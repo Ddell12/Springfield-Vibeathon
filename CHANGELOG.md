@@ -42,6 +42,45 @@ Key libraries chosen: dnd-kit (touch DnD), motion (animations), use-sound (iOS a
 
 ---
 
+## 2026-03-23 — Phase 0: Foundation & Setup
+
+### What Changed
+- Initialized Next.js 16.2.1 project with TypeScript, Tailwind v4, App Router, `src/` directory
+- Installed 30+ production and dev dependencies (AI stack, Convex ecosystem, UI libraries, testing tools)
+- Created Convex backend with Agent + RAG components, full schema (tools, knowledgeBase, ttsCache tables with all indexes)
+- Configured shadcn/ui with 15 components in VSA-compliant paths (`src/shared/components/ui/`)
+- Created responsive header with mobile Sheet menu, Toaster, ThemeProvider
+- Built builder page with shadcn Resizable split panels (35/65 desktop, stacked mobile)
+- Set up placeholder pages for all routes (/builder, /templates, /my-tools, /tool/[toolId])
+- Configured Vitest, Playwright, MSW mock handlers, Zod env validation, Prettier + ESLint
+- Created GitHub Actions CI/CD workflows (CI on all branches, deploy on main)
+- Deployed Convex backend (`dev:prestigious-husky-196`) with API keys for Anthropic, Google, ElevenLabs
+
+### Decisions Made
+- **Lazy ConvexReactClient init** — deferred to `useEffect` to avoid SSR/prerender crashes when `NEXT_PUBLIC_CONVEX_URL` isn't set
+- **`skipValidation` in env.ts** — `@t3-oss/env-nextjs` skips validation in CI to prevent E2E failures from missing secrets
+- **ThemeProvider added early** — shadcn's Toaster requires `next-themes` context; defaulted to `light` theme
+- **Vitest excludes `.claude/`** — prevents worktree test file pollution from parallel agent sessions
+- **Single commit per task** — plan's two-commit strategy collapsed when no rework was needed
+
+### Gotchas Discovered
+- Tailwind v4: `@import url()` must precede `@import "tailwindcss"` (CSS spec: no `@import` after rules)
+- shadcn Resizable: prop is `orientation`, not `direction` (react-resizable-panels v4 API change)
+- Bitwarden CLI: `bw get item` fails silently with "More than one result" when items share name prefixes
+- `eslint-plugin-simple-import-sort` must be explicitly wired into `eslint.config.mjs` (flat config format)
+
+### Infrastructure
+- GitHub repo: `Ddell12/Springfield-Vibeathon`
+- Convex project: `bridge-ai` (team: deshawndell)
+- Convex dashboard: https://dashboard.convex.dev/d/prestigious-husky-196
+- Convex env vars set: ANTHROPIC_API_KEY, GOOGLE_API_KEY, ELEVENLABS_API_KEY
+- Missing: FAL_KEY (fal.ai image gen — not critical until Phase 2)
+
+### 11 Commits
+`a4e9527` → `4eb08c5` → `57f2a3e` → `8770690` → `1c43554` → `f103b45` → `bd66194` → `234eb77` → `c7bd810` → `dd6b81d` → `833d3db`
+
+---
+
 <!--
 TEMPLATE for future entries:
 

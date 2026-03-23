@@ -175,3 +175,64 @@ Config → component mapper: `src/features/therapy-tools/components/tool-rendere
 - Temporary debugging notes
 - Task-specific implementation details (those go in the code or roadmap)
 - Information already in the sharded docs (don't duplicate)
+
+## Gotchas Discovered (Phase 0)
+
+- **Tailwind v4 CSS import order:** `@import url()` for external fonts MUST precede `@import "tailwindcss"` — Tailwind expands into CSS rules, and CSS spec forbids `@import` after rules.
+- **Convex + Next.js prerender:** `ConvexReactClient` throws "not an absolute URL" during SSR/prerender when `NEXT_PUBLIC_CONVEX_URL` isn't set. Fix: defer client creation to `useEffect` (see `src/core/providers.tsx`).
+- **shadcn Resizable prop name:** The correct prop is `orientation="horizontal"`, NOT `direction="horizontal"` (react-resizable-panels v4 API).
+- **shadcn Toaster + next-themes:** `Toaster` from sonner calls `useTheme()` — requires `ThemeProvider` in the provider tree or you get context warnings.
+- **Vitest + Claude worktrees:** `.claude/worktrees/` can contain test files from other agent sessions. Always exclude `.claude/**` in vitest.config.ts.
+- **`@t3-oss/env-nextjs` in CI:** Env validation crashes the build in CI where secrets aren't available. Use `skipValidation: !!process.env.CI` in `src/env.ts`.
+- **Bitwarden "More than one result":** When multiple items share a name prefix (e.g., "ElevenLabs" and "ElevenLabs Phone Number ID"), `bw get item` fails silently. Use `bw list items --search` with a `jq` filter for exact name + type match.
+- **`"use node";` file separation:** Never put `"use node";` in a file that also exports queries or mutations. Actions needing Node.js must be in separate files.
+- **Convex `filter` is banned:** Always use `.withIndex()` instead of `.filter()` in Convex queries.
+- **Convex `ctx.db` not available in actions:** Actions cannot access the database directly — use `ctx.runQuery` or `ctx.runMutation`.
+
+## Convex Backend
+
+<!-- convex-ai-start -->
+This project uses [Convex](https://convex.dev) as its backend.
+
+When working on Convex code, **always read `convex/_generated/ai/guidelines.md` first** for important guidelines on how to correctly use Convex APIs and patterns. The file contains rules that override what you may have learned about Convex from training data.
+
+Convex agent skills for common tasks can be installed by running `npx convex ai-files install`.
+<!-- convex-ai-end -->
+
+### Convex Quick Reference (from `convex/_generated/ai/guidelines.md`)
+
+- **Function types:** `query` (read-only, cached, reactive), `mutation` (transactional read+write), `action` (external APIs, non-transactional)
+- **Internal functions:** Use `internalQuery`/`internalMutation`/`internalAction` for private functions (not exposed to client)
+- **Function references:** `api.module.functionName` for public, `internal.module.functionName` for private
+- **Cross-function calls:** `ctx.runQuery`, `ctx.runMutation`, `ctx.runAction` — always use `FunctionReference`, never pass the function directly
+- **Type annotations:** When calling same-file functions via `ctx.runQuery`, add explicit return type annotation to avoid TypeScript circularity
+- **Queries:** Never use `.filter()` — always use `.withIndex()`. Use `.take(n)` instead of `.collect()` unless explicitly need all results. Never use `.collect().length` for counting.
+- **Mutations:** `ctx.db.patch` for partial update, `ctx.db.replace` for full replace. Both throw if doc doesn't exist.
+- **Actions:** Add `"use node";` at top of file for Node.js built-ins. `fetch()` works without it. Never use `ctx.db` in actions.
+- **Scheduling:** `ctx.scheduler.runAfter(ms, functionRef, args)` for delayed execution. Crons in `convex/crons.ts` using `cronJobs()`.
+- **Schema:** System fields `_id` and `_creationTime` are auto-added. Index names should include all fields (e.g., `by_field1_and_field2`).
+- **Auth:** Use `ctx.auth.getUserIdentity()` server-side. Never accept userId as a function argument. Use `tokenIdentifier` as the canonical user key.
+- **File storage:** `ctx.storage.getUrl()` for signed URLs. Query `_storage` system table for metadata. Store as `Blob`.
+- **Pagination:** Use `paginationOptsValidator` from `convex/server`. Returns `{ page, isDone, continueCursor }`.
+
+## Available Skills & Capabilities
+
+This project is built with Claude Code which has access to specialized skills. Key skills for this project:
+
+| Skill | Trigger | Purpose |
+|-------|---------|---------|
+| `convex-dev` | Creating tables, CRUD, backend features | Generates Convex functions with validation, auth, indexes |
+| `ai-action-builder` | Adding AI to Convex | Creates Convex actions with AI SDK for text gen, embeddings |
+| `plan-mode` | Complex multi-file tasks | Research-first planning before implementation |
+| `agent-team-implement` | Features touching 4+ files | Parallel multi-agent TDD implementation |
+| `agent-team-code-review` | PR review, code review | 4-agent parallel review (security, perf, correctness, maintainability) |
+| `frontend-design` | UI components, pages | Production-grade frontend with high design quality |
+| `web-design-guidelines` | UI audit, accessibility | Checks accessibility, layout, typography, interaction patterns |
+| `vitest-testing` | Writing tests | Modern TS/JS testing with Vitest |
+| `new-app` | (already used) | Scaffold Next.js + Convex + shadcn projects |
+| `bitwarden` | API keys, secrets | Retrieve/manage credentials from Bitwarden vault |
+| `env-setup` | Environment config | Wire up .env files from vault |
+| `commit` | Git commits | Structured commit workflow |
+| `check-pr` | PR readiness | Checks review comments, failing checks, PR descriptions |
+| `visual-explainer` | Architecture diagrams | Generate HTML visual explanations of systems |
+| `project-xray` | Codebase overview | Interactive HTML visualization of project state |
