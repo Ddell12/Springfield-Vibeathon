@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { Providers } from "@/core/providers";
 
 export const metadata: Metadata = {
   title: "Bridges — AI Therapy Tool Builder",
@@ -13,7 +14,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="h-full">
-      <body className="min-h-full flex flex-col antialiased">{children}</body>
+      <body className="min-h-full flex flex-col antialiased">
+        <Providers>{children}</Providers>
+      </body>
     </html>
   );
 }
