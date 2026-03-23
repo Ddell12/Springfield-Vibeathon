@@ -1,6 +1,7 @@
 "use client";
 
 import { ConvexProvider, ConvexReactClient } from "convex/react";
+import { ThemeProvider } from "next-themes";
 import { ReactNode, useEffect, useState } from "react";
 
 export function Providers({ children }: { children: ReactNode }) {
@@ -15,9 +16,15 @@ export function Providers({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const themed = (
+    <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
+      {children}
+    </ThemeProvider>
+  );
+
   if (!convex) {
-    return <>{children}</>;
+    return themed;
   }
 
-  return <ConvexProvider client={convex}>{children}</ConvexProvider>;
+  return <ConvexProvider client={convex}>{themed}</ConvexProvider>;
 }
