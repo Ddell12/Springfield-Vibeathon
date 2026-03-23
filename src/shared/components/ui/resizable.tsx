@@ -8,7 +8,7 @@ import { cn } from "@/core/utils"
 function ResizablePanelGroup({
   className,
   ...props
-}: ResizablePrimitive.GroupProps) {
+}: ResizablePrimitive.GroupProps & { className?: string }) {
   return (
     <ResizablePrimitive.Group
       data-slot="resizable-panel-group"
