@@ -1,0 +1,317 @@
+{
+  "metadata": {
+    "skill_name": "wheel-detector",
+    "skill_path": "/Users/desha/Aura/.claude/skills/wheel-detector",
+    "executor_model": "claude-opus-4-6",
+    "analyzer_model": "claude-opus-4-6",
+    "timestamp": "2026-03-06T12:00:00Z",
+    "evals_run": [1, 2, 3],
+    "runs_per_configuration": 1
+  },
+  "runs": [
+    {
+      "eval_id": 1,
+      "eval_name": "Full Codebase Scan",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.78,
+        "passed": 7,
+        "failed": 2,
+        "total": 9,
+        "time_seconds": 223.4,
+        "tokens": 93444,
+        "tool_calls": 53,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Identifies at least 3 distinct hand-rolled implementations",
+          "passed": true,
+          "evidence": "9 candidates found"
+        },
+        {
+          "text": "Each finding includes file path and line range",
+          "passed": true,
+          "evidence": "All findings have precise paths like src/shared/retry.ts:1-63"
+        },
+        {
+          "text": "Each finding includes suggested library with stats",
+          "passed": true,
+          "evidence": "p-retry (~24.9M downloads), p-limit (~170M downloads), etc."
+        },
+        {
+          "text": "Each finding rated with confidence level",
+          "passed": true,
+          "evidence": "3 High, 4 Medium, 2 Low"
+        },
+        {
+          "text": "Each finding includes migration difficulty",
+          "passed": true,
+          "evidence": "Easy/Moderate/Hard ratings on all findings"
+        },
+        {
+          "text": "Report has summary section",
+          "passed": true,
+          "evidence": "Summary with candidate counts and maintenance savings estimate"
+        },
+        {
+          "text": "Parallel subagents used for exploration",
+          "passed": false,
+          "evidence": "Sequential exploration despite skill instructions"
+        },
+        {
+          "text": "Web search or Context7 used for verification",
+          "passed": false,
+          "evidence": "No web search/Context7 calls observed"
+        },
+        {
+          "text": "Report saved to markdown file",
+          "passed": true,
+          "evidence": "WHEEL-DETECTOR-REPORT.md created"
+        }
+      ]
+    },
+    {
+      "eval_id": 1,
+      "eval_name": "Full Codebase Scan",
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.56,
+        "passed": 5,
+        "failed": 4,
+        "total": 9,
+        "time_seconds": 197.3,
+        "tokens": 109024,
+        "tool_calls": 60,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Identifies at least 3 distinct hand-rolled implementations",
+          "passed": true,
+          "evidence": "12 findings identified"
+        },
+        {
+          "text": "Each finding includes file path and line range",
+          "passed": true,
+          "evidence": "Paths with line counts included"
+        },
+        {
+          "text": "Each finding includes suggested library with stats",
+          "passed": true,
+          "evidence": "Fastify (74M+), p-retry (18M+), etc."
+        },
+        {
+          "text": "Each finding rated with confidence level",
+          "passed": false,
+          "evidence": "Uses STRONGLY REC/REC/CONSIDER/KEEP instead of High/Med/Low"
+        },
+        {
+          "text": "Each finding includes migration difficulty",
+          "passed": true,
+          "evidence": "Effort column in summary table"
+        },
+        {
+          "text": "Report has summary section",
+          "passed": false,
+          "evidence": "No top-level summary, only bottom table"
+        },
+        {
+          "text": "Parallel subagents used for exploration",
+          "passed": false,
+          "evidence": "No subagents in baseline"
+        },
+        {
+          "text": "Web search or Context7 used for verification",
+          "passed": false,
+          "evidence": "No web tools used"
+        },
+        {
+          "text": "Report saved to markdown file",
+          "passed": true,
+          "evidence": "wheel-audit-report.md created"
+        }
+      ]
+    },
+    {
+      "eval_id": 2,
+      "eval_name": "Scoped Core Scan",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 4,
+        "failed": 0,
+        "total": 4,
+        "time_seconds": 122.7,
+        "tokens": 47140,
+        "tool_calls": 24,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Scan limited to src/core/",
+          "passed": true,
+          "evidence": "Summary: 1 directory (src/core/), 7 source files"
+        },
+        {
+          "text": "At least 1 finding in src/core/",
+          "passed": true,
+          "evidence": "4 findings in src/core/"
+        },
+        {
+          "text": "Specific file paths within src/core/",
+          "passed": true,
+          "evidence": "src/core/atomic-write.ts:1-41, src/core/config.ts:249-268, etc."
+        },
+        {
+          "text": "No findings from other directories",
+          "passed": true,
+          "evidence": "All findings within src/core/"
+        }
+      ]
+    },
+    {
+      "eval_id": 2,
+      "eval_name": "Scoped Core Scan",
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 4,
+        "failed": 0,
+        "total": 4,
+        "time_seconds": 69.9,
+        "tokens": 38345,
+        "tool_calls": 13,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Scan limited to src/core/",
+          "passed": true,
+          "evidence": "Audited 7 source files in src/core/"
+        },
+        {
+          "text": "At least 1 finding in src/core/",
+          "passed": true,
+          "evidence": "4 findings identified"
+        },
+        {
+          "text": "Specific file paths within src/core/",
+          "passed": true,
+          "evidence": "Paths referenced within src/core/"
+        },
+        {
+          "text": "No findings from other directories",
+          "passed": true,
+          "evidence": "All analysis within src/core/"
+        }
+      ]
+    },
+    {
+      "eval_id": 3,
+      "eval_name": "Casual Phrasing",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 4,
+        "failed": 0,
+        "total": 4,
+        "time_seconds": 423.9,
+        "tokens": 98907,
+        "tool_calls": 96,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Skill was invoked",
+          "passed": true,
+          "evidence": "Agent read SKILL.md and followed three-phase approach"
+        },
+        {
+          "text": "Structured report generated",
+          "passed": true,
+          "evidence": "7 findings with full structure"
+        },
+        {
+          "text": "Findings grouped by confidence",
+          "passed": true,
+          "evidence": "High (2), Medium (3), Low (2)"
+        },
+        {
+          "text": "Report includes summary section",
+          "passed": true,
+          "evidence": "Summary with candidate counts"
+        }
+      ]
+    },
+    {
+      "eval_id": 3,
+      "eval_name": "Casual Phrasing",
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.75,
+        "passed": 3,
+        "failed": 1,
+        "total": 4,
+        "time_seconds": 235.2,
+        "tokens": 71920,
+        "tool_calls": 92,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Skill was invoked",
+          "passed": false,
+          "evidence": "Baseline — no skill provided"
+        },
+        {
+          "text": "Structured report generated",
+          "passed": true,
+          "evidence": "11 findings with severity and recommendations"
+        },
+        {
+          "text": "Findings grouped by confidence",
+          "passed": true,
+          "evidence": "HIGH (3), MEDIUM (3), LOW (5)"
+        },
+        {
+          "text": "Report includes summary section",
+          "passed": true,
+          "evidence": "Summary table at bottom"
+        }
+      ]
+    }
+  ],
+  "run_summary": {
+    "with_skill": {
+      "pass_rate": { "mean": 0.93, "stddev": 0.13, "min": 0.78, "max": 1.0 },
+      "time_seconds": { "mean": 256.7, "stddev": 155.7, "min": 122.7, "max": 423.9 },
+      "tokens": { "mean": 79830, "stddev": 27786, "min": 47140, "max": 98907 }
+    },
+    "without_skill": {
+      "pass_rate": { "mean": 0.77, "stddev": 0.22, "min": 0.56, "max": 1.0 },
+      "time_seconds": { "mean": 167.5, "stddev": 86.7, "min": 69.9, "max": 235.2 },
+      "tokens": { "mean": 73096, "stddev": 35497, "min": 38345, "max": 109024 }
+    },
+    "delta": {
+      "pass_rate": "+0.16",
+      "time_seconds": "+89.2",
+      "tokens": "+6734"
+    }
+  },
+  "notes": [
+    "Eval 2 (Scoped Core Scan) passes 100% in both configurations — the scope-limiting behavior is inherent, not skill-specific",
+    "The skill's biggest value-add is in Eval 1 (full scan): +22% pass rate due to structured confidence levels and summary section",
+    "Neither configuration used web search or Context7 — both relied on training knowledge for library suggestions",
+    "The baseline found MORE candidates in Eval 1 (12 vs 9) and caught gray-matter already-installed issue that the with-skill version missed",
+    "The baseline Eval 3 found internal code duplication (formatCurrency x4, relativeTime x4) which the skill doesn't cover",
+    "With-skill runs average 53% more wall-clock time but only 9% more tokens — overhead is in coordination, not exploration depth",
+    "The 'parallel subagents' assertion fails consistently — subagents explored sequentially even when instructed to parallelize"
+  ]
+}

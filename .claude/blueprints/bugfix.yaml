@@ -1,0 +1,55 @@
+name: bugfix
+description: Investigate and fix a bug in an existing codebase. Minimal footprint — only changes what is needed to fix the reported issue.
+stack:
+  framework: any
+  backend: any
+  ui: any
+  styling: any
+
+steps:
+  - id: investigate
+    type: agentic
+    agent_team:
+      lead: architect
+      members: [researcher]
+    prompt: |
+      Investigate the following bug in the repository at {{repo_path}}:
+
+      BUG REPORT: {{bug_description}}
+
+      1. Reproduce the issue by reading the relevant code paths.
+      2. Identify the root cause with file and line-level precision.
+      3. Propose the minimal fix needed — do not refactor unrelated code.
+      4. Output a concise fix plan: files to change, lines to change, reason.
+
+  - id: fix
+    type: agentic
+    depends_on: [investigate]
+    agent_team:
+      lead: implementer
+      members: []
+    prompt: |
+      Apply the fix plan from the investigation step.
+
+      BUG REPORT: {{bug_description}}
+      REPO: {{repo_path}}
+
+      - Make only the changes identified in the plan.
+      - Do not introduce unrelated improvements or refactors.
+      - Add a regression test if the test suite exists and a test is feasible.
+
+  - id: test
+    type: deterministic
+    depends_on: [fix]
+    on_failure: feed_to_agent
+    run: npm test
+
+  - id: commit_and_pr
+    type: deterministic
+    depends_on: [test]
+    run: |
+      git checkout -b fix/{{bug_slug}} &&
+      git add -A &&
+      git commit -m "fix: {{bug_slug}} — {{bug_description}}" &&
+      git push -u origin fix/{{bug_slug}} &&
+      gh pr create --title "fix: {{bug_slug}}" --body "Fixes: {{bug_description}}" --draft

@@ -1,0 +1,74 @@
+name: aura-self-mod
+description: Modify the Aura codebase itself. Follows Aura's Vertical Slice Architecture conventions — branch, analyze, implement, typecheck, test, PR.
+stack:
+  framework: node.js
+  backend: convex
+  ui: none
+  styling: none
+
+steps:
+  - id: analyze
+    type: agentic
+    agent_team:
+      lead: architect
+      members: []
+    prompt: |
+      Analyze the Aura codebase at ~/Aura for the following change:
+
+      CHANGE REQUEST: {{change_description}}
+
+      Aura uses Vertical Slice Architecture (VSA). Key conventions:
+      - src/ has 16 slices; cross-slice imports are forbidden.
+      - Slices communicate via core/bus.ts (events) or dependency injection.
+      - core/ and shared/ are imported by direct path.
+      - Feature slices export through their index.ts barrel.
+      - All imports use .js extensions (ESM).
+      - Convex functions must be exported to be registered.
+
+      Produce a precise implementation plan:
+      1. Which slice(s) are affected?
+      2. Which files need to be created or modified?
+      3. Are new Convex tables or functions needed?
+      4. Any cross-slice communication changes needed (bus events, DI)?
+      5. What tests should be added or updated?
+
+  - id: implement
+    type: agentic
+    depends_on: [analyze]
+    agent_team:
+      lead: implementer
+      members: []
+    prompt: |
+      Execute the implementation plan from the analyze step.
+
+      CHANGE REQUEST: {{change_description}}
+      REPO: ~/Aura
+
+      Strict rules:
+      - No cross-slice imports (enforce VSA boundary).
+      - All local imports must use .js extensions.
+      - Convex functions must be exported from their module.
+      - Do not modify .env files.
+      - Branch: feature/{{change_slug}} (create if not already on it).
+
+  - id: typecheck
+    type: deterministic
+    depends_on: [implement]
+    on_failure: feed_to_agent
+    run: cd ~/Aura && npm run typecheck
+
+  - id: test
+    type: deterministic
+    depends_on: [typecheck]
+    on_failure: feed_to_agent
+    run: cd ~/Aura && npx vitest run
+
+  - id: commit_and_pr
+    type: deterministic
+    depends_on: [test]
+    run: |
+      cd ~/Aura &&
+      git add -A &&
+      git commit -m "feat: {{change_slug}} — {{change_description}}" &&
+      git push -u origin feature/{{change_slug}} &&
+      gh pr create --title "feat: {{change_slug}}" --body "{{change_description}}" --draft

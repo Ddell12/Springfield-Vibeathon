@@ -1,0 +1,12 @@
+{
+  "eval_id": 3,
+  "eval_name": "casual-phrasing",
+  "prompt": "audit my codebase for reinvented wheels",
+  "assertions": [
+    "The skill was invoked (wheel-detector skill was used)",
+    "A structured report was generated with findings",
+    "Findings are grouped by confidence level",
+    "The report includes a summary section",
+    "The report includes an Already Installed But Unused section"
+  ]
+}

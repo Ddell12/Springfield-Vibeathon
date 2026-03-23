@@ -1,0 +1,49 @@
+{
+  "skill_name": "wheel-detector",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "scan my codebase for any hand-rolled code that could be replaced by a well-maintained npm package. focus on substantial implementations, not tiny helpers",
+      "expected_output": "A structured markdown report identifying hand-rolled implementations with library alternatives, confidence levels, migration difficulty ratings, and an Already Installed But Unused section",
+      "files": [],
+      "expectations": [
+        "The report identifies at least 3 distinct hand-rolled implementations",
+        "Each finding includes the file path and line range",
+        "Each finding includes a suggested library replacement with npm download stats or GitHub stars",
+        "Each finding is rated with a confidence level (High/Medium/Low)",
+        "Each finding includes migration difficulty (Easy/Moderate/Hard)",
+        "The report has a summary section with total candidates found",
+        "package.json was read before scanning code (Phase 1 Inventory)",
+        "The report includes an Already Installed But Unused section",
+        "The report includes an Internal Duplication section or notes on copy-pasted utilities",
+        "The report was saved to a markdown file"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "check src/core/ for code that could use a library instead of being hand-rolled",
+      "expected_output": "A focused report on just the src/core/ directory, identifying hand-rolled utilities that have library alternatives",
+      "files": [],
+      "expectations": [
+        "The scan was limited to src/core/ (not the entire codebase)",
+        "At least 1 finding was identified in src/core/",
+        "Findings include specific file paths within src/core/",
+        "The report does not include findings from other directories like src/agent/ or src/memory/",
+        "package.json was read to check for already-installed alternatives"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "audit my codebase for reinvented wheels",
+      "expected_output": "The skill triggers from this casual phrasing and produces the same structured report as a more explicit request",
+      "files": [],
+      "expectations": [
+        "The skill was invoked (wheel-detector skill was used)",
+        "A structured report was generated with findings",
+        "Findings are grouped by confidence level",
+        "The report includes a summary section",
+        "The report includes an Already Installed But Unused section"
+      ]
+    }
+  ]
+}

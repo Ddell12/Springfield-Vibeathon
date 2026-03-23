@@ -1,0 +1,30 @@
+{
+  "expectations": [
+    {
+      "text": "The scan was limited to src/core/ (not the entire codebase)",
+      "passed": true,
+      "evidence": "Summary states 'Scanned: 1 directory (src/core/), 7 source files'. All findings are within src/core/."
+    },
+    {
+      "text": "At least 1 finding was identified in src/core/",
+      "passed": true,
+      "evidence": "4 findings identified: atomic-write.ts (High), config.ts deepMerge (Medium), bus.ts TypedEventEmitter (Medium), sessions.ts timezone helpers (Low)"
+    },
+    {
+      "text": "Findings include specific file paths within src/core/",
+      "passed": true,
+      "evidence": "All findings reference src/core/ paths: 'src/core/atomic-write.ts:1-41', 'src/core/config.ts:249-268', 'src/core/bus.ts:63-82', 'src/core/sessions.ts:1-12'"
+    },
+    {
+      "text": "The report does not include findings from other directories like src/agent/ or src/memory/",
+      "passed": true,
+      "evidence": "All 4 findings and the Skipped section reference only src/core/ files. No findings from src/agent/, src/memory/, or other slices."
+    }
+  ],
+  "summary": {
+    "passed": 4,
+    "failed": 0,
+    "total": 4,
+    "pass_rate": 1.0
+  }
+}

@@ -1,0 +1,75 @@
+name: nextjs-convex-feature
+description: Add a feature to an existing Next.js + Convex application. Covers analysis, implementation, linting, type checking, testing, and PR creation.
+stack:
+  framework: next.js
+  backend: convex
+  ui: shadcn/ui
+  styling: tailwind
+
+steps:
+  - id: setup
+    type: deterministic
+    run: |
+      git checkout -b feature/{{feature_name}} && npm install
+
+  - id: analyze
+    type: agentic
+    depends_on: [setup]
+    agent_team:
+      lead: architect
+      members: [researcher]
+    prompt: |
+      Analyze the codebase at {{repo_path}} and the following task:
+
+      TASK: {{task_description}}
+
+      1. Identify which files need to be created or modified.
+      2. Identify relevant Convex schema tables, queries, and mutations.
+      3. Identify relevant Next.js routes and components.
+      4. Produce a concise implementation plan with file-level detail.
+      5. Output the plan as a structured markdown document.
+
+  - id: implement
+    type: agentic
+    depends_on: [analyze]
+    agent_team:
+      lead: implementer
+      members: [implementer]
+    prompt: |
+      Execute the implementation plan produced in the analyze step.
+
+      TASK: {{task_description}}
+      REPO: {{repo_path}}
+
+      Follow the plan exactly. Create or modify the identified files.
+      Adhere to Next.js App Router conventions, Convex function patterns,
+      shadcn/ui component composition, and Tailwind v4 utilities.
+      Do not add unnecessary abstractions or unrelated changes.
+
+  - id: lint
+    type: deterministic
+    depends_on: [implement]
+    on_failure: retry_once
+    run: npm run lint --fix
+
+  - id: typecheck
+    type: deterministic
+    depends_on: [lint]
+    on_failure: feed_to_agent
+    run: npm run typecheck
+
+  - id: test
+    type: deterministic
+    depends_on: [typecheck]
+    on_failure: feed_to_agent
+    max_retries: 2
+    run: npm test
+
+  - id: commit_and_pr
+    type: deterministic
+    depends_on: [test]
+    run: |
+      git add -A &&
+      git commit -m "feat: {{feature_name}} — {{task_description}}" &&
+      git push -u origin feature/{{feature_name}} &&
+      gh pr create --title "feat: {{feature_name}}" --body "{{task_description}}" --draft

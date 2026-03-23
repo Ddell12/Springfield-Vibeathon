@@ -1,0 +1,78 @@
+name: nextjs-convex-app
+description: Scaffold and build a complete new Next.js + Convex application from scratch. Covers project creation, dependency configuration, full implementation, and PR creation.
+stack:
+  framework: next.js
+  backend: convex
+  ui: shadcn/ui
+  styling: tailwind
+
+steps:
+  - id: scaffold
+    type: deterministic
+    run: |
+      npx create-next-app@latest {{app_name}} \
+        --typescript --tailwind --eslint --app --src-dir --import-alias "@/*" \
+        --use-npm &&
+      cd {{app_name}} &&
+      npx convex dev --once
+
+  - id: configure
+    type: deterministic
+    depends_on: [scaffold]
+    run: |
+      cd {{app_name}} &&
+      npm install @convex-dev/react-query convex &&
+      npx shadcn@latest init -d &&
+      npx shadcn@latest add button card input label badge dialog sheet
+
+  - id: implement
+    type: agentic
+    depends_on: [configure]
+    agent_team:
+      lead: architect
+      members: [implementer]
+    prompt: |
+      Build the full application described below inside the directory {{app_name}}.
+
+      APP DESCRIPTION: {{app_description}}
+
+      Steps:
+      1. Define the Convex schema (convex/schema.ts) — tables, indexes, validators.
+      2. Create Convex queries and mutations for all required data operations.
+      3. Build the Next.js App Router pages and layouts.
+      4. Wire up Convex hooks (useQuery, useMutation) in client components.
+      5. Apply Tailwind v4 utility classes and shadcn/ui components for UI.
+      6. Ensure all files are properly typed (no `any`).
+
+      Follow Next.js App Router conventions, Convex ESM export requirements,
+      and shadcn/ui composition patterns throughout.
+
+  - id: lint
+    type: deterministic
+    depends_on: [implement]
+    on_failure: retry_once
+    run: cd {{app_name}} && npm run lint --fix
+
+  - id: typecheck
+    type: deterministic
+    depends_on: [lint]
+    on_failure: feed_to_agent
+    run: cd {{app_name}} && npm run typecheck
+
+  - id: test
+    type: deterministic
+    depends_on: [typecheck]
+    on_failure: feed_to_agent
+    max_retries: 2
+    run: cd {{app_name}} && npm test
+
+  - id: commit_and_pr
+    type: deterministic
+    depends_on: [test]
+    run: |
+      cd {{app_name}} &&
+      git init &&
+      git add -A &&
+      git commit -m "feat: initial scaffold — {{app_description}}" &&
+      gh repo create {{github_org}}/{{app_name}} --private --source=. --remote=origin &&
+      git push -u origin main

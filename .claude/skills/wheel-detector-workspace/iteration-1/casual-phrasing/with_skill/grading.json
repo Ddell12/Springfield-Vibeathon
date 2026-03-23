@@ -1,0 +1,30 @@
+{
+  "expectations": [
+    {
+      "text": "The skill was invoked (wheel-detector skill was used)",
+      "passed": true,
+      "evidence": "Agent read the SKILL.md and followed the three-phase approach (Discover, Match, Report) as instructed"
+    },
+    {
+      "text": "A structured report was generated with findings",
+      "passed": true,
+      "evidence": "Report has 7 findings with full structure: File, What it does, Confidence, Migration difficulty, Suggested library, Why replace, Next step"
+    },
+    {
+      "text": "Findings are grouped by confidence level",
+      "passed": true,
+      "evidence": "Report organized into sections: High Confidence (2), Medium Confidence (3), Low Confidence (2)"
+    },
+    {
+      "text": "The report includes a summary section",
+      "passed": true,
+      "evidence": "Summary section with: 'Candidates found: 7', 'High confidence replacements: 2', 'Medium confidence replacements: 3', 'Low confidence replacements: 2'"
+    }
+  ],
+  "summary": {
+    "passed": 4,
+    "failed": 0,
+    "total": 4,
+    "pass_rate": 1.0
+  }
+}

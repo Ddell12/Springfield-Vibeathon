@@ -1,0 +1,55 @@
+{
+  "expectations": [
+    {
+      "text": "The report identifies at least 3 distinct hand-rolled implementations",
+      "passed": true,
+      "evidence": "Report identifies 12 findings including HTTP server, concurrency semaphore, retry, frontmatter parsing, markdown chunker, DAG executor, orchestrator, template interpolation, SSE, webhook verification, file watcher, token rate limiter"
+    },
+    {
+      "text": "Each finding includes the file path and line range",
+      "passed": true,
+      "evidence": "Most findings include file paths and line counts: 'trigger-server.ts, 540 lines', 'concurrency.ts, 112 lines', 'retry.ts, 64 lines'. Line ranges are less precise than with-skill version."
+    },
+    {
+      "text": "Each finding includes a suggested library replacement with npm download stats or GitHub stars",
+      "passed": true,
+      "evidence": "All findings include library suggestions with download stats: Fastify (74M+), p-limit (60M+), p-retry (18M+), gray-matter (4M+), graphlib (700K)"
+    },
+    {
+      "text": "Each finding is rated with a confidence level (High/Medium/Low)",
+      "passed": false,
+      "evidence": "Uses a different rating system: STRONGLY RECOMMENDED, RECOMMENDED, CONSIDER, KEEP, SKIP — not High/Medium/Low confidence levels"
+    },
+    {
+      "text": "Each finding includes migration difficulty (Easy/Moderate/Hard)",
+      "passed": true,
+      "evidence": "Summary table includes Effort column: Low, Medium, Medium, Low, Medium, Medium, Low, Very low. Uses Effort/risk in prose."
+    },
+    {
+      "text": "The report has a summary section with total candidates found",
+      "passed": false,
+      "evidence": "No dedicated summary section at the top. The summary table at the bottom serves a similar purpose but doesn't have a count header."
+    },
+    {
+      "text": "Parallel subagents were used to explore the codebase",
+      "passed": false,
+      "evidence": "No subagents — baseline run explored sequentially with 60 tool calls"
+    },
+    {
+      "text": "Web search or Context7 was used to verify at least one library suggestion",
+      "passed": false,
+      "evidence": "No web search or Context7 tools used in baseline run"
+    },
+    {
+      "text": "The report was saved to a markdown file",
+      "passed": true,
+      "evidence": "Report saved to wheel-audit-report.md in the outputs directory"
+    }
+  ],
+  "summary": {
+    "passed": 5,
+    "failed": 4,
+    "total": 9,
+    "pass_rate": 0.56
+  }
+}

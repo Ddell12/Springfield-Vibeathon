@@ -1,0 +1,171 @@
+<h2>Final Design: Library-Optimized Bridges</h2>
+<p class="subtitle">Approach B — Surgical library additions + scope trim + Stitch UI + Zod validation</p>
+
+<div class="section">
+  <h3>Architecture Layers</h3>
+  <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:1rem; margin:1rem 0;">
+    <div style="padding:1rem; background:linear-gradient(135deg, #0d9488 0%, #14b8a6 100%); border-radius:12px; color:white; text-align:center;">
+      <div style="font-size:0.75rem; text-transform:uppercase; opacity:0.8; margin-bottom:0.5rem;">Visual Layer</div>
+      <div style="font-size:1.1rem; font-weight:600;">Google Stitch</div>
+      <div style="font-size:0.85rem; margin-top:0.5rem; opacity:0.9;">Pages, layouts, tool visuals, app shell</div>
+    </div>
+    <div style="padding:1rem; background:linear-gradient(135deg, #6366f1 0%, #818cf8 100%); border-radius:12px; color:white; text-align:center;">
+      <div style="font-size:0.75rem; text-transform:uppercase; opacity:0.8; margin-bottom:0.5rem;">Behavior Layer</div>
+      <div style="font-size:1.1rem; font-weight:600;">Libraries</div>
+      <div style="font-size:0.85rem; margin-top:0.5rem; opacity:0.9;">assistant-ui, dnd-kit, motion, zustand, use-sound</div>
+    </div>
+    <div style="padding:1rem; background:linear-gradient(135deg, #ea580c 0%, #f97316 100%); border-radius:12px; color:white; text-align:center;">
+      <div style="font-size:0.75rem; text-transform:uppercase; opacity:0.8; margin-bottom:0.5rem;">Data Layer</div>
+      <div style="font-size:1.1rem; font-weight:600;">Convex + AI</div>
+      <div style="font-size:0.85rem; margin-top:0.5rem; opacity:0.9;">Agent, RAG, Claude, ElevenLabs, Zod schemas</div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>What Changed from Original Plan</h3>
+  <table style="width:100%; border-collapse:collapse; margin:1rem 0;">
+    <thead>
+      <tr style="border-bottom:2px solid var(--border); text-align:left;">
+        <th style="padding:0.5rem;">Area</th>
+        <th style="padding:0.5rem;">Original</th>
+        <th style="padding:0.5rem;">Now</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:0.5rem;">Chat UI</td>
+        <td style="padding:0.5rem;">3 custom components (~190 lines)</td>
+        <td style="padding:0.5rem;">@assistant-ui/react + ExternalStoreRuntime (~40 lines)</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:0.5rem;">UI Design</td>
+        <td style="padding:0.5rem;">Hand-coded with shadcn + Tailwind</td>
+        <td style="padding:0.5rem;">Google Stitch generates visuals, libraries add behavior</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:0.5rem;">Therapy tools</td>
+        <td style="padding:0.5rem;">5 tools, custom components</td>
+        <td style="padding:0.5rem;">3 tools (comm board, token board, visual schedule), thin compositions</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:0.5rem;">Tool configs</td>
+        <td style="padding:0.5rem;">TypeScript interfaces only</td>
+        <td style="padding:0.5rem;">Zod schemas with z.infer&lt;&gt; for runtime + compile-time safety</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:0.5rem;">Builder layout</td>
+        <td style="padding:0.5rem;">Custom split-panel CSS</td>
+        <td style="padding:0.5rem;">shadcn Resizable (wraps react-resizable-panels)</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:0.5rem;">Error boundaries</td>
+        <td style="padding:0.5rem;">Custom class components</td>
+        <td style="padding:0.5rem;">react-error-boundary</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:0.5rem;">Custom hooks</td>
+        <td style="padding:0.5rem;">Hand-written (useMediaQuery, etc.)</td>
+        <td style="padding:0.5rem;">usehooks-ts</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:0.5rem;">Loading states</td>
+        <td style="padding:0.5rem;">Custom shimmer CSS</td>
+        <td style="padding:0.5rem;">shadcn Skeleton</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:0.5rem;">Templates</td>
+        <td style="padding:0.5rem;">8 templates across 4 categories</td>
+        <td style="padding:0.5rem;">6 templates across 3 categories</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:0.5rem;">Landing page</td>
+        <td style="padding:0.5rem;">Hero + How It Works + Tool Showcase</td>
+        <td style="padding:0.5rem;">Hero + CTA only (Stitch-designed)</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:0.5rem;">Task count</td>
+        <td style="padding:0.5rem;">62 tasks</td>
+        <td style="padding:0.5rem;">~52 tasks (stretch goals for choice/first-then boards)</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="section">
+  <h3>Full Dependency List</h3>
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin:1rem 0;">
+    <div>
+      <div class="label">Core Stack</div>
+      <ul style="padding-left:1.25rem; font-size:0.9rem;">
+        <li>Next.js (App Router)</li>
+        <li>Convex + @convex-dev/agent + @convex-dev/rag</li>
+        <li>ai + @ai-sdk/anthropic + @ai-sdk/google</li>
+        <li>Clerk (Phase 6 only)</li>
+      </ul>
+    </div>
+    <div>
+      <div class="label">UI Layer</div>
+      <ul style="padding-left:1.25rem; font-size:0.9rem;">
+        <li>Google Stitch (visual generation)</li>
+        <li>shadcn/ui (resizable, skeleton, checkbox, toggle-group, scroll-area, + base set)</li>
+        <li>@assistant-ui/react (chat UI)</li>
+        <li>Tailwind v4</li>
+      </ul>
+    </div>
+    <div>
+      <div class="label">Interaction</div>
+      <ul style="padding-left:1.25rem; font-size:0.9rem;">
+        <li>@dnd-kit/react (drag & drop)</li>
+        <li>motion (animations)</li>
+        <li>zustand (state)</li>
+        <li>use-sound (TTS playback)</li>
+        <li>usehooks-ts (utility hooks)</li>
+      </ul>
+    </div>
+    <div>
+      <div class="label">Validation & Quality</div>
+      <ul style="padding-left:1.25rem; font-size:0.9rem;">
+        <li>zod (config schemas + env validation)</li>
+        <li>react-error-boundary</li>
+        <li>react-markdown + remark-gfm</li>
+        <li>react-qr-code</li>
+        <li>sonner (toasts)</li>
+      </ul>
+    </div>
+    <div>
+      <div class="label">External Services</div>
+      <ul style="padding-left:1.25rem; font-size:0.9rem;">
+        <li>Claude Sonnet (LLM)</li>
+        <li>Google gemini-embedding-001 (embeddings)</li>
+        <li>ElevenLabs (TTS)</li>
+        <li>Google Gemini / fal.ai (image gen)</li>
+      </ul>
+    </div>
+    <div>
+      <div class="label">Testing & DX</div>
+      <ul style="padding-left:1.25rem; font-size:0.9rem;">
+        <li>Vitest + React Testing Library</li>
+        <li>convex-test</li>
+        <li>Playwright (chromium + webkit)</li>
+        <li>msw (API mocking)</li>
+        <li>@faker-js/faker</li>
+        <li>prettier-plugin-tailwindcss</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Stretch Goals (if time allows)</h3>
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin:1rem 0;">
+    <div style="padding:0.75rem; background:var(--surface); border-radius:8px; border:1px dashed var(--border);">
+      <strong>Choice Board</strong><br>
+      <span style="color:var(--muted); font-size:0.85rem;">~1 hour. Stitch visual + shadcn ToggleGroup + motion. Config schema already defined.</span>
+    </div>
+    <div style="padding:0.75rem; background:var(--surface); border-radius:8px; border:1px dashed var(--border);">
+      <strong>First-Then Board</strong><br>
+      <span style="color:var(--muted); font-size:0.85rem;">~1 hour. Stitch visual + motion transitions + usehooks-ts useCountdown.</span>
+    </div>
+  </div>
+</div>

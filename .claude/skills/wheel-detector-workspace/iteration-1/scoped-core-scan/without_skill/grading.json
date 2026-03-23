@@ -1,0 +1,30 @@
+{
+  "expectations": [
+    {
+      "text": "The scan was limited to src/core/ (not the entire codebase)",
+      "passed": true,
+      "evidence": "Report states 'Audited 7 source files in src/core/'. All findings are within src/core/."
+    },
+    {
+      "text": "At least 1 finding was identified in src/core/",
+      "passed": true,
+      "evidence": "4 findings: atomic-write.ts (replace), sessions.ts (replace), config.ts deepMerge (keep), config.ts resolveTilde (keep)"
+    },
+    {
+      "text": "Findings include specific file paths within src/core/",
+      "passed": true,
+      "evidence": "Paths referenced: 'src/core/atomic-write.ts', 'src/core/config.ts lines 249-268', 'src/core/sessions.ts'. Less precise line ranges than with-skill."
+    },
+    {
+      "text": "The report does not include findings from other directories like src/agent/ or src/memory/",
+      "passed": true,
+      "evidence": "All findings and analysis are within src/core/. No mention of src/agent/ or other slices."
+    }
+  ],
+  "summary": {
+    "passed": 4,
+    "failed": 0,
+    "total": 4,
+    "pass_rate": 1.0
+  }
+}

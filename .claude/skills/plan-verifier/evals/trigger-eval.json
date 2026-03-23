@@ -1,0 +1,82 @@
+[
+  {
+    "query": "ok i just finished the design doc for the new notification system, heres the implementation plan at Docs/plans/2026-03-07-notification-system-plan.md — can you check it before I start coding? I want to make sure the file paths and convex functions are all legit",
+    "should_trigger": true
+  },
+  {
+    "query": "verify Docs/plans/2026-03-06-agent-control-tower-plan.md",
+    "should_trigger": true
+  },
+  {
+    "query": "im about to execute this plan but last time the line numbers were all wrong and i wasted 2 hours. can you audit Docs/plans/crystalline-rolling-honey.md before i start?",
+    "should_trigger": true
+  },
+  {
+    "query": "I wrote an implementation plan for adding webhooks to the daemon. It creates 3 new convex tables and 2 new src slices. Before I run /execute on it, can you check that the schema additions make sense and that the imports arent hallucinated?",
+    "should_trigger": true
+  },
+  {
+    "query": "check if this plan is feasible — it references internal.memory.graph.searchEntities but I think that function is actually public, not internal. Plan is at Docs/plans/2026-03-06-graph-memory-implementation.md",
+    "should_trigger": true
+  },
+  {
+    "query": "review my plan at Docs/plans/new-feature.md for VSA compliance and make sure it doesnt violate slice boundaries or introduce wrong dependencies",
+    "should_trigger": true
+  },
+  {
+    "query": "I just generated a plan with /plan-feature and want to sanity check it catches any hallucinated APIs or missing barrel exports before I hand it off to the executor",
+    "should_trigger": true
+  },
+  {
+    "query": "is this plan going to work? it adds 4 new files to src/memory/ but im not sure if it should go through convex-sync like the rest of the memory slice does. plan file: Docs/plans/graph-memory-plan.md",
+    "should_trigger": true
+  },
+  {
+    "query": "give me a confidence score on whether Docs/plans/2026-03-05-unified-task-wiring-plan.md can be implemented without errors",
+    "should_trigger": true
+  },
+  {
+    "query": "the last 3 plans I executed all had wrong line numbers and missing npx convex dev steps. can you verify this new plan catches those issues? its at Docs/plans/dashboard-overhaul.md",
+    "should_trigger": true
+  },
+  {
+    "query": "create an implementation plan for adding a voice channel adapter to the daemon that supports ElevenLabs real-time streaming",
+    "should_trigger": false
+  },
+  {
+    "query": "review my pull request on the feature/webhook-system branch — check code quality, test coverage, and whether it follows our conventions",
+    "should_trigger": false
+  },
+  {
+    "query": "run a code review on the changes I just made to src/agent/agent.ts and src/daemon/daemon.ts",
+    "should_trigger": false
+  },
+  {
+    "query": "I need to debug why the morning briefing trigger job keeps failing with a timeout error. Can you look at the logs and figure out whats going on?",
+    "should_trigger": false
+  },
+  {
+    "query": "scaffold a new Next.js + Convex + Clerk project for my client portal SaaS idea",
+    "should_trigger": false
+  },
+  {
+    "query": "help me write a design doc for the new analytics dashboard feature — I need to think through the data model and component hierarchy before writing code",
+    "should_trigger": false
+  },
+  {
+    "query": "can you explain how the agent context pipeline works? I want to understand how src/agent/context-summary.ts assembles the system prompt",
+    "should_trigger": false
+  },
+  {
+    "query": "write a Convex mutation that creates a new task with proper validation, indexes, and a bus event emission",
+    "should_trigger": false
+  },
+  {
+    "query": "I need to refactor the telegram adapter to support inline keyboards and callback queries. Just go ahead and make the changes",
+    "should_trigger": false
+  },
+  {
+    "query": "generate a visual diagram showing the architecture of how agent sessions flow from channel adapters through the daemon to convex",
+    "should_trigger": false
+  }
+]

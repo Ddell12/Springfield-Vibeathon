@@ -1,0 +1,98 @@
+<h2>Three Approaches: Library-Optimized Bridges</h2>
+<p class="subtitle">How aggressively should we replace custom code with libraries?</p>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Surgical Additions (Recommended)</h3>
+      <p>Add 5 targeted libraries to the existing plan. Keep the current roadmap structure — just swap custom code for library equivalents where they're a clear win.</p>
+      <div style="margin-top:0.75rem;">
+        <div class="label">ADDS</div>
+        <ul style="margin:0.25rem 0; padding-left:1.25rem; font-size:0.9rem;">
+          <li><code>@assistant-ui/react</code> — replaces 3 custom chat components with pre-built shadcn-compatible thread UI + ExternalStoreRuntime for Convex Agent</li>
+          <li><code>shadcn resizable</code> — replaces custom split-panel CSS in builder</li>
+          <li><code>react-error-boundary</code> — replaces custom ErrorBoundary classes</li>
+          <li><code>usehooks-ts</code> — replaces 4-5 custom hooks (useMediaQuery, useCountdown, useCopyToClipboard, useDebounce)</li>
+          <li><code>react-markdown + remark-gfm</code> — chat markdown rendering (may be redundant if @assistant-ui handles this)</li>
+          <li><code>shadcn skeleton</code> — loading states</li>
+        </ul>
+      </div>
+      <div style="margin-top:0.5rem;">
+        <div class="label">IMPACT</div>
+        <p style="font-size:0.9rem;">~300-400 lines of custom code eliminated. Roadmap stays at 62 tasks but several shrink significantly (TASK-007, TASK-015, TASK-016, TASK-044, TASK-045). Lowest risk — well-tested libraries, drop-in replacements.</p>
+      </div>
+      <div class="pros-cons">
+        <div class="pros"><h4>Pros</h4><ul>
+          <li>Minimal plan disruption</li>
+          <li>Each library is a clear, isolated win</li>
+          <li>Easy to revert if a library doesn't work</li>
+          <li>Chat UI is the biggest time save (~2-3 hours)</li>
+        </ul></div>
+        <div class="cons"><h4>Cons</h4><ul>
+          <li>Doesn't question the overall scope</li>
+          <li>Still 62 tasks for 5 days</li>
+        </ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Surgical Additions + Scope Trim</h3>
+      <p>Same library additions as A, but also cut scope to increase confidence of shipping in 5 days. Drop from 5 therapy tools to 3 (communication board, token board, visual schedule — the demo flow). Defer choice board and first-then board to a stretch goal.</p>
+      <div style="margin-top:0.75rem;">
+        <div class="label">CHANGES</div>
+        <ul style="margin:0.25rem 0; padding-left:1.25rem; font-size:0.9rem;">
+          <li>All library additions from Approach A</li>
+          <li>Drop TASK-023 (choice board) and TASK-024 (first-then board) to stretch goals</li>
+          <li>Reduce templates from 8 to 6 (drop 2 categories)</li>
+          <li>Simplify landing page — hero + CTA only, skip How It Works animation</li>
+          <li>~52 tasks instead of 62</li>
+        </ul>
+      </div>
+      <div class="pros-cons">
+        <div class="pros"><h4>Pros</h4><ul>
+          <li>More realistic for 5-day timeline</li>
+          <li>3 polished tools > 5 rough tools for demo</li>
+          <li>Freed time goes to polish and reliability</li>
+        </ul></div>
+        <div class="cons"><h4>Cons</h4><ul>
+          <li>Judges may notice fewer tool types</li>
+          <li>Reduces "wow" factor slightly</li>
+        </ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Maximum Velocity — Template Fork</h3>
+      <p>Start from Vercel's open-source AI chatbot template (Next.js + AI SDK + shadcn), rip out its auth/database layer, wire in Convex Agent, and bolt on therapy tools. Pre-built chat UI, layout, streaming, markdown — all included.</p>
+      <div style="margin-top:0.75rem;">
+        <div class="label">CHANGES</div>
+        <ul style="margin:0.25rem 0; padding-left:1.25rem; font-size:0.9rem;">
+          <li>Fork <code>vercel/ai-chatbot</code> as the starting point</li>
+          <li>Replace its database (Postgres) with Convex</li>
+          <li>Replace its auth (NextAuth) with nothing (add Clerk later)</li>
+          <li>Add therapy tool components + tool renderer on top</li>
+          <li>Potentially save Phase 0 setup time entirely</li>
+        </ul>
+      </div>
+      <div class="pros-cons">
+        <div class="pros"><h4>Pros</h4><ul>
+          <li>Fastest possible start — chat UI works day 1</li>
+          <li>Battle-tested layout, streaming, markdown</li>
+        </ul></div>
+        <div class="cons"><h4>Cons</h4><ul>
+          <li>Ripping out Postgres/NextAuth may cost more time than starting fresh</li>
+          <li>Template's opinions may fight your architecture (VSA, Convex Agent)</li>
+          <li>Forked code is harder to maintain long-term</li>
+          <li>High risk of hidden incompatibilities</li>
+        </ul></div>
+      </div>
+    </div>
+  </div>
+</div>

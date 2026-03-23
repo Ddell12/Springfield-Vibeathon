@@ -1,0 +1,16 @@
+{
+  "eval_id": 1,
+  "eval_name": "full-codebase-scan",
+  "prompt": "scan my codebase for any hand-rolled code that could be replaced by a well-maintained npm package. focus on substantial implementations, not tiny helpers",
+  "assertions": [
+    "The report identifies at least 3 distinct hand-rolled implementations",
+    "Each finding includes the file path and line range",
+    "Each finding includes a suggested library replacement with npm download stats or GitHub stars",
+    "Each finding is rated with a confidence level (High/Medium/Low)",
+    "Each finding includes migration difficulty (Easy/Moderate/Hard)",
+    "The report has a summary section with total candidates found",
+    "Parallel subagents were used to explore the codebase",
+    "Web search or Context7 was used to verify at least one library suggestion",
+    "The report was saved to a markdown file"
+  ]
+}

@@ -1,0 +1,128 @@
+<h2>Library Audit: Custom Code vs Library Replacements</h2>
+<p class="subtitle">Every line you don't write is a line you don't debug. Here's where libraries replace custom code.</p>
+
+<div class="section">
+  <h3>New Libraries to Add</h3>
+  <table style="width:100%; border-collapse:collapse; margin:1rem 0;">
+    <thead>
+      <tr style="border-bottom:2px solid var(--border); text-align:left;">
+        <th style="padding:0.5rem;">Library</th>
+        <th style="padding:0.5rem;">What It Replaces</th>
+        <th style="padding:0.5rem;">Tasks Affected</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:0.5rem;"><code>shadcn resizable</code><br><span style="color:var(--muted);font-size:0.85rem;">wraps react-resizable-panels</span></td>
+        <td style="padding:0.5rem;">Custom split-panel CSS in builder layout</td>
+        <td style="padding:0.5rem;">TASK-007</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:0.5rem;"><code>react-error-boundary</code> v6.1<br><span style="color:var(--muted);font-size:0.85rem;">Kent C. Dodds</span></td>
+        <td style="padding:0.5rem;">Custom ErrorBoundary class components (~40 lines each)</td>
+        <td style="padding:0.5rem;">TASK-016, TASK-045</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:0.5rem;"><code>usehooks-ts</code> v3.1<br><span style="color:var(--muted);font-size:0.85rem;">useMediaQuery, useCountdown, useCopyToClipboard, useDebounce</span></td>
+        <td style="padding:0.5rem;">4-5 custom hooks you'd otherwise write</td>
+        <td style="padding:0.5rem;">TASK-007, TASK-024, TASK-037, TASK-047</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:0.5rem;"><code>react-markdown</code> v10.1<br><span style="color:var(--muted);font-size:0.85rem;">+ remark-gfm + rehype-highlight</span></td>
+        <td style="padding:0.5rem;">Custom markdown parsing in AI chat responses</td>
+        <td style="padding:0.5rem;">TASK-015</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:0.5rem;"><code>shadcn skeleton</code><br><span style="color:var(--muted);font-size:0.85rem;">built-in component</span></td>
+        <td style="padding:0.5rem;">Custom loading shimmer/placeholder code</td>
+        <td style="padding:0.5rem;">TASK-017, TASK-044</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:0.5rem;"><code>Chat UI library</code><br><span style="color:var(--muted);font-size:0.85rem;">@assistant-ui/react — researching compatibility</span></td>
+        <td style="padding:0.5rem;">3 custom chat components (interface, message, input)</td>
+        <td style="padding:0.5rem;">TASK-015</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="section">
+  <h3>Therapy Tools: Thin Composition Over Primitives</h3>
+  <p class="subtitle">Each tool becomes a ~50-line config-to-primitives mapper</p>
+  <table style="width:100%; border-collapse:collapse; margin:1rem 0;">
+    <thead>
+      <tr style="border-bottom:2px solid var(--border); text-align:left;">
+        <th style="padding:0.5rem;">Tool</th>
+        <th style="padding:0.5rem;">Libraries Used</th>
+        <th style="padding:0.5rem;">Custom Code Left</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:0.5rem;"><strong>Visual Schedule</strong></td>
+        <td style="padding:0.5rem;">shadcn Card + Checkbox, @dnd-kit sortable, motion</td>
+        <td style="padding:0.5rem;">Config → props mapping only</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:0.5rem;"><strong>Token Board</strong></td>
+        <td style="padding:0.5rem;">shadcn Card + Button, motion, zustand</td>
+        <td style="padding:0.5rem;">Earn/reset state logic (~15 lines)</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:0.5rem;"><strong>Communication Board</strong></td>
+        <td style="padding:0.5rem;">shadcn Card, @dnd-kit sortable, use-sound, next/image</td>
+        <td style="padding:0.5rem;">Sentence builder + TTS trigger (~30 lines)</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:0.5rem;"><strong>Choice Board</strong></td>
+        <td style="padding:0.5rem;">shadcn Card + ToggleGroup, motion</td>
+        <td style="padding:0.5rem;">Selection state (~10 lines)</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:0.5rem;"><strong>First-Then Board</strong></td>
+        <td style="padding:0.5rem;">shadcn Card, motion, usehooks-ts useCountdown</td>
+        <td style="padding:0.5rem;">Phase transition logic (~15 lines)</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="section">
+  <h3>Libraries Already In Plan — Confirmed Good</h3>
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem; margin:1rem 0;">
+    <div style="padding:0.75rem; background:var(--surface); border-radius:8px; border:1px solid var(--border);">
+      <strong>@convex-dev/agent</strong><br><span style="color:var(--muted);font-size:0.85rem;">Chat threads, streaming, tool calling, React hooks</span>
+    </div>
+    <div style="padding:0.75rem; background:var(--surface); border-radius:8px; border:1px solid var(--border);">
+      <strong>@convex-dev/rag</strong><br><span style="color:var(--muted);font-size:0.85rem;">Embeddings, chunking, vector search — all handled</span>
+    </div>
+    <div style="padding:0.75rem; background:var(--surface); border-radius:8px; border:1px solid var(--border);">
+      <strong>@dnd-kit/react</strong><br><span style="color:var(--muted);font-size:0.85rem;">Drag & drop, touch-safe, sortable</span>
+    </div>
+    <div style="padding:0.75rem; background:var(--surface); border-radius:8px; border:1px solid var(--border);">
+      <strong>motion</strong><br><span style="color:var(--muted);font-size:0.85rem;">Animations, AnimatePresence, spring physics</span>
+    </div>
+    <div style="padding:0.75rem; background:var(--surface); border-radius:8px; border:1px solid var(--border);">
+      <strong>zustand</strong><br><span style="color:var(--muted);font-size:0.85rem;">Tool interaction state (tokens, selections)</span>
+    </div>
+    <div style="padding:0.75rem; background:var(--surface); border-radius:8px; border:1px solid var(--border);">
+      <strong>sonner</strong><br><span style="color:var(--muted);font-size:0.85rem;">Toast notifications</span>
+    </div>
+    <div style="padding:0.75rem; background:var(--surface); border-radius:8px; border:1px solid var(--border);">
+      <strong>react-qr-code</strong><br><span style="color:var(--muted);font-size:0.85rem;">QR code SVG for share dialog</span>
+    </div>
+    <div style="padding:0.75rem; background:var(--surface); border-radius:8px; border:1px solid var(--border);">
+      <strong>use-sound</strong><br><span style="color:var(--muted);font-size:0.85rem;">Audio playback, iOS Safari safe</span>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Libraries Evaluated and Skipped</h3>
+  <div style="margin:1rem 0; padding:1rem; background:var(--surface); border-radius:8px; border:1px solid var(--border);">
+    <p style="margin:0.25rem 0;"><s>react-timer-hook</s> → usehooks-ts has useCountdown</p>
+    <p style="margin:0.25rem 0;"><s>blurhash / react-content-loader</s> → shadcn Skeleton is enough</p>
+    <p style="margin:0.25rem 0;"><s>copy-to-clipboard</s> → native Clipboard API or usehooks-ts</p>
+    <p style="margin:0.25rem 0;"><s>@dnd-kit/sortable</s> → @dnd-kit/react v0.3 already has useSortable</p>
+  </div>
+</div>

@@ -1,0 +1,30 @@
+{
+  "expectations": [
+    {
+      "text": "The skill was invoked (wheel-detector skill was used)",
+      "passed": true,
+      "evidence": "Agent read SKILL.md and followed four-phase approach (Inventory → Discover → Match → Report)"
+    },
+    {
+      "text": "A structured report was generated with findings",
+      "passed": true,
+      "evidence": "8 findings with full structure: File, Confidence, Migration difficulty, Suggested library, Why replace, Why keep, Next step"
+    },
+    {
+      "text": "Findings are grouped by confidence level",
+      "passed": true,
+      "evidence": "Sections: Already Installed But Unused, High Confidence (3), Medium Confidence (2), Low Confidence (1), Internal Duplication"
+    },
+    {
+      "text": "The report includes a summary section",
+      "passed": true,
+      "evidence": "Summary: Candidates found: 8, High confidence: 3, Already installed but unused: 1"
+    },
+    {
+      "text": "The report includes an Already Installed But Unused section",
+      "passed": true,
+      "evidence": "Dedicated section: gray-matter installed but only used in 1 of 5 frontmatter-parsing locations"
+    }
+  ],
+  "summary": { "passed": 5, "failed": 0, "total": 5, "pass_rate": 1.0 }
+}

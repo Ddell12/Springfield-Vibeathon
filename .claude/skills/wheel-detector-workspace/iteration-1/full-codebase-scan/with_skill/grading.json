@@ -1,0 +1,55 @@
+{
+  "expectations": [
+    {
+      "text": "The report identifies at least 3 distinct hand-rolled implementations",
+      "passed": true,
+      "evidence": "Report identifies 9 candidates: retry.ts, concurrency.ts, atomic-write.ts, git-automator.ts, trigger-server.ts, orchestrator.ts, runner.ts, bus.ts, chunker.ts"
+    },
+    {
+      "text": "Each finding includes the file path and line range",
+      "passed": true,
+      "evidence": "All findings include file paths with line ranges, e.g., 'src/shared/retry.ts:1-63', 'src/agent/concurrency.ts:1-111', 'src/core/atomic-write.ts:1-41'"
+    },
+    {
+      "text": "Each finding includes a suggested library replacement with npm download stats or GitHub stars",
+      "passed": true,
+      "evidence": "All findings include library suggestions with stats: p-retry (~24.9M weekly downloads, 989 stars), p-limit (~170M weekly downloads), write-file-atomic (maintained by npm team), simple-git (~3.5M weekly downloads, 3.2k stars)"
+    },
+    {
+      "text": "Each finding is rated with a confidence level (High/Medium/Low)",
+      "passed": true,
+      "evidence": "Report uses High/Medium/Low sections: 3 High, 4 Medium, 2 Low. Each finding explicitly states its confidence."
+    },
+    {
+      "text": "Each finding includes migration difficulty (Easy/Moderate/Hard)",
+      "passed": true,
+      "evidence": "All findings include migration difficulty: retry.ts=Easy, concurrency.ts=Moderate, atomic-write.ts=Easy, git-automator.ts=Moderate, trigger-server.ts=Hard, etc."
+    },
+    {
+      "text": "The report has a summary section with total candidates found",
+      "passed": true,
+      "evidence": "Summary section states: 'Candidates found: 9', 'High confidence replacements: 3', 'Medium confidence replacements: 4', 'Low confidence replacements: 2'"
+    },
+    {
+      "text": "Parallel subagents were used to explore the codebase",
+      "passed": false,
+      "evidence": "The agent used 53 tool calls but the transcript shows sequential exploration, not parallel subagent spawning. The skill instructs spawning Explore subagents but the agent read files directly instead."
+    },
+    {
+      "text": "Web search or Context7 was used to verify at least one library suggestion",
+      "passed": false,
+      "evidence": "No web search or Context7 tool calls observed in the transcript. Library suggestions appear to come from the agent's training knowledge."
+    },
+    {
+      "text": "The report was saved to a markdown file",
+      "passed": true,
+      "evidence": "Report saved to WHEEL-DETECTOR-REPORT.md in the outputs directory"
+    }
+  ],
+  "summary": {
+    "passed": 7,
+    "failed": 2,
+    "total": 9,
+    "pass_rate": 0.78
+  }
+}

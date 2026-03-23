@@ -1,0 +1,30 @@
+{
+  "expectations": [
+    {
+      "text": "The skill was invoked (wheel-detector skill was used)",
+      "passed": false,
+      "evidence": "Baseline run — no skill was provided. This is expected for the baseline comparison."
+    },
+    {
+      "text": "A structured report was generated with findings",
+      "passed": true,
+      "evidence": "Report has 11 findings with structure: severity levels, locations, descriptions, recommendations, summary table"
+    },
+    {
+      "text": "Findings are grouped by confidence level",
+      "passed": true,
+      "evidence": "Findings grouped by severity: HIGH (3), MEDIUM (3), LOW (5). Different terminology but same concept."
+    },
+    {
+      "text": "The report includes a summary section",
+      "passed": true,
+      "evidence": "Summary table at the bottom with all 11 findings, severity, locations, and actions. Also has estimated cleanup effort."
+    }
+  ],
+  "summary": {
+    "passed": 3,
+    "failed": 1,
+    "total": 4,
+    "pass_rate": 0.75
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "plansDirectory": "Docs/plans",
+  "permissions": {
+    "additionalDirectories": ["~/Documents/Life Management"]
+  },
+  "enabledPlugins": {
+    "linear-pm@al-premium-marketplace": true
+  },
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/check-esm-extensions.sh"
+          },
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/check-slice-boundary.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "INPUT=$(cat); CMD=$(echo \"$INPUT\" | jq -r '.tool_input.command // \"unknown\"'); echo \"$(date '+%Y-%m-%d %H:%M:%S') | $CMD\" >> \"$CLAUDE_PROJECT_DIR/.claude/command-audit.log\"",
+            "async": true
+          }
+        ]
+      }
+    ]
+  }
+}

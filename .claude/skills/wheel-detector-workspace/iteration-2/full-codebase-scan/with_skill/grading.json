@@ -1,0 +1,60 @@
+{
+  "expectations": [
+    {
+      "text": "The report identifies at least 3 distinct hand-rolled implementations",
+      "passed": true,
+      "evidence": "8 candidates: frontmatter parsing, duplicate YAML libs, retry logic, atomic writes, git operations, concurrency limiter, toposort, frontmatter generation"
+    },
+    {
+      "text": "Each finding includes the file path and line range",
+      "passed": true,
+      "evidence": "All findings include precise paths: src/shared/retry.ts:1-63, src/core/atomic-write.ts:1-41, src/vault/vault-tasks.ts:31-79, etc."
+    },
+    {
+      "text": "Each finding includes a suggested library replacement with npm download stats or GitHub stars",
+      "passed": true,
+      "evidence": "gray-matter (6.8M+ downloads, 3.8k+ stars), p-retry (13.6M downloads, 850+ stars), write-file-atomic (45.8M downloads), simple-git (1.5M downloads, 3.3k+ stars)"
+    },
+    {
+      "text": "Each finding is rated with a confidence level (High/Medium/Low)",
+      "passed": true,
+      "evidence": "4 High, 1 Medium, 1 Low confidence ratings used consistently"
+    },
+    {
+      "text": "Each finding includes migration difficulty (Easy/Moderate/Hard)",
+      "passed": true,
+      "evidence": "Easy, Moderate, Hard ratings on all findings"
+    },
+    {
+      "text": "The report has a summary section with total candidates found",
+      "passed": true,
+      "evidence": "Summary: Candidates found: 8, High confidence: 4, Already installed but unused: 2"
+    },
+    {
+      "text": "package.json was read before scanning code (Phase 1 Inventory)",
+      "passed": true,
+      "evidence": "gray-matter and duplicate YAML libraries identified from package.json cross-reference, listed as Already Installed But Unused section"
+    },
+    {
+      "text": "Web search was used to verify at least one library suggestion",
+      "passed": false,
+      "evidence": "No web search calls observed in the agent transcript — library stats appear from training knowledge"
+    },
+    {
+      "text": "The report includes an Already Installed But Unused section",
+      "passed": true,
+      "evidence": "Dedicated section at top: gray-matter (6 locations) and duplicate YAML libraries"
+    },
+    {
+      "text": "The report includes an Internal Duplication section or notes on copy-pasted utilities",
+      "passed": true,
+      "evidence": "Dedicated Internal Duplication section: frontmatter parsing (6 implementations, ~197 lines) and frontmatter generation (3 implementations)"
+    },
+    {
+      "text": "The report was saved to a markdown file",
+      "passed": true,
+      "evidence": "WHEEL-DETECTOR-REPORT.md saved to outputs directory"
+    }
+  ],
+  "summary": { "passed": 10, "failed": 1, "total": 11, "pass_rate": 0.91 }
+}

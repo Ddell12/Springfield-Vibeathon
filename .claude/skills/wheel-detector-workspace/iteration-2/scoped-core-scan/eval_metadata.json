@@ -1,0 +1,12 @@
+{
+  "eval_id": 2,
+  "eval_name": "scoped-core-scan",
+  "prompt": "check src/core/ for code that could use a library instead of being hand-rolled",
+  "assertions": [
+    "The scan was limited to src/core/ (not the entire codebase)",
+    "At least 1 finding was identified in src/core/",
+    "Findings include specific file paths within src/core/",
+    "The report does not include findings from other directories like src/agent/ or src/memory/",
+    "package.json was read to check for already-installed alternatives"
+  ]
+}
