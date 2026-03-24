@@ -13,14 +13,19 @@ export default function BuilderPage() {
   const { threadId, toolId, setThreadId, setToolId, reset } = useBuilderState();
   const createThread = useMutation(api.chat.streaming.createNewThread);
 
-  // Create a thread on first render
+  // Rehydrate persisted state from localStorage on client mount
+  useEffect(() => {
+    useBuilderState.persist.rehydrate();
+  }, []);
+
+  // Create a thread on first render (after rehydration)
   useEffect(() => {
     if (!threadId) {
       createThread({}).then((id) => {
         setThreadId(id);
       });
     }
-  }, []); // intentionally empty deps — only run once
+  }, [threadId]); // re-run after rehydration sets threadId
 
   // Query for tools linked to this thread (reactive — auto-updates when AI creates a tool)
   const threadTools = useQuery(

@@ -18,6 +18,9 @@ export const useBuilderState = create<BuilderState>()(
       setToolId: (id) => set({ toolId: id }),
       reset: () => set({ threadId: null, toolId: null }),
     }),
-    { name: "bridges-builder-state" }
+    {
+      name: "bridges-builder-state",
+      skipHydration: true,
+    }
   )
 );
