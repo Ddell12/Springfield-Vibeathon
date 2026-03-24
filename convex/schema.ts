@@ -50,4 +50,28 @@ export default defineSchema({
     createdAt: v.number(),
   })
     .index("by_text_voice", ["text", "voiceId"]),
+
+  projects: defineTable({
+    title: v.string(),
+    description: v.optional(v.string()),
+    fragment: v.optional(v.any()),
+    sandboxId: v.optional(v.string()),
+    messages: v.optional(v.any()),
+    shareSlug: v.string(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_shareSlug", ["shareSlug"])
+    .index("by_createdAt", ["createdAt"]),
+
+  therapyTemplates: defineTable({
+    name: v.string(),
+    description: v.string(),
+    category: v.string(),
+    starterPrompt: v.string(),
+    exampleFragment: v.optional(v.any()),
+    sortOrder: v.number(),
+  })
+    .index("by_category", ["category"])
+    .index("by_sortOrder", ["sortOrder"]),
 });

@@ -1,70 +1,58 @@
 "use client";
 
-import { useMutation, useQuery } from "convex/react";
-import { useEffect, useRef } from "react";
+import { useState } from "react";
 
-import { BuilderHeader } from "@/features/builder/components/builder-header";
-import { BuilderLayout } from "@/features/builder/components/builder-layout";
-import { BridgesChat } from "@/features/builder/components/chat/bridges-chat";
-import { ToolPreview } from "@/features/builder/components/tool-preview";
-import { useBuilderState } from "@/features/builder/hooks/use-builder-state";
-
-import { api } from "../../../../convex/_generated/api";
+import { BuilderV2Header } from "@/features/builder-v2/components/builder-header";
+import { BuilderV2Layout } from "@/features/builder-v2/components/builder-layout";
+import { Chat } from "@/features/builder-v2/components/chat";
+import { Preview } from "@/features/builder-v2/components/preview";
+import type { FragmentResult } from "@/features/builder-v2/lib/schema";
 
 export default function BuilderPage() {
-  const { threadId, toolId, setThreadId, setToolId, reset } = useBuilderState();
-  const createThread = useMutation(api.chat.streaming.createNewThread);
-  const isCreatingRef = useRef(false);
+  const [fragment, setFragment] = useState<FragmentResult | null>(null);
+  const [sandboxUrl, setSandboxUrl] = useState<string | null>(null);
+  const [isPreviewLoading, setIsPreviewLoading] = useState(false);
 
-  // Rehydrate persisted state from localStorage on client mount
-  useEffect(() => {
-    useBuilderState.persist.rehydrate();
-  }, []);
-
-  // Create a thread when needed (guarded against React Strict Mode double-fire)
-  useEffect(() => {
-    if (!threadId && !isCreatingRef.current) {
-      isCreatingRef.current = true;
-      createThread({}).then((id) => {
-        setThreadId(id);
-        isCreatingRef.current = false;
+  const handleFragmentGenerated = async (result: FragmentResult) => {
+    setFragment(result);
+    setIsPreviewLoading(true);
+    try {
+      const res = await fetch("/api/sandbox", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fragment: result }),
       });
-    }
-  }, [threadId]);
-
-  // Query for tools linked to this thread (reactive — auto-updates when AI creates a tool)
-  const threadTools = useQuery(
-    api.tools.getByThread,
-    threadId ? { threadId } : "skip"
-  );
-
-  // When a new tool appears for this thread, set it as the active tool
-  useEffect(() => {
-    if (threadTools && threadTools.length > 0) {
-      const latestTool = threadTools[threadTools.length - 1];
-      if (latestTool._id !== toolId) {
-        setToolId(latestTool._id);
+      if (res.ok) {
+        const { url } = await res.json();
+        setSandboxUrl(url);
       }
+    } finally {
+      setIsPreviewLoading(false);
     }
-  }, [threadTools, toolId, setToolId]);
+  };
 
-  const activeTool = threadTools?.find((t) => t._id === toolId);
-
-  function handleNewTool() {
-    reset();
-  }
+  const handleNewProject = () => {
+    setFragment(null);
+    setSandboxUrl(null);
+    setIsPreviewLoading(false);
+  };
 
   return (
     <div className="flex flex-col h-full">
-      <BuilderHeader
-        toolName={activeTool?.title}
-        shareSlug={activeTool?.shareSlug}
-        onNewTool={handleNewTool}
+      <BuilderV2Header
+        projectName={fragment?.title}
+        onNewProject={handleNewProject}
       />
       <div className="flex-1 overflow-hidden">
-        <BuilderLayout
-          chatPanel={<BridgesChat threadId={threadId} />}
-          previewPanel={<ToolPreview toolId={toolId} />}
+        <BuilderV2Layout
+          chatPanel={<Chat onFragmentGenerated={handleFragmentGenerated} />}
+          previewPanel={
+            <Preview
+              fragment={fragment}
+              sandboxUrl={sandboxUrl}
+              isLoading={isPreviewLoading}
+            />
+          }
         />
       </div>
     </div>
