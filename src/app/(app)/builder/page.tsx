@@ -1,12 +1,13 @@
 "use client";
 
 import { useMutation, useQuery } from "convex/react";
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 
 import { BuilderV2Header } from "@/features/builder-v2/components/builder-header";
 import { BuilderV2Layout } from "@/features/builder-v2/components/builder-layout";
 import { Chat } from "@/features/builder-v2/components/chat";
 import { Preview } from "@/features/builder-v2/components/preview";
+import { useProjectLoader } from "@/features/builder-v2/hooks/use-project-loader";
 import { useTemplateStarter } from "@/features/builder-v2/hooks/use-template-starter";
 import type { FragmentResult } from "@/features/builder-v2/lib/schema";
 import { ShareDialog } from "@/features/sharing/components/share-dialog";
@@ -30,6 +31,31 @@ function BuilderContent() {
   );
 
   const { starterPrompt } = useTemplateStarter();
+
+  const hasRestoredProject = useRef(false);
+  const { loadedProject, isLoadingProject } = useProjectLoader();
+
+  // Restore project from ?project= URL param
+  useEffect(() => {
+    if (!loadedProject || hasRestoredProject.current) return;
+    if (!loadedProject.fragment) return;
+
+    hasRestoredProject.current = true;
+    const restoredFragment = loadedProject.fragment as FragmentResult;
+    setFragment(restoredFragment);
+    setProjectId(loadedProject._id);
+    setIsPreviewLoading(true);
+
+    fetch("/api/sandbox", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ fragment: restoredFragment }),
+    })
+      .then((res) => (res.ok ? res.json() : Promise.reject()))
+      .then(({ url }) => setSandboxUrl(url))
+      .catch(() => {})
+      .finally(() => setIsPreviewLoading(false));
+  }, [loadedProject]);
 
   const handleFragmentGenerated = async (result: FragmentResult) => {
     setFragment(result);
@@ -71,6 +97,18 @@ function BuilderContent() {
     setIsPreviewLoading(false);
     setProjectId(null);
     setShowShareDialog(false);
+    hasRestoredProject.current = false;
+  };
+
+  const handleDownload = () => {
+    if (!fragment?.code) return;
+    const blob = new Blob([fragment.code], { type: "text/html" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${fragment.title.replace(/\s+/g, "-").toLowerCase()}.html`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -79,6 +117,7 @@ function BuilderContent() {
         projectName={fragment?.title}
         onNewProject={handleNewProject}
         onShare={() => setShowShareDialog(true)}
+        onDownload={handleDownload}
         hasProject={!!projectId}
       />
       <div className="flex-1 overflow-hidden">
@@ -94,7 +133,7 @@ function BuilderContent() {
             <Preview
               fragment={fragment}
               sandboxUrl={sandboxUrl}
-              isLoading={isPreviewLoading}
+              isLoading={isPreviewLoading || isLoadingProject}
             />
           }
         />

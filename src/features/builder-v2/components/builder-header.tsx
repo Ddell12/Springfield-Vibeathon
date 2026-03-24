@@ -9,10 +9,11 @@ type BuilderV2HeaderProps = {
   shareSlug?: string;
   onNewProject?: () => void;
   onShare?: () => void;
+  onDownload?: () => void;
   hasProject?: boolean;
 };
 
-export function BuilderV2Header({ projectName, shareSlug: _shareSlug, onNewProject, onShare, hasProject }: BuilderV2HeaderProps) {
+export function BuilderV2Header({ projectName, shareSlug: _shareSlug, onNewProject, onShare, onDownload, hasProject }: BuilderV2HeaderProps) {
   return (
     <header className="h-14 bg-surface-container-lowest flex items-center justify-between px-6 z-10 shrink-0">
       {/* Left: Logo + project breadcrumb */}
@@ -40,6 +41,16 @@ export function BuilderV2Header({ projectName, shareSlug: _shareSlug, onNewProje
           <MaterialIcon icon="add" size="sm" />
           New Project
         </button>
+        {hasProject && onDownload && (
+          <button
+            className="flex items-center gap-2 px-4 py-1.5 text-on-surface-variant rounded-lg font-medium text-sm hover:bg-surface-container-high hover:text-primary transition-colors min-h-[44px]"
+            type="button"
+            onClick={onDownload}
+          >
+            <MaterialIcon icon="download" size="sm" />
+            <span className="hidden sm:inline">Download</span>
+          </button>
+        )}
         {hasProject && (
           <button
             className="flex items-center gap-2 px-4 py-1.5 text-primary rounded-lg font-bold text-sm hover:bg-primary/5 transition-colors active:scale-95 min-h-[44px]"

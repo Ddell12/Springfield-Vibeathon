@@ -1,0 +1,37 @@
+import Link from "next/link";
+
+import { MaterialIcon } from "@/shared/components/material-icon";
+
+export function CtaSection() {
+  return (
+    <section className="px-6 py-16 max-w-7xl mx-auto">
+      <div className="bg-primary-gradient rounded-3xl px-10 py-16 text-center flex flex-col items-center gap-6 relative overflow-hidden">
+        <div className="absolute -top-24 -right-24 w-64 h-64 rounded-full border border-white/10" />
+        <div className="absolute -bottom-16 -left-16 w-48 h-48 rounded-full border border-white/10" />
+
+        <div className="relative z-10 flex flex-col items-center gap-6 max-w-2xl">
+          <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center">
+            <MaterialIcon icon="auto_awesome" className="text-white text-3xl" />
+          </div>
+          <h2 className="font-headline text-3xl md:text-4xl font-extrabold text-white leading-tight">
+            Start building therapy tools today — for free.
+          </h2>
+          <p className="text-white/80 text-lg max-w-lg leading-relaxed">
+            No account required. Describe what you need, and Bridges builds it in seconds.
+          </p>
+          <Link
+            href="/builder"
+            className="bg-white text-primary px-10 py-4 rounded-xl text-lg font-bold font-headline hover:bg-white/90 transition-colors active:scale-95 inline-flex items-center gap-2 group"
+          >
+            Build Your First Tool
+            <MaterialIcon
+              icon="arrow_forward"
+              size="sm"
+              className="transition-transform group-hover:translate-x-1"
+            />
+          </Link>
+        </div>
+      </div>
+    </section>
+  );
+}
