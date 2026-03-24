@@ -46,7 +46,7 @@ export default defineSchema({
   ttsCache: defineTable({
     text: v.string(),
     voiceId: v.string(),
-    audioStorageId: v.id("_storage"),
+    audioUrl: v.string(),
     createdAt: v.number(),
   })
     .index("by_text_voice", ["text", "voiceId"]),
