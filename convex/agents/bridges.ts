@@ -1,9 +1,12 @@
 "use node";
 
-import { Agent, createTool } from "@convex-dev/agent";
-import { components, api } from "../_generated/api";
 import { anthropic } from "@ai-sdk/anthropic";
+import { Agent, createTool } from "@convex-dev/agent";
+import { anyApi } from "convex/server";
 import { z } from "zod/v3";
+
+import { api, components, internal } from "../_generated/api";
+import { Id } from "../_generated/dataModel";
 
 const SYSTEM_PROMPT = `You are Bridges, an AI assistant that helps parents and therapists of autistic children build personalized therapy tools. You create tools by generating configurations — you do not write code.
 
@@ -117,7 +120,7 @@ export const bridgesAgent = new Agent(components.agent, {
       }),
       execute: async (ctx, args): Promise<string> => {
         await ctx.runMutation(api.tools.update, {
-          toolId: args.toolId as any, // LLM provides string, Convex expects Id<"tools">
+          toolId: args.toolId as Id<"tools">, // LLM provides string, Convex expects Id<"tools">
           config: args.config,
           title: args.title,
         });
@@ -141,9 +144,36 @@ export const bridgesAgent = new Agent(components.agent, {
           .optional()
           .describe("Optional category filter"),
       }),
-      execute: async (_ctx, _args): Promise<string> => {
-        // Placeholder — RAG search will be implemented in Phase 3
-        return "Knowledge base search not yet available. Use your built-in knowledge of therapy tools.";
+      execute: async (ctx, args): Promise<string> => {
+        const result = await ctx.runAction(
+          internal.knowledge.search.searchKnowledgeAction,
+          {
+            query: args.query,
+            category: args.category,
+            limit: 5,
+          },
+        );
+        return result || "No relevant knowledge found for this query.";
+      },
+    }),
+
+    generateImage: createTool({
+      description:
+        "Generate a custom illustration for a therapy card. Use this when creating communication boards, choice boards, or any tool that would benefit from a picture.",
+      inputSchema: z.object({
+        label: z.string().describe("The item or concept to illustrate"),
+        category: z
+          .string()
+          .describe(
+            "The category context (e.g., food, emotions, activities, objects)",
+          ),
+      }),
+      execute: async (ctx, args): Promise<string> => {
+        const result = await ctx.runAction(anyApi.aiActions.generateImage, {
+          label: args.label,
+          category: args.category,
+        });
+        return result.imageUrl;
       },
     }),
   },
