@@ -23,8 +23,9 @@
 
 ### Delete
 
-- `src/features/builder/` — entire directory (576 LOC: chat, layout, preview, hooks, tests)
+- `src/features/builder/` — entire directory (~946 LOC including tests)
 - All imports referencing `@/features/builder/` from other files
+- **CRITICAL:** `src/app/(app)/layout.tsx` imports `BuilderSidebar` from v1. Rewrite this layout to remove the v1 import. Replace with minimal navigation or render children directly — the `(app)` route group (builder) must not break.
 - Convex Agent chat functions in `convex/chat/` **only if** exclusively used by v1
   - `convex/agents/bridges.ts` may still be used for RAG/knowledge — verify before removing
 
@@ -46,7 +47,7 @@
 
 ### Verification
 
-- `npm test -- --run` passes all 295 tests (0 failures)
+- `npm test -- --run` passes all remaining tests (0 failures) — total count will drop after v1 test deletion
 - No TypeScript errors (`npx tsc --noEmit`)
 - App builds (`npm run build`)
 
@@ -110,7 +111,7 @@ Builder v2 uses the `projects` table (not `tools`). Projects store `fragment` (g
 ### Changes needed
 
 - **`src/app/tool/[toolId]/page.tsx`** — rewire to query `projects.getBySlug` instead of `tools.getBySlug`
-- **`src/features/shared-tool/components/shared-tool-page.tsx`** — replace `ToolRenderer` with iframe loading E2B sandbox. Design via Stitch MCP. Add loading state while sandbox boots. Keep header, footer CTA, not-found state.
+- **`src/features/shared-tool/components/shared-tool-page.tsx`** — **FULL REWRITE** (not a patch). The existing component uses v1's `ToolRenderer` + `ToolConfig` — none of this JSX is reusable. New component must: (1) query `api.projects.getBySlug`, (2) POST the retrieved `fragment` to `/api/sandbox`, (3) render an iframe with the returned sandbox URL, (4) handle loading/error/not-found states. Design via Stitch MCP. Keep the header and footer CTA pattern.
 - **`convex/projects.ts`** — verify `getBySlug` query exists; create if not
 - **Share dialog** — wire into builder v2's project context (`project.shareSlug`, not `tool.shareSlug`)
 
@@ -124,6 +125,11 @@ Builder v2 uses the `projects` table (not `tools`). Projects store `fragment` (g
 
 Each shared link visit costs one E2B sandbox (~60s timeout). Fine for demo. Post-vibeathon optimize with caching or static export.
 
+### Risk mitigation
+
+- E2B may be down or rate-limited during demo recording. Record the shared-view portion while E2B is confirmed working.
+- Consider having a screenshot fallback: if E2B is unreliable, the shared view could show a static image of the generated tool with a "Live preview unavailable" message.
+
 ---
 
 ## Section 5: Templates Page
@@ -131,7 +137,20 @@ Each shared link visit costs one E2B sandbox (~60s timeout). Fine for demo. Post
 ### Data layer
 
 - `therapyTemplates` table exists in schema with `name`, `description`, `category`, `starterPrompt`, `exampleFragment`, `sortOrder`
-- Verify seed data exists. If empty, seed 6-8 templates with realistic therapy starter prompts.
+- **No Convex functions exist yet.** Create `convex/therapy_templates.ts` with:
+  - `list` query — all templates sorted by `sortOrder`
+  - `getByCategory` query — filtered by category
+  - `get` query — single template by ID
+  - `seed` internalMutation — idempotent seed of 8 templates
+- **Seed data (8 templates):**
+  1. Communication / "Snack Request Board" / "Build a picture communication board with 8 common snack requests like goldfish crackers, apple slices, juice box, and more"
+  2. Communication / "Feelings Check-In" / "Create a feelings check-in board with 6 emotions — happy, sad, angry, scared, tired, excited — with pictures and labels"
+  3. Behavior Support / "5-Star Token Board" / "Build a token board with 5 stars where a child earns tokens for positive behavior, with a reward choice at the end"
+  4. Behavior Support / "First-Then Transition Board" / "Create a first-then board for transitioning between activities — first finish homework, then play outside"
+  5. Daily Routines / "Morning Routine Schedule" / "Build a visual schedule for a morning routine: wake up, brush teeth, get dressed, eat breakfast, pack backpack"
+  6. Daily Routines / "Bedtime Schedule" / "Create a visual bedtime routine: bath time, put on pajamas, brush teeth, read a story, lights out"
+  7. Academic / "Letter Choice Board" / "Build a choice board with 4 uppercase letters for a letter recognition activity"
+  8. Academic / "Color Matching Board" / "Create an interactive color matching activity with 6 colors and their names"
 
 ### UI (design via Stitch MCP)
 
@@ -141,10 +160,12 @@ Each shared link visit costs one E2B sandbox (~60s timeout). Fine for demo. Post
 
 ### "Use Template" flow
 
-- Navigates to `/builder?template={templateId}`
-- Builder reads `?template=` URL param
-- Queries `therapyTemplates` by ID, gets `starterPrompt`
-- Auto-sends prompt as first user message in new chat session
+- Template card navigates to `/builder?template={templateId}`
+- **Builder integration (new code needed):**
+  - Add `useSearchParams` to `src/app/(app)/builder/page.tsx` (or a new hook `use-template-starter.ts`)
+  - If `?template=` param present, query `api.therapyTemplates.get` by ID from Convex
+  - Pass the retrieved `starterPrompt` as an `initialMessage` prop to `<Chat />`
+  - `Chat` component must accept and auto-send the initial message on mount (new prop)
 - User sees AI start building immediately
 
 ### Do NOT build
@@ -161,6 +182,11 @@ Each shared link visit costs one E2B sandbox (~60s timeout). Fine for demo. Post
 
 - Query `projects` table (v2), NOT `tools` table (v1)
 - `projects` has: `title`, `description`, `fragment`, `sandboxId`, `shareSlug`
+- Update `projects.list` to use `.withIndex('by_createdAt')` and `.order('desc')` for newest-first display
+
+### Route placement
+
+- My Tools is at `src/app/(marketing)/my-tools/page.tsx` (marketing layout, no sidebar). This is intentional — after v1 removal there's no app sidebar anyway. Keep it in `(marketing)` for simplicity.
 
 ### UI (design via Stitch MCP)
 
@@ -213,7 +239,7 @@ Each shared link visit costs one E2B sandbox (~60s timeout). Fine for demo. Post
 | Decision | Choice | Why |
 |----------|--------|-----|
 | Builder architecture | v2 (E2B sandbox) only | More impressive demo, user confirmed |
-| Builder v1 | Delete entirely | Dead code, confuses architecture |
+| Builder v1 | Delete entirely (~946 LOC) | Dead code, confuses architecture |
 | Demo format | Recorded video | Allows retries, less risk |
 | Shared tool view | Re-spin E2B sandbox from saved code | Simplest path, ~5s load acceptable for demo |
 | Template flow | Auto-send starterPrompt to builder chat | One-tap experience, no extra UX needed |
