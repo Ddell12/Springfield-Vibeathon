@@ -62,4 +62,23 @@ describe("FragmentWeb", () => {
     // Should allow at least same-origin or scripts
     expect(sandboxAttr).toMatch(/allow-scripts|allow-same-origin/);
   });
+
+  it("applies width style when width prop is provided", () => {
+    render(<FragmentWeb url={sandboxUrl} width={375} />);
+    const iframe = document.querySelector("iframe");
+    expect(iframe).not.toBeNull();
+    // Width can be applied via style or data attribute
+    expect(
+      iframe!.style.width === "375px" ||
+      iframe!.getAttribute("width") === "375" ||
+      iframe!.closest("[style*='375']") !== null
+    ).toBe(true);
+  });
+
+  it("uses 'Tool Preview' as the default title when no title is provided", () => {
+    render(<FragmentWeb url={sandboxUrl} />);
+    const iframe = document.querySelector("iframe");
+    expect(iframe).not.toBeNull();
+    expect(iframe!.title).toBe("Tool Preview");
+  });
 });

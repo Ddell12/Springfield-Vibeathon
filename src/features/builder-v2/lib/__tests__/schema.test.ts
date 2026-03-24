@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { FragmentSchema, FragmentTemplate } from "../schema";
+import { FragmentPersistence, FragmentSchema, FragmentTemplate } from "../schema";
 
 describe("FragmentTemplate", () => {
   it("accepts valid template values", () => {
-    const valid = ["nextjs-developer", "vue-developer", "html-developer"];
+    const valid = ["nextjs-developer", "vue-developer", "html-developer", "vite-therapy"];
     for (const v of valid) {
       expect(() => FragmentTemplate.parse(v)).not.toThrow();
     }
@@ -15,6 +15,25 @@ describe("FragmentTemplate", () => {
     expect(() => FragmentTemplate.parse("")).toThrow();
     expect(() => FragmentTemplate.parse("unknown")).toThrow();
   });
+
+  it("accepts the vite-therapy template", () => {
+    expect(() => FragmentTemplate.parse("vite-therapy")).not.toThrow();
+  });
+});
+
+describe("FragmentPersistence", () => {
+  it("accepts valid persistence tiers", () => {
+    const valid = ["session", "device", "cloud"];
+    for (const tier of valid) {
+      expect(() => FragmentPersistence.parse(tier)).not.toThrow();
+    }
+  });
+
+  it("rejects unknown persistence values", () => {
+    expect(() => FragmentPersistence.parse("local")).toThrow();
+    expect(() => FragmentPersistence.parse("")).toThrow();
+    expect(() => FragmentPersistence.parse("server")).toThrow();
+  });
 });
 
 describe("FragmentSchema", () => {
@@ -24,6 +43,15 @@ describe("FragmentSchema", () => {
     template: "nextjs-developer",
     code: "export default function App() { return <div>Hello</div>; }",
     file_path: "app/page.tsx",
+    has_additional_dependencies: false,
+  };
+
+  const viteFragment = {
+    title: "Token Board",
+    description: "A token reward board for positive reinforcement",
+    template: "vite-therapy",
+    code: "export default function App() { return <div>Token Board</div>; }",
+    file_path: "src/App.tsx",
     has_additional_dependencies: false,
   };
 
@@ -94,5 +122,30 @@ describe("FragmentSchema", () => {
       const result = FragmentSchema.parse({ ...validFragment, template });
       expect(result.template).toBe(template);
     }
+  });
+
+  it("defaults port to 5173 for vite-therapy template", () => {
+    const result = FragmentSchema.parse(viteFragment);
+    expect(result.port).toBe(5173);
+  });
+
+  it("uses src/App.tsx as file_path for vite-therapy template", () => {
+    const result = FragmentSchema.parse(viteFragment);
+    expect(result.file_path).toBe("src/App.tsx");
+  });
+
+  it("defaults persistence to 'device' when not provided", () => {
+    const result = FragmentSchema.parse(validFragment);
+    expect(result.persistence).toBe("device");
+  });
+
+  it("accepts a custom persistence tier", () => {
+    const result = FragmentSchema.parse({ ...validFragment, persistence: "cloud" });
+    expect(result.persistence).toBe("cloud");
+  });
+
+  it("accepts session persistence", () => {
+    const result = FragmentSchema.parse({ ...validFragment, persistence: "session" });
+    expect(result.persistence).toBe("session");
   });
 });

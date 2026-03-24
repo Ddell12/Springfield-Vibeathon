@@ -181,3 +181,115 @@ describe("projects CRUD", () => {
     expect(project!.updatedAt).toBeGreaterThanOrEqual(before);
   });
 });
+
+describe("projects versioning", () => {
+  test("saveVersion appends a version entry to the project", async () => {
+    const t = convexTest(schema, modules);
+
+    const projectId = await t.mutation(api.projects.create, {
+      title: "Token Board",
+    });
+
+    await t.mutation(api.projects.saveVersion, {
+      projectId,
+      fragment: { title: "Token Board", code: "export default function App() {}" },
+      sandboxId: "sandbox-abc-123",
+    });
+
+    const project = await t.query(api.projects.get, { projectId });
+    expect(project).not.toBeNull();
+    expect(Array.isArray(project!.versions)).toBe(true);
+    expect(project!.versions.length).toBe(1);
+  });
+
+  test("saveVersion caps versions at 10 (FIFO — oldest dropped)", async () => {
+    const t = convexTest(schema, modules);
+
+    const projectId = await t.mutation(api.projects.create, {
+      title: "Version Cap Test",
+    });
+
+    // Save 11 versions
+    for (let i = 1; i <= 11; i++) {
+      await t.mutation(api.projects.saveVersion, {
+        projectId,
+        fragment: { title: `Version ${i}`, code: `export default function App${i}() {}` },
+        sandboxId: `sandbox-${i}`,
+      });
+    }
+
+    const project = await t.query(api.projects.get, { projectId });
+    expect(project!.versions.length).toBe(10);
+    // Oldest (version 1) should have been dropped; newest (version 11) should be last
+    const lastVersion = project!.versions[project!.versions.length - 1];
+    expect(lastVersion.fragment.title).toBe("Version 11");
+  });
+
+  test("getLatestVersion returns the second-to-last version", async () => {
+    const t = convexTest(schema, modules);
+
+    const projectId = await t.mutation(api.projects.create, {
+      title: "History Test",
+    });
+
+    await t.mutation(api.projects.saveVersion, {
+      projectId,
+      fragment: { title: "First Version", code: "v1" },
+      sandboxId: "sandbox-v1",
+    });
+    await t.mutation(api.projects.saveVersion, {
+      projectId,
+      fragment: { title: "Second Version", code: "v2" },
+      sandboxId: "sandbox-v2",
+    });
+    await t.mutation(api.projects.saveVersion, {
+      projectId,
+      fragment: { title: "Third Version", code: "v3" },
+      sandboxId: "sandbox-v3",
+    });
+
+    const previous = await t.query(api.projects.getLatestVersion, { projectId });
+    expect(previous).not.toBeNull();
+    // getLatestVersion returns the second-to-last (i.e., the previous working version)
+    expect(previous!.fragment.title).toBe("Second Version");
+  });
+
+  test("getLatestVersion returns null when fewer than 2 versions exist", async () => {
+    const t = convexTest(schema, modules);
+
+    const projectId = await t.mutation(api.projects.create, {
+      title: "Sparse History",
+    });
+
+    // No versions saved yet
+    const noVersions = await t.query(api.projects.getLatestVersion, { projectId });
+    expect(noVersions).toBeNull();
+
+    // Save exactly one version
+    await t.mutation(api.projects.saveVersion, {
+      projectId,
+      fragment: { title: "Only Version", code: "v1" },
+      sandboxId: "sandbox-v1",
+    });
+
+    const oneVersion = await t.query(api.projects.getLatestVersion, { projectId });
+    expect(oneVersion).toBeNull();
+  });
+
+  test("updatePublishUrl patches the publishedUrl field", async () => {
+    const t = convexTest(schema, modules);
+
+    const projectId = await t.mutation(api.projects.create, {
+      title: "Published Project",
+    });
+
+    await t.mutation(api.projects.updatePublishUrl, {
+      projectId,
+      publishedUrl: "https://bridges-morning-routine.vercel.app",
+    });
+
+    const project = await t.query(api.projects.get, { projectId });
+    expect(project).not.toBeNull();
+    expect(project!.publishedUrl).toBe("https://bridges-morning-routine.vercel.app");
+  });
+});

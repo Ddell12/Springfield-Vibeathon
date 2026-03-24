@@ -124,4 +124,58 @@ describe("ShareDialog", () => {
 
     expect(onOpenChange).toHaveBeenCalledWith(false);
   });
+
+  test("renders 'Preview Link' tab when no publishedUrl is provided", () => {
+    render(<ShareDialog {...defaultProps} />);
+    // Should show preview link tab (the share-slug based link)
+    expect(screen.getByText(/preview link/i)).toBeInTheDocument();
+  });
+
+  test("renders 'Published Link' tab when publishedUrl is provided", () => {
+    render(
+      <ShareDialog
+        {...defaultProps}
+        publishedUrl="https://bridges-morning-routine.vercel.app"
+      />
+    );
+    expect(screen.getByText(/published link/i)).toBeInTheDocument();
+  });
+
+  test("'Published Link' tab displays the Vercel URL", async () => {
+    const user = userEvent.setup();
+    render(
+      <ShareDialog
+        {...defaultProps}
+        publishedUrl="https://bridges-morning-routine.vercel.app"
+      />
+    );
+
+    // Click the Published Link tab
+    const publishedTab = screen.getByText(/published link/i);
+    await user.click(publishedTab);
+
+    const input = screen.getAllByRole("textbox").find(
+      (el) => (el as HTMLInputElement).value?.includes("vercel.app")
+    );
+    expect(input).toBeDefined();
+  });
+
+  test("switching tabs shows different URLs", async () => {
+    const user = userEvent.setup();
+    render(
+      <ShareDialog
+        {...defaultProps}
+        publishedUrl="https://bridges-morning-routine.vercel.app"
+      />
+    );
+
+    // Preview link tab should show the slug URL by default
+    const previewTab = screen.getByText(/preview link/i);
+    await user.click(previewTab);
+
+    const slugInput = screen.getAllByRole("textbox").find(
+      (el) => (el as HTMLInputElement).value?.includes("/tool/abc1234567")
+    );
+    expect(slugInput).toBeDefined();
+  });
 });

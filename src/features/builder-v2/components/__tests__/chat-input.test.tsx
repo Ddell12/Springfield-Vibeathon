@@ -128,4 +128,20 @@ describe("ChatInput", () => {
 
     expect(onSubmit).not.toHaveBeenCalled();
   });
+
+  it("only renders send and stop buttons — no other action buttons", () => {
+    render(<ChatInput onSubmit={vi.fn()} isLoading={false} />);
+    const buttons = screen.getAllByRole("button");
+    // Only the submit button should be present when not loading
+    // (voice, image, etc. stub buttons must be absent)
+    const buttonTexts = buttons.map((b) => b.textContent ?? "");
+    expect(buttonTexts.some((t) => /voice|microphone|attach|image/i.test(t))).toBe(false);
+  });
+
+  it("does not show a notification banner", () => {
+    render(<ChatInput onSubmit={vi.fn()} isLoading={false} />);
+    // No beta notice or alert banners in the chat input area
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(screen.queryByText(/beta|experimental|unstable/i)).not.toBeInTheDocument();
+  });
 });
