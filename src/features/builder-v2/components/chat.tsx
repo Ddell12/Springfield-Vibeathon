@@ -103,19 +103,31 @@ export function Chat({
       // Parse the completed FragmentResult
       const parsed = FragmentSchema.safeParse(JSON.parse(fullText));
       if (parsed.success) {
+        const fragment = parsed.data;
+
+        // Ensure Next.js components have "use client" directive —
+        // without it, hooks like useState crash in App Router Server Components
+        if (
+          fragment.template === "nextjs-developer" &&
+          !fragment.code.trimStart().startsWith('"use client"') &&
+          !fragment.code.trimStart().startsWith("'use client'")
+        ) {
+          fragment.code = `"use client";\n${fragment.code}`;
+        }
+
         // Update the building message with success
         setMessages((prev) =>
           prev.map((m) =>
             m.id === buildingMessage.id
               ? {
                   ...m,
-                  content: `Here's your ${parsed.data.title}! ${parsed.data.description} Let me know if you want any changes.`,
+                  content: `Here's your ${fragment.title}! ${fragment.description} Let me know if you want any changes.`,
                 }
               : m
           )
         );
 
-        onFragmentGenerated?.(parsed.data);
+        onFragmentGenerated?.(fragment);
       } else {
         throw new Error("Failed to parse generated code");
       }

@@ -1,5 +1,3 @@
-import { nanoid } from "nanoid";
-
 import { internalMutation } from "../_generated/server";
 
 const TEMPLATES = [
@@ -158,6 +156,11 @@ export const seedTemplates = internalMutation({
       }
 
       const now = Date.now();
+      const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
+      let shareSlug = "";
+      for (let i = 0; i < 10; i++) {
+        shareSlug += chars[Math.floor(Math.random() * chars.length)];
+      }
       await ctx.db.insert("tools", {
         title: template.title,
         description: template.description,
@@ -165,7 +168,7 @@ export const seedTemplates = internalMutation({
         templateCategory: template.templateCategory,
         config: template.config,
         isTemplate: true,
-        shareSlug: nanoid(10),
+        shareSlug,
         createdAt: now,
         updatedAt: now,
       });

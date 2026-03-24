@@ -33,12 +33,13 @@ Requirements:
 - Include all necessary logic within the component
 - Make it visually appealing with large touch targets for tablet use
 - Consider accessibility (ARIA labels, color contrast)
+- CRITICAL: When using template "nextjs-developer", the code MUST start with "use client"; as the very first line (before all imports) because the file is written to app/page.tsx which is a Server Component by default in Next.js App Router. Any component using React hooks (useState, useEffect, useRef, etc.) or event handlers MUST have "use client"; at the top or it will crash.
 
 Output format (FragmentSchema):
 - title: Short, descriptive title for the app
 - description: What the app does and who it's for
-- template: One of "nextjs-developer", "vue-developer", "html-developer"
-- code: The complete source code
+- template: One of "nextjs-developer", "vue-developer", "html-developer". Default to "nextjs-developer" for React apps.
+- code: The complete source code. For Next.js, always start with "use client";
 - file_path: Where to write the file (e.g., "app/page.tsx" for Next.js)
 - has_additional_dependencies: Whether npm packages beyond React are needed
 - additional_dependencies: Array of npm package names if needed

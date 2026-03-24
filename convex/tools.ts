@@ -1,5 +1,4 @@
 import { v } from "convex/values";
-import { nanoid } from "nanoid";
 
 import { mutation, query } from "./_generated/server";
 
@@ -50,7 +49,11 @@ export const create = mutation({
   },
   handler: async (ctx, args) => {
     const now = Date.now();
-    const shareSlug = nanoid(10);
+    const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
+    let shareSlug = "";
+    for (let i = 0; i < 10; i++) {
+      shareSlug += chars[Math.floor(Math.random() * chars.length)];
+    }
 
     return await ctx.db.insert("tools", {
       title: args.title,

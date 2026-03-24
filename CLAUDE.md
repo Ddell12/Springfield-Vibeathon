@@ -216,6 +216,7 @@ Config → component mapper: `src/features/therapy-tools/components/tool-rendere
 - **RAG `rag.search()` needs action context:** `rag.search()` calls the embedding API internally, so it requires `ctx` with `runAction`. Agent tool `execute` functions can use `ctx.runAction(internal.knowledge.search.searchKnowledgeAction, args)` as a wrapper.
 - **`"use node";` is only for `action`/`internalAction`:** Never add `"use node";` to files defining `httpAction`, `query`, or `mutation`. HTTP actions run in the Convex V8 runtime, not Node.js. Adding it causes a 400 "InvalidModules" deploy error.
 - **Convex file names cannot contain hyphens:** Module paths only allow alphanumeric characters, underscores, or periods. Use `snake_case` for all files in `convex/` (e.g., `therapy_seeds.ts` not `therapy-seeds.ts`). Hyphens cause a 400 "InvalidConfig" error on `convex dev`.
+- **Convex V8 runtime does not support dynamic `import()`:** Never use `await import("nanoid")` or similar in queries/mutations. Use static top-level imports or inline implementations. Dynamic imports crash with `TypeError: dynamic module import unsupported`.
 
 ## Convex Backend
 
