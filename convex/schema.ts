@@ -58,11 +58,26 @@ export default defineSchema({
     sandboxId: v.optional(v.string()),
     messages: v.optional(v.any()),
     shareSlug: v.string(),
+    versions: v.optional(v.array(v.object({
+      fragment: v.any(),
+      sandboxId: v.optional(v.string()),
+      timestamp: v.number(),
+    }))),
+    publishedUrl: v.optional(v.string()),
+    persistence: v.optional(v.string()),
     createdAt: v.number(),
     updatedAt: v.number(),
   })
     .index("by_shareSlug", ["shareSlug"])
     .index("by_createdAt", ["createdAt"]),
+
+  toolState: defineTable({
+    projectId: v.string(),
+    key: v.string(),
+    value: v.any(),
+    updatedAt: v.number(),
+  })
+    .index("by_projectId_key", ["projectId", "key"]),
 
   therapyTemplates: defineTable({
     name: v.string(),
