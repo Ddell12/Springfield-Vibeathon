@@ -16,7 +16,6 @@ import {
 } from "@assistant-ui/react";
 import { SendHorizontal } from "lucide-react";
 import { api } from "../../../../../convex/_generated/api";
-import { cn } from "@/core/utils";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -215,7 +214,7 @@ function Thread() {
 
 export function BridgesChat({ threadId }: BridgesChatProps) {
   // Fetch messages from Convex Agent (paginated + streaming)
-  const { results: messages, status: paginationStatus } = useUIMessages(
+  const { results: messages } = useUIMessages(
     api.chat.streaming.listThreadMessages,
     threadId ? { threadId } : "skip",
     { initialNumItems: 20, stream: true },

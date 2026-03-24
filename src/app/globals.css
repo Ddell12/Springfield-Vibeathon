@@ -33,15 +33,5 @@ body {
   font-family: var(--font-body);
 }
 
-/* assistant-ui chat theme overrides
-   Primitives are unstyled in 0.12.x — these target the custom wrappers
+/* assistant-ui 0.12.x: primitives are unstyled, colors applied via Tailwind
    in src/features/builder/components/chat/bridges-chat.tsx */
-[data-aui-role="user"] {
-  --chat-bubble-bg: var(--color-primary);
-  --chat-bubble-fg: #ffffff;
-}
-
-[data-aui-role="assistant"] {
-  --chat-bubble-bg: var(--color-surface-raised);
-  --chat-bubble-fg: var(--color-foreground);
-}
