@@ -1,21 +1,51 @@
 "use client";
 
 import Link from "next/link";
+import { useParams } from "next/navigation";
+import { useQuery } from "convex/react";
+import { api } from "../../../../convex/_generated/api";
 import { MaterialIcon } from "@/shared/components/material-icon";
 import { ToolRenderer } from "@/features/therapy-tools/components/tool-renderer";
 import type { ToolConfig } from "@/features/therapy-tools/types/tool-configs";
 
-type SharedToolProps = {
-  tool: {
-    title: string;
-    description: string;
-    config: ToolConfig;
-    creatorName?: string;
-    creatorSpecialty?: string;
-  };
-};
+export function SharedToolPage() {
+  const params = useParams();
+  const slug = params?.toolId as string;
+  const tool = useQuery(api.tools.getBySlug, slug ? { slug } : "skip");
 
-export function SharedToolPage({ tool }: SharedToolProps) {
+  // Loading state
+  if (tool === undefined) {
+    return (
+      <div className="bg-surface font-body text-on-surface min-h-screen flex flex-col items-center justify-center">
+        <div data-testid="loading-skeleton" className="animate-pulse space-y-4 max-w-4xl w-full px-8">
+          <div className="h-10 bg-surface-container-low rounded-xl w-64" />
+          <div className="h-64 bg-surface-container-low rounded-xl" />
+        </div>
+      </div>
+    );
+  }
+
+  // Not found state
+  if (tool === null) {
+    return (
+      <div className="bg-surface font-body text-on-surface min-h-screen flex flex-col items-center justify-center gap-6 text-center px-4">
+        <MaterialIcon icon="search_off" className="text-6xl text-primary/40" />
+        <h1 className="font-headline font-bold text-3xl text-on-surface">
+          Build your own therapy tools with Bridges
+        </h1>
+        <p className="text-on-surface-variant text-lg">
+          This tool doesn&apos;t exist or has been removed.
+        </p>
+        <Link
+          href="/builder"
+          className="bg-primary-gradient text-white px-8 py-4 rounded-lg font-semibold hover:opacity-90 transition-all active:scale-95"
+        >
+          Create Tool
+        </Link>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-surface font-body text-on-surface min-h-screen flex flex-col">
       {/* Minimal Header */}
@@ -53,12 +83,11 @@ export function SharedToolPage({ tool }: SharedToolProps) {
 
           {/* Safe Space Container */}
           <div className="safe-space-container bg-surface-container-lowest p-6 md:p-10 sanctuary-shadow relative overflow-hidden">
-            {/* Decorative blurred orbs */}
             <div className="absolute -top-24 -right-24 w-64 h-64 rounded-full bg-secondary-container/10 blur-3xl" />
             <div className="absolute -bottom-24 -left-24 w-64 h-64 rounded-full bg-primary-container/5 blur-3xl" />
 
             <div className="relative z-10">
-              <ToolRenderer config={tool.config} />
+              <ToolRenderer config={tool.config as ToolConfig} />
             </div>
           </div>
 
@@ -77,27 +106,6 @@ export function SharedToolPage({ tool }: SharedToolProps) {
                 </p>
               </div>
             </div>
-
-            {/* Creator Info */}
-            {tool.creatorName && (
-              <div className="bg-surface-container-low rounded-xl p-6 flex flex-col justify-center border border-outline-variant/10">
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="w-10 h-10 rounded-full bg-primary-fixed flex items-center justify-center">
-                    <MaterialIcon icon="person" className="text-primary" size="sm" />
-                  </div>
-                  <div>
-                    <p className="font-label font-bold text-on-surface text-sm">
-                      Created by {tool.creatorName}
-                    </p>
-                    {tool.creatorSpecialty && (
-                      <p className="text-xs text-on-surface-variant">
-                        {tool.creatorSpecialty}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         </div>
       </main>

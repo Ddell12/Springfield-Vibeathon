@@ -130,7 +130,7 @@ describe("tools CRUD", () => {
     const before = await t.query(api.tools.get, { toolId });
     expect(before).not.toBeNull();
 
-    await t.mutation(api.tools.remove, { toolId });
+    await t.mutation(api.tools.remove, { id: toolId });
 
     const after = await t.query(api.tools.get, { toolId });
     expect(after).toBeNull();

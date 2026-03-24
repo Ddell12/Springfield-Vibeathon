@@ -3,13 +3,14 @@
 import { useEffect } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
+import { BuilderHeader } from "@/features/builder/components/builder-header";
 import { BuilderLayout } from "@/features/builder/components/builder-layout";
 import { BridgesChat } from "@/features/builder/components/chat/bridges-chat";
 import { ToolPreview } from "@/features/builder/components/tool-preview";
 import { useBuilderState } from "@/features/builder/hooks/use-builder-state";
 
 export default function BuilderPage() {
-  const { threadId, toolId, setThreadId, setToolId } = useBuilderState();
+  const { threadId, toolId, setThreadId, setToolId, reset } = useBuilderState();
   const createThread = useMutation(api.chat.streaming.createNewThread);
 
   // Create a thread on first render
@@ -37,10 +38,25 @@ export default function BuilderPage() {
     }
   }, [threadTools, toolId, setToolId]);
 
+  const activeTool = threadTools?.find((t) => t._id === toolId);
+
+  function handleNewTool() {
+    reset();
+  }
+
   return (
-    <BuilderLayout
-      chatPanel={<BridgesChat threadId={threadId} />}
-      previewPanel={<ToolPreview toolId={toolId} />}
-    />
+    <div className="flex flex-col h-full">
+      <BuilderHeader
+        toolName={activeTool?.title}
+        shareSlug={activeTool?.shareSlug}
+        onNewTool={handleNewTool}
+      />
+      <div className="flex-1 overflow-hidden">
+        <BuilderLayout
+          chatPanel={<BridgesChat threadId={threadId} />}
+          previewPanel={<ToolPreview toolId={toolId} />}
+        />
+      </div>
+    </div>
   );
 }
