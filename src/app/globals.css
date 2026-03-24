@@ -32,3 +32,6 @@ body {
   color: var(--color-foreground);
   font-family: var(--font-body);
 }
+
+/* assistant-ui 0.12.x: primitives are unstyled, colors applied via Tailwind
+   in src/features/builder/components/chat/bridges-chat.tsx */
