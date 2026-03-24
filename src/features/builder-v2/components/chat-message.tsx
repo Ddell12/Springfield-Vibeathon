@@ -1,4 +1,6 @@
 import { DesignPlan } from "./design-plan";
+import { FileProgress } from "./file-progress";
+import type { ProgressPhase } from "./file-progress";
 import { ThinkingState } from "./thinking-state";
 
 export type MessageType = "text" | "thinking" | "plan" | "building" | "complete";
@@ -7,16 +9,17 @@ type ChatMessageProps = {
   role: "user" | "assistant";
   content: string;
   type?: MessageType;
+  progressPhase?: ProgressPhase;
 };
 
-export function ChatMessage({ role, content, type }: ChatMessageProps) {
+export function ChatMessage({ role, content, type, progressPhase }: ChatMessageProps) {
   if (role === "assistant") {
     if (type === "thinking") {
       return <ThinkingState status="Thinking..." isComplete={false} plan={content} />;
     }
 
     if (type === "building") {
-      return <ThinkingState status="Building..." isComplete={false} />;
+      return <FileProgress progressPhase={progressPhase ?? "started"} />;
     }
 
     if (type === "plan") {

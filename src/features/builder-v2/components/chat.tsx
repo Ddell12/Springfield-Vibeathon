@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import type { FragmentResult } from "../lib/schema";
 import { FragmentSchema } from "../lib/schema";
 import { ChatInput } from "./chat-input";
+import type { ProgressPhase } from "./file-progress";
 import type { MessageType } from "./chat-message";
 import { ChatMessage } from "./chat-message";
 
@@ -37,6 +38,7 @@ export function Chat({
 }: ChatProps) {
   const [messages, setMessages] = useState<Message[]>([WELCOME_MESSAGE]);
   const [isLoading, setIsLoading] = useState(false);
+  const [progressPhase, setProgressPhase] = useState<ProgressPhase>("started");
   const abortRef = useRef<AbortController | null>(null);
   const [hasAutoSent, setHasAutoSent] = useState(false);
 
@@ -49,6 +51,8 @@ export function Chat({
   }, [initialMessage, hasAutoSent, isLoading]);
 
   const handleSubmit = async (message: string) => {
+    setProgressPhase("started");
+
     const userMessage: Message = {
       id: `user-${Date.now()}`,
       role: "user",
@@ -162,8 +166,27 @@ export function Chat({
 
       while (true) {
         const { done, value } = await generateReader.read();
-        if (done) break;
+        if (done) {
+          setProgressPhase("complete");
+          break;
+        }
         fullText += generateDecoder.decode(value, { stream: true });
+
+        // Detect field markers in accumulated JSON to drive progress UI
+        if (fullText.includes('"title"')) setProgressPhase("title");
+        if (fullText.includes('"description"')) setProgressPhase("description");
+        if (fullText.includes('"code"')) {
+          const codeKeyIndex = fullText.indexOf('"code"');
+          const textAfterCode = fullText.length - codeKeyIndex;
+          // Advance to "code-streaming" once meaningful code content is flowing
+          if (textAfterCode > 80) {
+            setProgressPhase("code-streaming");
+          } else {
+            setProgressPhase("code-started");
+          }
+        }
+        if (fullText.includes('"file_path"')) setProgressPhase("file-path");
+        if (fullText.includes('"has_additional_dependencies"')) setProgressPhase("dependencies");
       }
 
       // Parse the completed FragmentResult
@@ -227,6 +250,7 @@ export function Chat({
             role={msg.role}
             content={msg.content}
             type={msg.type}
+            progressPhase={msg.type === "building" ? progressPhase : undefined}
           />
         ))}
       </div>

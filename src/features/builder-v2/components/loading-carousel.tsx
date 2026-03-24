@@ -1,31 +1,45 @@
 "use client";
 
-import { Cloud, Globe, Sparkles } from "lucide-react";
+import { Hand, Pencil, Share2, Sparkles, Volume2, WifiOff } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { cn } from "@/core/utils";
 
 const CAROUSEL_ITEMS = [
   {
-    icon: Cloud,
-    title: "Bridges Cloud",
-    description: "Describe features, get full therapy tools. Data, hosting, auth, AI included.",
-    color: "from-blue-500/20 to-cyan-500/20",
+    icon: Share2,
+    title: "Share Instantly",
+    description: "Every tool gets a shareable link. Send it to your therapist, partner, or another parent — works on any device.",
+    color: "from-teal-500/20 to-cyan-500/20",
+    iconColor: "text-teal-500",
+  },
+  {
+    icon: Hand,
+    title: "Built for Small Hands",
+    description: "Large 44px+ tap targets, high contrast, and clear visuals — designed for children's motor skills.",
+    color: "from-blue-500/20 to-indigo-500/20",
     iconColor: "text-blue-500",
   },
   {
-    icon: Globe,
-    title: "Publish your project",
-    description: "Instantly publish to bridges.app, buy a domain, or connect your own. Update anytime.",
+    icon: Volume2,
+    title: "Talk Out Loud",
+    description: "Communication boards speak with natural text-to-speech. Your child hears their request spoken aloud.",
     color: "from-purple-500/20 to-pink-500/20",
     iconColor: "text-purple-500",
   },
   {
-    icon: Sparkles,
-    title: "AI-Powered Generation",
-    description: "Our advanced AI models are writing code, configuring databases, and setting up auth for you.",
-    color: "from-orange-500/20 to-red-500/20",
+    icon: Pencil,
+    title: "Customize Anytime",
+    description: "Just tell me what to change. 'Make the pictures bigger' or 'Add yogurt to the choices' — I'll update it instantly.",
+    color: "from-orange-500/20 to-amber-500/20",
     iconColor: "text-orange-500",
+  },
+  {
+    icon: WifiOff,
+    title: "Works Offline-Ready",
+    description: "Once loaded, tools work without an internet connection. Perfect for appointments and car rides.",
+    color: "from-green-500/20 to-emerald-500/20",
+    iconColor: "text-green-500",
   },
 ];
 
@@ -35,7 +49,7 @@ export function LoadingCarousel() {
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % CAROUSEL_ITEMS.length);
-    }, 4000);
+    }, 5000);
     return () => clearInterval(interval);
   }, []);
 

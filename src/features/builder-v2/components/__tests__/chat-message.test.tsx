@@ -13,6 +13,12 @@ vi.mock("../design-plan", () => ({
   DesignPlan: ({ content }: { content: string }) => <div data-testid="design-plan">{content}</div>,
 }));
 
+vi.mock("../file-progress", () => ({
+  FileProgress: ({ progressPhase }: { progressPhase: string }) => (
+    <div data-testid="file-progress" data-phase={progressPhase}>Let me build this:</div>
+  ),
+}));
+
 describe("ChatMessage", () => {
   it("renders user message content", () => {
     render(<ChatMessage role="user" content="Build a token board" />);
@@ -78,10 +84,16 @@ describe("ChatMessage", () => {
       expect(screen.getByTestId("thinking-plan")).toHaveTextContent("Planning...");
     });
 
-    it('renders ThinkingState for type="building"', () => {
+    it('renders FileProgress for type="building"', () => {
+      render(<ChatMessage role="assistant" content="Building code" type="building" progressPhase="started" />);
+      expect(screen.getByTestId("file-progress")).toBeInTheDocument();
+      expect(screen.getByTestId("file-progress")).toHaveAttribute("data-phase", "started");
+    });
+
+    it('renders FileProgress with default "started" phase when progressPhase is not provided', () => {
       render(<ChatMessage role="assistant" content="Building code" type="building" />);
-      expect(screen.getByTestId("thinking-state")).toBeInTheDocument();
-      expect(screen.getByText("Building...")).toBeInTheDocument();
+      expect(screen.getByTestId("file-progress")).toBeInTheDocument();
+      expect(screen.getByTestId("file-progress")).toHaveAttribute("data-phase", "started");
     });
 
     it('renders DesignPlan for type="plan"', () => {
