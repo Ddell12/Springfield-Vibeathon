@@ -31,13 +31,13 @@ type BridgesChatProps = {
 
 function convertMessage(message: UIMessage): ThreadMessageLike {
   const status: ThreadMessageLike["status"] =
-    message.status === "streaming"
-      ? { type: "running" as const }
-      : message.status === "failed"
-        ? { type: "incomplete" as const, reason: "error" as const }
-        : message.status === "pending"
+    message.role === "assistant"
+      ? (message.status === "streaming" || message.status === "pending"
           ? { type: "running" as const }
-          : { type: "complete" as const, reason: "stop" as const };
+          : message.status === "failed"
+            ? { type: "incomplete" as const, reason: "error" as const }
+            : { type: "complete" as const, reason: "stop" as const })
+      : undefined;
 
   const content: ThreadMessageLike["content"] =
     message.parts && message.parts.length > 0
