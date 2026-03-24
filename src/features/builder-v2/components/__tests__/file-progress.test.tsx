@@ -81,4 +81,9 @@ describe("FileProgress", () => {
     );
     expect(pendingLabels.length).toBe(6);
   });
+
+  it("shows 'Creating your tool' as the active step label when phase is 'code-started'", () => {
+    render(<FileProgress progressPhase="code-started" />);
+    expect(screen.getByText("Creating your tool")).toBeInTheDocument();
+  });
 });

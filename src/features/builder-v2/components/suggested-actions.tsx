@@ -15,7 +15,7 @@ import {
   Volume2,
   type LucideIcon,
 } from "lucide-react";
-import { motion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 
 import { cn } from "@/core/utils";
 import type { FragmentResult } from "../lib/schema";
@@ -140,28 +140,37 @@ export function SuggestedActions({ fragment, onAction }: SuggestedActionsProps) 
   const chips = CHIPS_BY_TYPE[toolType] ?? CHIPS_BY_TYPE["default"];
 
   return (
-    <div className="flex flex-wrap gap-2 px-4 pb-2 pt-1 md:flex-nowrap md:overflow-x-auto md:scrollbar-none">
-      {chips.map(({ label, icon: Icon, prompt }, index) => (
-        <motion.button
-          key={label}
-          initial={{ opacity: 0, x: -12 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.3, delay: index * 0.1, ease: [0.4, 0, 0.2, 1] }}
-          onClick={() => onAction(prompt)}
-          aria-label={prompt}
-          className={cn(
-            "flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5",
-            "bg-surface-container-low hover:bg-surface-container-high",
-            "text-sm font-medium text-on-surface",
-            "transition-colors duration-200",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-          )}
-          type="button"
-        >
-          <Icon size={14} className="text-primary" aria-hidden="true" />
-          {label}
-        </motion.button>
-      ))}
-    </div>
+    <AnimatePresence key={toolType} mode="wait">
+      <motion.div
+        key={toolType}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+        className="flex flex-wrap gap-2 px-4 pb-2 pt-1 md:flex-nowrap md:overflow-x-auto md:scrollbar-none"
+      >
+        {chips.map(({ label, icon: Icon, prompt }, index) => (
+          <motion.button
+            key={label}
+            initial={{ opacity: 0, x: -12 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.3, delay: index * 0.1, ease: [0.4, 0, 0.2, 1] }}
+            onClick={() => onAction(prompt)}
+            aria-label={prompt}
+            className={cn(
+              "flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5",
+              "bg-surface-container-low hover:bg-surface-container-high",
+              "text-sm font-medium text-on-surface",
+              "transition-colors duration-200",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            )}
+            type="button"
+          >
+            <Icon size={14} className="text-primary" aria-hidden="true" />
+            {label}
+          </motion.button>
+        ))}
+      </motion.div>
+    </AnimatePresence>
   );
 }

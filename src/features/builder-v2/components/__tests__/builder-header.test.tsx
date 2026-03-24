@@ -93,4 +93,54 @@ describe("BuilderV2Header", () => {
     render(<BuilderV2Header />);
     expect(screen.getByRole("banner")).toBeInTheDocument();
   });
+
+  it("does not render stub Cloud, Code, or Analytics buttons", () => {
+    render(<BuilderV2Header />);
+    const buttons = screen.getAllByRole("button");
+    const buttonTexts = buttons.map((b) => b.textContent ?? "");
+    expect(buttonTexts.some((t) => /cloud/i.test(t))).toBe(false);
+    expect(buttonTexts.some((t) => /analytics/i.test(t))).toBe(false);
+    expect(buttonTexts.some((t) => /^code$/i.test(t))).toBe(false);
+  });
+
+  it("renders Undo button when canUndo is true", () => {
+    render(<BuilderV2Header canUndo={true} onUndo={vi.fn()} />);
+    const buttons = screen.getAllByRole("button");
+    const undoBtn = buttons.find(
+      (btn) => btn.textContent?.toLowerCase().includes("undo") ||
+               btn.querySelector('[data-testid="icon-undo"]')
+    );
+    expect(undoBtn).toBeDefined();
+  });
+
+  it("does not render Undo button when canUndo is false", () => {
+    render(<BuilderV2Header canUndo={false} />);
+    const buttons = screen.getAllByRole("button");
+    const undoBtn = buttons.find(
+      (btn) => btn.textContent?.toLowerCase().includes("undo") ||
+               btn.querySelector('[data-testid="icon-undo"]')
+    );
+    expect(undoBtn).toBeUndefined();
+  });
+
+  it("calls onUndo when Undo button is clicked", async () => {
+    const onUndo = vi.fn();
+    const user = userEvent.setup();
+
+    render(<BuilderV2Header canUndo={true} onUndo={onUndo} />);
+    const buttons = screen.getAllByRole("button");
+    const undoBtn = buttons.find(
+      (btn) => btn.textContent?.toLowerCase().includes("undo") ||
+               btn.querySelector('[data-testid="icon-undo"]')
+    )!;
+    await user.click(undoBtn);
+
+    expect(onUndo).toHaveBeenCalledTimes(1);
+  });
+
+  it("download button title is 'Save to my files'", () => {
+    render(<BuilderV2Header hasProject={true} onDownload={() => {}} />);
+    const downloadBtn = document.querySelector("[title='Save to my files']");
+    expect(downloadBtn).not.toBeNull();
+  });
 });

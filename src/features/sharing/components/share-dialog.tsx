@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import QRCode from "react-qr-code";
 import { toast } from "sonner";
 
@@ -18,6 +19,7 @@ type ShareDialogProps = {
   onOpenChange: (open: boolean) => void;
   shareSlug: string;
   toolTitle: string;
+  publishedUrl?: string;
 };
 
 export function ShareDialog({
@@ -25,16 +27,21 @@ export function ShareDialog({
   onOpenChange,
   shareSlug,
   toolTitle,
+  publishedUrl,
 }: ShareDialogProps) {
-  const url = `${window.location.origin}/tool/${shareSlug}`;
+  const [activeTab, setActiveTab] = useState<"preview" | "published">("preview");
+
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  const previewUrl = `${origin}/tool/${shareSlug}`;
+  const activeUrl = activeTab === "published" && publishedUrl ? publishedUrl : previewUrl;
 
   async function handleCopy() {
-    await navigator.clipboard.writeText(url);
+    await navigator.clipboard.writeText(activeUrl);
     toast("Link copied!");
   }
 
   async function handleShare() {
-    await navigator.share({ title: toolTitle, url });
+    await navigator.share({ title: toolTitle, url: activeUrl });
   }
 
   return (
@@ -44,15 +51,43 @@ export function ShareDialog({
           <DialogTitle>Share &quot;{toolTitle}&quot;</DialogTitle>
         </DialogHeader>
 
-        <div className="flex flex-col gap-6 py-2">
+        <div className="flex flex-col gap-4 py-2">
+          {/* Tabs */}
+          <div className="flex gap-1 bg-surface-container-low rounded-lg p-1">
+            <button
+              type="button"
+              onClick={() => setActiveTab("preview")}
+              className={
+                activeTab === "preview"
+                  ? "flex-1 py-1.5 rounded-md text-sm font-semibold bg-surface-container-lowest text-primary shadow-sm"
+                  : "flex-1 py-1.5 rounded-md text-sm font-medium text-on-surface-variant"
+              }
+            >
+              Preview Link
+            </button>
+            {publishedUrl && (
+              <button
+                type="button"
+                onClick={() => setActiveTab("published")}
+                className={
+                  activeTab === "published"
+                    ? "flex-1 py-1.5 rounded-md text-sm font-semibold bg-surface-container-lowest text-primary shadow-sm"
+                    : "flex-1 py-1.5 rounded-md text-sm font-medium text-on-surface-variant"
+                }
+              >
+                Published Link
+              </button>
+            )}
+          </div>
+
           {/* QR Code */}
           <div className="flex justify-center">
-            <QRCode value={url} size={160} />
+            <QRCode value={activeUrl} size={160} />
           </div>
 
           {/* URL input + copy */}
           <div className="flex gap-2">
-            <Input value={url} readOnly className="flex-1 text-sm" />
+            <Input value={activeUrl} readOnly className="flex-1 text-sm" />
             <Button variant="outline" onClick={handleCopy} aria-label="Copy Link">
               <MaterialIcon icon="content_copy" size="sm" />
               Copy Link

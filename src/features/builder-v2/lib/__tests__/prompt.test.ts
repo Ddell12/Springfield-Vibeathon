@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { getCodeGenSystemPrompt, getInterviewSystemPrompt } from "../prompt";
+import { getCodeGenSystemPrompt, getInterviewSystemPrompt, getPersistencePromptFragment } from "../prompt";
 
 describe("getInterviewSystemPrompt", () => {
   it("returns a non-empty string", () => {
@@ -69,5 +69,50 @@ describe("getCodeGenSystemPrompt", () => {
     const schemaKeywords = ["title", "description", "template", "code"];
     const found = schemaKeywords.filter((kw) => prompt.includes(kw));
     expect(found.length).toBeGreaterThan(0);
+  });
+
+  it("includes therapy-ui class names in code generation prompt", () => {
+    const prompt = getCodeGenSystemPrompt();
+    expect(prompt).toContain("card-interactive");
+    expect(prompt).toContain("tap-target");
+    expect(prompt).toContain("tool-container");
+  });
+
+  it("references src/App.tsx not app/page.tsx", () => {
+    const prompt = getCodeGenSystemPrompt();
+    expect(prompt).toContain("src/App.tsx");
+    expect(prompt).not.toContain("app/page.tsx");
+  });
+
+  it("includes localStorage guidance when persistence is 'device'", () => {
+    const prompt = getCodeGenSystemPrompt(undefined, "device");
+    expect(prompt.toLowerCase()).toContain("localstorage");
+  });
+});
+
+describe("getPersistencePromptFragment", () => {
+  it("session persistence mentions useState", () => {
+    const fragment = getPersistencePromptFragment("session");
+    expect(fragment.toLowerCase()).toContain("usestate");
+  });
+
+  it("device persistence mentions useLocalStorage or localStorage", () => {
+    const fragment = getPersistencePromptFragment("device");
+    const lower = fragment.toLowerCase();
+    expect(lower.includes("uselocalstorage") || lower.includes("localstorage")).toBe(true);
+  });
+
+  it("cloud persistence mentions useConvexData or Convex", () => {
+    const fragment = getPersistencePromptFragment("cloud");
+    const lower = fragment.toLowerCase();
+    expect(lower.includes("useconvexdata") || lower.includes("convex")).toBe(true);
+  });
+
+  it("returns a non-empty string for all tiers", () => {
+    for (const tier of ["session", "device", "cloud"] as const) {
+      const result = getPersistencePromptFragment(tier);
+      expect(typeof result).toBe("string");
+      expect(result.length).toBeGreaterThan(0);
+    }
   });
 });

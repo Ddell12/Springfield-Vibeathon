@@ -32,6 +32,25 @@ vi.mock("@/features/sharing/components/share-dialog", () => ({
   ShareDialog: () => null,
 }));
 
+// Mock AlertDialog so we can control confirm/cancel interactions
+vi.mock("@/shared/components/ui/alert-dialog", () => ({
+  AlertDialog: ({ children, open }: { children: React.ReactNode; open?: boolean }) =>
+    open ? <div data-testid="alert-dialog">{children}</div> : null,
+  AlertDialogContent: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="alert-dialog-content">{children}</div>
+  ),
+  AlertDialogHeader: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  AlertDialogFooter: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  AlertDialogTitle: ({ children }: { children: React.ReactNode }) => <h2>{children}</h2>,
+  AlertDialogDescription: ({ children }: { children: React.ReactNode }) => <p>{children}</p>,
+  AlertDialogAction: ({ children, onClick }: { children: React.ReactNode; onClick?: () => void }) => (
+    <button data-testid="alert-confirm" onClick={onClick}>{children}</button>
+  ),
+  AlertDialogCancel: ({ children, onClick }: { children: React.ReactNode; onClick?: () => void }) => (
+    <button data-testid="alert-cancel" onClick={onClick}>{children}</button>
+  ),
+}));
+
 // Mock material-icon to avoid font-loading issues
 vi.mock("@/shared/components/material-icon", () => ({
   MaterialIcon: ({ icon }: { icon: string }) => (
@@ -90,15 +109,10 @@ describe("MyToolsPage", () => {
     expect(screen.getByText("My Schedule")).toBeInTheDocument();
   });
 
-  test("delete button triggers confirmation before calling remove mutation", async () => {
+  test("delete button opens AlertDialog for confirmation", async () => {
     const mockRemove = vi.fn();
     vi.mocked(convexReact.useQuery).mockReturnValue([mockProject]);
     vi.mocked(convexReact.useMutation).mockReturnValue(mockRemove);
-
-    // Spy on window.confirm
-    const confirmSpy = vi
-      .spyOn(window, "confirm")
-      .mockReturnValueOnce(false); // Cancel first
 
     const user = userEvent.setup();
     render(<MyToolsPage />);
@@ -106,33 +120,38 @@ describe("MyToolsPage", () => {
     const deleteButton = screen.getByRole("button", { name: /delete/i });
     await user.click(deleteButton);
 
-    // Confirmation was shown
-    expect(confirmSpy).toHaveBeenCalled();
-    // Remove was NOT called because user cancelled
+    // AlertDialog should now be open
+    expect(screen.getByTestId("alert-dialog")).toBeInTheDocument();
+    // Remove was NOT called yet — waiting for confirmation
     expect(mockRemove).not.toHaveBeenCalled();
-
-    confirmSpy.mockRestore();
   });
 
-  test("remove mutation is called with projectId after delete confirmation", async () => {
+  test("cancel in AlertDialog does not call remove mutation", async () => {
     const mockRemove = vi.fn();
     vi.mocked(convexReact.useQuery).mockReturnValue([mockProject]);
     vi.mocked(convexReact.useMutation).mockReturnValue(mockRemove);
 
-    // Confirm the delete
-    const confirmSpy = vi
-      .spyOn(window, "confirm")
-      .mockReturnValueOnce(true);
+    const user = userEvent.setup();
+    render(<MyToolsPage />);
+
+    await user.click(screen.getByRole("button", { name: /delete/i }));
+    await user.click(screen.getByTestId("alert-cancel"));
+
+    expect(mockRemove).not.toHaveBeenCalled();
+  });
+
+  test("confirm in AlertDialog calls removeProject with projectId", async () => {
+    const mockRemove = vi.fn();
+    vi.mocked(convexReact.useQuery).mockReturnValue([mockProject]);
+    vi.mocked(convexReact.useMutation).mockReturnValue(mockRemove);
 
     const user = userEvent.setup();
     render(<MyToolsPage />);
 
-    const deleteButton = screen.getByRole("button", { name: /delete/i });
-    await user.click(deleteButton);
+    await user.click(screen.getByRole("button", { name: /delete/i }));
+    await user.click(screen.getByTestId("alert-confirm"));
 
     expect(mockRemove).toHaveBeenCalledWith({ projectId: mockProject._id });
-
-    confirmSpy.mockRestore();
   });
 
   test("tool cards have share buttons that open the share dialog", async () => {

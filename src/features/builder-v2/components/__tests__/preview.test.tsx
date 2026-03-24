@@ -109,4 +109,57 @@ describe("Preview", () => {
     );
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
   });
+
+  it("does not render a Code tab", () => {
+    render(
+      <Preview
+        fragment={mockFragment}
+        sandboxUrl="https://sandbox-abc-3000.e2b.app"
+        isLoading={false}
+      />
+    );
+    // No tab or button labeled "Code"
+    const buttons = screen.getAllByRole("button").concat(screen.queryAllByRole("tab"));
+    expect(buttons.some((b) => b.textContent?.trim() === "Code")).toBe(false);
+  });
+
+  it("does not render a <pre> code block", () => {
+    render(
+      <Preview
+        fragment={mockFragment}
+        sandboxUrl="https://sandbox-abc-3000.e2b.app"
+        isLoading={false}
+      />
+    );
+    expect(document.querySelector("pre")).toBeNull();
+  });
+
+  it("shows empty placeholder text 'Your tool preview' when fragment is null", () => {
+    render(<Preview fragment={null} sandboxUrl={null} isLoading={false} />);
+    expect(screen.getByText(/your tool preview/i)).toBeInTheDocument();
+  });
+
+  it("shows 'Updating your tool...' pill when isIterating is true", () => {
+    render(
+      <Preview
+        fragment={mockFragment}
+        sandboxUrl="https://sandbox-abc-3000.e2b.app"
+        isLoading={false}
+        isIterating={true}
+      />
+    );
+    expect(screen.getByText(/updating your tool/i)).toBeInTheDocument();
+  });
+
+  it("does not show iterating pill when isIterating is false", () => {
+    render(
+      <Preview
+        fragment={mockFragment}
+        sandboxUrl="https://sandbox-abc-3000.e2b.app"
+        isLoading={false}
+        isIterating={false}
+      />
+    );
+    expect(screen.queryByText(/updating your tool/i)).not.toBeInTheDocument();
+  });
 });

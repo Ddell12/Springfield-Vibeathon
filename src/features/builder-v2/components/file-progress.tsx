@@ -36,6 +36,11 @@ const PHASE_LABELS: Record<Exclude<ProgressPhase, "complete">, string> = {
   "dependencies": "Finalizing accessibility",
 };
 
+// Override labels shown when the step is actively in-progress
+const ACTIVE_PHASE_LABELS: Partial<Record<Exclude<ProgressPhase, "complete">, string>> = {
+  "code-started": "Creating your tool",
+};
+
 const DISPLAY_STEPS = PHASE_ORDER.filter(
   (p): p is Exclude<ProgressPhase, "complete"> => p !== "complete"
 );
@@ -59,7 +64,9 @@ export function FileProgress({ progressPhase }: FileProgressProps) {
       <p className="text-sm font-bold text-on-surface mb-1">Let me build this:</p>
       {DISPLAY_STEPS.map((phase, index) => {
         const status = getStepStatus(phase, progressPhase);
-        const label = PHASE_LABELS[phase];
+        const label = status === "in-progress" && ACTIVE_PHASE_LABELS[phase]
+          ? ACTIVE_PHASE_LABELS[phase]
+          : PHASE_LABELS[phase];
 
         return (
           <motion.div

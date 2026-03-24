@@ -1,5 +1,5 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { CompletionMessage } from "../completion-message";
 import type { FragmentResult } from "../../lib/schema";
@@ -60,5 +60,17 @@ describe("CompletionMessage", () => {
     expect(
       screen.getByText(/Interact with your tool in the preview/i)
     ).toBeInTheDocument();
+  });
+
+  it("calls onConfetti callback when rendered", () => {
+    const onConfetti = vi.fn();
+    render(<CompletionMessage fragment={baseFragment} onConfetti={onConfetti} />);
+    expect(onConfetti).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not crash when onConfetti is not provided", () => {
+    expect(() => {
+      render(<CompletionMessage fragment={baseFragment} />);
+    }).not.toThrow();
   });
 });

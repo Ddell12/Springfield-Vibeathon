@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import { ChevronDown, Lightbulb } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 
 type ThinkingStateProps = {
   status: string;
@@ -12,6 +12,7 @@ type ThinkingStateProps = {
 export function ThinkingState({ status, isComplete = false, plan }: ThinkingStateProps) {
   const [elapsed, setElapsed] = useState(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const startTimeRef = useRef<number>(0);
 
   useEffect(() => {
     if (isComplete) {
@@ -22,10 +23,10 @@ export function ThinkingState({ status, isComplete = false, plan }: ThinkingStat
       return;
     }
 
-    // Start timer
-    setElapsed(0);
+    // Reset start time — refs are mutable and safe to set inside effects
+    startTimeRef.current = Date.now();
     intervalRef.current = setInterval(() => {
-      setElapsed((prev) => prev + 1);
+      setElapsed(Math.floor((Date.now() - startTimeRef.current) / 1000));
     }, 1000);
 
     return () => {

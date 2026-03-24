@@ -71,6 +71,26 @@
   --radius-xl: 16px;
 }
 
+/* Dark mode overrides */
+.dark {
+  --color-surface: #0f1117;
+  --color-surface-dim: #0a0d12;
+  --color-surface-bright: #1a2030;
+  --color-surface-container: #1e2535;
+  --color-surface-container-low: #161c28;
+  --color-surface-container-lowest: #0f1117;
+  --color-surface-container-high: #28303f;
+  --color-surface-container-highest: #303848;
+  --color-on-surface: #e4ebfc;
+  --color-on-surface-variant: #b0bec5;
+  --color-outline: #546e7a;
+  --color-outline-variant: #37474f;
+  --color-foreground: #e4ebfc;
+  --color-muted: #b0bec5;
+  --color-border: #37474f;
+  --color-background: #0f1117;
+}
+
 /* Utility classes */
 .bg-primary-gradient {
   background: linear-gradient(135deg, #00595c 0%, #0d7377 100%);

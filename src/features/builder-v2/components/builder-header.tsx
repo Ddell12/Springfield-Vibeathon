@@ -10,10 +10,24 @@ type BuilderV2HeaderProps = {
   onNewProject?: () => void;
   onShare?: () => void;
   onDownload?: () => void;
+  onUndo?: () => void;
+  onPublish?: () => void;
+  canUndo?: boolean;
   hasProject?: boolean;
+  responsiveValue?: "mobile" | "tablet" | "desktop";
+  onResponsiveChange?: (value: "mobile" | "tablet" | "desktop") => void;
 };
 
-export function BuilderV2Header({ projectName, onNewProject, onShare, onDownload, hasProject }: BuilderV2HeaderProps) {
+export function BuilderV2Header({
+  projectName,
+  onNewProject,
+  onShare,
+  onDownload,
+  onUndo,
+  onPublish,
+  canUndo,
+  hasProject,
+}: BuilderV2HeaderProps) {
   return (
     <header className="h-14 bg-surface-container-lowest flex items-center justify-between px-6 z-10 shrink-0">
       {/* Left: Logo + project breadcrumb */}
@@ -31,38 +45,29 @@ export function BuilderV2Header({ projectName, onNewProject, onShare, onDownload
         )}
       </div>
 
-      {/* Center: View Toggles */}
-      <div className="hidden md:flex items-center bg-surface-container-low rounded-lg p-1 border border-surface-container-high/50">
-        <button className="flex items-center gap-2 px-3 py-1.5 rounded-md text-primary font-semibold text-sm bg-surface-container-lowest shadow-sm">
-          <MaterialIcon icon="preview" size="sm" />
-          Preview
-        </button>
-        <button className="flex items-center gap-2 px-3 py-1.5 rounded-md text-on-surface-variant font-medium text-sm hover:text-on-surface transition-colors">
-          <MaterialIcon icon="cloud" size="sm" />
-        </button>
-        <button className="flex items-center gap-2 px-3 py-1.5 rounded-md text-on-surface-variant font-medium text-sm hover:text-on-surface transition-colors">
-          <MaterialIcon icon="code" size="sm" />
-        </button>
-        <button className="flex items-center gap-2 px-3 py-1.5 rounded-md text-on-surface-variant font-medium text-sm hover:text-on-surface transition-colors">
-          <MaterialIcon icon="analytics" size="sm" />
-        </button>
-        <div className="w-[1px] h-4 bg-surface-container-high mx-2" />
-        <button className="flex items-center gap-2 px-2 py-1.5 rounded-md text-on-surface-variant font-medium text-sm hover:text-on-surface transition-colors">
-          <MaterialIcon icon="add" size="sm" />
-        </button>
-      </div>
-
       {/* Right: Actions */}
       <div className="flex items-center gap-3">
-        {hasProject && onDownload && (
+        {canUndo && (
           <button
-            className="flex items-center gap-2 w-9 h-9 justify-center text-on-surface-variant rounded-full hover:bg-surface-container-high hover:text-primary transition-colors border border-surface-container"
+            className="flex items-center gap-2 w-9 h-9 justify-center text-on-surface-variant rounded-full hover:bg-surface-container-high hover:text-primary transition-colors"
             type="button"
-            onClick={onDownload}
-            title="Download Code"
+            onClick={onUndo}
+            title="Undo"
           >
-            <MaterialIcon icon="download" size="sm" />
+            <MaterialIcon icon="undo" size="sm" />
           </button>
+        )}
+        {hasProject && onDownload && (
+          <span title="Save to my files">
+            <button
+              className="flex items-center gap-2 w-9 h-9 justify-center text-on-surface-variant rounded-full hover:bg-surface-container-high hover:text-primary transition-colors border border-surface-container"
+              type="button"
+              onClick={onDownload}
+              title="Download Code"
+            >
+              <MaterialIcon icon="download" size="sm" />
+            </button>
+          </span>
         )}
         <button
           className="flex items-center gap-2 px-4 py-1.5 text-on-surface-variant rounded-full border border-surface-container hover:bg-surface-container-high hover:text-primary transition-colors min-h-[36px]"
@@ -82,12 +87,15 @@ export function BuilderV2Header({ projectName, onNewProject, onShare, onDownload
             <span className="text-sm font-bold">Share</span>
           </button>
         )}
-        <button
-          className="flex items-center gap-2 px-4 py-1.5 bg-primary text-on-primary rounded-full hover:bg-primary/90 transition-colors shadow-sm active:scale-95 min-h-[36px]"
-          type="button"
-        >
-          <span className="text-sm font-bold">Publish</span>
-        </button>
+        {onPublish && (
+          <button
+            className="flex items-center gap-2 px-4 py-1.5 bg-primary text-on-primary rounded-full hover:bg-primary/90 transition-colors shadow-sm active:scale-95 min-h-[36px]"
+            type="button"
+            onClick={onPublish}
+          >
+            <span className="text-sm font-bold">Publish</span>
+          </button>
+        )}
       </div>
     </header>
   );

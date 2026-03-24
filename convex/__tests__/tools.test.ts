@@ -168,10 +168,12 @@ describe("tools CRUD", () => {
 
     const tools = await t.query(api.tools.getByThread, { threadId });
     expect(tools).toHaveLength(2);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Convex test query returns unknown shape
     expect(tools.map((t: any) => t.title).sort()).toEqual([
       "Board B",
       "Schedule A",
     ]);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Convex test query returns unknown shape
     tools.forEach((tool: any) => {
       expect(tool.threadId).toBe(threadId);
     });
