@@ -48,12 +48,12 @@ describe("ToolCard", () => {
     expect(screen.getByText("March 20, 2026")).toBeInTheDocument();
   });
 
-  it("shows Share and Edit buttons for tool variant", () => {
+  it("shows Share and Delete buttons for tool variant", () => {
     render(
       <ToolCard title="My Board" toolType="token-board" variant="tool" />
     );
     expect(screen.getByTitle("Share")).toBeInTheDocument();
-    expect(screen.getByTitle("Edit")).toBeInTheDocument();
+    expect(screen.getByTitle("Delete")).toBeInTheDocument();
   });
 
   it("shows description for template variant", () => {
