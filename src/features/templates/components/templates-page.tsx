@@ -1,10 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useQuery } from "convex/react";
 import Link from "next/link";
+import { useState } from "react";
+
+import { cn } from "@/core/utils";
 import { MaterialIcon } from "@/shared/components/material-icon";
 import { ToolCard } from "@/shared/components/tool-card";
-import { cn } from "@/core/utils";
+import { Skeleton } from "@/shared/components/ui/skeleton";
+
+import { api } from "../../../../convex/_generated/api";
+import { Doc } from "../../../../convex/_generated/dataModel";
 
 type Category = "all" | "communication" | "rewards" | "routines";
 
@@ -15,58 +21,15 @@ const categories: { value: Category; label: string }[] = [
   { value: "routines", label: "Routines" },
 ];
 
-const mockTemplates = [
-  {
-    title: "Feelings Board",
-    toolType: "communication-board",
-    description:
-      "Helps children identify and express complex emotions using visual cues and relatable character icons.",
-    category: "communication" as Category,
-  },
-  {
-    title: "Basic Needs Board",
-    toolType: "communication-board",
-    description:
-      "A simplified interface for non-verbal communication of immediate requirements like food, water, and rest.",
-    category: "communication" as Category,
-  },
-  {
-    title: "5-Star Reward Chart",
-    toolType: "token-board",
-    description:
-      "Encourages positive behavior reinforcement through incremental goals and visual achievement milestones.",
-    category: "rewards" as Category,
-  },
-  {
-    title: "Sticker Collection",
-    toolType: "token-board",
-    description:
-      "A gamified approach to task completion where children earn digital or printable stickers for their gallery.",
-    category: "rewards" as Category,
-  },
-  {
-    title: "Morning Routine",
-    toolType: "visual-schedule",
-    description:
-      "Step-by-step visual schedule to reduce morning anxiety and build independence in start-of-day tasks.",
-    category: "routines" as Category,
-  },
-  {
-    title: "Bedtime Routine",
-    toolType: "visual-schedule",
-    description:
-      "A calming visual guide for wind-down activities, helping transition into a restful night's sleep.",
-    category: "routines" as Category,
-  },
-];
-
 export function TemplatesPage() {
   const [active, setActive] = useState<Category>("all");
 
-  const filtered =
-    active === "all"
-      ? mockTemplates
-      : mockTemplates.filter((t) => t.category === active);
+  const filteredTemplates = useQuery(
+    api.templates.queries.listTemplates,
+    active === "all" ? {} : { category: active },
+  );
+
+  const isLoading = filteredTemplates === undefined;
 
   return (
     <div className="max-w-7xl mx-auto px-8 py-12">
@@ -105,15 +68,19 @@ export function TemplatesPage() {
 
       {/* Template Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {filtered.map((template) => (
-          <ToolCard
-            key={template.title}
-            title={template.title}
-            toolType={template.toolType}
-            description={template.description}
-            variant="template"
-          />
-        ))}
+        {isLoading
+          ? Array.from({ length: 6 }).map((_, i) => (
+              <Skeleton key={i} className="h-48 rounded-xl" />
+            ))
+          : (filteredTemplates as Doc<"tools">[]).map((template) => (
+              <ToolCard
+                key={template._id}
+                title={template.title}
+                toolType={template.toolType}
+                description={template.description}
+                variant="template"
+              />
+            ))}
       </div>
 
       {/* CTA Section */}
