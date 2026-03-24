@@ -445,12 +445,12 @@ NEXT_PUBLIC_CONVEX_URL=
 ### Vercel Configuration
 
 ```json
-// vercel.json
+// vercel.json — cron every 4 min to maintain Gateway overlap on Vercel Pro (maxDuration 300s)
 {
   "crons": [
     {
       "path": "/api/discord/gateway",
-      "schedule": "*/9 * * * *"
+      "schedule": "*/4 * * * *"
     }
   ]
 }
@@ -495,19 +495,7 @@ export async function GET(request: Request): Promise<Response> {
 }
 ```
 
-**Important: Vercel Pro `maxDuration` caps at 300 seconds.** The Chat SDK docs show 800s which requires Enterprise. For Pro, we run the Gateway for 270s (4.5 min) with a 30s buffer, and the cron fires every 4 minutes (`*/4 * * * *`) to maintain overlap:
-
-```json
-// vercel.json (adjusted for Pro tier)
-{
-  "crons": [
-    {
-      "path": "/api/discord/gateway",
-      "schedule": "*/4 * * * *"
-    }
-  ]
-}
-```
+**Important: Vercel Pro `maxDuration` caps at 300 seconds.** The Chat SDK docs show 800s which requires Enterprise. For Pro, we run the Gateway for 270s (4.5 min) with a 30s buffer, and the cron fires every 4 minutes (`*/4 * * * *`) to maintain overlap. See `vercel.json` config above.
 
 ### Webhook Route
 
