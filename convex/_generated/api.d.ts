@@ -13,12 +13,15 @@ import type * as ai from "../ai.js";
 import type * as aiActions from "../aiActions.js";
 import type * as chat_actions from "../chat/actions.js";
 import type * as chat_streaming from "../chat/streaming.js";
+import type * as http from "../http.js";
 import type * as init from "../init.js";
 import type * as knowledge_data from "../knowledge/data.js";
 import type * as knowledge_search from "../knowledge/search.js";
 import type * as knowledge_seed from "../knowledge/seed.js";
+import type * as projects from "../projects.js";
 import type * as templates_queries from "../templates/queries.js";
 import type * as templates_seed from "../templates/seed.js";
+import type * as templates_therapy_seeds from "../templates/therapy_seeds.js";
 import type * as tools from "../tools.js";
 
 import type {
@@ -33,12 +36,15 @@ declare const fullApi: ApiFromModules<{
   aiActions: typeof aiActions;
   "chat/actions": typeof chat_actions;
   "chat/streaming": typeof chat_streaming;
+  http: typeof http;
   init: typeof init;
   "knowledge/data": typeof knowledge_data;
   "knowledge/search": typeof knowledge_search;
   "knowledge/seed": typeof knowledge_seed;
+  projects: typeof projects;
   "templates/queries": typeof templates_queries;
   "templates/seed": typeof templates_seed;
+  "templates/therapy_seeds": typeof templates_therapy_seeds;
   tools: typeof tools;
 }>;
 

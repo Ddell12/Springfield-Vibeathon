@@ -45,7 +45,12 @@ export default function BuilderPage() {
       />
       <div className="flex-1 overflow-hidden">
         <BuilderV2Layout
-          chatPanel={<Chat onFragmentGenerated={handleFragmentGenerated} />}
+          chatPanel={
+            <Chat
+              onFragmentGenerated={handleFragmentGenerated}
+              currentCode={fragment?.code}
+            />
+          }
           previewPanel={
             <Preview
               fragment={fragment}

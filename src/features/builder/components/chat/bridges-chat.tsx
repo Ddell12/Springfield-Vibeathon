@@ -13,7 +13,7 @@ import {
 import { type UIMessage,useUIMessages } from "@convex-dev/agent/react";
 import { optimisticallySendMessage } from "@convex-dev/agent/react";
 import { useMutation } from "convex/react";
-import { useCallback, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 
 import { MaterialIcon } from "@/shared/components/material-icon";
 
@@ -224,7 +224,9 @@ export function BridgesChat({ threadId }: BridgesChatProps) {
 
   // Stable callback for sending a new message
   const threadIdRef = useRef(threadId);
-  threadIdRef.current = threadId;
+  useEffect(() => {
+    threadIdRef.current = threadId;
+  }, [threadId]);
 
   const handleNew = useCallback(
     async (message: AppendMessage) => {

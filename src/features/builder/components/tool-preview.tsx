@@ -8,6 +8,7 @@ import { MaterialIcon } from "@/shared/components/material-icon";
 import { Skeleton } from "@/shared/components/ui/skeleton";
 
 import { api } from "../../../../convex/_generated/api";
+import type { Id } from "../../../../convex/_generated/dataModel";
 // NOTE: the "motion" package (v12.x) exports from "motion/react", NOT "framer-motion"
 
 type ToolPreviewProps = {
@@ -18,7 +19,7 @@ export function ToolPreview({ toolId }: ToolPreviewProps) {
   // Subscribe to the tool document (reactive)
   const tool = useQuery(
     api.tools.get,
-    toolId ? { toolId: toolId as any } : "skip"
+    toolId ? { toolId: toolId as Id<"tools"> } : "skip"
     // toolId comes as string from zustand, Convex expects Id<"tools">
   );
 

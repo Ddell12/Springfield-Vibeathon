@@ -1,0 +1,138 @@
+{
+  "meta": {
+    "createdAt": "2026-03-23T18:00:00Z",
+    "updatedAt": "2026-03-23T18:00:00Z",
+    "version": "1.0",
+    "plaidVersion": "1.0"
+  },
+  "creator": {
+    "name": "Desha",
+    "expertise": "Full-stack AI development — can build entire AI-powered products from scratch, from frontend to backend to model integration",
+    "background": "I'm a parent living this daily with my son Ace, who has Level 1 ASD. I've seen firsthand how inaccessible, expensive, and one-size-fits-all current therapy options are. I joined OneDay MBA because I know how to build but not how to sell — I can create AI products from scratch, but I need the business skills to turn that into something sustainable. ABA therapy is under scrutiny, AI can finally handle natural speech well enough to help kids communicate, Ace is at a critical developmental age, and I have the skills to build it now. The timing lines up."
+  },
+  "purpose": {
+    "whoYouHelp": "ABA therapists, speech-language pathologists (SLPs), and parents of children with autism and speech delays — people with deep domain knowledge about what their kids need but zero coding skills to build the tools themselves",
+    "problemYouSolve": "These people know exactly what tools they need — visual schedules, progress trackers, communication boards, session logs, parent homework apps — but can't build them. They're stuck with generic apps that don't fit their specific child or caseload, or they hack things together with laminated cards, spreadsheets, and paper handouts. The tools that exist are either built for therapists (too clinical for parents) or dumbed-down toys (not real therapy tools). Everything is static, generic, and disconnected. The 23 hours between therapy sessions are wasted potential because parents have no way to practice the exact same activities at home.",
+    "desiredTransformation": "A parent types what their child is working on and gets a working, personalized therapy tool in 30 seconds — no coding, no jargon, no app store. Therapists build custom tools for their caseload in minutes instead of hours of laminating and cutting. Every generated tool works on any device via a shareable link. Kids get tools tailored to their specific goals, motivators, and developmental level instead of one-size-fits-all apps.",
+    "whyYou": "I'm a parent living this with Ace every day — I see firsthand what works and what doesn't in autism therapy. I have the full-stack AI development skills to build the solution myself, not just configure no-code tools. ABA therapy is expensive, inaccessible, and increasingly under scrutiny, which creates openness to AI-powered alternatives. The tech is finally ready, the need is urgent, and I'm the rare combination of someone who deeply understands both the problem domain and the technical solution space."
+  },
+  "product": {
+    "name": "Bridges",
+    "oneLiner": "Bridges lets autism therapists and parents build their own therapy tools using AI — no coding needed.",
+    "howItWorks": "Bridges serves three core user flows. (1) A parent opens Bridges and picks 'I want to build something for my child.' The AI asks plain-language questions — 'What's your child working on right now?' 'What does your therapist have you practice at home?' — then generates a working app like a visual schedule with picture cards. The parent tweaks it through conversation and shares it to their phone instantly. (2) An ABA therapist says 'I need a data collection tool for discrete trial training across my caseload.' The AI knows what DTT is — it asks clarifying questions in therapy language, generates a session tracker with trial-by-trial data entry and auto-graphed progress charts, and the therapist shares it with her RBTs. (3) A speech therapist describes an interactive game for building sentences — Bridges generates a drag-and-drop communication board with text-to-speech, and the SLP customizes the vocabulary for a specific client's goals.",
+    "keyCapabilities": [
+      "Conversational app builder with therapy-aware AI that speaks ABA and speech therapy language",
+      "Template library with common therapy tools — visual schedules, token boards, DTT data sheets, communication boards",
+      "Drag-and-drop customization after AI generates the first version",
+      "Share to any device with a link — no app store, no install, no deploy",
+      "Progress tracking and simple data collection built into every generated tool"
+    ],
+    "platform": "web",
+    "marketDifferentiation": "Unlike existing therapy apps like CentralReach or Hi Rasmus that offer rigid, one-size-fits-all tools, Bridges lets each therapist and parent build exactly what their specific child needs — because no two kids on the spectrum are the same.",
+    "magicMoment": "A parent types 'I need something to help my son practice requesting snacks' — and 30 seconds later, they're looking at a working communication board with picture cards of their kid's favorite snacks, a sentence strip, and text-to-speech that says the request out loud. They tap a picture and hear their child's request spoken. They didn't configure anything. They just described what they needed in parent language. A therapist builds a token board in 30 seconds that used to take an hour of laminating. An SLP builds a custom articulation game and the parent gets a link at pickup — that night, data flows back showing 8 trials completed, 62% accuracy."
+  },
+  "audience": {
+    "primaryUser": "James, 38, stay-at-home dad to a 4-year-old with Level 2 ASD. His son gets 15 hours/week of ABA but James feels useless in between. The therapist gives him paper homework sheets and says 'practice this at home' but he doesn't know if he's doing it right. He's Googled 'autism apps' a hundred times and downloaded dozens — none fit his son's specific goals. He wishes he could just build the exact tool his therapist described.",
+    "secondaryUsers": [
+      "ABA clinic owners and directors who would adopt Bridges across their practice to standardize tool creation, reduce material prep time, and differentiate their clinic by offering custom tools to families",
+      "Special education teachers and paraprofessionals who work with the same kids and need similar visual supports and data tracking but have even fewer resources than private therapists",
+      "Developmental pediatricians and early intervention coordinators who are the referral source — they would recommend Bridges to parents at diagnosis when families are desperate for something actionable"
+    ],
+    "currentAlternatives": "Parents and therapists make physical materials by hand — laminating picture cards, velcroing token boards, printing worksheets from Teachers Pay Teachers. Parents download generic apps like Proloquo2Go ($250), AutiSpark, or Speech Blubs but the content doesn't fit their specific child. Therapists use CentralReach or Catalyst for data collection but these are enterprise tools built for clinic billing, not parent empowerment. Therapists track data in Google Sheets or paper binders. Parents get photocopied worksheets and verbal instructions. Nothing is connected — progress notes in one system, parent communication in texting, materials in a lamination folder. Most parents just wing it between sessions because the friction is too high.",
+    "frustrations": "Existing tools are built for therapists, not parents — CentralReach assumes clinical training, while parent-facing apps are dumbed-down toys, not real therapy tools. Everything is static and generic — a laminated token board can't adapt when a kid masters a goal, a downloaded app can't swap in the specific reinforcers that motivate your child. Every kid on the spectrum is different but every tool treats them the same. The therapist-parent gap is a black hole — what happens in a 1-hour therapy session stays in that session. There's no continuity, no way for parents to practice the exact same activities at home, no way for therapists to see what happened between sessions."
+  },
+  "business": {
+    "revenueModel": "freemium",
+    "initialGoal": "50 parents actively using Bridges, 10 therapists have created and shared tools with families, 3 ABA clinics piloting it. First paying users on the premium tier. Featured in one autism parent Facebook group or subreddit.",
+    "sixMonthVision": "500 active families, 50 therapists, $5,000 MRR. Bridges is the go-to recommendation in autism parent communities when someone asks 'what app should I use?' A library of 100+ community-shared therapy tools. ABA clinics starting to ask about bulk pricing.",
+    "constraints": "Solo founder building for a hackathon (Springfield Vibeathon, March 23–27, 2026). Need a working, demoable product within the competition window. Full-stack AI skills are the strength; business and GTM is the growth area, actively learning through OneDay MBA program. Bridges is a tool-creation platform, not a healthcare app — it doesn't store therapy data or provide clinical advice, which keeps it clean of HIPAA/COPPA for the hackathon. Budget is lean, need to ship fast.",
+    "goToMarket": "Vibeathon-first, community second. Win or place at the Vibeathon for credibility and press. Then seed it in autism parent Facebook groups and Reddit (r/autism, r/ABA). Let parents share tools they've built — every shared tool is a free ad for Bridges. Build in public on X/LinkedIn showing the journey of a dad building the tool he wishes existed for his autistic son."
+  },
+  "feeling": {
+    "brandPersonality": "The patient guide — warm, calm, endlessly patient. Like the best therapist you've ever met. Never makes you feel dumb for not knowing something. Speaks plainly. Celebrates small wins because in this world, small wins are everything.",
+    "visualMood": "Clean and trustworthy. White and light gray base with a single warm accent color — deep teal or soft indigo. Professional enough that a BCBA takes it seriously, approachable enough that a parent doesn't feel intimidated. Minimal, modern, breathing room everywhere. Think Linear's clarity with Calm's warmth.",
+    "toneOfVoice": "Supportive partner. 'Tell me what you need — I'll handle the technical part.' Error: 'Hmm, I need a bit more detail to get this right. Can you describe it differently?' Success: 'Done! Here's what I built. Want to tweak anything before sharing it?'",
+    "antiPatterns": "Never clinical or cold — no sterile white interfaces with tiny gray text, no medical-form energy, no 'patient ID' fields. Never condescending or infantilizing — no cartoon mascots explaining buttons, no 'Great job clicking that!' for adults, no dumbing down. Parents of special needs kids get patronized enough. Never overwhelming or developer-y — no dashboards with 15 widgets on first login, no 'configure your workspace' onboarding, no visible code, JSON, or deploy buttons. If a user ever sees the word 'component,' 'API,' or 'database,' something went wrong."
+  },
+  "techStack": {
+    "appType": "web",
+    "frontend": {
+      "choice": "Next.js",
+      "rationale": "Largest ecosystem, best AI coding tool support, excellent Convex integration, deploys instantly to Vercel"
+    },
+    "backend": {
+      "choice": "Convex",
+      "rationale": "Real-time reactivity for live tool previews, zero backend boilerplate, built-in vector search for RAG, built-in file storage, TypeScript end-to-end"
+    },
+    "database": {
+      "choice": "Convex Database",
+      "rationale": "Included with Convex backend, document-relational model, automatic indexing, ACID transactions, reactive queries, built-in vector search for therapy knowledge RAG"
+    },
+    "auth": {
+      "choice": "Clerk",
+      "rationale": "Pre-built UI components for fast implementation, social login, organization management for clinic teams. Deferred to final build phase — auth early creates friction for AI coding agents doing E2E testing with Playwright."
+    },
+    "payments": {
+      "choice": "Stripe",
+      "rationale": "Industry standard, most flexible, subscription billing for freemium model. Deferred to post-hackathon — free tier works without payments for the demo."
+    }
+  },
+  "tooling": {
+    "codingAgent": "claude-code"
+  },
+  "extendedStack": {
+    "aiLayer": {
+      "chatAndStreaming": {
+        "choice": "Vercel AI SDK (ai + @ai-sdk/anthropic)",
+        "rationale": "useChat hook for streaming chat UI, maxSteps for multi-step agent loops, provider-agnostic architecture"
+      },
+      "llm": {
+        "choice": "Claude via @ai-sdk/anthropic",
+        "rationale": "Best reasoning for understanding therapy descriptions and generating accurate tool configurations"
+      },
+      "embeddings": {
+        "choice": "Google gemini-embedding-001 (768 dimensions) via @ai-sdk/google",
+        "rationale": "High-quality embeddings for therapy knowledge RAG via AI SDK provider pattern. 768-dim MRL-compatible with future gemini-embedding-2 upgrade (one-line swap when GA). @google/generative-ai is deprecated — use @ai-sdk/google for embeddings, @google/genai for image gen."
+      },
+      "vectorSearch": {
+        "choice": "Convex built-in vector search",
+        "rationale": "No external vector DB needed, integrated with existing Convex backend, supports filter fields for scoped queries"
+      },
+      "textToSpeech": {
+        "choice": "ElevenLabs",
+        "rationale": "Communication boards that speak out loud — killer demo moment. Parent taps a picture card and hears the request spoken naturally."
+      }
+    },
+    "builderArchitecture": {
+      "approach": "Config-based builder — AI maps natural language descriptions to pre-built component configurations, not arbitrary code generation",
+      "rationale": "Therapy tools are a finite set of well-defined UI patterns. Config-based is faster to build, more reliable, and feels more magical because every generated tool works perfectly.",
+      "componentLibrary": "Pre-built React/shadcn therapy tool components: visual schedules, token boards, DTT data sheets, communication boards, timer/countdown tools, choice boards, first-then boards, social stories",
+      "configFormat": "JSON configs stored in Convex — each tool is a type + configuration that renders via the component library"
+    },
+    "ragKnowledgeBase": {
+      "content": [
+        "ABA therapy terminology and common interventions",
+        "Common therapy tool patterns (what a token board is, what a visual schedule contains, DTT structure)",
+        "IEP goal banks and speech therapy target word lists",
+        "Developmental milestones for communication"
+      ],
+      "rationale": "Pre-loaded domain knowledge makes the AI feel magical — it already speaks therapy language out of the box"
+    },
+    "deferredToPostHackathon": [
+      "Claude Agent SDK (@anthropic-ai/agent-sdk) — sub-agent orchestration for v2",
+      "Twelve Labs — video analysis of therapy sessions for progress tracking",
+      "Stripe — payment integration for freemium tiers",
+      "screenshot-to-code — photograph paper therapy tools to digitize them",
+      "Google Stitch — AI-generated UI mockups as a product feature",
+      "Cloudflare VibeSDK — potential migration for full arbitrary app generation in v2"
+    ],
+    "deployment": {
+      "choice": "Vercel",
+      "rationale": "One-click Next.js deploy, preview URLs for sharing generated tools, edge functions"
+    },
+    "designTools": {
+      "googleStitch": "Used during design phase to generate UI mockups and screens before coding — not a runtime product feature for hackathon",
+      "promptGuide": "Provide Stitch with: page type (dashboard, builder interface, tool preview), layout (sidebar chat + main preview area), components (chat input, live preview, template gallery), visual style (minimal, clean, warm teal accent, large tap targets, generous whitespace), audience context (non-technical parents, therapy professionals)"
+    }
+  }
+}

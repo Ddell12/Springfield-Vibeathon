@@ -15,7 +15,7 @@ export async function POST(req: Request): Promise<Response> {
   }
 
   const result = streamObject({
-    model: anthropic("claude-sonnet-4-5-20251001"),
+    model: anthropic("claude-sonnet-4-20250514"),
     system: getCodeGenSystemPrompt(context),
     schema: FragmentSchema,
     messages,

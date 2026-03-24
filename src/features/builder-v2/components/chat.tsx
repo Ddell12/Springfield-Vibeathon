@@ -16,16 +16,21 @@ type Message = {
 type ChatProps = {
   projectId?: string;
   onFragmentGenerated?: (fragment: FragmentResult) => void;
+  currentCode?: string;
 };
 
 const WELCOME_MESSAGE: Message = {
   id: "welcome",
   role: "assistant",
   content:
-    "Hi! I'm here to help you build therapy tools. Describe what you need — like a token board, visual schedule, or morning routine tracker — and I'll create it for you.",
+    "Hi! I'm here to help you build therapy tools. Describe what you need — like a token board, visual schedule, or morning routine tracker — and I'll build it right away.",
 };
 
-export function Chat({ projectId: _projectId, onFragmentGenerated }: ChatProps) {
+export function Chat({
+  projectId: _projectId,
+  onFragmentGenerated,
+  currentCode,
+}: ChatProps) {
   const [messages, setMessages] = useState<Message[]>([WELCOME_MESSAGE]);
   const [isLoading, setIsLoading] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
@@ -37,22 +42,35 @@ export function Chat({ projectId: _projectId, onFragmentGenerated }: ChatProps) 
       content: message,
     };
 
-    const assistantMessage: Message = {
+    const buildingMessage: Message = {
       id: `assistant-${Date.now()}`,
       role: "assistant",
-      content: "",
+      content: currentCode
+        ? "Updating your tool..."
+        : "Building your tool — this takes about 15 seconds...",
     };
 
-    setMessages((prev) => [...prev, userMessage, assistantMessage]);
+    setMessages((prev) => [...prev, userMessage, buildingMessage]);
     setIsLoading(true);
 
     abortRef.current = new AbortController();
 
     try {
-      const response = await fetch("/api/chat", {
+      // Go straight to code generation — every message generates/updates code
+      const allMessages = [...messages, userMessage].map((m) => ({
+        role: m.role,
+        content: m.content,
+      }));
+
+      // If iterating, inject current code into context
+      const context = currentCode
+        ? `The user already has a working tool. Here is the current code:\n\`\`\`\n${currentCode}\n\`\`\`\nModify it based on the user's request. Keep what works, change what they asked for.`
+        : undefined;
+
+      const response = await fetch("/api/chat/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message, messages }),
+        body: JSON.stringify({ messages: allMessages, context }),
         signal: abortRef.current.signal,
       });
 
@@ -60,57 +78,46 @@ export function Chat({ projectId: _projectId, onFragmentGenerated }: ChatProps) 
         throw new Error("Request failed");
       }
 
+      // Accumulate the streamed JSON
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
-      let fullContent = "";
+      let fullText = "";
 
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-
-        const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split("\n");
-
-        for (const line of lines) {
-          if (!line.trim()) continue;
-          // Parse Vercel AI SDK stream format: `0:"text chunk"\n`
-          const match = line.match(/^0:"(.*)"\s*$/);
-          if (match) {
-            try {
-              const text = JSON.parse(`"${match[1]}"`);
-              fullContent += text;
-              setMessages((prev) =>
-                prev.map((m) =>
-                  m.id === assistantMessage.id ? { ...m, content: fullContent } : m
-                )
-              );
-            } catch {
-              // ignore parse errors
-            }
-          }
-        }
+        fullText += decoder.decode(value, { stream: true });
       }
 
-      // Try to detect a fragment in the accumulated content
-      if (onFragmentGenerated) {
-        try {
-          const jsonMatch = fullContent.match(/\{[\s\S]*\}/);
-          if (jsonMatch) {
-            const parsed = FragmentSchema.safeParse(JSON.parse(jsonMatch[0]));
-            if (parsed.success) {
-              onFragmentGenerated(parsed.data);
-            }
-          }
-        } catch {
-          // no fragment found
-        }
+      // Parse the completed FragmentResult
+      const parsed = FragmentSchema.safeParse(JSON.parse(fullText));
+      if (parsed.success) {
+        // Update the building message with success
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === buildingMessage.id
+              ? {
+                  ...m,
+                  content: `Here's your ${parsed.data.title}! ${parsed.data.description} Let me know if you want any changes.`,
+                }
+              : m
+          )
+        );
+
+        onFragmentGenerated?.(parsed.data);
+      } else {
+        throw new Error("Failed to parse generated code");
       }
     } catch (err) {
       if (err instanceof Error && err.name !== "AbortError") {
         setMessages((prev) =>
           prev.map((m) =>
-            m.id === assistantMessage.id
-              ? { ...m, content: "Sorry, something went wrong. Please try again." }
+            m.id === buildingMessage.id
+              ? {
+                  ...m,
+                  content:
+                    "Sorry, something went wrong building your tool. Please try describing it again.",
+                }
               : m
           )
         );
@@ -127,7 +134,15 @@ export function Chat({ projectId: _projectId, onFragmentGenerated }: ChatProps) 
           <ChatMessage key={msg.id} role={msg.role} content={msg.content} />
         ))}
       </div>
-      <ChatInput onSubmit={handleSubmit} isLoading={isLoading} />
+      <ChatInput
+        onSubmit={handleSubmit}
+        isLoading={isLoading}
+        placeholder={
+          currentCode
+            ? "What would you like to change?"
+            : "Describe the therapy tool you want to build..."
+        }
+      />
     </div>
   );
 }

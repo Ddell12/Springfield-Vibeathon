@@ -2,12 +2,6 @@
 
 import { useMediaQuery } from "usehooks-ts";
 
-import {
-  ResizableHandle,
-  ResizablePanel,
-  ResizablePanelGroup,
-} from "@/shared/components/ui/resizable";
-
 type BuilderV2LayoutProps = {
   chatPanel: React.ReactNode;
   previewPanel: React.ReactNode;
@@ -26,14 +20,13 @@ export function BuilderV2Layout({ chatPanel, previewPanel }: BuilderV2LayoutProp
   }
 
   return (
-    <ResizablePanelGroup orientation="horizontal" className="h-full">
-      <ResizablePanel defaultSize={40} minSize={25} maxSize={55}>
+    <div className="flex h-full">
+      <div className="w-[400px] shrink-0 overflow-hidden">
         {chatPanel}
-      </ResizablePanel>
-      <ResizableHandle withHandle />
-      <ResizablePanel defaultSize={60}>
+      </div>
+      <div className="flex-1 overflow-hidden">
         {previewPanel}
-      </ResizablePanel>
-    </ResizablePanelGroup>
+      </div>
+    </div>
   );
 }

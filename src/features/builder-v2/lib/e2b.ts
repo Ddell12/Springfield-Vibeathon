@@ -8,9 +8,7 @@ export interface SandboxResult {
 }
 
 export function getSandboxUrl(host: string, port: number): string {
-  // E2B's getHost(port) already embeds the port in the hostname
-  // We include port in the URL path to distinguish different ports
-  return `https://${host}:${port}`;
+  return `https://${host}`;
 }
 
 export async function createSandbox(fragment: FragmentResult): Promise<SandboxResult> {
@@ -18,11 +16,13 @@ export async function createSandbox(fragment: FragmentResult): Promise<SandboxRe
     timeoutMs: 60_000,
   });
 
+  // Write the generated code to the sandbox
   await sandbox.files.write(fragment.file_path, fragment.code);
 
+  // Install additional dependencies if needed
   if (fragment.has_additional_dependencies && fragment.additional_dependencies?.length) {
     const deps = fragment.additional_dependencies.join(" ");
-    await sandbox.commands?.run(`npm install ${deps}`);
+    await sandbox.commands.run(`npm install ${deps}`, { timeoutMs: 60_000 });
   }
 
   const port = fragment.port ?? 3000;
@@ -39,11 +39,15 @@ export async function executeFragment(
   sandboxId: string,
   fragment: FragmentResult
 ): Promise<SandboxResult> {
-  const sandbox = await Sandbox.create(fragment.template, {
-    timeoutMs: 60_000,
-  });
+  // Reconnect to existing sandbox and update code
+  const sandbox = await Sandbox.connect(sandboxId);
 
   await sandbox.files.write(fragment.file_path, fragment.code);
+
+  if (fragment.has_additional_dependencies && fragment.additional_dependencies?.length) {
+    const deps = fragment.additional_dependencies.join(" ");
+    await sandbox.commands.run(`npm install ${deps}`, { timeoutMs: 60_000 });
+  }
 
   const port = fragment.port ?? 3000;
   const host = sandbox.getHost(port);

@@ -13,7 +13,7 @@ export async function POST(req: Request): Promise<Response> {
   }
 
   const result = streamText({
-    model: anthropic("claude-sonnet-4-5-20251001"),
+    model: anthropic("claude-sonnet-4-20250514"),
     system: getInterviewSystemPrompt(),
     messages,
   });

@@ -214,6 +214,8 @@ Config → component mapper: `src/features/therapy-tools/components/tool-rendere
 - **`convex.config.ts` must be inside `convex/`:** The file must live at `convex/convex.config.ts`, NOT at the project root. If placed at root, the Convex CLI silently ignores it and components (agent, rag, workpool) are never installed — causing "Child component not found" errors at runtime.
 - **`@ai-sdk/google` env var name:** The Google AI SDK expects `GOOGLE_GENERATIVE_AI_API_KEY`, not `GOOGLE_API_KEY`. Set both in Convex env vars if using `@ai-sdk/google` for embeddings.
 - **RAG `rag.search()` needs action context:** `rag.search()` calls the embedding API internally, so it requires `ctx` with `runAction`. Agent tool `execute` functions can use `ctx.runAction(internal.knowledge.search.searchKnowledgeAction, args)` as a wrapper.
+- **`"use node";` is only for `action`/`internalAction`:** Never add `"use node";` to files defining `httpAction`, `query`, or `mutation`. HTTP actions run in the Convex V8 runtime, not Node.js. Adding it causes a 400 "InvalidModules" deploy error.
+- **Convex file names cannot contain hyphens:** Module paths only allow alphanumeric characters, underscores, or periods. Use `snake_case` for all files in `convex/` (e.g., `therapy_seeds.ts` not `therapy-seeds.ts`). Hyphens cause a 400 "InvalidConfig" error on `convex dev`.
 
 ## Convex Backend
 
