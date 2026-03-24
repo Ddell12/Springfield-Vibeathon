@@ -24,8 +24,9 @@
 .DS_Store
 *.pem
 
-# claude code audit log (may contain secrets)
+# claude code
 .claude/command-audit.log
+.claude/worktrees/
 
 # debug
 npm-debug.log*
