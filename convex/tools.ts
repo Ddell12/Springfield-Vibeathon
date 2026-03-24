@@ -95,3 +95,13 @@ export const remove = mutation({
     return null;
   },
 });
+
+export const getByThread = query({
+  args: { threadId: v.string() },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("tools")
+      .withIndex("by_thread", (q) => q.eq("threadId", args.threadId))
+      .collect();
+  },
+});
