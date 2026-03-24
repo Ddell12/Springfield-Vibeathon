@@ -1,5 +1,5 @@
 import { render, screen } from "@testing-library/react";
-import { describe, test, expect, vi } from "vitest";
+import { describe, expect, test, vi } from "vitest";
 
 // Mock convex/react — useQuery is the main seam for this component
 vi.mock("convex/react", () => ({
@@ -49,6 +49,7 @@ vi.mock("motion/react", () => ({
 }));
 
 import * as convexReact from "convex/react";
+
 import { SharedToolPage } from "../shared-tool-page";
 
 const mockTool = {

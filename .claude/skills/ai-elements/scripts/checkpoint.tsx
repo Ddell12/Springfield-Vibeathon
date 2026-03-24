@@ -1,5 +1,8 @@
 "use client";
 
+import { nanoid } from "nanoid";
+import { Fragment, memo, useCallback, useState } from "react";
+
 import {
   Checkpoint,
   CheckpointIcon,
@@ -11,8 +14,6 @@ import {
   MessageContent,
   MessageResponse,
 } from "@/components/ai-elements/message";
-import { nanoid } from "nanoid";
-import { Fragment, memo, useCallback, useState } from "react";
 
 interface MessageType {
   id: string;

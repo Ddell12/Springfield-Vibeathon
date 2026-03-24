@@ -1,5 +1,7 @@
 "use client";
 
+import { FileIcon } from "lucide-react";
+import { useCallback, useState } from "react";
 import type { BundledLanguage } from "shiki";
 
 import {
@@ -15,8 +17,6 @@ import {
   CodeBlockLanguageSelectorValue,
   CodeBlockTitle,
 } from "@/components/ai-elements/code-block";
-import { FileIcon } from "lucide-react";
-import { useCallback, useState } from "react";
 
 const codeExamples = {
   go: {

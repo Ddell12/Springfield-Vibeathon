@@ -1,7 +1,9 @@
 "use client";
 
-import type { QueueMessage, QueueTodo } from "@/components/ai-elements/queue";
+import { ArrowUp, Trash2 } from "lucide-react";
+import { memo, useCallback, useState } from "react";
 
+import type { QueueMessage, QueueTodo } from "@/components/ai-elements/queue";
 import {
   Queue,
   QueueItem,
@@ -19,8 +21,6 @@ import {
   QueueSectionLabel,
   QueueSectionTrigger,
 } from "@/components/ai-elements/queue";
-import { ArrowUp, Trash2 } from "lucide-react";
-import { memo, useCallback, useState } from "react";
 
 const sampleMessages: QueueMessage[] = [
   {

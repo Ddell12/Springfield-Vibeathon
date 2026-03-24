@@ -1,9 +1,10 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, test, expect, vi, beforeEach } from "vitest";
-import { CommunicationBoard } from "../communication-board";
-import type { CommunicationBoardConfig } from "../../types/tool-configs";
 import * as convexReact from "convex/react";
+import { beforeEach,describe, expect, test, vi } from "vitest";
+
+import type { CommunicationBoardConfig } from "../../types/tool-configs";
+import { CommunicationBoard } from "../communication-board";
 
 // Mock use-sound — returns [playFn, { stop, isPlaying }]
 vi.mock("use-sound", () => ({

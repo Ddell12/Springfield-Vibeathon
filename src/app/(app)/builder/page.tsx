@@ -1,13 +1,15 @@
 "use client";
 
-import { useEffect, useRef } from "react";
 import { useMutation, useQuery } from "convex/react";
-import { api } from "../../../../convex/_generated/api";
+import { useEffect, useRef } from "react";
+
 import { BuilderHeader } from "@/features/builder/components/builder-header";
 import { BuilderLayout } from "@/features/builder/components/builder-layout";
 import { BridgesChat } from "@/features/builder/components/chat/bridges-chat";
 import { ToolPreview } from "@/features/builder/components/tool-preview";
 import { useBuilderState } from "@/features/builder/hooks/use-builder-state";
+
+import { api } from "../../../../convex/_generated/api";
 
 export default function BuilderPage() {
   const { threadId, toolId, setThreadId, setToolId, reset } = useBuilderState();

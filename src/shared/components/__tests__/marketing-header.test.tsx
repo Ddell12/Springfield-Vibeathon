@@ -1,4 +1,5 @@
 import { render, screen } from "@testing-library/react";
+
 import { MarketingHeader } from "../marketing-header";
 
 vi.mock("next/link", () => ({

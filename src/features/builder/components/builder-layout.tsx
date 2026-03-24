@@ -1,11 +1,12 @@
 "use client";
 
-import {
-  ResizablePanelGroup,
-  ResizablePanel,
-  ResizableHandle,
-} from "@/shared/components/ui/resizable";
 import { useMediaQuery } from "usehooks-ts";
+
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from "@/shared/components/ui/resizable";
 
 export function BuilderLayout({
   chatPanel,

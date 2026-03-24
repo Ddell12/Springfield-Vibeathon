@@ -11,7 +11,7 @@ export default function AppLayout({
     <div className="flex h-screen overflow-hidden">
       <BuilderSidebar />
       <div className="flex-1 flex flex-col min-w-0">
-        <main className="flex-1 overflow-hidden">{children}</main>
+        <main id="main-content" className="flex-1 overflow-hidden">{children}</main>
       </div>
     </div>
   );

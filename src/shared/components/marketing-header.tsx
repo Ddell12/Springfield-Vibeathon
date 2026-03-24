@@ -1,15 +1,16 @@
 "use client";
 
+import { Menu } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu } from "lucide-react";
+
+import { cn } from "@/core/utils";
 import { Button } from "@/shared/components/ui/button";
 import {
   Sheet,
   SheetContent,
   SheetTrigger,
 } from "@/shared/components/ui/sheet";
-import { cn } from "@/core/utils";
 
 const navLinks = [
   { href: "/builder", label: "Builder" },
@@ -21,7 +22,7 @@ export function MarketingHeader() {
   const pathname = usePathname();
 
   return (
-    <header className="bg-surface sticky top-0 z-50">
+    <header className="bg-surface/80 backdrop-blur-lg sticky top-0 z-50">
       <nav className="flex justify-between items-center w-full px-8 py-4 max-w-7xl mx-auto">
         <div className="flex items-center gap-12">
           <Link

@@ -1,4 +1,5 @@
 import { render, screen } from "@testing-library/react";
+
 import { HeroSection } from "../hero-section";
 
 vi.mock("next/link", () => ({

@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
-import { MaterialIcon } from "@/shared/components/material-icon";
+import { useState } from "react";
+
 import { ShareDialog } from "@/features/sharing/components/share-dialog";
+import { MaterialIcon } from "@/shared/components/material-icon";
 
 type BuilderHeaderProps = {
   toolName?: string;

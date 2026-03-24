@@ -1,8 +1,9 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, test, expect, vi, beforeEach } from "vitest";
-import { MyToolsPage } from "../my-tools-page";
 import type { Id } from "convex/_generated/dataModel";
+import { beforeEach,describe, expect, test, vi } from "vitest";
+
+import { MyToolsPage } from "../my-tools-page";
 
 // Mock convex/react — useQuery returns undefined (loading) by default
 vi.mock("convex/react", () => ({
@@ -38,8 +39,8 @@ vi.mock("@/shared/components/material-icon", () => ({
   ),
 }));
 
-import * as convexReact from "convex/react";
 import { api } from "convex/_generated/api";
+import * as convexReact from "convex/react";
 
 const mockTool = {
   _id: "tool1" as Id<"tools">,

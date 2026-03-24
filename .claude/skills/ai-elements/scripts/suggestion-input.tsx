@@ -1,7 +1,10 @@
 "use client";
 
-import type { PromptInputMessage } from "@/components/ai-elements/prompt-input";
+import { GlobeIcon, MicIcon, PlusIcon, SendIcon } from "lucide-react";
+import { nanoid } from "nanoid";
+import { memo, useCallback, useState } from "react";
 
+import type { PromptInputMessage } from "@/components/ai-elements/prompt-input";
 import {
   PromptInput,
   PromptInputButton,
@@ -16,9 +19,6 @@ import {
   PromptInputTools,
 } from "@/components/ai-elements/prompt-input";
 import { Suggestion, Suggestions } from "@/components/ai-elements/suggestion";
-import { GlobeIcon, MicIcon, PlusIcon, SendIcon } from "lucide-react";
-import { nanoid } from "nanoid";
-import { memo, useCallback, useState } from "react";
 
 const suggestions: { key: string; value: string }[] = [
   { key: nanoid(), value: "What are the latest trends in AI?" },

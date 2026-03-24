@@ -1,6 +1,7 @@
 "use client";
 
 import type { ToolUIPart } from "ai";
+import { nanoid } from "nanoid";
 
 import { CodeBlock } from "@/components/ai-elements/code-block";
 import {
@@ -10,7 +11,6 @@ import {
   ToolInput,
   ToolOutput,
 } from "@/components/ai-elements/tool";
-import { nanoid } from "nanoid";
 
 const toolCall: ToolUIPart = {
   errorText: undefined,

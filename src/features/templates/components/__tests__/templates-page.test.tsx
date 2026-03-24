@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react";
-import { describe, test, expect, vi } from "vitest";
 import { useQuery } from "convex/react";
+import { describe, expect, test, vi } from "vitest";
+
 import { TemplatesPage } from "../templates-page";
 
 vi.mock("convex/react", () => ({
@@ -135,7 +136,7 @@ describe("TemplatesPage", () => {
     ).toBeInTheDocument();
 
     const ctaLink = screen.getByRole("link", {
-      name: /build a custom template/i,
+      name: /create a custom tool/i,
     });
     expect(ctaLink).toHaveAttribute("href", "/builder");
   });

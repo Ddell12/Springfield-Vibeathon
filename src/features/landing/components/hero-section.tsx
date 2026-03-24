@@ -1,4 +1,5 @@
 import Link from "next/link";
+
 import { MaterialIcon } from "@/shared/components/material-icon";
 
 export function HeroSection() {
@@ -25,7 +26,7 @@ export function HeroSection() {
           <div className="flex flex-wrap gap-4 mt-8">
             <Link
               href="/builder"
-              className="bg-primary-gradient text-white px-8 py-3.5 rounded-xl text-lg font-semibold font-headline inline-flex items-center gap-2 transition-all active:scale-95 group"
+              className="bg-primary-gradient text-white px-8 py-3.5 rounded-xl text-lg font-semibold font-headline inline-flex items-center gap-2 transition-all duration-300 active:scale-95 group"
             >
               Start Building — It&apos;s Free
               <MaterialIcon
@@ -36,7 +37,7 @@ export function HeroSection() {
             </Link>
             <Link
               href="/templates"
-              className="bg-surface-container-low text-on-surface px-8 py-3.5 rounded-xl text-lg font-semibold font-headline hover:bg-surface-container-high transition-colors"
+              className="bg-surface-container-low text-on-surface px-8 py-3.5 rounded-xl text-lg font-semibold font-headline hover:bg-surface-container-high transition-colors duration-300"
             >
               View Templates
             </Link>

@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-import swc from '@swc/core';
 import fs from 'node:fs';
 import path from 'node:path';
+
+import swc from '@swc/core';
 
 const HEX_COLOR_REGEX = /#[0-9A-Fa-f]{6}/;
 

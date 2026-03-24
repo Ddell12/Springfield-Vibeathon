@@ -113,3 +113,12 @@ body {
 
 /* assistant-ui 0.12.x: primitives are unstyled, colors applied via Tailwind
    in src/features/builder/components/chat/bridges-chat.tsx */
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

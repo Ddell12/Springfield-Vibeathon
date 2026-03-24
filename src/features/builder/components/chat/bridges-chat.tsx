@@ -1,20 +1,22 @@
 "use client";
 
-import { useCallback, useRef } from "react";
-import { useMutation } from "convex/react";
-import { useUIMessages, type UIMessage } from "@convex-dev/agent/react";
-import { optimisticallySendMessage } from "@convex-dev/agent/react";
 import {
-  useExternalStoreRuntime,
-  AssistantRuntimeProvider,
-  type ThreadMessageLike,
   type AppendMessage,
-  ThreadPrimitive,
+  AssistantRuntimeProvider,
   ComposerPrimitive,
-  MessagePrimitive,
   MessagePartPrimitive,
+  MessagePrimitive,
+  type ThreadMessageLike,
+  ThreadPrimitive,
+  useExternalStoreRuntime,
 } from "@assistant-ui/react";
+import { type UIMessage,useUIMessages } from "@convex-dev/agent/react";
+import { optimisticallySendMessage } from "@convex-dev/agent/react";
+import { useMutation } from "convex/react";
+import { useCallback, useRef } from "react";
+
 import { MaterialIcon } from "@/shared/components/material-icon";
+
 import { api } from "../../../../../convex/_generated/api";
 
 // ---------------------------------------------------------------------------
@@ -179,7 +181,7 @@ function Composer() {
 function Thread() {
   return (
     <ThreadPrimitive.Root className="flex h-full flex-col">
-      <ThreadPrimitive.Viewport className="flex flex-1 flex-col overflow-y-auto">
+      <ThreadPrimitive.Viewport aria-live="polite" className="flex flex-1 flex-col overflow-y-auto">
         <ThreadPrimitive.Empty>
           <WelcomeState />
         </ThreadPrimitive.Empty>

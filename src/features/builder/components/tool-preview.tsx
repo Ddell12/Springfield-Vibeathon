@@ -1,11 +1,13 @@
 "use client";
 
 import { useQuery } from "convex/react";
-import { api } from "../../../../convex/_generated/api";
-import { ToolRenderer } from "@/features/therapy-tools/components/tool-renderer";
-import { Skeleton } from "@/shared/components/ui/skeleton";
-import { MaterialIcon } from "@/shared/components/material-icon";
 import { AnimatePresence, motion } from "motion/react";
+
+import { ToolRenderer } from "@/features/therapy-tools/components/tool-renderer";
+import { MaterialIcon } from "@/shared/components/material-icon";
+import { Skeleton } from "@/shared/components/ui/skeleton";
+
+import { api } from "../../../../convex/_generated/api";
 // NOTE: the "motion" package (v12.x) exports from "motion/react", NOT "framer-motion"
 
 type ToolPreviewProps = {
@@ -77,7 +79,7 @@ export function ToolPreview({ toolId }: ToolPreviewProps) {
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -8 }}
-        transition={{ duration: 0.2 }}
+        transition={{ duration: 0.3 }}
         className="h-full overflow-y-auto bg-surface"
       >
         <div className="bg-surface-container-lowest rounded-3xl p-6 md:p-8 sanctuary-shadow safe-space-container m-4">
