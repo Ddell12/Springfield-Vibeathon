@@ -176,7 +176,7 @@ Config → component mapper: `src/features/therapy-tools/components/tool-rendere
 - Task-specific implementation details (those go in the code or roadmap)
 - Information already in the sharded docs (don't duplicate)
 
-## Gotchas Discovered (Phase 0)
+## Gotchas Discovered (Phase 0–3)
 
 - **Tailwind v4 CSS import order:** `@import url()` for external fonts MUST precede `@import "tailwindcss"` — Tailwind expands into CSS rules, and CSS spec forbids `@import` after rules.
 - **Convex + Next.js prerender:** `ConvexReactClient` throws "not an absolute URL" during SSR/prerender when `NEXT_PUBLIC_CONVEX_URL` isn't set. Fix: defer client creation to `useEffect` (see `src/core/providers.tsx`).
@@ -188,6 +188,9 @@ Config → component mapper: `src/features/therapy-tools/components/tool-rendere
 - **`"use node";` file separation:** Never put `"use node";` in a file that also exports queries or mutations. Actions needing Node.js must be in separate files.
 - **Convex `filter` is banned:** Always use `.withIndex()` instead of `.filter()` in Convex queries.
 - **Convex `ctx.db` not available in actions:** Actions cannot access the database directly — use `ctx.runQuery` or `ctx.runMutation`.
+- **`convex.config.ts` must be inside `convex/`:** The file must live at `convex/convex.config.ts`, NOT at the project root. If placed at root, the Convex CLI silently ignores it and components (agent, rag, workpool) are never installed — causing "Child component not found" errors at runtime.
+- **`@ai-sdk/google` env var name:** The Google AI SDK expects `GOOGLE_GENERATIVE_AI_API_KEY`, not `GOOGLE_API_KEY`. Set both in Convex env vars if using `@ai-sdk/google` for embeddings.
+- **RAG `rag.search()` needs action context:** `rag.search()` calls the embedding API internally, so it requires `ctx` with `runAction`. Agent tool `execute` functions can use `ctx.runAction(internal.knowledge.search.searchKnowledgeAction, args)` as a wrapper.
 
 ## Convex Backend
 
