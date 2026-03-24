@@ -4,7 +4,13 @@ import { describe, expect, it, vi } from "vitest";
 import { ChatMessage } from "../chat-message";
 
 vi.mock("../thinking-state", () => ({
-  ThinkingState: ({ status }: { status: string }) => <div data-testid="thinking-state">{status}</div>,
+  ThinkingState: ({ status, plan }: { status: string; plan?: string }) => (
+    <div data-testid="thinking-state">{status}{plan && <span data-testid="thinking-plan">{plan}</span>}</div>
+  ),
+}));
+
+vi.mock("../design-plan", () => ({
+  DesignPlan: ({ content }: { content: string }) => <div data-testid="design-plan">{content}</div>,
 }));
 
 describe("ChatMessage", () => {
@@ -62,5 +68,45 @@ describe("ChatMessage", () => {
       <ChatMessage role="user" content="Accessible message" />
     );
     expect(container.firstChild).toBeInTheDocument();
+  });
+
+  describe("type-based routing", () => {
+    it('renders ThinkingState for type="thinking"', () => {
+      render(<ChatMessage role="assistant" content="Planning..." type="thinking" />);
+      expect(screen.getByTestId("thinking-state")).toBeInTheDocument();
+      expect(screen.getByText("Thinking...")).toBeInTheDocument();
+      expect(screen.getByTestId("thinking-plan")).toHaveTextContent("Planning...");
+    });
+
+    it('renders ThinkingState for type="building"', () => {
+      render(<ChatMessage role="assistant" content="Building code" type="building" />);
+      expect(screen.getByTestId("thinking-state")).toBeInTheDocument();
+      expect(screen.getByText("Building...")).toBeInTheDocument();
+    });
+
+    it('renders DesignPlan for type="plan"', () => {
+      render(<ChatMessage role="assistant" content="**Design Direction**\n- Blue palette" type="plan" />);
+      expect(screen.getByTestId("design-plan")).toBeInTheDocument();
+      expect(screen.getByTestId("design-plan")).toHaveTextContent("**Design Direction**");
+    });
+
+    it('renders plain text for type="complete"', () => {
+      render(<ChatMessage role="assistant" content="Your tool is ready!" type="complete" />);
+      expect(screen.queryByTestId("thinking-state")).not.toBeInTheDocument();
+      expect(screen.queryByTestId("design-plan")).not.toBeInTheDocument();
+      expect(screen.getByText("Your tool is ready!")).toBeInTheDocument();
+    });
+
+    it('renders plain text for type="text"', () => {
+      render(<ChatMessage role="assistant" content="Hello" type="text" />);
+      expect(screen.queryByTestId("thinking-state")).not.toBeInTheDocument();
+      expect(screen.getByText("Hello")).toBeInTheDocument();
+    });
+
+    it("renders plain text when type is undefined (backwards compat)", () => {
+      render(<ChatMessage role="assistant" content="Welcome" />);
+      expect(screen.queryByTestId("thinking-state")).not.toBeInTheDocument();
+      expect(screen.getByText("Welcome")).toBeInTheDocument();
+    });
   });
 });
