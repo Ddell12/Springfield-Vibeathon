@@ -67,10 +67,11 @@ git commit -m "chore: install Vercel Chat SDK + Discord adapter + Redis state"
 
 - [ ] **Step 1: Write the failing test**
 
-Add to `convex/__tests__/projects.test.ts`:
+Add inside a new `describe` block at the bottom of `convex/__tests__/projects.test.ts` (after the existing `describe("projects CRUD", ...)` block):
 
 ```typescript
-test("projects.setDiscordMetadata patches discord fields", async () => {
+describe("projects Discord integration", () => {
+  test("projects.setDiscordMetadata patches discord fields", async () => {
   const t = convexTest(schema, modules);
 
   const projectId = await t.mutation(api.projects.create, {
@@ -87,7 +88,8 @@ test("projects.setDiscordMetadata patches discord fields", async () => {
   expect(project).not.toBeNull();
   expect(project!.discordUserId).toBe("123456789");
   expect(project!.discordThreadId).toBe("discord:guild:channel:thread");
-});
+  });
+}); // close describe("projects Discord integration")
 ```
 
 - [ ] **Step 2: Run test to verify it fails**
@@ -166,7 +168,7 @@ git commit -m "feat: add Discord metadata fields to projects schema"
 
 - [ ] **Step 1: Write failing tests for `countByDiscordUser`**
 
-Add to `convex/__tests__/projects.test.ts`:
+Add inside the `describe("projects Discord integration", ...)` block in `convex/__tests__/projects.test.ts`:
 
 ```typescript
 test("projects.countByDiscordUser returns count of recent projects", async () => {
@@ -432,6 +434,25 @@ describe("generateFragment", () => {
     ][0];
     expect((call as any).system).toContain("For a 5-year-old with autism");
   });
+
+  test("passes full messages array when provided (web builder path)", () => {
+    const fullHistory = [
+      { role: "user", content: "Build me a token board" },
+      { role: "assistant", content: "Sure, I'll build that" },
+      { role: "user", content: "Make it have 5 stars" },
+    ];
+
+    generateFragment({
+      messages: fullHistory,
+      existingCode: null,
+    });
+
+    expect(streamObject).toHaveBeenCalledWith(
+      expect.objectContaining({
+        messages: fullHistory,
+      })
+    );
+  });
 });
 ```
 
@@ -455,16 +476,32 @@ import { getCodeGenSystemPrompt } from "./prompt";
 import { FragmentSchema } from "./schema";
 
 export interface GenerateFragmentInput {
-  userMessage: string;
+  /** For Discord: single user message. For web: pass null and use `messages` instead. */
+  userMessage?: string;
   existingCode: string | null;
   context?: string;
+  /** For web: pass the full messages array to preserve multi-turn conversation history. */
+  messages?: Array<{ role: string; content: string }>;
 }
 
 export function generateFragment({
   userMessage,
   existingCode,
   context,
+  messages: rawMessages,
 }: GenerateFragmentInput) {
+  // If a full messages array is provided (web builder), use it directly.
+  // This preserves multi-turn conversation history for the web builder.
+  if (rawMessages && rawMessages.length > 0) {
+    return streamObject({
+      model: anthropic("claude-sonnet-4-20250514"),
+      system: getCodeGenSystemPrompt(context),
+      schema: FragmentSchema,
+      messages: rawMessages,
+    });
+  }
+
+  // Otherwise build a single-message array (Discord bot path)
   const messages: Array<{ role: "user"; content: string }> = [];
 
   if (existingCode) {
@@ -473,7 +510,7 @@ export function generateFragment({
       content: `The user already has a working tool. Here is the current code:\n\n${existingCode}\n\nModify it based on this request: ${userMessage}`,
     });
   } else {
-    messages.push({ role: "user", content: userMessage });
+    messages.push({ role: "user", content: userMessage ?? "" });
   }
 
   return streamObject({
@@ -511,10 +548,12 @@ export async function POST(req: Request): Promise<Response> {
     return NextResponse.json({ error: "messages are required" }, { status: 400 });
   }
 
-  const lastUserMsg = messages.filter((m: { role: string }) => m.role === "user").pop();
+  // IMPORTANT: Pass the full messages array to preserve multi-turn conversation
+  // history for the web builder. Do NOT extract just the last message.
   const result = generateFragment({
-    userMessage: lastUserMsg?.content ?? "",
-    existingCode: context ?? null,
+    messages,
+    existingCode: null,
+    context: context ?? undefined,
   });
 
   return result.toTextStreamResponse();
@@ -683,6 +722,14 @@ bot.onNewMention(async (thread, message) => {
 
   await thread.subscribe();
 
+  // Empty message guard
+  if (!message.text || message.text.trim().length === 0) {
+    await thread.post(
+      "Could you describe what kind of tool you'd like? For example: 'A token board with 5 stars for rewarding good behavior'"
+    );
+    return;
+  }
+
   // Rate limit check
   try {
     const count = await convex.query(api.projects.countByDiscordUser, {
@@ -703,9 +750,10 @@ bot.onNewMention(async (thread, message) => {
   // Lock thread
   await redis.set(GENERATING_KEY(thread.id), "true", { EX: 120 });
 
+  let result: ReturnType<typeof generateFragment> | undefined;
   try {
     // Stream generation
-    const result = generateFragment({
+    result = generateFragment({
       userMessage: message.text,
       existingCode: null,
     });
@@ -745,6 +793,20 @@ bot.onNewMention(async (thread, message) => {
     );
   } catch (error) {
     console.error("Discord bot generation error:", error);
+
+    // Try to post the generated code as markdown fallback if we have it
+    try {
+      const fragment = await result?.object;
+      if (fragment?.code) {
+        await thread.post(
+          `I generated the code but couldn't create a live preview. Here's the code:\n\n\`\`\`tsx\n${fragment.code}\n\`\`\`\n\nYou can paste this into the web builder to see it live.`
+        );
+        return;
+      }
+    } catch {
+      // Fragment wasn't available either
+    }
+
     await thread.post(
       "Something went wrong building your tool. Could you try again or rephrase your request?"
     );
@@ -1074,6 +1136,13 @@ git commit -m "fix: integration test fixes from Discord bot E2E testing"
 | `DISCORD_BUILD_CHANNEL_ID` | Discord (right-click channel → Copy ID) | Channel restriction |
 | `REDIS_URL` | Upstash console | Chat SDK state + generation locks |
 | `CRON_SECRET` | `openssl rand -hex 32` | Gateway endpoint auth |
+| `NEXT_PUBLIC_APP_URL` | Your Vercel deployment URL | "Open in Builder" link in embeds |
+
+## Deferred Items (Not in This Plan)
+
+- **Screenshot previews in embeds:** The spec describes capturing sandbox screenshots for embed images. Deferred to a follow-up because it requires either Browserbase (headless browser API), Vercel OG Image, or an E2B screenshot API — each needs its own investigation. For now, embeds use text cards with live links. Users see the actual tool when they click.
+- **`persistent-listener.ts`:** Cross-instance Gateway coordination using Redis pub/sub. Only needed if multiple Vercel instances process the Gateway cron simultaneously. Unlikely on Pro tier with a single cron. Add if duplicate message processing is observed.
+- **Gateway route and webhook route integration tests:** These routes are thin wrappers around Chat SDK's handlers, which are tested by Vercel. Manual E2E testing (Task 11) covers the full flow. Add automated tests if the routes gain custom logic.
 
 ## Docs to Reference During Implementation
 
