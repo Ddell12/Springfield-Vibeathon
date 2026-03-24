@@ -1,7 +1,7 @@
 # Discord Bot via Vercel Chat SDK — Design Spec
 
 **Date:** 2026-03-24
-**Status:** Draft
+**Status:** Draft (reviewed, issues fixed)
 **Author:** Claude + Desha
 
 ## Objective
@@ -86,6 +86,17 @@ const bot = new Chat({
 export { bot };
 ```
 
+### Convex Client Initialization
+
+The bot handlers run server-side in Next.js API routes, so they need `ConvexHttpClient` (not the React client):
+
+```typescript
+import { ConvexHttpClient } from "convex/browser";
+import { api } from "@/convex/_generated/api";
+
+const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
+```
+
 ### New Mention Handler (first message)
 
 ```typescript
@@ -97,7 +108,7 @@ bot.onNewMention(async (thread, message) => {
   await thread.subscribe();
 
   // Rate limit check
-  const count = await convexClient.query(api.projects.countByDiscordUser, {
+  const count = await convex.query(api.projects.countByDiscordUser, {
     discordUserId: message.author.id,
     since: Date.now() - 86400000,
   });
@@ -110,7 +121,7 @@ bot.onNewMention(async (thread, message) => {
   await redis.set(`bridges:generating:${thread.id}`, "true", { ex: 120 });
 
   try {
-    // Stream generation
+    // Stream generation (reuses builder-v2 pipeline)
     const result = await generateFragment({
       userMessage: message.text,
       existingCode: null,
@@ -120,14 +131,21 @@ bot.onNewMention(async (thread, message) => {
     // Create sandbox + screenshot
     const fragment = await result.object;
     const sandbox = await createSandbox(fragment);
-    const screenshot = await takeSandboxScreenshot(sandbox.url);
+    const screenshotUrl = await takeSandboxScreenshot(sandbox.url);
 
-    // Save to Convex
-    const project = await convexClient.mutation(api.projects.create, {
+    // Save to Convex — create project then patch with fragment data
+    const projectId = await convex.mutation(api.projects.create, {
       title: fragment.title,
       description: fragment.description,
+    });
+    await convex.mutation(api.projects.update, {
+      projectId,
       fragment,
       sandboxId: sandbox.id,
+    });
+    // Save Discord metadata
+    await convex.mutation(api.projects.setDiscordMetadata, {
+      projectId,
       discordUserId: message.author.id,
       discordThreadId: thread.id,
     });
@@ -135,14 +153,19 @@ bot.onNewMention(async (thread, message) => {
     // Post final embed
     await thread.post(
       <Card title={fragment.title} subtitle={fragment.description}>
-        <Image url={screenshot} alt="Tool preview" />
+        <Image url={screenshotUrl} alt="Tool preview" />
         <Actions>
           <LinkButton url={sandbox.url}>View Live</LinkButton>
-          <LinkButton url={`https://bridges.app/builder?project=${project._id}`}>
+          <LinkButton url={`${process.env.NEXT_PUBLIC_APP_URL}/builder?project=${projectId}`}>
             Open in Builder
           </LinkButton>
         </Actions>
       </Card>
+    );
+  } catch (error) {
+    console.error("Discord bot generation error:", error);
+    await thread.post(
+      "Something went wrong building your tool. Could you try again or rephrase your request?"
     );
   } finally {
     await redis.del(`bridges:generating:${thread.id}`);
@@ -161,8 +184,8 @@ bot.onSubscribedMessage(async (thread, message) => {
     return;
   }
 
-  // Look up existing project
-  const project = await convexClient.query(api.projects.getByDiscordThread, {
+  // Look up existing project for this thread
+  const project = await convex.query(api.projects.getByDiscordThread, {
     discordThreadId: thread.id,
   });
   if (!project) return;
@@ -173,28 +196,33 @@ bot.onSubscribedMessage(async (thread, message) => {
     // Re-generate with current code as context
     const result = await generateFragment({
       userMessage: message.text,
-      existingCode: project.fragment.code,
+      existingCode: project.fragment?.code ?? null,
     });
     await thread.post(result.fullStream);
 
     // Update sandbox + project
     const fragment = await result.object;
-    await updateSandbox(project.sandboxId, fragment);
-    const screenshot = await takeSandboxScreenshot(sandbox.url);
+    const sandboxUrl = await reconstructSandboxUrl(project.sandboxId, fragment);
+    const screenshotUrl = await takeSandboxScreenshot(sandboxUrl);
 
-    await convexClient.mutation(api.projects.update, {
-      id: project._id,
+    await convex.mutation(api.projects.update, {
+      projectId: project._id,
       fragment,
     });
 
     // Post updated embed
     await thread.post(
       <Card title={fragment.title}>
-        <Image url={screenshot} alt="Updated preview" />
+        <Image url={screenshotUrl} alt="Updated preview" />
         <Actions>
-          <LinkButton url={sandbox.url}>View Live</LinkButton>
+          <LinkButton url={sandboxUrl}>View Live</LinkButton>
         </Actions>
       </Card>
+    );
+  } catch (error) {
+    console.error("Discord bot iteration error:", error);
+    await thread.post(
+      "Something went wrong updating your tool. Could you try again?"
     );
   } finally {
     await redis.del(`bridges:generating:${thread.id}`);
@@ -210,22 +238,64 @@ Extract from `/api/chat/generate/route.ts` into a shared function both the web r
 
 ```typescript
 // src/features/builder-v2/lib/generate.ts (NEW)
-export async function generateFragment({
-  userMessage,
-  existingCode,
-  templateContext,
-}: GenerateInput) {
-  const result = await streamObject({
+import { anthropic } from "@ai-sdk/anthropic";
+import { streamObject } from "ai";
+import { getCodeGenSystemPrompt } from "./prompt";
+import { FragmentSchema } from "./schema";
+
+interface GenerateInput {
+  userMessage: string;
+  existingCode: string | null;
+  context?: string;
+}
+
+export function generateFragment({ userMessage, existingCode, context }: GenerateInput) {
+  // Build messages array to match existing route.ts pattern
+  const messages: Array<{ role: "user"; content: string }> = [];
+
+  if (existingCode) {
+    messages.push({
+      role: "user",
+      content: `The user already has a working tool. Here is the current code:\n\n${existingCode}\n\nModify it based on this request: ${userMessage}`,
+    });
+  } else {
+    messages.push({ role: "user", content: userMessage });
+  }
+
+  return streamObject({
     model: anthropic("claude-sonnet-4-20250514"),
+    system: getCodeGenSystemPrompt(context),
     schema: FragmentSchema,
-    system: getSystemPrompt(),
-    prompt: buildUserPrompt({ userMessage, existingCode, templateContext }),
+    messages,
   });
-  return result;
 }
 ```
 
-The web route (`/api/chat/generate/route.ts`) becomes a thin wrapper that calls `generateFragment()` and returns the stream as a Response.
+The web route (`/api/chat/generate/route.ts`) becomes a thin wrapper:
+
+```typescript
+// src/app/api/chat/generate/route.ts (SIMPLIFIED)
+import { generateFragment } from "@/features/builder-v2/lib/generate";
+
+export async function POST(req: Request): Promise<Response> {
+  const body = await req.json();
+  const messages = body?.messages;
+  const context = body?.context;
+
+  if (!messages || !Array.isArray(messages) || messages.length === 0) {
+    return NextResponse.json({ error: "messages are required" }, { status: 400 });
+  }
+
+  // For web: pass last user message to shared function
+  const lastUserMsg = messages.filter((m: any) => m.role === "user").pop();
+  const result = generateFragment({
+    userMessage: lastUserMsg?.content ?? "",
+    existingCode: context ?? null,
+  });
+
+  return result.toTextStreamResponse();
+}
+```
 
 ### Streaming to Discord
 
@@ -234,6 +304,16 @@ The web route (`/api/chat/generate/route.ts`) becomes a thin wrapper that calls 
 - Built-in markdown healing for incomplete markdown during streaming
 - GFM tables buffered until complete structure arrives
 - `fullStream` preserves step boundaries with automatic paragraph breaks
+
+### Screenshot Implementation
+
+Screenshots require a headless browser to capture the rendered E2B sandbox. Options:
+
+1. **Browserbase** (already available as MCP) — use headless browser API to navigate to sandbox URL and screenshot
+2. **Vercel OG Image** — generate a static preview card image from tool metadata (no live screenshot, but simpler)
+3. **E2B screenshot API** — check if E2B provides a built-in screenshot endpoint for sandboxes
+
+Recommendation: Start with option 2 (metadata-based preview card) for MVP, upgrade to option 1 (Browserbase live screenshot) if preview quality matters for adoption.
 
 ## File Structure
 
@@ -253,12 +333,16 @@ src/
         generate.ts                 # NEW — extracted shared generation function
         schema.ts                   # Existing FragmentSchema
         prompt.ts                   # Existing system prompts
-  lib/
-    bot.tsx                         # NEW — bot definition + event handlers
-    persistent-listener.ts          # NEW — cross-instance Gateway coordination
+    discord/                        # NEW — Discord bot feature slice (VSA)
+      lib/
+        bot.tsx                     # Bot definition + event handlers
+        persistent-listener.ts      # Cross-instance Gateway coordination
+        convex-client.ts            # ConvexHttpClient initialization
 vercel.json                         # Add cron: */9 * * * *
 next.config.ts                      # Add serverExternalPackages: ["discord.js"]
 ```
+
+Note: Bot code lives in `src/features/discord/` per VSA conventions (self-contained feature slice), not `src/lib/`.
 
 ## Schema Changes
 
@@ -267,27 +351,42 @@ next.config.ts                      # Add serverExternalPackages: ["discord.js"]
 ```typescript
 // convex/schema.ts — extend projects table
 projects: defineTable({
-  // ...existing fields...
+  title: v.string(),
+  description: v.optional(v.string()),
+  fragment: v.optional(v.any()),
+  sandboxId: v.optional(v.string()),
+  messages: v.optional(v.any()),
+  shareSlug: v.string(),
+  createdAt: v.number(),
+  updatedAt: v.number(),
+  // NEW: Discord integration fields
   discordUserId: v.optional(v.string()),
   discordThreadId: v.optional(v.string()),
-}).index("by_discord_user", ["discordUserId", "createdAt"])
-  .index("by_discord_thread", ["discordThreadId"])
+})
+  .index("by_shareSlug", ["shareSlug"])
+  .index("by_createdAt", ["createdAt"])
+  // NEW: Discord indexes
+  .index("by_discordUserId", ["discordUserId", "createdAt"])
+  .index("by_discordThreadId", ["discordThreadId"])
 ```
 
-### New Convex Queries
+Index names follow existing convention: `by_shareSlug`, `by_createdAt` → `by_discordUserId`, `by_discordThreadId`.
+
+### New Convex Functions
 
 ```typescript
-// convex/projects.ts — new queries
+// convex/projects.ts — new queries + mutation
+
 export const countByDiscordUser = query({
   args: { discordUserId: v.string(), since: v.number() },
   handler: async (ctx, args) => {
     const projects = await ctx.db
       .query("projects")
-      .withIndex("by_discord_user", (q) =>
-        q.eq("discordUserId", args.discordUserId)
+      .withIndex("by_discordUserId", (q) =>
+        q.eq("discordUserId", args.discordUserId).gte("createdAt", args.since)
       )
-      .collect();
-    return projects.filter((p) => p.createdAt >= args.since).length;
+      .take(6); // Short-circuit: only need to know if >= 5
+    return projects.length;
   },
 });
 
@@ -296,13 +395,29 @@ export const getByDiscordThread = query({
   handler: async (ctx, args) => {
     return await ctx.db
       .query("projects")
-      .withIndex("by_discord_thread", (q) =>
+      .withIndex("by_discordThreadId", (q) =>
         q.eq("discordThreadId", args.discordThreadId)
       )
       .first();
   },
 });
+
+export const setDiscordMetadata = mutation({
+  args: {
+    projectId: v.id("projects"),
+    discordUserId: v.string(),
+    discordThreadId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.projectId, {
+      discordUserId: args.discordUserId,
+      discordThreadId: args.discordThreadId,
+    });
+  },
+});
 ```
+
+Note: `countByDiscordUser` uses the compound index `["discordUserId", "createdAt"]` with `.gte("createdAt", args.since)` to avoid loading all historical projects, and `.take(6)` to short-circuit once the rate limit is known to be exceeded.
 
 ## Infrastructure
 
@@ -324,6 +439,7 @@ CRON_SECRET=                     # random string
 # Existing (already configured)
 ANTHROPIC_API_KEY=
 E2B_API_KEY=
+NEXT_PUBLIC_CONVEX_URL=
 ```
 
 ### Vercel Configuration
@@ -341,8 +457,9 @@ E2B_API_KEY=
 ```
 
 ```typescript
-// next.config.ts
-const nextConfig = {
+// next.config.ts — discord.js is a transitive dependency of @chat-adapter/discord
+// and must be externalized for serverless builds
+const nextConfig: NextConfig = {
   serverExternalPackages: ["discord.js"],
 };
 ```
@@ -352,9 +469,9 @@ const nextConfig = {
 ```typescript
 // src/app/api/discord/gateway/route.ts
 import { after } from "next/server";
-import { bot } from "@/lib/bot";
+import { bot } from "@/features/discord/lib/bot";
 
-export const maxDuration = 800;
+export const maxDuration = 300; // Vercel Pro max (5 minutes)
 
 export async function GET(request: Request): Promise<Response> {
   const cronSecret = process.env.CRON_SECRET;
@@ -363,7 +480,8 @@ export async function GET(request: Request): Promise<Response> {
   const authHeader = request.headers.get("authorization");
   if (authHeader !== `Bearer ${cronSecret}`) return new Response("Unauthorized", { status: 401 });
 
-  const durationMs = 600_000;
+  // Run for 4.5 minutes (leaves 30s buffer before maxDuration)
+  const durationMs = 270_000;
   const webhookUrl = `https://${process.env.VERCEL_URL}/api/webhooks/discord`;
 
   await bot.initialize();
@@ -377,12 +495,26 @@ export async function GET(request: Request): Promise<Response> {
 }
 ```
 
+**Important: Vercel Pro `maxDuration` caps at 300 seconds.** The Chat SDK docs show 800s which requires Enterprise. For Pro, we run the Gateway for 270s (4.5 min) with a 30s buffer, and the cron fires every 4 minutes (`*/4 * * * *`) to maintain overlap:
+
+```json
+// vercel.json (adjusted for Pro tier)
+{
+  "crons": [
+    {
+      "path": "/api/discord/gateway",
+      "schedule": "*/4 * * * *"
+    }
+  ]
+}
+```
+
 ### Webhook Route
 
 ```typescript
 // src/app/api/webhooks/[platform]/route.ts
 import { after } from "next/server";
-import { bot } from "@/lib/bot";
+import { bot } from "@/features/discord/lib/bot";
 
 type Platform = keyof typeof bot.webhooks;
 
@@ -403,7 +535,7 @@ export async function POST(
 npm install chat @chat-adapter/discord @chat-adapter/state-redis redis
 ```
 
-Note: `ai` and `@ai-sdk/anthropic` are already installed.
+Note: `ai` (^6.0.137) and `@ai-sdk/anthropic` are already installed. `discord.js` is a transitive dependency of `@chat-adapter/discord`.
 
 ### Cost
 
@@ -411,16 +543,17 @@ Note: `ai` and `@ai-sdk/anthropic` are already installed.
 |---------|------|-------|
 | Discord Bot | Free | No cost for bot applications |
 | Upstash Redis | Free | Free tier: 10K commands/day |
-| Vercel Pro | $20/mo | Required for maxDuration 800 + cron frequency |
+| Vercel Pro | $20/mo | Required for maxDuration 300 + cron frequency |
 | Claude API | ~$0.01-0.05/gen | Same as web builder |
 | E2B Sandbox | ~$0.005/min | Same as web builder |
 
 ## Rate Limiting
 
-- **5 builds per day per Discord user** — tracked via `countByDiscordUser` query
+- **5 builds per day per Discord user** — tracked via `countByDiscordUser` query using compound index
 - Only initial builds count; iterative edits in the same thread are free
 - Rate limit check happens before generation starts
 - If exceeded: friendly message suggesting they iterate on existing tools
+- Note: Discord user IDs are stable but a user could create multiple accounts to bypass. Acceptable for MVP.
 
 ## Error Handling
 
@@ -432,7 +565,7 @@ Note: `ai` and `@ai-sdk/anthropic` are already installed.
 | Empty/unclear message | "Could you describe what kind of tool you'd like? For example: 'A token board with 5 stars for rewarding good behavior'" |
 | Mentioned outside #build-tools | Ignore silently |
 | Discord API rate limit (429) | Chat SDK handles retry/backoff automatically |
-| Gateway disconnects | Cron restarts within 9 minutes |
+| Gateway disconnects | Cron restarts within 4 minutes |
 | StreamObject invalid schema | "I had trouble creating that tool. Could you try describing it differently?" |
 | Screenshot fails | Post embed without image, still include live URL |
 | Message during active generation | "Still working on your last request — hold tight!" |
@@ -440,16 +573,38 @@ Note: `ai` and `@ai-sdk/anthropic` are already installed.
 ## Edge Cases
 
 ### Concurrent Messages
-Redis-based generation lock per thread (`bridges:generating:{threadId}`) with 2-minute TTL. Messages arriving during generation get a "still working" response.
+Redis-based generation lock per thread (`bridges:generating:{threadId}`) with 2-minute TTL as safety net. Messages arriving during generation get a "still working" response. If generation crashes without cleanup, TTL auto-expires the lock.
 
 ### Stale Threads
-Threads auto-archive after 24 hours. If user unarchives and sends a new message, `onSubscribedMessage` fires. Check if E2B sandbox is still alive — if expired, create new sandbox from saved fragment in Convex.
+Threads auto-archive after 24 hours. If user unarchives and sends a new message, `onSubscribedMessage` fires. Check if E2B sandbox is still alive — if expired, create new sandbox from saved fragment in Convex. The FragmentResult (code) persists; only the sandbox is ephemeral.
 
 ### Collaborative Building
 Multiple users can contribute in the same thread. Project stays linked to original creator via `discordUserId`. All users can suggest edits — this is a feature, not a bug (matches how therapy teams collaborate).
 
 ### Bot Mentioned in Foreign Thread
 Check parent channel ID in `onNewMention`. If not `#build-tools`, ignore.
+
+### Gateway Graceful Shutdown
+If a generation is in-flight when the Gateway function times out, the Redis lock TTL (2 min) ensures cleanup. The next cron invocation starts a fresh listener. Partial state in the Discord thread (streaming message mid-edit) is handled by the SDK's cleanup.
+
+## Testing Strategy
+
+### Unit Tests
+- `generateFragment()` — mock `streamObject`, verify messages array construction for new vs iterative builds
+- `countByDiscordUser` — test with `convex-test` mock runtime, verify index query + `.take(6)` behavior
+- `getByDiscordThread` — test lookup returns correct project
+- `setDiscordMetadata` — test patches correct fields
+
+### Integration Tests
+- Webhook route — mock Chat SDK's webhook handler, verify POST routing
+- Gateway route — verify auth check, CRON_SECRET validation
+
+### Manual Testing
+- Create Discord test server with bot invited
+- Verify: mention → thread creation → streaming → embed with link
+- Verify: follow-up message in thread → iterative update
+- Verify: rate limit at 5 builds
+- Verify: mention outside #build-tools is ignored
 
 ## Future Enhancements (Out of Scope)
 
@@ -481,7 +636,7 @@ Check parent channel ID in `onNewMention`. If not `#build-tools`, ignore.
 
 ## Discord Developer Portal Settings
 
-- **Message Content Intent:** Enabled (required)
+- **Message Content Intent:** Enabled (required — without this, bot receives empty message bodies)
 - **Server Members Intent:** Enabled
 - **Interactions Endpoint URL:** `https://{domain}/api/webhooks/discord`
 - **OAuth2 Scopes:** `bot`, `applications.commands`
