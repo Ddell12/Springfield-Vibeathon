@@ -2,29 +2,23 @@
 
 import { ConvexProvider, ConvexReactClient } from "convex/react";
 import { ThemeProvider } from "next-themes";
-import { ReactNode, useEffect, useState } from "react";
+import { ReactNode, useMemo } from "react";
+
+// NEXT_PUBLIC_ vars are inlined at build time by Next.js, so this is safe
+// to read at module level on both server and client.
+const CONVEX_URL = process.env.NEXT_PUBLIC_CONVEX_URL!;
 
 export function Providers({ children }: { children: ReactNode }) {
-  // Defer Convex client creation to the browser to avoid "not an absolute URL"
-  // errors during static prerendering when NEXT_PUBLIC_CONVEX_URL is not set.
-  const [convex, setConvex] = useState<ConvexReactClient | null>(null);
+  // Create client once per component lifetime. useMemo (not useState+useEffect)
+  // ensures the ConvexProvider wraps children on the very first client render,
+  // which is required by hooks like useMutation/useQuery in child components.
+  const convex = useMemo(() => new ConvexReactClient(CONVEX_URL), []);
 
-  useEffect(() => {
-    const url = process.env.NEXT_PUBLIC_CONVEX_URL;
-    if (url) {
-      setConvex(new ConvexReactClient(url));
-    }
-  }, []);
-
-  const themed = (
-    <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
-      {children}
-    </ThemeProvider>
+  return (
+    <ConvexProvider client={convex}>
+      <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
+        {children}
+      </ThemeProvider>
+    </ConvexProvider>
   );
-
-  if (!convex) {
-    return themed;
-  }
-
-  return <ConvexProvider client={convex}>{themed}</ConvexProvider>;
 }

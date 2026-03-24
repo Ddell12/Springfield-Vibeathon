@@ -27,11 +27,11 @@ export function BuilderLayout({
 
   return (
     <ResizablePanelGroup orientation="horizontal" className="h-[calc(100vh-64px)]">
-      <ResizablePanel defaultSize={35} minSize={25} maxSize={50}>
+      <ResizablePanel defaultSize="35%" minSize="25%" maxSize="50%">
         {chatPanel}
       </ResizablePanel>
       <ResizableHandle withHandle />
-      <ResizablePanel defaultSize={65}>
+      <ResizablePanel defaultSize="65%">
         {previewPanel}
       </ResizablePanel>
     </ResizablePanelGroup>
