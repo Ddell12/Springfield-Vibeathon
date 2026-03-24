@@ -96,9 +96,8 @@ export function PromptHome({ onSubmit }: PromptHomeProps) {
             className={cn(
               "w-full resize-none bg-transparent px-3 pt-3 pb-1",
               "text-[15px] text-foreground placeholder:text-muted",
-              "focus:outline-none leading-relaxed font-body"
+              "focus:outline-none leading-relaxed font-body min-h-[100px]"
             )}
-            style={{ minHeight: "100px" }}
             value={value}
             onChange={(e) => setValue(e.target.value)}
             onKeyDown={handleKeyDown}
