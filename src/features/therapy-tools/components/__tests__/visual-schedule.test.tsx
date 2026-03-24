@@ -1,14 +1,16 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, act } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, test, expect, vi } from "vitest";
 import { VisualSchedule } from "../visual-schedule";
 import type { VisualScheduleConfig } from "../../types/tool-configs";
 
-// Mock dnd-kit to avoid drag-drop setup complexity in jsdom
+// Mock dnd-kit — capture onDragEnd so we can test reorder logic
+let capturedOnDragEnd: ((event: any) => void) | undefined;
 vi.mock("@dnd-kit/react", () => ({
-  DragDropProvider: ({ children }: { children: React.ReactNode }) => (
-    <div>{children}</div>
-  ),
+  DragDropProvider: ({ children, onDragEnd }: { children: React.ReactNode; onDragEnd?: (event: any) => void }) => {
+    capturedOnDragEnd = onDragEnd;
+    return <div>{children}</div>;
+  },
 }));
 
 vi.mock("@dnd-kit/react/sortable", () => ({
@@ -119,5 +121,63 @@ describe("VisualSchedule", () => {
 
     // Should not crash
     expect(() => render(<VisualSchedule config={emptyConfig} />)).not.toThrow();
+  });
+
+  test("reorders steps on drag end", () => {
+    render(<VisualSchedule config={mockScheduleConfig} />);
+
+    // First step should be "Wake Up"
+    const buttons = screen.getAllByRole("button");
+    expect(buttons[0]).toHaveTextContent("Wake Up");
+
+    // Simulate drag from index 0 to index 2
+    act(() => {
+      capturedOnDragEnd?.({
+        operation: {
+          source: { sortable: { index: 0 } },
+          target: { sortable: { index: 2 } },
+        },
+      });
+    });
+
+    // After reorder: Brush Teeth, Get Dressed, Wake Up, ...
+    const reorderedButtons = screen.getAllByRole("button");
+    expect(reorderedButtons[0]).toHaveTextContent("Brush Teeth");
+    expect(reorderedButtons[2]).toHaveTextContent("Wake Up");
+  });
+
+  test("drag end with same source and target does nothing", () => {
+    render(<VisualSchedule config={mockScheduleConfig} />);
+
+    act(() => {
+      capturedOnDragEnd?.({
+        operation: {
+          source: { sortable: { index: 1 } },
+          target: { sortable: { index: 1 } },
+        },
+      });
+    });
+
+    // Order unchanged
+    const buttons = screen.getAllByRole("button");
+    expect(buttons[0]).toHaveTextContent("Wake Up");
+    expect(buttons[1]).toHaveTextContent("Brush Teeth");
+  });
+
+  test("drag end with missing indices does nothing", () => {
+    render(<VisualSchedule config={mockScheduleConfig} />);
+
+    act(() => {
+      capturedOnDragEnd?.({
+        operation: {
+          source: {},
+          target: { sortable: { index: 2 } },
+        },
+      });
+    });
+
+    // Order unchanged
+    const buttons = screen.getAllByRole("button");
+    expect(buttons[0]).toHaveTextContent("Wake Up");
   });
 });

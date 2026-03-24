@@ -135,4 +135,93 @@ describe("tools CRUD", () => {
     const after = await t.query(api.tools.get, { toolId });
     expect(after).toBeNull();
   });
+
+  test("tools.getByThread returns empty array for unknown threadId", async () => {
+    const t = convexTest(schema, modules);
+
+    const tools = await t.query(api.tools.getByThread, {
+      threadId: "nonexistent-thread-id",
+    });
+    expect(tools).toEqual([]);
+  });
+
+  test("tools.getByThread returns tools matching the threadId", async () => {
+    const t = convexTest(schema, modules);
+
+    const threadId = "thread-abc-123";
+
+    await t.mutation(api.tools.create, {
+      title: "Schedule A",
+      description: "First tool in thread",
+      toolType: "visual-schedule",
+      config: { steps: ["step 1"] },
+      threadId,
+    });
+
+    await t.mutation(api.tools.create, {
+      title: "Board B",
+      description: "Second tool in thread",
+      toolType: "token-board",
+      config: { maxTokens: 3 },
+      threadId,
+    });
+
+    const tools = await t.query(api.tools.getByThread, { threadId });
+    expect(tools).toHaveLength(2);
+    expect(tools.map((t: any) => t.title).sort()).toEqual([
+      "Board B",
+      "Schedule A",
+    ]);
+    tools.forEach((tool: any) => {
+      expect(tool.threadId).toBe(threadId);
+    });
+  });
+
+  test("tools.getByThread excludes tools from other threads", async () => {
+    const t = convexTest(schema, modules);
+
+    const threadA = "thread-aaa";
+    const threadB = "thread-bbb";
+
+    await t.mutation(api.tools.create, {
+      title: "Tool in Thread A",
+      description: "Belongs to thread A",
+      toolType: "choice-board",
+      config: {},
+      threadId: threadA,
+    });
+
+    await t.mutation(api.tools.create, {
+      title: "Tool in Thread B",
+      description: "Belongs to thread B",
+      toolType: "first-then-board",
+      config: {},
+      threadId: threadB,
+    });
+
+    const toolsA = await t.query(api.tools.getByThread, { threadId: threadA });
+    expect(toolsA).toHaveLength(1);
+    expect(toolsA[0].title).toBe("Tool in Thread A");
+
+    const toolsB = await t.query(api.tools.getByThread, { threadId: threadB });
+    expect(toolsB).toHaveLength(1);
+    expect(toolsB[0].title).toBe("Tool in Thread B");
+  });
+
+  test("tools.create with isTemplate: true stores the flag correctly", async () => {
+    const t = convexTest(schema, modules);
+
+    const toolId = await t.mutation(api.tools.create, {
+      title: "Morning Routine Template",
+      description: "A reusable template for morning routines",
+      toolType: "visual-schedule",
+      config: { steps: ["wake up", "brush teeth", "get dressed"] },
+      isTemplate: true,
+    });
+
+    const tool = await t.query(api.tools.get, { toolId });
+    expect(tool).not.toBeNull();
+    expect(tool!.isTemplate).toBe(true);
+    expect(tool!.title).toBe("Morning Routine Template");
+  });
 });

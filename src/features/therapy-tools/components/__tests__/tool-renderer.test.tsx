@@ -1,6 +1,11 @@
 import { render, screen } from "@testing-library/react";
 import { describe, test, expect, vi } from "vitest";
-import { ToolRenderer } from "../tool-renderer";
+import {
+  ToolRenderer,
+  LazyVisualSchedule,
+  LazyTokenBoard,
+  LazyCommunicationBoard,
+} from "../tool-renderer";
 
 // Mock the tool components as simple divs that render the config title.
 // This avoids async Suspense complexity and isolates the renderer's routing logic.
@@ -123,5 +128,34 @@ describe("ToolRenderer", () => {
     render(<ToolRenderer config={null} />);
 
     expect(screen.getByText(/couldn't be displayed/i)).toBeInTheDocument();
+  });
+
+  test("lazy exports are valid React.lazy components", async () => {
+    const { Suspense } = await import("react");
+
+    // Render each lazy component inside Suspense to trigger the factory function
+    const { unmount: u1 } = render(
+      <Suspense fallback={<div>loading</div>}>
+        <LazyVisualSchedule config={{ type: "visual-schedule", title: "T", steps: [], orientation: "vertical", showCheckmarks: true, theme: "default" }} />
+      </Suspense>,
+    );
+    expect(await screen.findByTestId("visual-schedule")).toBeInTheDocument();
+    u1();
+
+    const { unmount: u2 } = render(
+      <Suspense fallback={<div>loading</div>}>
+        <LazyTokenBoard config={{ type: "token-board", title: "T", totalTokens: 5, earnedTokens: 0, tokenIcon: "star", reinforcers: [], celebrationAnimation: false }} />
+      </Suspense>,
+    );
+    expect(await screen.findByTestId("token-board")).toBeInTheDocument();
+    u2();
+
+    const { unmount: u3 } = render(
+      <Suspense fallback={<div>loading</div>}>
+        <LazyCommunicationBoard config={{ type: "communication-board", title: "T", sentenceStarter: "I want", cards: [], enableTTS: false, voiceId: "v", columns: 3 }} />
+      </Suspense>,
+    );
+    expect(await screen.findByTestId("communication-board")).toBeInTheDocument();
+    u3();
   });
 });

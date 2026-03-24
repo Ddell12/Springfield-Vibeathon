@@ -1,0 +1,79 @@
+import { render, screen } from "@testing-library/react";
+import { Header } from "../header";
+
+vi.mock("next/link", () => ({
+  default: ({ children, href, ...rest }: any) => (
+    <a href={href} {...rest}>
+      {children}
+    </a>
+  ),
+}));
+
+vi.mock("next/navigation", () => ({
+  usePathname: () => "/builder",
+}));
+
+vi.mock("@/shared/components/ui/button", () => ({
+  Button: ({ children, asChild, className, ...rest }: any) => (
+    <div className={className} data-testid="button" {...rest}>
+      {children}
+    </div>
+  ),
+}));
+
+vi.mock("@/shared/components/ui/sheet", () => ({
+  Sheet: ({ children }: any) => <div data-testid="sheet">{children}</div>,
+  SheetTrigger: ({ children }: any) => <div data-testid="sheet-trigger">{children}</div>,
+  SheetContent: ({ children }: any) => <div data-testid="sheet-content">{children}</div>,
+}));
+
+vi.mock("lucide-react", () => ({
+  Menu: (props: any) => <svg data-testid="menu-icon" {...props} />,
+}));
+
+describe("Header", () => {
+  it("renders the brand name as a link to home", () => {
+    render(<Header />);
+    const brand = screen.getByText("Bridges");
+    expect(brand).toBeInTheDocument();
+    expect(brand.closest("a")).toHaveAttribute("href", "/");
+  });
+
+  it("renders all navigation links", () => {
+    render(<Header />);
+    expect(screen.getAllByText("Builder").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("Templates").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("My Tools").length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("applies active styling to the current path link", () => {
+    render(<Header />);
+    // The Builder links (desktop + mobile) should have the active class
+    const buttons = screen.getAllByTestId("button");
+    const builderButtons = buttons.filter((btn) =>
+      btn.textContent === "Builder"
+    );
+    expect(builderButtons.length).toBeGreaterThanOrEqual(1);
+    builderButtons.forEach((btn) => {
+      expect(btn.className).toContain("text-primary");
+      expect(btn.className).toContain("bg-primary/10");
+    });
+  });
+
+  it("does not apply active styling to non-current links", () => {
+    render(<Header />);
+    const buttons = screen.getAllByTestId("button");
+    const templatesButtons = buttons.filter(
+      (btn) => btn.textContent === "Templates"
+    );
+    expect(templatesButtons.length).toBeGreaterThanOrEqual(1);
+    templatesButtons.forEach((btn) => {
+      expect(btn.className).not.toContain("bg-primary/10");
+    });
+  });
+
+  it("renders a mobile menu trigger", () => {
+    render(<Header />);
+    expect(screen.getByTestId("menu-icon")).toBeInTheDocument();
+  });
+});
