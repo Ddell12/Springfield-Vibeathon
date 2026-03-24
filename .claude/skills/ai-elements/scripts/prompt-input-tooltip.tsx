@@ -1,5 +1,7 @@
 "use client";
 
+import { GlobeIcon, MicIcon, PaperclipIcon } from "lucide-react";
+
 import {
   PromptInput,
   PromptInputBody,
@@ -9,7 +11,6 @@ import {
   PromptInputTextarea,
   PromptInputTools,
 } from "@/components/ai-elements/prompt-input";
-import { GlobeIcon, MicIcon, PaperclipIcon } from "lucide-react";
 
 const handleSubmit = () => {
   // Handle submit

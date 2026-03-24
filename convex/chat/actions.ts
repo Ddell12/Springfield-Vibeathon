@@ -2,8 +2,9 @@
 // convex/chat/actions.ts
 // Node.js runtime — required for @ai-sdk/anthropic used inside bridgesAgent.streamText
 
-import { internalAction } from "../_generated/server";
 import { v } from "convex/values";
+
+import { internalAction } from "../_generated/server";
 import { bridgesAgent } from "../agents/bridges";
 
 // streamAsync — internal action that runs the agent's streamText and persists stream deltas

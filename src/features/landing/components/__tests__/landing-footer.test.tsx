@@ -1,4 +1,5 @@
 import { render, screen } from "@testing-library/react";
+
 import { LandingFooter } from "../landing-footer";
 
 vi.mock("next/link", () => ({

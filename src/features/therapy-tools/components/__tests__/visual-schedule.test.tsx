@@ -1,8 +1,9 @@
-import { render, screen, act } from "@testing-library/react";
+import { act,render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, test, expect, vi } from "vitest";
-import { VisualSchedule } from "../visual-schedule";
+import { describe, expect, test, vi } from "vitest";
+
 import type { VisualScheduleConfig } from "../../types/tool-configs";
+import { VisualSchedule } from "../visual-schedule";
 
 // Mock dnd-kit — capture onDragEnd so we can test reorder logic
 let capturedOnDragEnd: ((event: any) => void) | undefined;

@@ -1,4 +1,5 @@
 import { render, screen } from "@testing-library/react";
+
 import { HowItWorks } from "../how-it-works";
 
 vi.mock("@/shared/components/material-icon", () => ({

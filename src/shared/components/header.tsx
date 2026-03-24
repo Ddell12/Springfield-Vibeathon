@@ -1,16 +1,17 @@
 "use client";
 
+import { Menu } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu } from "lucide-react";
+
+import { APP_NAME } from "@/core/config";
+import { cn } from "@/core/utils";
 import { Button } from "@/shared/components/ui/button";
 import {
   Sheet,
   SheetContent,
   SheetTrigger,
 } from "@/shared/components/ui/sheet";
-import { cn } from "@/core/utils";
-import { APP_NAME } from "@/core/config";
 
 const navLinks = [
   { href: "/builder", label: "Builder" },

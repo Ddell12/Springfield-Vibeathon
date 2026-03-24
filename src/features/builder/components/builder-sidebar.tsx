@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { MaterialIcon } from "@/shared/components/material-icon";
+
 import { cn } from "@/core/utils";
+import { MaterialIcon } from "@/shared/components/material-icon";
 
 const navItems = [
   { href: "/builder", label: "Builder", icon: "construction" },

@@ -1,4 +1,5 @@
 import Link from "next/link";
+
 import { MaterialIcon } from "@/shared/components/material-icon";
 import { TypeBadge } from "@/shared/components/type-badge";
 

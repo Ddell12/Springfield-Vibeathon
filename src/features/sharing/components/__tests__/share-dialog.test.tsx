@@ -1,6 +1,7 @@
-import { render, screen, waitFor, fireEvent } from "@testing-library/react";
+import { fireEvent,render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, test, expect, vi, beforeEach } from "vitest";
+import { beforeEach,describe, expect, test, vi } from "vitest";
+
 import { ShareDialog } from "../share-dialog";
 
 // Mock react-qr-code to avoid canvas/SVG rendering complexity in jsdom

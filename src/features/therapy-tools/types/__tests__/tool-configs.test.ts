@@ -1,8 +1,8 @@
 import {
-  VisualScheduleSchema,
-  TokenBoardSchema,
   CommunicationBoardSchema,
+  TokenBoardSchema,
   ToolConfigSchema,
+  VisualScheduleSchema,
 } from "../tool-configs";
 
 const validVisualSchedule = {

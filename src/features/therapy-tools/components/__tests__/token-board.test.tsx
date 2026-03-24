@@ -1,8 +1,9 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, test, expect } from "vitest";
-import { TokenBoard } from "../token-board";
+import { describe, expect,test } from "vitest";
+
 import type { TokenBoardConfig } from "../../types/tool-configs";
+import { TokenBoard } from "../token-board";
 
 // motion/react produces real DOM in jsdom — no mock needed.
 // The zustand store is used internally by the component — let it work naturally.

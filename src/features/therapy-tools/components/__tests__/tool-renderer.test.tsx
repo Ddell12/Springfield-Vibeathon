@@ -1,10 +1,11 @@
 import { render, screen } from "@testing-library/react";
-import { describe, test, expect, vi } from "vitest";
+import { describe, expect, test, vi } from "vitest";
+
 import {
-  ToolRenderer,
-  LazyVisualSchedule,
-  LazyTokenBoard,
   LazyCommunicationBoard,
+  LazyTokenBoard,
+  LazyVisualSchedule,
+  ToolRenderer,
 } from "../tool-renderer";
 
 // Mock the tool components as simple divs that render the config title.

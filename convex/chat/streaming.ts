@@ -2,11 +2,12 @@
 // Queries and mutations for chat streaming — NO "use node;" (V8 runtime)
 // The streamAsync internalAction lives in convex/chat/actions.ts (Node.js runtime)
 
-import { mutation, query } from "../_generated/server";
-import { internal, components } from "../_generated/api";
 import { listUIMessages, syncStreams, vStreamArgs } from "@convex-dev/agent";
 import { paginationOptsValidator } from "convex/server";
 import { v } from "convex/values";
+
+import { components,internal } from "../_generated/api";
+import { mutation, query } from "../_generated/server";
 import { bridgesAgent } from "../agents/bridges";
 
 // 1. initiateStreaming — saves the user message and schedules the async stream

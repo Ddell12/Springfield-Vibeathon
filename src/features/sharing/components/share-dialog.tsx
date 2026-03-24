@@ -2,15 +2,16 @@
 
 import QRCode from "react-qr-code";
 import { toast } from "sonner";
+
+import { MaterialIcon } from "@/shared/components/material-icon";
+import { Button } from "@/shared/components/ui/button";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/shared/components/ui/dialog";
-import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
-import { MaterialIcon } from "@/shared/components/material-icon";
 
 type ShareDialogProps = {
   open: boolean;

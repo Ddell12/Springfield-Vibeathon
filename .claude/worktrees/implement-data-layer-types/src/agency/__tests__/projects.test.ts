@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach,describe, expect, it, vi } from "vitest";
 
 const mockAgency = vi.hoisted(() => ({
   listClients: vi.fn(),
@@ -24,11 +24,11 @@ vi.mock("../../core/logger.js", () => ({
 }));
 
 import {
+  createProject,
   listProjects,
   listProjectsByClient,
-  createProject,
-  updateProject,
   removeProject,
+  updateProject,
 } from "../projects.js";
 
 const mockProject = {

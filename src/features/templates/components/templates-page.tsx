@@ -67,21 +67,37 @@ export function TemplatesPage() {
       </section>
 
       {/* Template Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {isLoading
-          ? Array.from({ length: 6 }).map((_, i) => (
-              <Skeleton key={i} className="h-48 rounded-xl" />
-            ))
-          : (filteredTemplates as Doc<"tools">[]).map((template) => (
-              <ToolCard
-                key={template._id}
-                title={template.title}
-                toolType={template.toolType}
-                description={template.description}
-                variant="template"
-              />
-            ))}
-      </div>
+      {isLoading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Skeleton key={i} className="h-48 rounded-xl" />
+          ))}
+        </div>
+      ) : !isLoading && (filteredTemplates as Doc<"tools">[]).length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-24 text-center gap-4">
+          <p className="text-on-surface-variant text-lg font-medium">
+            No templates found for this category.
+          </p>
+          <Link
+            href="/builder"
+            className="text-primary font-semibold hover:underline"
+          >
+            Build your own tool
+          </Link>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {(filteredTemplates as Doc<"tools">[]).map((template) => (
+            <ToolCard
+              key={template._id}
+              title={template.title}
+              toolType={template.toolType}
+              description={template.description}
+              variant="template"
+            />
+          ))}
+        </div>
+      )}
 
       {/* CTA Section */}
       <section className="mt-20 p-12 bg-surface-container-low rounded-xl relative overflow-hidden ring-1 ring-outline-variant/10">
@@ -97,7 +113,7 @@ export function TemplatesPage() {
             href="/builder"
             className="flex items-center gap-2 text-primary font-bold hover:gap-3 transition-all duration-300"
           >
-            Build a custom template
+            Create a custom tool
             <MaterialIcon icon="arrow_forward" size="sm" />
           </Link>
         </div>

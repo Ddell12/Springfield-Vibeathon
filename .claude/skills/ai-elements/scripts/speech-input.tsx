@@ -1,7 +1,8 @@
 "use client";
 
-import { SpeechInput } from "@/components/ai-elements/speech-input";
 import { useCallback, useState } from "react";
+
+import { SpeechInput } from "@/components/ai-elements/speech-input";
 
 /**
  * Fallback handler for browsers that don't support Web Speech API (Firefox, Safari).

@@ -1,12 +1,14 @@
 "use client";
 
+import { useQuery } from "convex/react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useQuery } from "convex/react";
-import { api } from "../../../../convex/_generated/api";
-import { MaterialIcon } from "@/shared/components/material-icon";
+
 import { ToolRenderer } from "@/features/therapy-tools/components/tool-renderer";
 import type { ToolConfig } from "@/features/therapy-tools/types/tool-configs";
+import { MaterialIcon } from "@/shared/components/material-icon";
+
+import { api } from "../../../../convex/_generated/api";
 
 export function SharedToolPage() {
   const params = useParams();
