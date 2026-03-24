@@ -1,3 +1,5 @@
+import type { FragmentResult } from "../lib/schema";
+import { CompletionMessage } from "./completion-message";
 import { DesignPlan } from "./design-plan";
 import { FileProgress } from "./file-progress";
 import type { ProgressPhase } from "./file-progress";
@@ -10,9 +12,10 @@ type ChatMessageProps = {
   content: string;
   type?: MessageType;
   progressPhase?: ProgressPhase;
+  fragment?: FragmentResult;
 };
 
-export function ChatMessage({ role, content, type, progressPhase }: ChatMessageProps) {
+export function ChatMessage({ role, content, type, progressPhase, fragment }: ChatMessageProps) {
   if (role === "assistant") {
     if (type === "thinking") {
       return <ThinkingState status="Thinking..." isComplete={false} plan={content} />;
@@ -26,7 +29,11 @@ export function ChatMessage({ role, content, type, progressPhase }: ChatMessageP
       return <DesignPlan content={content} />;
     }
 
-    // type === "complete" | type === "text" | type === undefined
+    if (type === "complete" && fragment) {
+      return <CompletionMessage fragment={fragment} />;
+    }
+
+    // type === "complete" without fragment | type === "text" | type === undefined
     return (
       <div className="flex w-full justify-start mb-6">
         <div className="max-w-full text-sm leading-relaxed whitespace-pre-wrap text-on-surface">

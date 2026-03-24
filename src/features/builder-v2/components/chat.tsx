@@ -8,12 +8,14 @@ import { ChatInput } from "./chat-input";
 import type { ProgressPhase } from "./file-progress";
 import type { MessageType } from "./chat-message";
 import { ChatMessage } from "./chat-message";
+import { SuggestedActions } from "./suggested-actions";
 
 type Message = {
   id: string;
   role: "user" | "assistant";
   content: string;
   type?: MessageType;
+  fragment?: FragmentResult;
 };
 
 type ChatProps = {
@@ -39,6 +41,7 @@ export function Chat({
   const [messages, setMessages] = useState<Message[]>([WELCOME_MESSAGE]);
   const [isLoading, setIsLoading] = useState(false);
   const [progressPhase, setProgressPhase] = useState<ProgressPhase>("started");
+  const [latestFragment, setLatestFragment] = useState<FragmentResult | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const [hasAutoSent, setHasAutoSent] = useState(false);
 
@@ -203,7 +206,7 @@ export function Chat({
           fragment.code = `"use client";\n${fragment.code}`;
         }
 
-        // Mark building message as complete with success text
+        // Mark building message as complete — attach fragment for CompletionMessage rendering
         setMessages((prev) =>
           prev.map((m) =>
             m.id === buildingMessageId
@@ -211,11 +214,13 @@ export function Chat({
                   ...m,
                   type: "complete" as MessageType,
                   content: `Here's your ${fragment.title}! ${fragment.description} Let me know if you want any changes.`,
+                  fragment,
                 }
               : m
           )
         );
 
+        setLatestFragment(fragment);
         onFragmentGenerated?.(fragment);
       } else {
         throw new Error("Failed to parse generated code");
@@ -251,9 +256,16 @@ export function Chat({
             content={msg.content}
             type={msg.type}
             progressPhase={msg.type === "building" ? progressPhase : undefined}
+            fragment={msg.fragment}
           />
         ))}
       </div>
+      {latestFragment && !isLoading && (
+        <SuggestedActions
+          fragment={latestFragment}
+          onAction={handleSubmit}
+        />
+      )}
       <ChatInput
         onSubmit={handleSubmit}
         onStop={() => abortRef.current?.abort()}
