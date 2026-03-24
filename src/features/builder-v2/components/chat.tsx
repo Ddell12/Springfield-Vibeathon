@@ -44,15 +44,15 @@ export function Chat({
   const [progressPhase, setProgressPhase] = useState<ProgressPhase>("started");
   const [latestFragment, setLatestFragment] = useState<FragmentResult | null>(null);
   const abortRef = useRef<AbortController | null>(null);
-  const [hasAutoSent, setHasAutoSent] = useState(false);
+  const hasAutoSentRef = useRef(false);
 
   useEffect(() => {
-    if (initialMessage && !hasAutoSent && !isLoading) {
-      setHasAutoSent(true);
+    if (initialMessage && !hasAutoSentRef.current && !isLoading) {
+      hasAutoSentRef.current = true;
       handleSubmit(initialMessage);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialMessage, hasAutoSent, isLoading]);
+  }, [initialMessage, isLoading]);
 
   const handleSubmit = async (message: string) => {
     setProgressPhase("started");
