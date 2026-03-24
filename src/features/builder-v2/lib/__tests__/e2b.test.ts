@@ -20,6 +20,7 @@ const mockSandboxInstance = {
 vi.mock("@e2b/code-interpreter", () => ({
   Sandbox: {
     create: vi.fn(),
+    connect: vi.fn(),
   },
 }));
 
@@ -36,19 +37,17 @@ const validFragment: FragmentResult = {
 describe("getSandboxUrl", () => {
   it("returns a properly formatted URL from host and port", () => {
     const url = getSandboxUrl("abc123.sandbox.e2b.app", 3000);
-    expect(url).toContain("abc123.sandbox.e2b.app");
-    expect(url).toContain("3000");
+    expect(url).toBe("https://abc123.sandbox.e2b.app");
   });
 
-  it("returns a string starting with https or http", () => {
+  it("returns a string starting with https", () => {
     const url = getSandboxUrl("abc123.sandbox.e2b.app", 3000);
-    expect(url).toMatch(/^https?:\/\//);
+    expect(url).toMatch(/^https:\/\//);
   });
 
-  it("works with different ports", () => {
-    const url3000 = getSandboxUrl("host.e2b.app", 3000);
-    const url8080 = getSandboxUrl("host.e2b.app", 8080);
-    expect(url3000).not.toBe(url8080);
+  it("includes the host in the URL", () => {
+    const url = getSandboxUrl("host.e2b.app", 3000);
+    expect(url).toContain("host.e2b.app");
   });
 });
 
@@ -115,7 +114,7 @@ describe("executeFragment", () => {
   it("connects to an existing sandbox and updates the code file", async () => {
     const { Sandbox } = await import("@e2b/code-interpreter");
     mockGetHost.mockReturnValue("sandbox-abc-123-3000.e2b.app");
-    vi.mocked(Sandbox.create).mockResolvedValue(mockSandboxInstance as any);
+    vi.mocked(Sandbox.connect).mockResolvedValue(mockSandboxInstance as any);
 
     await executeFragment("sandbox-abc-123", validFragment);
 
@@ -128,7 +127,7 @@ describe("executeFragment", () => {
   it("returns a sandboxId and url", async () => {
     const { Sandbox } = await import("@e2b/code-interpreter");
     mockGetHost.mockReturnValue("sandbox-abc-123-3000.e2b.app");
-    vi.mocked(Sandbox.create).mockResolvedValue(mockSandboxInstance as any);
+    vi.mocked(Sandbox.connect).mockResolvedValue(mockSandboxInstance as any);
 
     const result = await executeFragment("sandbox-abc-123", validFragment);
 

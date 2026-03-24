@@ -41,11 +41,18 @@ describe("BuilderV2Header", () => {
     expect(screen.queryByText(/breadcrumb/i)).not.toBeInTheDocument();
   });
 
-  it("renders a Share button", () => {
-    render(<BuilderV2Header />);
+  it("renders a Share button when hasProject is true", () => {
+    render(<BuilderV2Header hasProject={true} />);
     expect(
       screen.getByRole("button", { name: /Share/i })
     ).toBeInTheDocument();
+  });
+
+  it("does not render Share button when hasProject is false", () => {
+    render(<BuilderV2Header hasProject={false} />);
+    expect(
+      screen.queryByRole("button", { name: /Share/i })
+    ).not.toBeInTheDocument();
   });
 
   it("renders a New Project button", () => {
@@ -65,11 +72,14 @@ describe("BuilderV2Header", () => {
     expect(onNewProject).toHaveBeenCalledTimes(1);
   });
 
-  it("renders share link when shareSlug is provided", () => {
-    render(<BuilderV2Header shareSlug="abc-def-123" />);
-    // Share button or link should reflect the slug
-    const shareButton = screen.getByRole("button", { name: /Share/i });
-    expect(shareButton).toBeInTheDocument();
+  it("calls onShare when Share button is clicked", async () => {
+    const onShare = vi.fn();
+    const user = userEvent.setup();
+
+    render(<BuilderV2Header hasProject={true} onShare={onShare} />);
+    await user.click(screen.getByRole("button", { name: /Share/i }));
+
+    expect(onShare).toHaveBeenCalledTimes(1);
   });
 
   it("renders a header landmark element", () => {

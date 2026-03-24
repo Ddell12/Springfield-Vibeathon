@@ -8,9 +8,11 @@ type BuilderV2HeaderProps = {
   projectName?: string;
   shareSlug?: string;
   onNewProject?: () => void;
+  onShare?: () => void;
+  hasProject?: boolean;
 };
 
-export function BuilderV2Header({ projectName, shareSlug: _shareSlug, onNewProject }: BuilderV2HeaderProps) {
+export function BuilderV2Header({ projectName, shareSlug: _shareSlug, onNewProject, onShare, hasProject }: BuilderV2HeaderProps) {
   return (
     <header className="h-14 bg-surface-container-lowest flex items-center justify-between px-6 z-10 shrink-0">
       {/* Left: Logo + project breadcrumb */}
@@ -38,13 +40,16 @@ export function BuilderV2Header({ projectName, shareSlug: _shareSlug, onNewProje
           <MaterialIcon icon="add" size="sm" />
           New Project
         </button>
-        <button
-          className="flex items-center gap-2 px-4 py-1.5 text-primary rounded-lg font-bold text-sm hover:bg-primary/5 transition-colors active:scale-95 min-h-[44px]"
-          type="button"
-        >
-          <MaterialIcon icon="share" size="sm" />
-          Share
-        </button>
+        {hasProject && (
+          <button
+            className="flex items-center gap-2 px-4 py-1.5 text-primary rounded-lg font-bold text-sm hover:bg-primary/5 transition-colors active:scale-95 min-h-[44px]"
+            type="button"
+            onClick={onShare}
+          >
+            <MaterialIcon icon="share" size="sm" />
+            Share
+          </button>
+        )}
       </div>
     </header>
   );

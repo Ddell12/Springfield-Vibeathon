@@ -49,7 +49,11 @@ export const getBySlug = query({
 export const list = query({
   args: {},
   handler: async (ctx) => {
-    return await ctx.db.query("projects").collect();
+    return await ctx.db
+      .query("projects")
+      .withIndex("by_createdAt")
+      .order("desc")
+      .collect();
   },
 });
 

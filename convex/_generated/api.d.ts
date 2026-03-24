@@ -19,6 +19,7 @@ import type * as knowledge_data from "../knowledge/data.js";
 import type * as knowledge_search from "../knowledge/search.js";
 import type * as knowledge_seed from "../knowledge/seed.js";
 import type * as projects from "../projects.js";
+import type * as therapy_templates from "../therapy_templates.js";
 import type * as templates_queries from "../templates/queries.js";
 import type * as templates_seed from "../templates/seed.js";
 import type * as templates_therapy_seeds from "../templates/therapy_seeds.js";
@@ -42,6 +43,7 @@ declare const fullApi: ApiFromModules<{
   "knowledge/search": typeof knowledge_search;
   "knowledge/seed": typeof knowledge_seed;
   projects: typeof projects;
+  therapy_templates: typeof therapy_templates;
   "templates/queries": typeof templates_queries;
   "templates/seed": typeof templates_seed;
   "templates/therapy_seeds": typeof templates_therapy_seeds;
