@@ -17,6 +17,11 @@ Bridges is an AI-powered vibe-coding platform where ABA therapists, speech thera
 
 ## How to Work in This Repo
 
+### Current Status
+- **Phases 0–3 complete** (foundation, AI chat, tool components, RAG + templates)
+- **Current Phase: Phase 4** — Sharing, Persistence & My Tools
+- **51 tests passing** (Vitest), all Convex functions deployed, RAG seeded with 110 entries
+
 ### Start here
 1. Read `docs/product-roadmap.md` — find the current phase (first unchecked task)
 2. Read ONLY the Reference sections listed for that phase from `docs/prd.md` and `docs/product-vision.md`
@@ -95,6 +100,10 @@ Config → component mapper: `src/features/therapy-tools/components/tool-rendere
 - Actions (`"use node";`) for external API calls (Claude, Google Embeddings, ElevenLabs)
 - Queries for reads, mutations for writes — actions are not transactional
 - Index naming: `by_fieldName`
+- **Component config at `convex/convex.config.ts`** — NOT at project root
+- **File organization:** domain-grouped — `convex/knowledge/`, `convex/templates/`, `convex/chat/`, `convex/agents/`
+- **Seed functions:** use `internalMutation` for DB seeds, `internalAction` for seeds needing external APIs (embeddings)
+- **`anyApi`** from `convex/server` for cross-file action references in agent tool `execute` functions
 
 ### Next.js
 - App Router only (`src/app/`)
@@ -118,8 +127,12 @@ Config → component mapper: `src/features/therapy-tools/components/tool-rendere
 - Primary: **Convex Agent** (`@convex-dev/agent`) for threads, streaming, tool calling, React hooks
 - Fallback: Vercel AI SDK `useChat` if Convex Agent doesn't fit a specific pattern
 - Claude via `@ai-sdk/anthropic` provider
-- RAG via `@convex-dev/rag` component
+- RAG via `@convex-dev/rag` component — stores in its own internal tables, NOT the `knowledgeBase` table in schema
 - System prompt and tools defined in `docs/ai/prompt-library.md`
+- Agent definition: `convex/agents/bridges.ts` — 4 tools: createTool, updateTool, searchKnowledge, generateImage
+- Agent tool `inputSchema` uses `zod/v3` (not `"zod"`) — required by `@convex-dev/agent`
+- RAG search wrapper: `convex/knowledge/search.ts` — `internalAction` that wraps `rag.search()` for agent tool access
+- Chat UI: `@assistant-ui/react` ExternalStoreRuntime wired to Convex Agent via `useUIMessages`
 
 ### Image Generation
 - Use **Nano Banana Pro** (`@google/genai` or `@fal-ai/client`) for therapy picture cards
@@ -144,6 +157,16 @@ Config → component mapper: `src/features/therapy-tools/components/tool-rendere
 - **API mocking:** `msw` (Mock Service Worker) — intercept Claude, Google, ElevenLabs calls in tests.
 - **Test data:** `@faker-js/faker` for generating realistic test fixtures.
 - **Env validation:** `@t3-oss/env-nextjs` — type-safe env var validation at build time.
+
+### Google Stitch Design System
+- All UI components are designed in Google Stitch, then exported as React components
+- Design system doc: `.stitch/DESIGN.md` — "The Digital Sanctuary" creative direction
+- Dual fonts: **Manrope** (headlines, 600/700) + **Inter** (body, 400/500/600)
+- **No-Line Rule:** 1px borders are banned for sectioning — use tonal background shifts instead
+- Surface hierarchy: `surface` (page bg) → `surface-container-low` (sections) → `surface-container-lowest` (interactive cards)
+- Primary CTA: gradient from `primary` (#00595c) to `primary-container` (#0d7377) at 135deg
+- All animations use `cubic-bezier(0.4, 0, 0.2, 1)` and must be >= 300ms
+- Stitch screens in `.stitch/designs/` — 8 screens (landing, builder, tools, templates, etc.)
 
 ## What NOT to Do
 

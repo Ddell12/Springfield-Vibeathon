@@ -81,6 +81,94 @@ Key libraries chosen: dnd-kit (touch DnD), motion (animations), use-sound (iOS a
 
 ---
 
+## 2026-03-23 — Phase 1: AI Chat & Tool Generation Core
+
+### What Changed
+- Defined Zod schemas for all 5 tool config types (`tool-configs.ts`) with `z.infer<>` for TypeScript types
+- Created Bridges agent definition (`convex/agents/bridges.ts`) with Claude Sonnet, full system prompt, 3 tools: createTool, updateTool, searchKnowledge (placeholder)
+- Built tool CRUD functions (`convex/tools.ts`) — get, getBySlug, list, create, update, remove with nanoid share slugs
+- Implemented Convex Agent streaming actions (`convex/chat/streaming.ts`) — initiateStreaming, streamAsync, listThreadMessages, createThread
+- Built chat UI with `@assistant-ui/react` ExternalStoreRuntime wired to Convex Agent
+- Created tool renderer (`tool-renderer.tsx`) with Zod `safeParse` validation and ErrorBoundary wrapper
+- Built tool preview panel with real-time Convex subscription and Skeleton loading
+- Wired builder end-to-end: chat → agent → tool → preview with zustand state management
+- Backend tests for tool CRUD via `convex-test`
+
+### Decisions Made
+- **`@assistant-ui/react` ExternalStoreRuntime** — bridges Convex Agent message format to assistant-ui components, eliminating 3 custom chat components (~190 lines saved)
+- **`zod/v3` import** — Convex Agent requires Zod v3 compat import path, not `"zod"` directly
+- **`anyApi` for cross-file action calls** — used `anyApi` from `convex/server` when agent tools call functions in other Convex files
+
+### Gotchas Discovered
+- `@convex-dev/agent` v0.6.1 uses `inputSchema` (not `parameters`) for tool definitions
+- `createTool` `execute` receives `AgentActionCtx` with `ctx.threadId`, `ctx.runMutation`, `ctx.runQuery`
+- Convex Agent streaming requires `saveStreamDeltas: true` for real-time token display
+
+---
+
+## 2026-03-23 — Phase 2: Therapy Tool Components
+
+### What Changed
+- Built 3 core therapy tool components (visual schedule, token board, communication board) with full interactivity
+- Visual schedule: drag-to-reorder via `@dnd-kit/react`, tap-to-complete with `motion` animations, vertical/horizontal orientation
+- Token board: zustand store for earn/reset state, `motion` scale-in animations, reinforcer selection
+- Communication board: picture card grid, sentence building with `motion` feedback, drag-to-reorder, TTS placeholder, `next/image` for AI-generated pictures
+- Updated tool renderer to use real components instead of placeholders, with `React.lazy` code splitting
+- Implemented ElevenLabs TTS action (`convex/aiActions.ts`) with Convex file storage caching
+- Implemented Google Imagen image generation action (`convex/aiActions.ts`) with file storage
+- Added TTS cache queries/mutations (`convex/ai.ts`)
+- Wrote unit tests for all 3 tool components + tool renderer (4 test files)
+
+### Decisions Made
+- **3 tools, not 5** — choice board and first-then board deferred as stretch goals per spec. 3 polished tools > 5 rough ones for hackathon demo
+- **Google Stitch for visuals** — all UI components designed in Stitch, exported as React, then wired with library behavior
+- **Separate `aiActions.ts` file** — `"use node"` actions for external APIs kept in dedicated file, not mixed with queries/mutations
+- **`zustand` only for token board** — other tools use React state since their interaction is simpler
+
+### Gotchas Discovered
+- Material Symbols icons required explicit font import — Tailwind v4 font-family reset was overriding Google Fonts
+- `@dnd-kit/react` v0.3 needs `touch-action: none` on drag handles for proper iPad behavior
+- `motion` v12 uses `animate` prop (not `variants` + `initial`/`animate` string keys like framer-motion v6)
+
+---
+
+## 2026-03-24 — Phase 3: RAG Knowledge Base & Templates
+
+### What Changed
+- Created 110 therapy knowledge entries across 5 categories: aba-terminology (22), speech-therapy (22), tool-patterns (22), developmental-milestones (22), iep-goals (22)
+- Set up Convex RAG component with Google `gemini-embedding-001` for 768-dim embeddings
+- Created idempotent seed action (`convex/knowledge/seed.ts`) using `rag.add()` with `key` for deduplication
+- Created search wrapper action (`convex/knowledge/search.ts`) returning pre-formatted `text` from RAG results
+- Wired `searchKnowledge` tool in Bridges agent to real RAG search (replaces Phase 1 placeholder)
+- Added `generateImage` tool to Bridges agent (calls existing `aiActions.generateImage`)
+- Created 6 pre-built templates with complete ToolConfig objects: Feelings Board, Basic Needs Board, 5-Star Reward Chart, Sticker Collection, Morning Routine, Bedtime Routine
+- Built idempotent template seed mutation (`convex/templates/seed.ts`) with JS-level dedup (no `.filter()`)
+- Created `listTemplates` public query with optional category filter using `by_template` index
+- Replaced mock template data in gallery page with live Convex queries + Skeleton loading
+- Created `convex/init.ts` orchestration action to seed RAG + templates on first deploy
+- 51 tests passing (8 template tests, 5 knowledge data tests, 38 existing)
+
+### Decisions Made
+- **RAG component storage, not `knowledgeBase` table** — `@convex-dev/rag` manages its own internal tables. The schema's `knowledgeBase` table stays inert (kept for potential direct vector search fallback)
+- **`internalAction` wrapper for RAG search** — `rag.search()` needs `runAction` context (embedding API call). Agent tool `execute` calls `ctx.runAction(internal.knowledge.search.searchKnowledgeAction)` as a bridge
+- **Templates stored in `tools` table** — `isTemplate: true` + `templateCategory` field. Same `ToolRenderer` renders both AI-generated and template tools
+- **3 categories, 6 templates** — matching the existing UI's 3-category structure (communication, rewards, routines)
+- **Single implementer** — architect recommended 2, but implementer-2's scope (1 file, ~15 lines) didn't justify coordination overhead
+
+### Gotchas Discovered
+- `convex.config.ts` must live at `convex/convex.config.ts` (inside the `convex/` folder), NOT at the project root — CLI silently ignores root placement and components never install
+- `@ai-sdk/google` expects `GOOGLE_GENERATIVE_AI_API_KEY` env var, not `GOOGLE_API_KEY`
+- RAG `rag.search()` requires action context with `runAction` — can't be called directly from agent tool `execute` without a wrapper
+- `convex-test` mock runtime cannot test actions that call external APIs (Google embeddings) — knowledge tests are structural/data validation only
+
+### Infrastructure
+- Convex components installed: `agent`, `rag`, `rag/workpool`
+- Convex env var added: `GOOGLE_GENERATIVE_AI_API_KEY`
+- RAG namespace: `therapy-knowledge` with 110 entries seeded
+- 6 templates seeded in `tools` table
+
+---
+
 <!--
 TEMPLATE for future entries:
 
