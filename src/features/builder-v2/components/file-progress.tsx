@@ -55,7 +55,7 @@ type FileProgressProps = {
 
 export function FileProgress({ progressPhase }: FileProgressProps) {
   return (
-    <div className="flex flex-col gap-3 py-3 px-1">
+    <div className="flex flex-col gap-3 py-3 px-1" role="status" aria-live="polite">
       <p className="text-sm font-bold text-on-surface mb-1">Let me build this:</p>
       {DISPLAY_STEPS.map((phase, index) => {
         const status = getStepStatus(phase, progressPhase);

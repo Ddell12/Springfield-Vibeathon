@@ -54,7 +54,11 @@ export function LoadingCarousel() {
   }, []);
 
   return (
-    <div className="flex flex-col items-center justify-center w-full h-full bg-surface">
+    <div
+      className="flex flex-col items-center justify-center w-full h-full bg-surface"
+      role="status"
+      aria-label="Loading your tool"
+    >
       <div className="flex items-center gap-2 mb-12 animate-pulse">
         <Sparkles size={16} className="text-muted" />
         <span className="text-sm font-semibold text-muted">Getting ready...</span>

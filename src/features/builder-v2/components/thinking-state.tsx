@@ -41,9 +41,9 @@ export function ThinkingState({ status, isComplete = false, plan }: ThinkingStat
     : `${status} ${elapsed}s`;
 
   return (
-    <div className="flex w-full justify-start mb-8 pl-1">
+    <div className="flex w-full justify-start mb-8 pl-1" aria-live="polite">
       <div className="flex flex-col gap-3 max-w-full">
-        <div className="flex items-center gap-2 text-muted text-sm font-medium">
+        <div className="flex items-center gap-2 text-muted text-sm font-medium" role="status">
           {!isComplete && (
             <span className="h-2 w-2 rounded-full bg-[#00595c] animate-pulse" />
           )}

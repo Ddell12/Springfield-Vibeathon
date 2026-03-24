@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { motion } from "motion/react";
 
 import type { FragmentResult } from "../lib/schema";
 import { FragmentSchema } from "../lib/schema";
@@ -250,14 +251,20 @@ export function Chat({
     <div className="flex flex-col h-full bg-surface">
       <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3">
         {messages.map((msg) => (
-          <ChatMessage
+          <motion.div
             key={msg.id}
-            role={msg.role}
-            content={msg.content}
-            type={msg.type}
-            progressPhase={msg.type === "building" ? progressPhase : undefined}
-            fragment={msg.fragment}
-          />
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+          >
+            <ChatMessage
+              role={msg.role}
+              content={msg.content}
+              type={msg.type}
+              progressPhase={msg.type === "building" ? progressPhase : undefined}
+              fragment={msg.fragment}
+            />
+          </motion.div>
         ))}
       </div>
       {latestFragment && !isLoading && (

@@ -1,4 +1,7 @@
+"use client";
+
 import { CheckCircle2, MousePointer, Pencil, Share2 } from "lucide-react";
+import { motion } from "motion/react";
 
 import { cn } from "@/core/utils";
 import type { FragmentResult } from "../lib/schema";
@@ -30,7 +33,12 @@ const tips = [
 
 export function CompletionMessage({ fragment }: CompletionMessageProps) {
   return (
-    <div
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+      role="status"
+      aria-live="polite"
       className={cn(
         "w-full rounded-2xl bg-surface-container-lowest p-5 sanctuary-shadow mb-6"
       )}
@@ -77,6 +85,6 @@ export function CompletionMessage({ fragment }: CompletionMessageProps) {
           </li>
         ))}
       </ul>
-    </div>
+    </motion.div>
   );
 }
