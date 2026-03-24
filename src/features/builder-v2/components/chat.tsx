@@ -5,12 +5,14 @@ import { useEffect, useRef, useState } from "react";
 import type { FragmentResult } from "../lib/schema";
 import { FragmentSchema } from "../lib/schema";
 import { ChatInput } from "./chat-input";
+import type { MessageType } from "./chat-message";
 import { ChatMessage } from "./chat-message";
 
 type Message = {
   id: string;
   role: "user" | "assistant";
   content: string;
+  type?: MessageType;
 };
 
 type ChatProps = {
@@ -25,6 +27,7 @@ const WELCOME_MESSAGE: Message = {
   role: "assistant",
   content:
     "Hi! I'm here to help you build therapy tools. Describe what you need — like a token board, visual schedule, or morning routine tracker — and I'll build it right away.",
+  type: "text",
 };
 
 export function Chat({
@@ -42,7 +45,7 @@ export function Chat({
       setHasAutoSent(true);
       handleSubmit(initialMessage);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialMessage, hasAutoSent, isLoading]);
 
   const handleSubmit = async (message: string) => {
@@ -50,53 +53,117 @@ export function Chat({
       id: `user-${Date.now()}`,
       role: "user",
       content: message,
+      type: "text",
     };
 
-    const buildingMessage: Message = {
-      id: `assistant-${Date.now()}`,
+    const thinkingMessageId = `thinking-${Date.now()}`;
+    const thinkingMessage: Message = {
+      id: thinkingMessageId,
       role: "assistant",
-      content: currentCode
-        ? "Updating your tool..."
-        : "Building your tool — this takes about 15 seconds...",
+      content: "",
+      type: "thinking",
     };
 
-    setMessages((prev) => [...prev, userMessage, buildingMessage]);
+    setMessages((prev) => [...prev, userMessage, thinkingMessage]);
     setIsLoading(true);
 
     abortRef.current = new AbortController();
 
     try {
-      // Go straight to code generation — every message generates/updates code
       const allMessages = [...messages, userMessage].map((m) => ({
         role: m.role,
         content: m.content,
       }));
 
-      // If iterating, inject current code into context
+      // ── Phase 1: Design Plan ──────────────────────────────────────────────
+      const planResponse = await fetch("/api/chat/plan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: allMessages }),
+        signal: abortRef.current.signal,
+      });
+
+      if (!planResponse.ok || !planResponse.body) {
+        throw new Error("Plan request failed");
+      }
+
+      // Stream plan text live into the thinking message
+      const planReader = planResponse.body.getReader();
+      const planDecoder = new TextDecoder();
+      let planText = "";
+
+      while (true) {
+        const { done, value } = await planReader.read();
+        if (done) break;
+
+        const chunk = planDecoder.decode(value, { stream: true });
+        // Vercel AI SDK text stream format: lines like `0:"text chunk"\n`
+        // We need to extract raw text from these chunks
+        const lines = chunk.split("\n");
+        for (const line of lines) {
+          if (line.startsWith("0:")) {
+            try {
+              // Parse the JSON-encoded string value after "0:"
+              const jsonStr = line.slice(2);
+              const textChunk = JSON.parse(jsonStr) as string;
+              planText += textChunk;
+            } catch {
+              // If parsing fails, treat as raw text (fallback)
+              planText += line.slice(2);
+            }
+          }
+        }
+
+        // Update the thinking message content as it streams
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === thinkingMessageId ? { ...m, content: planText } : m
+          )
+        );
+      }
+
+      // Phase 1 complete — mark as "plan"
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === thinkingMessageId ? { ...m, type: "plan" } : m
+        )
+      );
+
+      // ── Phase 2: Code Generation ──────────────────────────────────────────
+      const buildingMessageId = `building-${Date.now()}`;
+      const buildingMessage: Message = {
+        id: buildingMessageId,
+        role: "assistant",
+        content: currentCode ? "Updating your tool..." : "Building your tool...",
+        type: "building",
+      };
+
+      setMessages((prev) => [...prev, buildingMessage]);
+
       const context = currentCode
         ? `The user already has a working tool. Here is the current code:\n\`\`\`\n${currentCode}\n\`\`\`\nModify it based on the user's request. Keep what works, change what they asked for.`
         : undefined;
 
-      const response = await fetch("/api/chat/generate", {
+      const generateResponse = await fetch("/api/chat/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ messages: allMessages, context }),
         signal: abortRef.current.signal,
       });
 
-      if (!response.ok || !response.body) {
-        throw new Error("Request failed");
+      if (!generateResponse.ok || !generateResponse.body) {
+        throw new Error("Generate request failed");
       }
 
-      // Accumulate the streamed JSON
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
+      // Accumulate the streamed JSON (generate returns structured object)
+      const generateReader = generateResponse.body.getReader();
+      const generateDecoder = new TextDecoder();
       let fullText = "";
 
       while (true) {
-        const { done, value } = await reader.read();
+        const { done, value } = await generateReader.read();
         if (done) break;
-        fullText += decoder.decode(value, { stream: true });
+        fullText += generateDecoder.decode(value, { stream: true });
       }
 
       // Parse the completed FragmentResult
@@ -104,8 +171,7 @@ export function Chat({
       if (parsed.success) {
         const fragment = parsed.data;
 
-        // Ensure Next.js components have "use client" directive —
-        // without it, hooks like useState crash in App Router Server Components
+        // Ensure Next.js components have "use client" directive
         if (
           fragment.template === "nextjs-developer" &&
           !fragment.code.trimStart().startsWith('"use client"') &&
@@ -114,12 +180,13 @@ export function Chat({
           fragment.code = `"use client";\n${fragment.code}`;
         }
 
-        // Update the building message with success
+        // Mark building message as complete with success text
         setMessages((prev) =>
           prev.map((m) =>
-            m.id === buildingMessage.id
+            m.id === buildingMessageId
               ? {
                   ...m,
+                  type: "complete" as MessageType,
                   content: `Here's your ${fragment.title}! ${fragment.description} Let me know if you want any changes.`,
                 }
               : m
@@ -132,11 +199,13 @@ export function Chat({
       }
     } catch (err) {
       if (err instanceof Error && err.name !== "AbortError") {
+        // Show error in the thinking message if plan failed, otherwise last message
         setMessages((prev) =>
           prev.map((m) =>
-            m.id === buildingMessage.id
+            m.id === prev[prev.length - 1]?.id
               ? {
                   ...m,
+                  type: "text" as MessageType,
                   content:
                     "Sorry, something went wrong building your tool. Please try describing it again.",
                 }
@@ -153,7 +222,12 @@ export function Chat({
     <div className="flex flex-col h-full bg-surface">
       <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3">
         {messages.map((msg) => (
-          <ChatMessage key={msg.id} role={msg.role} content={msg.content} />
+          <ChatMessage
+            key={msg.id}
+            role={msg.role}
+            content={msg.content}
+            type={msg.type}
+          />
         ))}
       </div>
       <ChatInput

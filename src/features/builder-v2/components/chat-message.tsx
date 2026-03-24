@@ -1,24 +1,29 @@
+import { DesignPlan } from "./design-plan";
 import { ThinkingState } from "./thinking-state";
+
+export type MessageType = "text" | "thinking" | "plan" | "building" | "complete";
 
 type ChatMessageProps = {
   role: "user" | "assistant";
   content: string;
+  type?: MessageType;
 };
 
-export function ChatMessage({ role, content }: ChatMessageProps) {
-
-  if (role === "assistant" && content.includes("Building your tool")) {
-    return <ThinkingState status="Thinking..." time="30s" plan={content} />;
-  }
-
-  if (role === "assistant" && content.includes("Updating your tool")) {
-    return <ThinkingState status="Thinking..." time="15s" plan={content} />;
-  }
-
+export function ChatMessage({ role, content, type }: ChatMessageProps) {
   if (role === "assistant") {
-    // Only show assistant messages that aren't the building/thinking state occasionally
-    // In lovables UI, standard assistant messages are rare, mostly just the user prompts and the preview.
-    // For the welcome message:
+    if (type === "thinking") {
+      return <ThinkingState status="Thinking..." isComplete={false} plan={content} />;
+    }
+
+    if (type === "building") {
+      return <ThinkingState status="Building..." isComplete={false} />;
+    }
+
+    if (type === "plan") {
+      return <DesignPlan content={content} />;
+    }
+
+    // type === "complete" | type === "text" | type === undefined
     return (
       <div className="flex w-full justify-start mb-6">
         <div className="max-w-full text-sm leading-relaxed whitespace-pre-wrap text-on-surface">
