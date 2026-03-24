@@ -1,0 +1,188 @@
+{"header" : {
+  "cloc_url"           : "github.com/AlDanial/cloc",
+  "cloc_version"       : "2.08",
+  "elapsed_seconds"    : 391.776179075241,
+  "n_files"            : 74434,
+  "n_lines"            : 17420498,
+  "files_per_second"   : 189.991132630105,
+  "lines_per_second"   : 44465.4344251348},
+"JavaScript" :{
+  "nFiles": 44754,
+  "blank": 397162,
+  "comment": 1363662,
+  "code": 9948926},
+"TypeScript" :{
+  "nFiles": 21983,
+  "blank": 191876,
+  "comment": 1399761,
+  "code": 1908985},
+"JSON" :{
+  "nFiles": 3124,
+  "blank": 151,
+  "comment": 0,
+  "code": 923211},
+"Markdown" :{
+  "nFiles": 3733,
+  "blank": 221281,
+  "comment": 1395,
+  "code": 614933},
+"C" :{
+  "nFiles": 3,
+  "blank": 16667,
+  "comment": 80036,
+  "code": 165617},
+"HTML" :{
+  "nFiles": 155,
+  "blank": 4408,
+  "comment": 4636,
+  "code": 61429},
+"CSS" :{
+  "nFiles": 43,
+  "blank": 4886,
+  "comment": 761,
+  "code": 23370},
+"YAML" :{
+  "nFiles": 267,
+  "blank": 664,
+  "comment": 159,
+  "code": 22721},
+"Text" :{
+  "nFiles": 96,
+  "blank": 2404,
+  "comment": 0,
+  "code": 10166},
+"Bourne Shell" :{
+  "nFiles": 72,
+  "blank": 1233,
+  "comment": 1088,
+  "code": 5818},
+"C++" :{
+  "nFiles": 8,
+  "blank": 417,
+  "comment": 608,
+  "code": 5467},
+"Python" :{
+  "nFiles": 27,
+  "blank": 672,
+  "comment": 712,
+  "code": 5023},
+"C/C++ Header" :{
+  "nFiles": 10,
+  "blank": 535,
+  "comment": 11883,
+  "code": 4393},
+"Perl" :{
+  "nFiles": 3,
+  "blank": 304,
+  "comment": 82,
+  "code": 2892},
+"Swift" :{
+  "nFiles": 26,
+  "blank": 206,
+  "comment": 26,
+  "code": 1498},
+"make" :{
+  "nFiles": 19,
+  "blank": 362,
+  "comment": 431,
+  "code": 1444},
+"SVG" :{
+  "nFiles": 16,
+  "blank": 2,
+  "comment": 3,
+  "code": 1234},
+"SCSS" :{
+  "nFiles": 3,
+  "blank": 128,
+  "comment": 49,
+  "code": 564},
+"Protocol Buffers" :{
+  "nFiles": 6,
+  "blank": 170,
+  "comment": 0,
+  "code": 537},
+"Windows Module Definition" :{
+  "nFiles": 5,
+  "blank": 83,
+  "comment": 0,
+  "code": 451},
+"INI" :{
+  "nFiles": 28,
+  "blank": 97,
+  "comment": 0,
+  "code": 396},
+"CoffeeScript" :{
+  "nFiles": 6,
+  "blank": 51,
+  "comment": 27,
+  "code": 372},
+"XML" :{
+  "nFiles": 14,
+  "blank": 13,
+  "comment": 6,
+  "code": 366},
+"Bourne Again Shell" :{
+  "nFiles": 6,
+  "blank": 83,
+  "comment": 81,
+  "code": 342},
+"Go" :{
+  "nFiles": 1,
+  "blank": 23,
+  "comment": 7,
+  "code": 247},
+"JSON5" :{
+  "nFiles": 2,
+  "blank": 0,
+  "comment": 19,
+  "code": 214},
+"Jsonnet" :{
+  "nFiles": 2,
+  "blank": 2,
+  "comment": 0,
+  "code": 212},
+"PowerShell" :{
+  "nFiles": 8,
+  "blank": 24,
+  "comment": 3,
+  "code": 132},
+"PHP" :{
+  "nFiles": 1,
+  "blank": 13,
+  "comment": 19,
+  "code": 124},
+"Ruby" :{
+  "nFiles": 1,
+  "blank": 0,
+  "comment": 0,
+  "code": 8},
+"D" :{
+  "nFiles": 7,
+  "blank": 0,
+  "comment": 0,
+  "code": 7},
+"diff" :{
+  "nFiles": 1,
+  "blank": 1,
+  "comment": 7,
+  "code": 7},
+"CSV" :{
+  "nFiles": 1,
+  "blank": 0,
+  "comment": 0,
+  "code": 4},
+"Properties" :{
+  "nFiles": 2,
+  "blank": 0,
+  "comment": 0,
+  "code": 4},
+"DOS Batch" :{
+  "nFiles": 1,
+  "blank": 0,
+  "comment": 3,
+  "code": 2},
+"SUM": {
+  "blank": 843918,
+  "comment": 2865464,
+  "code": 13711116,
+  "nFiles": 74434} }

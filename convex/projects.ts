@@ -8,9 +8,11 @@ export const create = mutation({
     description: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const { customAlphabet } = await import("nanoid");
-    const nanoid = customAlphabet("abcdefghijklmnopqrstuvwxyz0123456789", 10);
-    const shareSlug = nanoid();
+    const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
+    let shareSlug = "";
+    for (let i = 0; i < 10; i++) {
+      shareSlug += chars[Math.floor(Math.random() * chars.length)];
+    }
     const now = Date.now();
 
     const projectId = await ctx.db.insert("projects", {
