@@ -213,6 +213,40 @@ Based on user's choice, the system prompt includes:
 - **"Save on this device"** → "Use the `useLocalStorage` hook from `./hooks/useLocalStorage` for all data that should persist. Import: `import { useLocalStorage } from './hooks/useLocalStorage'`"
 - **"Save everywhere"** → "Use the `useConvexData` hook from `./hooks/useConvexData` for all data that should sync. Import: `import { useConvexData } from './hooks/useConvexData'`"
 
+### Cloud Persistence: Convex Anonymous Auth (Detail)
+
+The "Save everywhere" tier uses Convex's built-in Anonymous auth provider (`@convex-dev/auth/providers/Anonymous`).
+
+**How it works:**
+1. The `vite-therapy` template includes a pre-configured Convex client in `src/lib/convex-client.ts`
+2. On first load, the app calls `signIn("anonymous")` — Convex creates a persistent anonymous user with no credentials
+3. The anonymous session persists via a browser cookie — same device returns as the same user
+4. Cross-device: the share/publish URL includes a `toolId` query param. The Convex backend stores tool state keyed by `toolId`, not by user. Anyone with the link reads/writes the same data.
+
+**`useConvexData` hook API:**
+```tsx
+// Generic key-value hook — tool state stored as a JSON blob in Convex
+function useConvexData<T>(key: string, defaultValue: T): [T, (value: T) => void]
+
+// Usage in generated code:
+const [stars, setStars] = useConvexData("stars", [false, false, false, false, false]);
+const [reward, setReward] = useConvexData("selectedReward", null);
+```
+
+**Convex schema for tool state:**
+```typescript
+// convex/schema.ts — new table
+toolState: defineTable({
+  toolId: v.string(),     // matches the project's shareSlug
+  key: v.string(),        // state key (e.g., "stars", "selectedReward")
+  value: v.any(),         // JSON-serializable value
+  updatedAt: v.number(),
+})
+  .index("by_toolId_key", ["toolId", "key"])
+```
+
+This generalizes across all tool types — each tool stores its own keys. The hook handles reads (reactive via Convex subscription) and writes (mutation). No auth UI, no login, no password.
+
 ### FragmentSchema Changes
 
 | Field | Current | New |
@@ -234,9 +268,13 @@ Based on user's choice, the system prompt includes:
 - Simpler mental model for AI (no SSR, no RSC, no routing)
 - Pre-installed design system means consistent output
 
+### Template Source Location
+
+The template lives in this repo at `e2b-templates/vite-therapy/`. It is a standalone directory with its own `package.json`, NOT a Next.js sub-project. E2B templates are registered via CLI and stored in E2B's infrastructure — the local directory is the source of truth.
+
 ### Migration
-1. Build the `vite-therapy` template locally
-2. Register as custom E2B template via `e2b template create`
+1. Build the `vite-therapy` template in `e2b-templates/vite-therapy/`
+2. Register as custom E2B template via `e2b template create` from that directory
 3. Update `FragmentSchema` to default to `"vite-therapy"`, port 5173, file_path `"src/App.tsx"`
 4. Update `e2b.ts` — `createSandbox` and `executeFragment` use new template
 5. Update system prompt to reference available classes, hooks, fonts
@@ -259,11 +297,26 @@ Saved projects store complete fragment code. When restoring an old Next.js proje
 
 **2. Publish to Vercel (NEW)**
 - Runs `vite build` inside E2B sandbox
-- Uploads `dist/` folder to Vercel via Deploy API using platform token
+- Uploads `dist/` folder to Vercel via Deploy API
 - Returns permanent `.vercel.app` URL
 - Header button: "Publish" → "Update" (after first publish)
 - Progress: "Building..." → "Uploading..." → "Live!" + confetti
-- Published URL stored on project in Convex
+- Published URL stored on project in Convex (`publishedUrl` field)
+
+**Vercel Deploy API Details:**
+- **Endpoint:** `POST https://api.vercel.com/v13/deployments`
+- **Auth:** Vercel Access Token stored as `VERCEL_DEPLOY_TOKEN` env var (server-side only, in `src/app/api/publish/route.ts`)
+- **Project strategy:** Single Vercel project named `bridges-tools` — all published tools deploy as separate deployments under this project. Each deployment gets a unique URL like `bridges-tools-abc123.vercel.app`.
+- **Flow:**
+  1. Server route receives `{ projectId }` from client
+  2. Fetches fragment from Convex
+  3. Runs `sandbox.commands.run("npx vite build")` in E2B sandbox
+  4. Reads built files from `dist/` via `sandbox.files.list("dist")`
+  5. Uploads files to Vercel: `POST /v13/deployments` with `files` array
+  6. Returns deployment URL
+  7. Stores URL on project via `updateProject({ publishedUrl })`
+- **Re-deploy:** Same flow, same Vercel project — Vercel handles versioning
+- **Team:** Uses `VERCEL_TEAM_ID` env var if deploying under a team scope
 
 **3. Save to Files (Existing — Polish)**
 - Downloads self-contained HTML file
@@ -292,7 +345,63 @@ Saved projects store complete fragment code. When restoring an old Next.js proje
 
 ---
 
-## 7. UI Cleanup — Strip Developer-Facing Elements
+## 7. Undo / Version History Strategy
+
+### Data Model
+
+Add to the `projects` table in `convex/schema.ts`:
+
+```typescript
+versions: v.optional(v.array(v.object({
+  fragment: v.any(),       // complete FragmentResult snapshot
+  title: v.string(),       // tool title at that point
+  timestamp: v.number(),   // Date.now()
+}))),
+publishedUrl: v.optional(v.string()),  // Vercel deployment URL
+persistence: v.optional(v.string()),   // "session" | "device" | "cloud"
+```
+
+### When Versions Are Captured
+
+A version is saved **before each iteration update** — when `handleFragmentGenerated` fires and a previous fragment already exists. The current fragment is pushed to the `versions` array before being replaced by the new one.
+
+- **First generation:** No version saved (nothing to go back to)
+- **Second generation (first iteration):** Previous fragment saved as version[0]
+- **Third generation:** Previous saved as version[1], etc.
+- **Retention:** Max 10 versions, FIFO (oldest dropped when limit hit)
+
+### Undo Behavior
+
+- **Single-step undo:** Restores the most recent version (second-to-last in the array). This is intentional — non-technical users think "go back" not "navigate a timeline."
+- **After undo:** The undo button disappears until the user makes another change (versions array now has < 2 entries for comparison).
+- **Undo creates a new sandbox:** Restored fragment is written to E2B sandbox, preview updates.
+- **Toast:** "Restored previous version"
+
+### Size Concern
+
+Each fragment includes full HTML code (10-50KB). 10 versions = 100-500KB per project document. Convex's 1MB document limit is not likely to be hit, but monitor.
+
+---
+
+## 8. Backward Compatibility
+
+### Old Next.js Projects in Vite Sandbox
+
+Saved projects store complete fragment code. When the sandbox switches to Vite:
+
+- **Safe:** Projects using React + Tailwind + inline styles → work as-is in `src/App.tsx`
+- **Broken:** Projects with `next/image`, `next/link`, or `next/font` imports → fail in Vite
+
+**Mitigation:** Add a code sanitizer that runs before writing to the sandbox:
+1. Replace `import Image from 'next/image'` → remove import, replace `<Image>` with `<img>`
+2. Replace `import Link from 'next/link'` → remove import, replace `<Link>` with `<a>`
+3. Remove `"use client";` directive (not needed in Vite, not harmful but unnecessary)
+
+This runs in `e2b.ts` before `sandbox.files.write()` — a simple string replacement, not an AST transform.
+
+---
+
+## 9. UI Cleanup — Strip Developer-Facing Elements
 
 ### Remove
 - 5 stub view toggle buttons in header (Cloud, Code, Analytics, divider, Plus)
@@ -320,7 +429,7 @@ Saved projects store complete fragment code. When restoring an old Next.js proje
 
 ---
 
-## 8. Technical Changes Summary
+## 10. Technical Changes Summary
 
 ### New Files
 | File | Purpose |
@@ -331,7 +440,11 @@ Saved projects store complete fragment code. When restoring an old Next.js proje
 | `src/features/builder-v2/components/publish-dialog.tsx` | Publish flow with progress + result |
 | `src/shared/components/theme-toggle.tsx` | Dark mode sun/moon toggle |
 | `src/app/api/publish/route.ts` | Server route for Vercel Deploy API |
-| E2B template: `vite-therapy/` | Custom Vite sandbox template (separate repo/directory) |
+| `e2b-templates/vite-therapy/` | Custom Vite sandbox template (in this repo) |
+| `e2b-templates/vite-therapy/src/therapy-ui.css` | Design system classes + animation keyframes |
+| `e2b-templates/vite-therapy/src/hooks/useLocalStorage.ts` | Device-persistent state hook |
+| `e2b-templates/vite-therapy/src/hooks/useConvexData.ts` | Cross-device persistent state hook |
+| `e2b-templates/vite-therapy/src/lib/convex-client.ts` | Anonymous Convex auth client |
 
 ### Modified Files
 | File | Changes |
@@ -350,14 +463,14 @@ Saved projects store complete fragment code. When restoring an old Next.js proje
 | `src/app/(app)/builder/page.tsx` | Wire persistence choice, undo, publish, iteration state, message persistence, responsive state |
 | `src/features/my-tools/components/my-tools-page.tsx` | Replace browser confirm() with AlertDialog |
 | `src/features/sharing/components/share-dialog.tsx` | Add tabs (Preview Link / Published Link) |
-| `convex/schema.ts` | Add versions + publishedUrl fields to projects |
+| `convex/schema.ts` | Add versions + publishedUrl + persistence fields to projects |
 | `convex/projects.ts` | Add saveVersion, getLatestVersion, updatePublishUrl |
 | `src/app/globals.css` | Add .dark tokens + dark utility overrides |
 | `src/app/api/sandbox/route.ts` | Handle new template, port |
 
 ---
 
-## 9. Success Criteria
+## 11. Success Criteria
 
 After implementation, these must all be true:
 
