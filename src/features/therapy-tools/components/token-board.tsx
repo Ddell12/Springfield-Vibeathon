@@ -1,20 +1,26 @@
 "use client";
 
-import { useState } from "react";
-import { motion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
+import { useLayoutEffect } from "react";
+
 import { MaterialIcon } from "@/shared/components/material-icon";
+
+import { useTokenBoardStore } from "../stores/token-board-store";
 import type { TokenBoardConfig } from "../types/tool-configs";
 
 export function TokenBoard({ config }: { config: TokenBoardConfig }) {
-  const [earned, setEarned] = useState(config.earnedTokens);
+  const { earnedTokens, earnToken, reset, init } = useTokenBoardStore();
+
+  // useLayoutEffect runs synchronously after DOM mutations — ensures store is
+  // initialized before any test assertions or clicks happen.
+  useLayoutEffect(() => {
+    init(config.totalTokens, config.earnedTokens);
+  }, [config.totalTokens, config.earnedTokens, init]);
+
+  const earned = earnedTokens;
   const remaining = config.totalTokens - earned;
   const percentage = Math.round((earned / config.totalTokens) * 100);
-
-  function handleEarnStar() {
-    if (earned < config.totalTokens) {
-      setEarned((prev) => prev + 1);
-    }
-  }
+  const allEarned = earned >= config.totalTokens;
 
   return (
     <div className="space-y-10">
@@ -26,7 +32,8 @@ export function TokenBoard({ config }: { config: TokenBoardConfig }) {
         <div className="inline-flex items-center gap-2 bg-secondary-container text-on-secondary-container px-4 py-1.5 rounded-full text-sm font-medium">
           <MaterialIcon icon={config.reinforcers[0]?.icon ?? "redeem"} size="sm" />
           <span>
-            Earn {config.totalTokens} stars to get: {config.reinforcers[0]?.label ?? "a reward"}
+            Earn {config.totalTokens} stars to get:{" "}
+            {config.reinforcers[0]?.label ?? "a reward"}
           </span>
         </div>
       </section>
@@ -83,34 +90,50 @@ export function TokenBoard({ config }: { config: TokenBoardConfig }) {
         </div>
       </section>
 
-      {/* Earn Star Button */}
-      <section className="flex justify-center py-4">
+      {/* Earn Star Button + Reset */}
+      <section className="flex justify-center gap-4 py-4 flex-wrap">
         <button
-          onClick={handleEarnStar}
-          disabled={earned >= config.totalTokens}
+          onClick={earnToken}
+          disabled={allEarned}
           className="bg-primary-gradient text-white px-8 py-4 rounded-2xl text-lg font-semibold font-headline flex items-center gap-3 transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:hover:scale-100"
         >
           <MaterialIcon icon="add_circle" className="text-3xl" />
           Earn Star
         </button>
+        <button
+          onClick={reset}
+          className="border border-outline-variant text-on-surface px-6 py-4 rounded-2xl text-lg font-semibold font-headline flex items-center gap-3 transition-all hover:scale-105 active:scale-95"
+        >
+          <MaterialIcon icon="restart_alt" className="text-2xl" />
+          Reset
+        </button>
       </section>
 
-      {/* Reward Hint */}
-      <section className="bg-tertiary-fixed border-l-8 border-tertiary-container rounded-[1.5rem] p-6 flex items-center gap-6">
-        <div className="bg-tertiary-container p-4 rounded-xl text-on-tertiary-container">
-          <MaterialIcon icon="redeem" filled className="text-4xl" />
-        </div>
-        <div>
-          <p className="font-headline font-bold text-xl text-on-tertiary-fixed">
-            {earned >= config.totalTokens ? "You did it!" : "Keep going!"}
-          </p>
-          <p className="text-on-tertiary-fixed-variant font-medium text-lg">
-            {earned >= config.totalTokens
-              ? `Time for your reward: ${config.reinforcers[0]?.label ?? "a reward"}!`
-              : `${remaining} more star${remaining === 1 ? "" : "s"} to go!`}
-          </p>
-        </div>
-      </section>
+      {/* Celebration / Reward Hint */}
+      <AnimatePresence>
+        <motion.section
+          key={allEarned ? "celebration" : "progress"}
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.95 }}
+          transition={{ duration: 0.3 }}
+          className="bg-tertiary-fixed border-l-8 border-tertiary-container rounded-[1.5rem] p-6 flex items-center gap-6"
+        >
+          <div className="bg-tertiary-container p-4 rounded-xl text-on-tertiary-container">
+            <MaterialIcon icon="redeem" filled className="text-4xl" />
+          </div>
+          <div>
+            <p className="font-headline font-bold text-xl text-on-tertiary-fixed">
+              {allEarned ? "You did it!" : "Keep going!"}
+            </p>
+            <p className="text-on-tertiary-fixed-variant font-medium text-lg">
+              {allEarned
+                ? `Time for your reward: ${config.reinforcers[0]?.label ?? "a reward"}!`
+                : `${remaining} more star${remaining === 1 ? "" : "s"} to go!`}
+            </p>
+          </div>
+        </motion.section>
+      </AnimatePresence>
     </div>
   );
 }

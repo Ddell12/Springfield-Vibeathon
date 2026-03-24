@@ -49,6 +49,7 @@ export const CommunicationBoardSchema = z.object({
       label: z.string(),
       icon: z.string(),
       category: z.string(),
+      imageUrl: z.string().optional(),
     }),
   ),
   enableTTS: z.boolean(),
