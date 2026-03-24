@@ -9,6 +9,7 @@ import type { Id } from "../../../../convex/_generated/dataModel";
 export function useTemplateStarter() {
   const searchParams = useSearchParams();
   const templateId = searchParams.get("template");
+  const rawPrompt = searchParams.get("prompt");
 
   const template = useQuery(
     api.therapy_templates.get,
@@ -16,7 +17,7 @@ export function useTemplateStarter() {
   );
 
   return {
-    starterPrompt: template?.starterPrompt ?? null,
+    starterPrompt: rawPrompt ? decodeURIComponent(rawPrompt) : (template?.starterPrompt ?? null),
     templateName: template?.name ?? null,
     isLoading: templateId !== null && template === undefined,
   };

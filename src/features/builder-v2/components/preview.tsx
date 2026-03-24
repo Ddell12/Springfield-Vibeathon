@@ -7,6 +7,7 @@ import { MaterialIcon } from "@/shared/components/material-icon";
 
 import type { FragmentResult } from "../lib/schema";
 import { FragmentWeb } from "./fragment-web";
+import { LoadingCarousel } from "./loading-carousel";
 
 type PreviewProps = {
   fragment: FragmentResult | null;
@@ -66,15 +67,10 @@ export function Preview({ fragment, sandboxUrl, isLoading }: PreviewProps) {
       </div>
 
       {/* Content area */}
-      <div className="flex-1 relative overflow-hidden">
+      <div className="flex-1 relative overflow-hidden bg-surface-container-lowest">
         {isLoading ? (
-          <div
-            role="status"
-            className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-surface-container-low"
-            aria-label="Loading preview"
-          >
-            <div className="animate-spin rounded-full h-10 w-10 border-4 border-primary/20 border-t-primary" />
-            <p className="text-sm text-on-surface-variant">Building your app...</p>
+          <div className="absolute inset-0 z-10">
+            <LoadingCarousel />
           </div>
         ) : fragment && viewMode === "code" ? (
           <div className="absolute inset-0 bg-surface-container overflow-auto p-4">

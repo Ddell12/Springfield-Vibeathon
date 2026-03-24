@@ -3,7 +3,7 @@ import { render, screen } from "@testing-library/react";
 import { ToolCard } from "../tool-card";
 
 vi.mock("next/link", () => ({
-  default: ({ children, href, ...rest }: any) => (
+  default: ({ children, href, ...rest }: { children: React.ReactNode; href: string; [key: string]: unknown }) => (
     <a href={href} {...rest}>
       {children}
     </a>

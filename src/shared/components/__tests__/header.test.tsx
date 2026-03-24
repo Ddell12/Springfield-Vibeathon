@@ -3,7 +3,7 @@ import { render, screen } from "@testing-library/react";
 import { Header } from "../header";
 
 vi.mock("next/link", () => ({
-  default: ({ children, href, ...rest }: any) => (
+  default: ({ children, href, ...rest }: { children: React.ReactNode; href: string; [key: string]: unknown }) => (
     <a href={href} {...rest}>
       {children}
     </a>
@@ -15,7 +15,7 @@ vi.mock("next/navigation", () => ({
 }));
 
 vi.mock("@/shared/components/ui/button", () => ({
-  Button: ({ children, asChild, className, ...rest }: any) => (
+  Button: ({ children, className, ...rest }: { children: React.ReactNode; className?: string; [key: string]: unknown }) => (
     <div className={className} data-testid="button" {...rest}>
       {children}
     </div>
@@ -23,13 +23,13 @@ vi.mock("@/shared/components/ui/button", () => ({
 }));
 
 vi.mock("@/shared/components/ui/sheet", () => ({
-  Sheet: ({ children }: any) => <div data-testid="sheet">{children}</div>,
-  SheetTrigger: ({ children }: any) => <div data-testid="sheet-trigger">{children}</div>,
-  SheetContent: ({ children }: any) => <div data-testid="sheet-content">{children}</div>,
+  Sheet: ({ children }: { children: React.ReactNode }) => <div data-testid="sheet">{children}</div>,
+  SheetTrigger: ({ children }: { children: React.ReactNode }) => <div data-testid="sheet-trigger">{children}</div>,
+  SheetContent: ({ children }: { children: React.ReactNode }) => <div data-testid="sheet-content">{children}</div>,
 }));
 
 vi.mock("lucide-react", () => ({
-  Menu: (props: any) => <svg data-testid="menu-icon" {...props} />,
+  Menu: (props: Record<string, unknown>) => <svg data-testid="menu-icon" {...props} />,
 }));
 
 describe("Header", () => {

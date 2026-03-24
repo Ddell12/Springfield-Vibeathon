@@ -48,17 +48,17 @@ describe("BuilderV2Header", () => {
     expect(shareBtn).toBeUndefined();
   });
 
-  it("renders a New Project button", () => {
+  it("renders a New button", () => {
     render(<BuilderV2Header />);
-    expect(getButtonByText("New Project")).toBeInTheDocument();
+    expect(getButtonByText("New")).toBeInTheDocument();
   });
 
-  it("calls onNewProject when New Project button is clicked", async () => {
+  it("calls onNewProject when New button is clicked", async () => {
     const onNewProject = vi.fn();
     const user = userEvent.setup();
 
     render(<BuilderV2Header onNewProject={onNewProject} />);
-    await user.click(getButtonByText("New Project"));
+    await user.click(getButtonByText("New"));
 
     expect(onNewProject).toHaveBeenCalledTimes(1);
   });
@@ -83,7 +83,8 @@ describe("BuilderV2Header", () => {
     const user = userEvent.setup();
 
     render(<BuilderV2Header hasProject={true} onDownload={onDownload} />);
-    await user.click(getButtonByText("Download"));
+    const downloadBtn = screen.getByTitle("Download Code");
+    await user.click(downloadBtn);
 
     expect(onDownload).toHaveBeenCalledTimes(1);
   });

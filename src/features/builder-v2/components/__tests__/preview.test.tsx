@@ -13,6 +13,10 @@ vi.mock("../fragment-web", () => ({
   ),
 }));
 
+vi.mock("../loading-carousel", () => ({
+  LoadingCarousel: () => <div data-testid="loading-carousel" role="status">Loading...</div>,
+}));
+
 const mockFragment: FragmentResult = {
   title: "Morning Routine Tracker",
   description: "An interactive morning routine for children with ASD",
@@ -27,7 +31,6 @@ describe("Preview", () => {
   it("renders an empty/placeholder state when fragment is null", () => {
     render(<Preview fragment={null} sandboxUrl={null} isLoading={false} />);
     // Should show some placeholder or empty state UI
-    const content = document.body.textContent ?? "";
     // Should not show the FragmentWeb iframe
     expect(screen.queryByTestId("fragment-web")).not.toBeInTheDocument();
   });
@@ -36,15 +39,7 @@ describe("Preview", () => {
     render(
       <Preview fragment={mockFragment} sandboxUrl={null} isLoading={true} />
     );
-    // Should show loading state (spinner, skeleton, or loading text)
-    const content = document.body.textContent ?? "";
-    const hasLoadingIndicator =
-      screen.queryByRole("status") !== null ||
-      content.toLowerCase().includes("loading") ||
-      document.querySelector('[class*="animate"]') !== null ||
-      document.querySelector('[class*="spinner"]') !== null ||
-      document.querySelector('[class*="skeleton"]') !== null;
-    expect(hasLoadingIndicator).toBe(true);
+    expect(screen.getByTestId("loading-carousel")).toBeInTheDocument();
   });
 
   it("renders FragmentWeb when fragment and sandboxUrl are both provided", () => {

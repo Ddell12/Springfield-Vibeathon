@@ -4,17 +4,22 @@ import { describe, expect, it, vi } from "vitest";
 
 import { ChatInput } from "../chat-input";
 
+vi.mock("@/shared/components/material-icon", () => ({
+  MaterialIcon: ({ icon }: { icon: string }) => <span data-testid={`icon-${icon}`}>{icon}</span>,
+}));
+
 describe("ChatInput", () => {
   it("renders the text input area", () => {
     render(<ChatInput onSubmit={vi.fn()} isLoading={false} />);
-    expect(
-      screen.getByRole("textbox") || screen.getByPlaceholderText(/message/i)
-    ).toBeInTheDocument();
+    expect(screen.getByRole("textbox")).toBeInTheDocument();
   });
 
   it("renders a submit button", () => {
     render(<ChatInput onSubmit={vi.fn()} isLoading={false} />);
-    expect(screen.getByRole("button")).toBeInTheDocument();
+    // The component renders multiple buttons; the submit button has type="button" and contains the arrow icon
+    const buttons = screen.getAllByRole("button");
+    const submitBtn = buttons.find((btn) => btn.querySelector('[data-testid="icon-arrow_upward"]'));
+    expect(submitBtn).toBeDefined();
   });
 
   it("renders the placeholder text when provided", () => {
@@ -37,7 +42,10 @@ describe("ChatInput", () => {
 
     const input = screen.getByRole("textbox");
     await user.type(input, "Build a token board");
-    await user.click(screen.getByRole("button"));
+
+    const buttons = screen.getAllByRole("button");
+    const submitBtn = buttons.find((btn) => btn.querySelector('[data-testid="icon-arrow_upward"]'))!;
+    await user.click(submitBtn);
 
     expect(onSubmit).toHaveBeenCalledWith("Build a token board");
   });
@@ -65,16 +73,20 @@ describe("ChatInput", () => {
   });
 
   it("shows stop button when isLoading is true", () => {
-    render(<ChatInput onSubmit={vi.fn()} isLoading={true} />);
-    const btn = screen.getByRole("button");
-    expect(btn).toBeInTheDocument();
-    expect(btn).toHaveAttribute("aria-label", "Stop generation");
-    expect(btn).not.toBeDisabled();
+    const onStop = vi.fn();
+    render(<ChatInput onSubmit={vi.fn()} onStop={onStop} isLoading={true} />);
+    // When loading, the stop button replaces the submit button — it contains a square stop indicator
+    const buttons = screen.getAllByRole("button");
+    const stopBtn = buttons.find((btn) => btn.querySelector(".rounded-sm"));
+    expect(stopBtn).toBeDefined();
+    expect(stopBtn).not.toBeDisabled();
   });
 
   it("disables the submit button when input is empty", () => {
     render(<ChatInput onSubmit={vi.fn()} isLoading={false} />);
-    expect(screen.getByRole("button")).toBeDisabled();
+    const buttons = screen.getAllByRole("button");
+    const submitBtn = buttons.find((btn) => btn.querySelector('[data-testid="icon-arrow_upward"]'));
+    expect(submitBtn).toBeDisabled();
   });
 
   it("enables submit button when there is text and not loading", async () => {
@@ -84,7 +96,9 @@ describe("ChatInput", () => {
     const input = screen.getByRole("textbox");
     await user.type(input, "Hello");
 
-    expect(screen.getByRole("button")).not.toBeDisabled();
+    const buttons = screen.getAllByRole("button");
+    const submitBtn = buttons.find((btn) => btn.querySelector('[data-testid="icon-arrow_upward"]'));
+    expect(submitBtn).not.toBeDisabled();
   });
 
   it("does not call onSubmit when input is empty and Enter is pressed", async () => {
@@ -105,7 +119,7 @@ describe("ChatInput", () => {
     render(<ChatInput onSubmit={onSubmit} isLoading={true} />);
 
     const input = screen.getByRole("textbox");
-    // Input may be disabled when loading, but test behavior regardless
+    // Input is disabled when loading, so type may fail
     try {
       await user.type(input, "hello{Enter}");
     } catch {

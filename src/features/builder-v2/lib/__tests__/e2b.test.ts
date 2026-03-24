@@ -15,6 +15,7 @@ const mockSandboxInstance = {
   },
   getHost: mockGetHost,
   close: mockClose,
+  commands: { run: vi.fn() },
 };
 
 vi.mock("@e2b/code-interpreter", () => ({
@@ -59,7 +60,7 @@ describe("createSandbox", () => {
   it("calls Sandbox.create with the correct template", async () => {
     const { Sandbox } = await import("@e2b/code-interpreter");
     mockGetHost.mockReturnValue("sandbox-abc-123-3000.e2b.app");
-    vi.mocked(Sandbox.create).mockResolvedValue(mockSandboxInstance as any);
+    vi.mocked(Sandbox.create).mockResolvedValue(mockSandboxInstance as ReturnType<typeof vi.fn> & typeof mockSandboxInstance);
 
     await createSandbox(validFragment);
 
@@ -72,7 +73,7 @@ describe("createSandbox", () => {
   it("writes the fragment code to the correct file path", async () => {
     const { Sandbox } = await import("@e2b/code-interpreter");
     mockGetHost.mockReturnValue("sandbox-abc-123-3000.e2b.app");
-    vi.mocked(Sandbox.create).mockResolvedValue(mockSandboxInstance as any);
+    vi.mocked(Sandbox.create).mockResolvedValue(mockSandboxInstance as ReturnType<typeof vi.fn> & typeof mockSandboxInstance);
 
     await createSandbox(validFragment);
 
@@ -85,7 +86,7 @@ describe("createSandbox", () => {
   it("returns a sandboxId and url", async () => {
     const { Sandbox } = await import("@e2b/code-interpreter");
     mockGetHost.mockReturnValue("sandbox-abc-123-3000.e2b.app");
-    vi.mocked(Sandbox.create).mockResolvedValue(mockSandboxInstance as any);
+    vi.mocked(Sandbox.create).mockResolvedValue(mockSandboxInstance as ReturnType<typeof vi.fn> & typeof mockSandboxInstance);
 
     const result = await createSandbox(validFragment);
 
@@ -98,7 +99,7 @@ describe("createSandbox", () => {
   it("returns the sandbox id from the created sandbox", async () => {
     const { Sandbox } = await import("@e2b/code-interpreter");
     mockGetHost.mockReturnValue("sandbox-abc-123-3000.e2b.app");
-    vi.mocked(Sandbox.create).mockResolvedValue(mockSandboxInstance as any);
+    vi.mocked(Sandbox.create).mockResolvedValue(mockSandboxInstance as ReturnType<typeof vi.fn> & typeof mockSandboxInstance);
 
     const result = await createSandbox(validFragment);
 
@@ -114,7 +115,7 @@ describe("executeFragment", () => {
   it("connects to an existing sandbox and updates the code file", async () => {
     const { Sandbox } = await import("@e2b/code-interpreter");
     mockGetHost.mockReturnValue("sandbox-abc-123-3000.e2b.app");
-    vi.mocked(Sandbox.connect).mockResolvedValue(mockSandboxInstance as any);
+    vi.mocked(Sandbox.connect).mockResolvedValue(mockSandboxInstance as ReturnType<typeof vi.fn> & typeof mockSandboxInstance);
 
     await executeFragment("sandbox-abc-123", validFragment);
 
@@ -127,7 +128,7 @@ describe("executeFragment", () => {
   it("returns a sandboxId and url", async () => {
     const { Sandbox } = await import("@e2b/code-interpreter");
     mockGetHost.mockReturnValue("sandbox-abc-123-3000.e2b.app");
-    vi.mocked(Sandbox.connect).mockResolvedValue(mockSandboxInstance as any);
+    vi.mocked(Sandbox.connect).mockResolvedValue(mockSandboxInstance as ReturnType<typeof vi.fn> & typeof mockSandboxInstance);
 
     const result = await executeFragment("sandbox-abc-123", validFragment);
 

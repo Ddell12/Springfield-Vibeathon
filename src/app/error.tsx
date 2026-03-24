@@ -5,7 +5,7 @@ import Link from "next/link";
 import { MaterialIcon } from "@/shared/components/material-icon";
 
 export default function ErrorPage({
-  error,
+  error: _error,
   reset,
 }: {
   error: Error & { digest?: string };

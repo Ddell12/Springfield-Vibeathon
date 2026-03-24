@@ -18,6 +18,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="h-full" suppressHydrationWarning>
+      {/* eslint-disable @next/next/no-page-custom-font -- App Router layout, not Pages Router _document.js */}
       <head>
         <link
           href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap"
@@ -28,6 +29,7 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
+      {/* eslint-enable @next/next/no-page-custom-font */}
       <body className="min-h-full flex flex-col antialiased">
         <SkipToContent />
         <Providers>

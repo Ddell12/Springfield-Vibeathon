@@ -43,7 +43,8 @@ export function SharedToolPage() {
 
     bootSandbox();
     return () => { cancelled = true; };
-  }, [project?._id, retryCount]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally depend on specific fields, not the full project object
+  }, [project?._id, project?.fragment, retryCount]);
 
   if (project === undefined) {
     return (

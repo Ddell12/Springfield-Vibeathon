@@ -28,7 +28,6 @@ const WELCOME_MESSAGE: Message = {
 };
 
 export function Chat({
-  projectId: _projectId,
   onFragmentGenerated,
   currentCode,
   initialMessage,

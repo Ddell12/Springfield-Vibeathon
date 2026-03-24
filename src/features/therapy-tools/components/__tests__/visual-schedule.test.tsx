@@ -6,9 +6,15 @@ import type { VisualScheduleConfig } from "../../types/tool-configs";
 import { VisualSchedule } from "../visual-schedule";
 
 // Mock dnd-kit — capture onDragEnd so we can test reorder logic
-let capturedOnDragEnd: ((event: any) => void) | undefined;
+interface DragEndEvent {
+  operation: {
+    source: { sortable?: { index: number } };
+    target: { sortable?: { index: number } };
+  };
+}
+let capturedOnDragEnd: ((event: DragEndEvent) => void) | undefined;
 vi.mock("@dnd-kit/react", () => ({
-  DragDropProvider: ({ children, onDragEnd }: { children: React.ReactNode; onDragEnd?: (event: any) => void }) => {
+  DragDropProvider: ({ children, onDragEnd }: { children: React.ReactNode; onDragEnd?: (event: DragEndEvent) => void }) => {
     capturedOnDragEnd = onDragEnd;
     return <div>{children}</div>;
   },

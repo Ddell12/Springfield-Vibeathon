@@ -7,7 +7,7 @@ export interface SandboxResult {
   url: string;
 }
 
-export function getSandboxUrl(host: string, port: number): string {
+export function getSandboxUrl(host: string, _port: number): string {
   return `https://${host}`;
 }
 

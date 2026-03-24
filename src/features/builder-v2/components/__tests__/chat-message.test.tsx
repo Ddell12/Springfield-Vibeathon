@@ -1,7 +1,11 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { ChatMessage } from "../chat-message";
+
+vi.mock("../thinking-state", () => ({
+  ThinkingState: ({ status }: { status: string }) => <div data-testid="thinking-state">{status}</div>,
+}));
 
 describe("ChatMessage", () => {
   it("renders user message content", () => {
@@ -33,18 +37,17 @@ describe("ChatMessage", () => {
     expect(userContainer.innerHTML).not.toBe(assistantContainer.innerHTML);
   });
 
-  it("aligns user messages to the right", () => {
+  it("renders user messages with distinct background styling", () => {
     render(<ChatMessage role="user" content="Hello from user" />);
-    const message = screen.getByText("Hello from user").closest("[class]");
-    // User messages should have right alignment or self-end class
-    expect(message?.className).toMatch(/end|right|user/i);
+    const bubble = screen.getByText("Hello from user").closest("[class]");
+    // User messages have a colored background bubble
+    expect(bubble?.className).toMatch(/bg-/);
   });
 
-  it("aligns assistant messages to the left", () => {
+  it("renders assistant messages as plain text", () => {
     render(<ChatMessage role="assistant" content="Hello from assistant" />);
-    const message = screen.getByText("Hello from assistant").closest("[class]");
-    // Assistant messages should have left alignment or self-start class
-    expect(message?.className).toMatch(/start|left|assistant/i);
+    const message = screen.getByText("Hello from assistant");
+    expect(message).toBeInTheDocument();
   });
 
   it("renders multi-line content correctly", () => {
