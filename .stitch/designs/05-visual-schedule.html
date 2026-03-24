@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Morning Routine - Visual Schedule</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              colors: {
+                "secondary-fixed-dim": "#c0c1ff",
+                "outline": "#6e7979",
+                "on-error-container": "#93000a",
+                "secondary-fixed": "#e1e0ff",
+                "on-tertiary-fixed": "#331200",
+                "on-secondary": "#ffffff",
+                "tertiary-fixed": "#ffdbca",
+                "outline-variant": "#bec9c9",
+                "surface-variant": "#dce2f3",
+                "inverse-surface": "#2a313d",
+                "primary": "#00595c",
+                "surface-dim": "#d3daea",
+                "surface-bright": "#f9f9ff",
+                "on-secondary-container": "#22248f",
+                "surface-container": "#e7eefe",
+                "on-primary-fixed-variant": "#004f52",
+                "tertiary-fixed-dim": "#ffb68e",
+                "on-tertiary": "#ffffff",
+                "surface-container-highest": "#dce2f3",
+                "on-secondary-fixed": "#05006d",
+                "primary-container": "#0d7377",
+                "on-secondary-fixed-variant": "#3639a1",
+                "secondary-container": "#8f93ff",
+                "on-tertiary-container": "#ffe1d2",
+                "on-error": "#ffffff",
+                "tertiary-container": "#975731",
+                "on-primary-container": "#a2f5f9",
+                "on-background": "#151c27",
+                "on-surface-variant": "#3e4949",
+                "error": "#ba1a1a",
+                "surface-container-lowest": "#ffffff",
+                "primary-fixed-dim": "#81d4d8",
+                "surface-container-low": "#f0f3ff",
+                "surface": "#f9f9ff",
+                "background": "#f9f9ff",
+                "inverse-on-surface": "#ebf1ff",
+                "surface-container-high": "#e2e8f8",
+                "primary-fixed": "#9df0f4",
+                "on-surface": "#151c27",
+                "surface-tint": "#00696d",
+                "inverse-primary": "#81d4d8",
+                "error-container": "#ffdad6",
+                "on-tertiary-fixed-variant": "#6f3814",
+                "on-primary-fixed": "#002021",
+                "secondary": "#4e52ba",
+                "on-primary": "#ffffff",
+                "tertiary": "#7a401c"
+              },
+              fontFamily: {
+                "headline": ["Manrope"],
+                "body": ["Inter"],
+                "label": ["Inter"]
+              },
+              borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+            },
+          },
+        }
+      </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .filled-icon {
+            font-variation-settings: 'FILL' 1;
+        }
+        body {
+            background-color: #f9f9ff;
+            color: #151c27;
+        }
+    </style>
+</head>
+<body class="font-body selection:bg-primary-fixed-dim">
+<!-- TopAppBar -->
+<header class="bg-[#f9f9ff] flex justify-between items-center w-full px-6 py-6 sticky top-0 z-50">
+<div class="flex flex-col">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-3xl filled-icon" data-icon="light_mode">light_mode</span>
+<h1 class="font-headline font-bold text-2xl tracking-tight text-primary">Morning Routine</h1>
+</div>
+<p class="text-on-surface-variant text-sm mt-1">7 steps to start the day</p>
+</div>
+<div class="flex items-center gap-3">
+<button class="p-2 rounded-full hover:bg-[#f0f3ff] transition-colors text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="edit">edit</span>
+</button>
+<button class="p-2 rounded-full hover:bg-[#f0f3ff] transition-colors text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+</div>
+</header>
+<!-- Main Content: Schedule Canvas -->
+<main class="max-w-2xl mx-auto px-6 pb-32">
+<div class="flex flex-col gap-4">
+<!-- Step 1: Completed -->
+<div class="bg-[#f0f9f9] border-l-4 border-transparent rounded-lg flex items-center p-4 transition-all duration-300">
+<div class="text-outline-variant mr-4">
+<span class="material-symbols-outlined" data-icon="drag_indicator">drag_indicator</span>
+</div>
+<div class="flex-grow flex items-center gap-4">
+<div class="w-12 h-12 bg-white rounded-full flex items-center justify-center text-2xl">🛏️</div>
+<div>
+<h3 class="font-headline font-bold text-lg text-primary line-through opacity-60">Wake Up</h3>
+<p class="font-label text-xs text-on-surface-variant">7:00 AM</p>
+</div>
+</div>
+<div class="ml-auto">
+<span class="material-symbols-outlined text-primary text-3xl filled-icon" data-icon="check_circle">check_circle</span>
+</div>
+</div>
+<!-- Step 2: Completed -->
+<div class="bg-[#f0f9f9] border-l-4 border-transparent rounded-lg flex items-center p-4 transition-all duration-300">
+<div class="text-outline-variant mr-4">
+<span class="material-symbols-outlined" data-icon="drag_indicator">drag_indicator</span>
+</div>
+<div class="flex-grow flex items-center gap-4">
+<div class="w-12 h-12 bg-white rounded-full flex items-center justify-center text-2xl">🪥</div>
+<div>
+<h3 class="font-headline font-bold text-lg text-primary line-through opacity-60">Brush Teeth</h3>
+<p class="font-label text-xs text-on-surface-variant">7:10 AM</p>
+</div>
+</div>
+<div class="ml-auto">
+<span class="material-symbols-outlined text-primary text-3xl filled-icon" data-icon="check_circle">check_circle</span>
+</div>
+</div>
+<!-- Step 3: Completed -->
+<div class="bg-[#f0f9f9] border-l-4 border-transparent rounded-lg flex items-center p-4 transition-all duration-300">
+<div class="text-outline-variant mr-4">
+<span class="material-symbols-outlined" data-icon="drag_indicator">drag_indicator</span>
+</div>
+<div class="flex-grow flex items-center gap-4">
+<div class="w-12 h-12 bg-white rounded-full flex items-center justify-center text-2xl">👕</div>
+<div>
+<h3 class="font-headline font-bold text-lg text-primary line-through opacity-60">Get Dressed</h3>
+<p class="font-label text-xs text-on-surface-variant">7:20 AM</p>
+</div>
+</div>
+<div class="ml-auto">
+<span class="material-symbols-outlined text-primary text-3xl filled-icon" data-icon="check_circle">check_circle</span>
+</div>
+</div>
+<!-- Step 4: Current -->
+<div class="bg-surface-container-lowest border-l-4 border-primary rounded-lg flex items-center p-5 shadow-[0px_12px_32px_rgba(21,28,39,0.06)] scale-[1.02] z-10">
+<div class="text-outline-variant mr-4">
+<span class="material-symbols-outlined" data-icon="drag_indicator">drag_indicator</span>
+</div>
+<div class="flex-grow flex items-center gap-4">
+<div class="w-14 h-14 bg-surface-container-low rounded-full flex items-center justify-center text-3xl shadow-sm">🥣</div>
+<div>
+<h3 class="font-headline font-bold text-xl text-on-surface">Eat Breakfast</h3>
+<p class="font-label text-sm text-primary font-semibold">7:30 AM • Happening Now</p>
+</div>
+</div>
+<div class="ml-auto">
+<div class="w-8 h-8 rounded-full border-2 border-outline-variant flex items-center justify-center">
+<div class="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
+</div>
+</div>
+</div>
+<!-- Step 5: Pending -->
+<div class="bg-surface-container-lowest border-l-4 border-transparent rounded-lg flex items-center p-4">
+<div class="text-outline-variant mr-4">
+<span class="material-symbols-outlined" data-icon="drag_indicator">drag_indicator</span>
+</div>
+<div class="flex-grow flex items-center gap-4">
+<div class="w-12 h-12 bg-surface-container-low rounded-full flex items-center justify-center text-2xl">🎒</div>
+<div>
+<h3 class="font-headline font-bold text-lg text-on-surface">Pack Backpack</h3>
+<p class="font-label text-xs text-on-surface-variant">7:45 AM</p>
+</div>
+</div>
+<div class="ml-auto">
+<span class="material-symbols-outlined text-outline-variant text-3xl" data-icon="radio_button_unchecked">radio_button_unchecked</span>
+</div>
+</div>
+<!-- Step 6: Pending -->
+<div class="bg-surface-container-lowest border-l-4 border-transparent rounded-lg flex items-center p-4">
+<div class="text-outline-variant mr-4">
+<span class="material-symbols-outlined" data-icon="drag_indicator">drag_indicator</span>
+</div>
+<div class="flex-grow flex items-center gap-4">
+<div class="w-12 h-12 bg-surface-container-low rounded-full flex items-center justify-center text-2xl">👟</div>
+<div>
+<h3 class="font-headline font-bold text-lg text-on-surface">Put on Shoes</h3>
+<p class="font-label text-xs text-on-surface-variant">7:55 AM</p>
+</div>
+</div>
+<div class="ml-auto">
+<span class="material-symbols-outlined text-outline-variant text-3xl" data-icon="radio_button_unchecked">radio_button_unchecked</span>
+</div>
+</div>
+<!-- Step 7: Pending -->
+<div class="bg-surface-container-lowest border-l-4 border-transparent rounded-lg flex items-center p-4">
+<div class="text-outline-variant mr-4">
+<span class="material-symbols-outlined" data-icon="drag_indicator">drag_indicator</span>
+</div>
+<div class="flex-grow flex items-center gap-4">
+<div class="w-12 h-12 bg-surface-container-low rounded-full flex items-center justify-center text-2xl">🚗</div>
+<div>
+<h3 class="font-headline font-bold text-lg text-on-surface">Go to Car</h3>
+<p class="font-label text-xs text-on-surface-variant">8:00 AM</p>
+</div>
+</div>
+<div class="ml-auto">
+<span class="material-symbols-outlined text-outline-variant text-3xl" data-icon="radio_button_unchecked">radio_button_unchecked</span>
+</div>
+</div>
+</div>
+</main>
+<!-- BottomNavBar (Custom Shell for Progress) -->
+<nav class="fixed bottom-0 left-0 w-full z-50">
+<!-- Floating Progress Card -->
+<div class="mx-auto max-w-2xl px-4 mb-4">
+<div class="bg-surface-container-lowest rounded-2xl p-5 shadow-[0px_-12px_32px_rgba(21,28,39,0.06)] border border-outline-variant/10">
+<div class="flex justify-between items-center mb-3">
+<span class="font-headline font-bold text-primary">Progress</span>
+<span class="font-label font-semibold text-primary">4 of 7 steps</span>
+</div>
+<div class="w-full h-3 bg-surface-container-high rounded-full overflow-hidden">
+<div class="h-full bg-gradient-to-r from-primary to-primary-container w-[57%] rounded-full transition-all duration-700 ease-in-out"></div>
+</div>
+</div>
+</div>
+<!-- Semantic Navigation Bar -->
+<div class="bg-[#f9f9ff]/90 backdrop-blur-md flex justify-around items-center px-4 pb-8 pt-4 border-t border-outline-variant/15">
+<button class="flex flex-col items-center justify-center bg-primary text-white rounded-2xl px-6 py-2 transition-transform active:scale-95">
+<span class="material-symbols-outlined filled-icon" data-icon="calendar_today">calendar_today</span>
+<span class="font-label text-[12px] font-medium tracking-wide mt-1">Schedule</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant px-6 py-2 hover:text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="leaderboard">leaderboard</span>
+<span class="font-label text-[12px] font-medium tracking-wide mt-1">Progress</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant px-6 py-2 hover:text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="stars">stars</span>
+<span class="font-label text-[12px] font-medium tracking-wide mt-1">Rewards</span>
+</button>
+</div>
+</nav>
+<!-- Visual Accent Element -->
+<div class="fixed top-0 right-0 w-64 h-64 bg-primary-fixed-dim/10 rounded-full -mr-32 -mt-32 blur-3xl pointer-events-none"></div>
+<div class="fixed bottom-0 left-0 w-48 h-48 bg-secondary-fixed/20 rounded-full -ml-24 -mb-24 blur-3xl pointer-events-none"></div>
+</body></html>

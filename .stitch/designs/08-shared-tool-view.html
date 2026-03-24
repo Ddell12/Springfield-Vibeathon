@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Emma's Feelings Board | Bridges</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "tertiary-container": "#975731",
+              "inverse-surface": "#2a313d",
+              "surface-dim": "#d3daea",
+              "background": "#f9f9ff",
+              "on-error-container": "#93000a",
+              "tertiary-fixed-dim": "#ffb68e",
+              "on-surface-variant": "#3e4949",
+              "surface-tint": "#00696d",
+              "secondary-fixed": "#e1e0ff",
+              "outline": "#6e7979",
+              "on-tertiary-fixed": "#331200",
+              "on-tertiary-container": "#ffe1d2",
+              "secondary-container": "#8f93ff",
+              "secondary": "#4e52ba",
+              "secondary-fixed-dim": "#c0c1ff",
+              "primary-fixed": "#9df0f4",
+              "on-primary": "#ffffff",
+              "on-error": "#ffffff",
+              "on-primary-fixed": "#002021",
+              "on-tertiary-fixed-variant": "#6f3814",
+              "on-secondary-fixed": "#05006d",
+              "outline-variant": "#bec9c9",
+              "on-primary-fixed-variant": "#004f52",
+              "on-secondary-container": "#22248f",
+              "surface-container": "#e7eefe",
+              "tertiary": "#7a401c",
+              "surface-container-lowest": "#ffffff",
+              "tertiary-fixed": "#ffdbca",
+              "surface": "#f9f9ff",
+              "on-tertiary": "#ffffff",
+              "error": "#ba1a1a",
+              "primary-container": "#0d7377",
+              "surface-container-highest": "#dce2f3",
+              "surface-variant": "#dce2f3",
+              "surface-container-low": "#f0f3ff",
+              "primary-fixed-dim": "#81d4d8",
+              "on-surface": "#151c27",
+              "on-secondary": "#ffffff",
+              "on-secondary-fixed-variant": "#3639a1",
+              "inverse-on-surface": "#ebf1ff",
+              "surface-container-high": "#e2e8f8",
+              "error-container": "#ffdad6",
+              "on-background": "#151c27",
+              "on-primary-container": "#a2f5f9",
+              "primary": "#00595c",
+              "surface-bright": "#f9f9ff",
+              "inverse-primary": "#81d4d8"
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .bg-primary-gradient {
+            background: linear-gradient(135deg, #00595c 0%, #0d7377 100%);
+        }
+        .safe-space-container {
+            background-color: #ffffff;
+            border-radius: 1.5rem;
+            border: 1px solid rgba(190, 201, 201, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-surface font-body text-on-surface min-h-screen flex flex-col">
+<!-- TopAppBar -->
+<header class="flex justify-center items-center w-full px-6 py-4 bg-[#f9f9ff] dark:bg-slate-950 no-border docked full-width top-0 z-10">
+<div class="max-w-7xl w-full flex justify-between items-center">
+<div class="flex items-center gap-2">
+<span class="text-[#0d7377] dark:text-teal-500 font-extrabold tracking-tight font-headline text-lg">Bridges</span>
+</div>
+<div class="hidden md:flex items-center gap-6">
+<span class="text-[#3e4949] dark:text-slate-400 font-label text-sm">Public Tool View</span>
+</div>
+<div class="flex items-center gap-3">
+<button class="material-symbols-outlined text-on-surface-variant hover:bg-[#f0f3ff] p-2 rounded-full transition-colors">share</button>
+<button class="material-symbols-outlined text-on-surface-variant hover:bg-[#f0f3ff] p-2 rounded-full transition-colors">info</button>
+</div>
+</div>
+</header>
+<main class="flex-grow flex items-center justify-center px-4 py-12 md:py-20">
+<div class="max-w-5xl w-full">
+<!-- Header Section -->
+<div class="mb-10 ml-2 md:ml-8">
+<h1 class="font-headline font-extrabold text-3xl md:text-4xl text-primary tracking-tight mb-2">Emma's Feelings Board</h1>
+<p class="font-body text-on-surface-variant text-base max-w-lg">Tap an emoji to express how you are feeling right now. This is a safe space for your voice.</p>
+</div>
+<!-- The "Safe Space" Container (Therapy Tool) -->
+<div class="safe-space-container p-6 md:p-10 shadow-sm relative overflow-hidden">
+<!-- Subtle Background Texture/Element -->
+<div class="absolute -top-24 -right-24 w-64 h-64 rounded-full bg-secondary-container opacity-10 blur-3xl"></div>
+<div class="absolute -bottom-24 -left-24 w-64 h-64 rounded-full bg-primary-container opacity-5 blur-3xl"></div>
+<!-- Bento Grid for Emoji Communication -->
+<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 md:gap-6 relative z-10">
+<!-- Feeling Card -->
+<button class="group flex flex-col items-center justify-center p-6 bg-surface-container-low hover:bg-surface-container-high transition-all duration-300 rounded-xl cursor-pointer">
+<span class="text-5xl mb-4 group-hover:scale-110 transition-transform duration-300">😊</span>
+<span class="font-headline font-bold text-primary">Happy</span>
+</button>
+<!-- Feeling Card -->
+<button class="group flex flex-col items-center justify-center p-6 bg-surface-container-low hover:bg-surface-container-high transition-all duration-300 rounded-xl cursor-pointer">
+<span class="text-5xl mb-4 group-hover:scale-110 transition-transform duration-300">😢</span>
+<span class="font-headline font-bold text-primary">Sad</span>
+</button>
+<!-- Feeling Card -->
+<button class="group flex flex-col items-center justify-center p-6 bg-surface-container-low hover:bg-surface-container-high transition-all duration-300 rounded-xl cursor-pointer">
+<span class="text-5xl mb-4 group-hover:scale-110 transition-transform duration-300">😠</span>
+<span class="font-headline font-bold text-primary">Angry</span>
+</button>
+<!-- Feeling Card -->
+<button class="group flex flex-col items-center justify-center p-6 bg-surface-container-low hover:bg-surface-container-high transition-all duration-300 rounded-xl cursor-pointer">
+<span class="text-5xl mb-4 group-hover:scale-110 transition-transform duration-300">😴</span>
+<span class="font-headline font-bold text-primary">Tired</span>
+</button>
+<!-- Feeling Card -->
+<button class="group flex flex-col items-center justify-center p-6 bg-surface-container-low hover:bg-surface-container-high transition-all duration-300 rounded-xl cursor-pointer">
+<span class="text-5xl mb-4 group-hover:scale-110 transition-transform duration-300">🤔</span>
+<span class="font-headline font-bold text-primary">Confused</span>
+</button>
+<!-- Feeling Card -->
+<button class="group flex flex-col items-center justify-center p-6 bg-surface-container-low hover:bg-surface-container-high transition-all duration-300 rounded-xl cursor-pointer">
+<span class="text-5xl mb-4 group-hover:scale-110 transition-transform duration-300">🥳</span>
+<span class="font-headline font-bold text-primary">Excited</span>
+</button>
+<!-- Feeling Card -->
+<button class="group flex flex-col items-center justify-center p-6 bg-surface-container-low hover:bg-surface-container-high transition-all duration-300 rounded-xl cursor-pointer">
+<span class="text-5xl mb-4 group-hover:scale-110 transition-transform duration-300">😰</span>
+<span class="font-headline font-bold text-primary">Scared</span>
+</button>
+<!-- Feeling Card -->
+<button class="group flex flex-col items-center justify-center p-6 bg-surface-container-low hover:bg-surface-container-high transition-all duration-300 rounded-xl cursor-pointer">
+<span class="text-5xl mb-4 group-hover:scale-110 transition-transform duration-300">💖</span>
+<span class="font-headline font-bold text-primary">Loved</span>
+</button>
+</div>
+</div>
+<!-- Contextual Note / Guidance -->
+<div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+<div class="p-6 rounded-xl bg-tertiary-fixed flex gap-4 items-start">
+<span class="material-symbols-outlined text-on-tertiary-fixed-variant" data-weight="fill">lightbulb</span>
+<div>
+<h4 class="font-headline font-bold text-on-tertiary-fixed mb-1">Therapist's Tip</h4>
+<p class="font-body text-sm text-on-tertiary-fixed-variant">Try to name the physical sensation you feel in your body along with the emoji you choose.</p>
+</div>
+</div>
+<div class="p-6 rounded-xl bg-surface-container-low flex flex-col justify-center border border-outline-variant/10">
+<div class="flex items-center gap-3 mb-2">
+<div class="w-10 h-10 rounded-full overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="professional portrait of a warm and smiling therapist in a bright airy office setting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAfFAYhrpiAoa3PHiqhTUrNXmPCROVXJZw_n2W9QhYsw26s-4EIH3xkYSJCuk-hrJagSE2GGxvAYOjdh7Jjlmku2rvB5xdTFT_Tb_MMpJVQPDmUfJAxUPOjkGMLvpylcRljw7s_hVmGziPZJcaX3DTM_5v1YOMvR4a82YnlxphRIoKZ6PxhwTDcveGmlO2uTwYVot8SlIoSFyktksJ48mmuI8sUvkTwEu-yqR4dL1NsaU2I6VkUWgHWywkLfDa96f-ObP8xaFcEYUo"/>
+</div>
+<div>
+<p class="font-label font-bold text-on-surface text-sm">Created by Sarah Miller, LMFT</p>
+<p class="text-xs text-on-surface-variant">Child Psychology Specialist</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Footer -->
+<footer class="fixed bottom-0 left-0 w-full z-50 flex flex-col md:flex-row justify-center items-center gap-4 py-6 px-4 bg-[#f0f3ff] dark:bg-slate-900 tonal-shift flat no shadows">
+<span class="font-['Inter'] text-sm font-medium text-[#3e4949] dark:text-slate-400">Build your own — powered by <span class="text-[#0d7377] dark:text-teal-500 font-bold">Bridges</span></span>
+<button class="bg-primary-gradient px-5 py-2 rounded-lg text-white font-label font-semibold text-sm hover:opacity-90 transition-all duration-300 active:scale-95">
+            Create Tool
+        </button>
+</footer>
+<!-- Spacer for footer overlap -->
+<div class="h-24 md:h-20"></div>
+</body></html>

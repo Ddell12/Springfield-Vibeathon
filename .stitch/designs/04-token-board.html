@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Token Rewards - Alex's Star Chart</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "surface-container": "#e7eefe",
+              "on-tertiary-fixed-variant": "#6f3814",
+              "on-surface": "#151c27",
+              "secondary": "#4e52ba",
+              "on-tertiary-fixed": "#331200",
+              "primary": "#00595c",
+              "inverse-on-surface": "#ebf1ff",
+              "surface-container-lowest": "#ffffff",
+              "on-surface-variant": "#3e4949",
+              "primary-fixed": "#9df0f4",
+              "secondary-container": "#8f93ff",
+              "background": "#f9f9ff",
+              "on-secondary-container": "#22248f",
+              "on-background": "#151c27",
+              "on-error-container": "#93000a",
+              "surface-tint": "#00696d",
+              "inverse-surface": "#2a313d",
+              "surface-container-low": "#f0f3ff",
+              "surface-container-highest": "#dce2f3",
+              "secondary-fixed-dim": "#c0c1ff",
+              "on-secondary-fixed": "#05006d",
+              "surface-bright": "#f9f9ff",
+              "surface": "#f9f9ff",
+              "tertiary-container": "#975731",
+              "inverse-primary": "#81d4d8",
+              "on-primary-fixed": "#002021",
+              "tertiary": "#7a401c",
+              "outline-variant": "#bec9c9",
+              "outline": "#6e7979",
+              "on-primary": "#ffffff",
+              "on-primary-container": "#a2f5f9",
+              "error-container": "#ffdad6",
+              "tertiary-fixed-dim": "#ffb68e",
+              "error": "#ba1a1a",
+              "on-primary-fixed-variant": "#004f52",
+              "surface-variant": "#dce2f3",
+              "primary-fixed-dim": "#81d4d8",
+              "secondary-fixed": "#e1e0ff",
+              "primary-container": "#0d7377",
+              "on-secondary-fixed-variant": "#3639a1",
+              "on-tertiary": "#ffffff",
+              "on-secondary": "#ffffff",
+              "surface-dim": "#d3daea",
+              "surface-container-high": "#e2e8f8",
+              "on-tertiary-container": "#ffe1d2",
+              "on-error": "#ffffff",
+              "tertiary-fixed": "#ffdbca"
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      }
+      .star-fill {
+        font-variation-settings: 'FILL' 1;
+      }
+    </style>
+</head>
+<body class="bg-surface font-body text-on-surface min-h-screen pb-32">
+<!-- TopAppBar -->
+<header class="bg-[#f9f9ff] dark:bg-slate-950 flex justify-between items-center w-full px-6 py-4 fixed top-0 z-50">
+<div class="flex items-center gap-2">
+<span class="text-[#00595c] dark:text-[#0d7377] font-extrabold tracking-tight text-xl font-headline">Token Rewards</span>
+</div>
+<div class="flex items-center gap-4">
+<button class="transition-transform duration-300 active:scale-95 hover:bg-[#f0f3ff] dark:hover:bg-slate-800 rounded-lg p-2">
+<span class="material-symbols-outlined text-[#3e4949] dark:text-slate-400">account_circle</span>
+</button>
+</div>
+</header>
+<main class="pt-24 px-6 max-w-2xl mx-auto space-y-10">
+<!-- Hero Header -->
+<section class="text-center space-y-4">
+<h1 class="font-headline font-extrabold text-4xl md:text-5xl text-primary tracking-tight">Alex's Star Chart</h1>
+<div class="inline-flex items-center gap-2 px-6 py-3 bg-secondary-container rounded-full text-on-secondary-container font-semibold shadow-sm">
+<span class="material-symbols-outlined">tablet_mac</span>
+<span class="font-label text-lg">Earn 5 stars to get: 10 minutes of iPad time</span>
+</div>
+</section>
+<!-- Main Visual Area: Star Slots -->
+<section class="bg-surface-container-lowest p-10 rounded-[2rem] shadow-[0px_12px_32px_rgba(21,28,39,0.06)] flex flex-wrap justify-center gap-6">
+<!-- Filled Star 1 -->
+<div class="w-20 h-20 md:w-24 md:h-24 rounded-full bg-primary-fixed flex items-center justify-center transition-transform hover:scale-105 duration-300">
+<span class="material-symbols-outlined text-primary text-5xl star-fill">stars</span>
+</div>
+<!-- Filled Star 2 -->
+<div class="w-20 h-20 md:w-24 md:h-24 rounded-full bg-primary-fixed flex items-center justify-center transition-transform hover:scale-105 duration-300">
+<span class="material-symbols-outlined text-primary text-5xl star-fill">stars</span>
+</div>
+<!-- Filled Star 3 -->
+<div class="w-20 h-20 md:w-24 md:h-24 rounded-full bg-primary-fixed flex items-center justify-center transition-transform hover:scale-105 duration-300">
+<span class="material-symbols-outlined text-primary text-5xl star-fill">stars</span>
+</div>
+<!-- Empty Star 4 -->
+<div class="w-20 h-20 md:w-24 md:h-24 rounded-full border-4 border-dashed border-outline-variant bg-surface-container-low flex items-center justify-center opacity-60">
+<span class="material-symbols-outlined text-outline-variant text-5xl">grade</span>
+</div>
+<!-- Empty Star 5 -->
+<div class="w-20 h-20 md:w-24 md:h-24 rounded-full border-4 border-dashed border-outline-variant bg-surface-container-low flex items-center justify-center opacity-60">
+<span class="material-symbols-outlined text-outline-variant text-5xl">grade</span>
+</div>
+</section>
+<!-- Progress Section -->
+<section class="bg-surface-container-low p-8 rounded-3xl space-y-4">
+<div class="flex justify-between items-end">
+<div class="space-y-1">
+<p class="font-headline font-bold text-2xl text-on-surface">3 of 5 stars earned</p>
+<p class="text-on-surface-variant font-medium">Keep it up, Alex!</p>
+</div>
+<span class="font-headline font-extrabold text-primary text-3xl">60%</span>
+</div>
+<div class="h-6 w-full bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-gradient-to-r from-primary to-primary-container rounded-full w-[60%] transition-all duration-500"></div>
+</div>
+</section>
+<!-- Primary Action -->
+<section class="flex justify-center py-4">
+<button class="bg-gradient-to-br from-primary to-primary-container text-on-primary px-12 py-6 rounded-2xl font-headline font-bold text-2xl shadow-lg transition-all duration-300 hover:scale-105 active:scale-95 flex items-center gap-3">
+<span class="material-symbols-outlined text-3xl">add_circle</span>
+                Earn Star
+            </button>
+</section>
+<!-- Reward Hint Card -->
+<section class="bg-tertiary-fixed p-6 rounded-[1.5rem] flex items-center gap-6 border-l-8 border-tertiary-container">
+<div class="bg-tertiary-container p-4 rounded-xl text-on-tertiary-container shadow-sm">
+<span class="material-symbols-outlined text-4xl star-fill">redeem</span>
+</div>
+<div>
+<p class="font-headline font-bold text-xl text-on-tertiary-fixed">Keep going, Alex!</p>
+<p class="text-on-tertiary-fixed-variant font-medium text-lg">2 more stars to go!</p>
+</div>
+</section>
+<!-- Asymmetric Detail / Safe Space Container -->
+<section class="mt-12 p-8 bg-surface-container-lowest rounded-[1.5rem] border border-outline-variant/10 shadow-sm md:w-3/4 transform -rotate-1">
+<div class="flex gap-4 items-start">
+<span class="material-symbols-outlined text-tertiary text-3xl">info</span>
+<p class="text-on-surface-variant leading-relaxed text-lg">
+                    Focus on completing the <span class="text-primary font-bold">morning routine</span> to earn your next star. You're doing a great job listening today!
+                </p>
+</div>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-md flex justify-around items-center px-4 pb-6 pt-3 z-50 rounded-t-[24px] shadow-[0px_-12px_32px_rgba(21,28,39,0.06)] border-t border-[#bec9c9]/15">
+<a class="flex flex-col items-center justify-center bg-[#f0f3ff] dark:bg-[#00595c]/20 text-[#00595c] dark:text-[#0d7377] rounded-2xl px-6 py-2 transition-all duration-300 ease-in-out active:scale-90" href="#">
+<span class="material-symbols-outlined star-fill">stars</span>
+<span class="font-['Inter'] font-medium text-xs tracking-wide">Board</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#3e4949] dark:text-slate-400 px-6 py-2 hover:text-[#00595c] transition-all duration-300 ease-in-out active:scale-90" href="#">
+<span class="material-symbols-outlined">redeem</span>
+<span class="font-['Inter'] font-medium text-xs tracking-wide">Rewards</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#3e4949] dark:text-slate-400 px-6 py-2 hover:text-[#00595c] transition-all duration-300 ease-in-out active:scale-90" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-['Inter'] font-medium text-xs tracking-wide">Settings</span>
+</a>
+</nav>
+</body></html>

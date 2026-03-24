@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Bridges Core Builder</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Manrope:wght@700;800&amp;display=swap" rel="stylesheet"/>
+<!-- Icons -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "secondary-container": "#8f93ff",
+              "surface-dim": "#d3daea",
+              "on-secondary-fixed": "#05006d",
+              "inverse-on-surface": "#ebf1ff",
+              "on-secondary": "#ffffff",
+              "error": "#ba1a1a",
+              "on-secondary-fixed-variant": "#3639a1",
+              "secondary": "#4e52ba",
+              "on-background": "#151c27",
+              "on-surface": "#151c27",
+              "inverse-surface": "#2a313d",
+              "inverse-primary": "#81d4d8",
+              "on-primary-fixed-variant": "#004f52",
+              "surface": "#f9f9ff",
+              "on-primary-container": "#a2f5f9",
+              "tertiary-fixed": "#ffdbca",
+              "surface-bright": "#f9f9ff",
+              "on-error-container": "#93000a",
+              "surface-container-low": "#f0f3ff",
+              "primary": "#00595c",
+              "surface-container-lowest": "#ffffff",
+              "tertiary-fixed-dim": "#ffb68e",
+              "surface-container-highest": "#dce2f3",
+              "on-tertiary-container": "#ffe1d2",
+              "outline": "#6e7979",
+              "surface-container-high": "#e2e8f8",
+              "on-primary-fixed": "#002021",
+              "outline-variant": "#bec9c9",
+              "tertiary-container": "#975731",
+              "on-tertiary-fixed": "#331200",
+              "on-tertiary-fixed-variant": "#6f3814",
+              "tertiary": "#7a401c",
+              "secondary-fixed": "#e1e0ff",
+              "on-secondary-container": "#22248f",
+              "error-container": "#ffdad6",
+              "background": "#f9f9ff",
+              "primary-fixed-dim": "#81d4d8",
+              "on-tertiary": "#ffffff",
+              "primary-fixed": "#9df0f4",
+              "on-primary": "#ffffff",
+              "secondary-fixed-dim": "#c0c1ff",
+              "on-surface-variant": "#3e4949",
+              "primary-container": "#0d7377",
+              "on-error": "#ffffff",
+              "surface-tint": "#00696d",
+              "surface-container": "#e7eefe",
+              "surface-variant": "#dce2f3"
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      }
+      .sanctuary-shadow {
+        box-shadow: 0px 12px 32px rgba(21, 28, 39, 0.04);
+      }
+      .glass-effect {
+        background: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(20px);
+      }
+    </style>
+</head>
+<body class="bg-surface font-body text-on-surface antialiased overflow-hidden">
+<!-- TopNavBar -->
+<header class="fixed top-0 left-0 right-0 h-14 bg-surface-container-lowest sanctuary-shadow flex justify-between items-center px-6 z-50">
+<div class="flex items-center gap-8">
+<span class="text-xl font-extrabold text-primary tracking-tighter font-headline">Bridges</span>
+<nav class="hidden md:flex items-center gap-6">
+<a class="text-primary font-bold border-b-2 border-primary text-sm py-4" href="#">Builder</a>
+<a class="text-on-surface-variant font-medium hover:text-primary transition-colors text-sm py-4" href="#">Assets</a>
+<a class="text-on-surface-variant font-medium hover:text-primary transition-colors text-sm py-4" href="#">Library</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<button class="flex items-center gap-2 px-4 py-1.5 text-primary font-semibold text-sm hover:bg-surface-container-high rounded-lg transition-all active:scale-95">
+<span class="material-symbols-outlined text-sm">add</span>
+                New Tool
+            </button>
+<button class="p-2 text-on-surface-variant hover:bg-surface-container-high rounded-full transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<div class="w-8 h-8 rounded-full bg-surface-container-highest overflow-hidden cursor-pointer active:scale-95 transition-transform">
+<img alt="User avatar" data-alt="Close-up professional headshot of a smiling woman with a warm expression, soft natural window lighting, neutral background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBX8DSCWmtYP0_iM-yzOtbh0zBfZZrAYGaGAY6dkl121WXIuBrBKZElB5SNaRyBQMdSufsL1zbJVRpCDlZhVPAKrILZjv_IRF6XLANVAIiZIaEdKRuWX5G9878tP2fEx-hn2xQYRcC8vutSXsI-G7WSMd2h_GrKjdWGlDJpIi3ZkpEZMU3cKrjsRW0nC2G3wEWi7MpKWwaQ2OkyyhaC9e1mJsVEgXt7loRT_QW_evPDqLRuuMyQh4Jyki37PLbJ7zbsC8TYos8jRbs"/>
+</div>
+</div>
+</header>
+<!-- SideNavBar (Mobile/Tablet Pivot) -->
+<aside class="fixed left-0 top-14 bottom-0 w-20 md:w-64 bg-surface-container-low border-r border-outline-variant/10 hidden lg:flex flex-col p-4">
+<div class="mb-8 flex items-center gap-3 px-3">
+<div class="w-10 h-10 rounded-xl bg-primary-container flex items-center justify-center text-on-primary-container">
+<span class="material-symbols-outlined">construction</span>
+</div>
+<div class="hidden md:block">
+<p class="font-headline font-bold text-sm">Core Builder</p>
+<p class="text-[10px] text-on-surface-variant uppercase tracking-wider">v1.0.4</p>
+</div>
+</div>
+<nav class="space-y-1 flex-1">
+<div class="flex items-center gap-3 bg-primary/5 text-primary rounded-lg px-3 py-2.5 cursor-pointer">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">construction</span>
+<span class="hidden md:block font-medium text-sm">Builder</span>
+</div>
+<div class="flex items-center gap-3 text-on-surface-variant px-3 py-2.5 hover:bg-surface-container-high rounded-lg cursor-pointer transition-all">
+<span class="material-symbols-outlined">category</span>
+<span class="hidden md:block font-medium text-sm">Assets</span>
+</div>
+<div class="flex items-center gap-3 text-on-surface-variant px-3 py-2.5 hover:bg-surface-container-high rounded-lg cursor-pointer transition-all">
+<span class="material-symbols-outlined">folder_open</span>
+<span class="hidden md:block font-medium text-sm">Library</span>
+</div>
+<div class="flex items-center gap-3 text-on-surface-variant px-3 py-2.5 hover:bg-surface-container-high rounded-lg cursor-pointer transition-all">
+<span class="material-symbols-outlined">settings</span>
+<span class="hidden md:block font-medium text-sm">Settings</span>
+</div>
+</nav>
+<div class="mt-auto space-y-4">
+<div class="flex items-center gap-3 text-on-surface-variant px-3 py-2.5 hover:bg-surface-container-high rounded-lg cursor-pointer transition-all">
+<span class="material-symbols-outlined">help</span>
+<span class="hidden md:block font-medium text-sm">Help</span>
+</div>
+<button class="w-full bg-gradient-to-br from-primary to-primary-container text-white py-3 rounded-xl font-bold text-sm hidden md:block sanctuary-shadow active:scale-[0.98] transition-all">
+                Deploy Tool
+            </button>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="fixed top-14 left-0 lg:left-64 right-0 bottom-0 flex bg-surface overflow-hidden">
+<!-- Split Panel: LEFT (Chat Interface) -->
+<section class="w-full md:w-[400px] flex-shrink-0 flex flex-col bg-surface-container-lowest border-r border-outline-variant/10">
+<div class="flex-1 flex flex-col items-center justify-center p-8 text-center max-w-md mx-auto">
+<div class="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mb-6 relative">
+<span class="material-symbols-outlined text-primary text-4xl" style="font-variation-settings: 'FILL' 1;">forum</span>
+<span class="absolute -top-1 -right-1 material-symbols-outlined text-tertiary text-xl">auto_awesome</span>
+</div>
+<h1 class="font-headline text-2xl font-bold mb-3 text-on-surface">What does your child need?</h1>
+<p class="text-on-surface-variant text-sm leading-relaxed mb-8 px-4">
+                    Describe the therapy tool you're imagining — a visual schedule, communication board, token system, or something else. I'll build it for you.
+                </p>
+<div class="flex flex-wrap justify-center gap-2 mb-8">
+<button class="px-4 py-2 bg-surface-container-low text-primary text-xs font-semibold rounded-full hover:bg-primary hover:text-white transition-colors">
+                        Morning routine schedule
+                    </button>
+<button class="px-4 py-2 bg-surface-container-low text-primary text-xs font-semibold rounded-full hover:bg-primary hover:text-white transition-colors">
+                        Feelings communication board
+                    </button>
+<button class="px-4 py-2 bg-surface-container-low text-primary text-xs font-semibold rounded-full hover:bg-primary hover:text-white transition-colors">
+                        Star reward chart
+                    </button>
+</div>
+</div>
+<!-- Bottom Input Area -->
+<div class="p-4 bg-surface-container-lowest">
+<div class="relative flex items-center bg-surface-container-high rounded-xl p-2 focus-within:ring-2 ring-primary transition-all">
+<input class="w-full bg-transparent border-none focus:ring-0 text-sm px-3 text-on-surface placeholder:text-on-surface-variant/50" placeholder="Describe what you need..." type="text"/>
+<button class="w-10 h-10 bg-primary text-white rounded-lg flex items-center justify-center sanctuary-shadow hover:bg-primary-container active:scale-95 transition-all">
+<span class="material-symbols-outlined">send</span>
+</button>
+</div>
+<p class="text-[10px] text-center text-on-surface-variant mt-3 opacity-60">AI can make mistakes. Please verify tool outputs before use.</p>
+</div>
+</section>
+<!-- Split Panel: RIGHT (Preview Area) -->
+<section class="flex-1 bg-surface-container-low flex items-center justify-center p-12 relative overflow-hidden">
+<!-- Decorative background elements for "Sanctuary" feel -->
+<div class="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] bg-secondary-container/10 rounded-full blur-[100px]"></div>
+<div class="absolute bottom-[-10%] left-[-10%] w-[30%] h-[30%] bg-primary-container/10 rounded-full blur-[100px]"></div>
+<div class="w-full max-w-4xl aspect-[4/3] border-2 border-dashed border-outline-variant/40 rounded-[2rem] flex flex-col items-center justify-center p-12 bg-surface/30 backdrop-blur-sm">
+<div class="w-20 h-20 bg-surface-container-highest rounded-full flex items-center justify-center mb-6">
+<span class="material-symbols-outlined text-outline-variant text-4xl">extension</span>
+</div>
+<h3 class="font-headline text-xl font-medium text-on-surface-variant mb-2">Your tool will appear here</h3>
+<p class="text-on-surface-variant/60 text-sm">Start a conversation to build your first therapy tool</p>
+<!-- Skeleton placeholder graphic -->
+<div class="mt-12 w-full max-w-lg space-y-4 opacity-20">
+<div class="h-4 bg-outline-variant rounded-full w-3/4 mx-auto"></div>
+<div class="grid grid-cols-3 gap-4">
+<div class="h-24 bg-outline-variant rounded-xl"></div>
+<div class="h-24 bg-outline-variant rounded-xl"></div>
+<div class="h-24 bg-outline-variant rounded-xl"></div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- FAB (Suppressed per rules as we are on the Builder/Edit screen, but included as a generic interaction hint if global) -->
+<!-- Suppressed: "You MUST suppress the FAB on Settings, Profile, Details, and Transactional screens." -->
+</body></html>

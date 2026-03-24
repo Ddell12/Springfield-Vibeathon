@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "surface-tint": "#00696d",
+              "on-primary": "#ffffff",
+              "primary-container": "#0d7377",
+              "on-primary-fixed-variant": "#004f52",
+              "surface-container": "#e7eefe",
+              "surface-container-low": "#f0f3ff",
+              "inverse-primary": "#81d4d8",
+              "error": "#ba1a1a",
+              "surface": "#f9f9ff",
+              "primary-fixed": "#9df0f4",
+              "surface-bright": "#f9f9ff",
+              "on-tertiary-container": "#ffe1d2",
+              "on-surface": "#151c27",
+              "on-primary-fixed": "#002021",
+              "tertiary-fixed-dim": "#ffb68e",
+              "inverse-surface": "#2a313d",
+              "surface-container-high": "#e2e8f8",
+              "primary": "#00595c",
+              "outline-variant": "#bec9c9",
+              "on-background": "#151c27",
+              "tertiary-fixed": "#ffdbca",
+              "surface-dim": "#d3daea",
+              "on-primary-container": "#a2f5f9",
+              "on-surface-variant": "#3e4949",
+              "on-error": "#ffffff",
+              "on-tertiary": "#ffffff",
+              "on-secondary-fixed-variant": "#3639a1",
+              "background": "#f9f9ff",
+              "secondary-fixed-dim": "#c0c1ff",
+              "secondary": "#4e52ba",
+              "secondary-fixed": "#e1e0ff",
+              "on-tertiary-fixed": "#331200",
+              "surface-container-lowest": "#ffffff",
+              "on-secondary": "#ffffff",
+              "error-container": "#ffdad6",
+              "inverse-on-surface": "#ebf1ff",
+              "tertiary-container": "#975731",
+              "tertiary": "#7a401c",
+              "surface-variant": "#dce2f3",
+              "secondary-container": "#8f93ff",
+              "on-tertiary-fixed-variant": "#6f3814",
+              "on-error-container": "#93000a",
+              "primary-fixed-dim": "#81d4d8",
+              "outline": "#6e7979",
+              "surface-container-highest": "#dce2f3",
+              "on-secondary-container": "#22248f",
+              "on-secondary-fixed": "#05006d"
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.5rem", "lg": "0.75rem", "xl": "1.5rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .text-gradient-primary {
+            background: linear-gradient(135deg, #00595c 0%, #0d7377 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .bg-gradient-primary {
+            background: linear-gradient(135deg, #00595c 0%, #0d7377 100%);
+        }
+    </style>
+</head>
+<body class="bg-surface font-body text-on-surface selection:bg-primary-fixed">
+<!-- TopNavBar -->
+<header class="w-full top-0 sticky z-50 bg-[#f9f9ff] dark:bg-slate-950">
+<nav class="flex justify-between items-center px-8 h-16 w-full max-w-7xl mx-auto">
+<div class="text-2xl font-black text-[#0D7377] dark:text-teal-400 font-headline">Bridges</div>
+<div class="hidden md:flex items-center gap-8">
+<a class="text-[#3e4949] dark:text-slate-400 font-medium hover:text-[#0D7377] font-label transition-colors duration-300" href="#">Builder</a>
+<a class="text-[#0D7377] dark:text-teal-400 border-b-2 border-[#0D7377] pb-1 font-label" href="#">Templates</a>
+<a class="text-[#3e4949] dark:text-slate-400 font-medium hover:text-[#0D7377] font-label transition-colors duration-300" href="#">Settings</a>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 hover:bg-[#f0f3ff] rounded-full transition-all">
+<span class="material-symbols-outlined text-on-surface-variant">search</span>
+</button>
+<button class="flex items-center gap-2 p-1 pr-3 hover:bg-[#f0f3ff] rounded-full transition-all">
+<span class="material-symbols-outlined text-on-surface-variant text-3xl" data-icon="account_circle">account_circle</span>
+</button>
+</div>
+</nav>
+</header>
+<main class="max-w-7xl mx-auto px-8 py-12">
+<!-- Hero Section -->
+<section class="mb-16">
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
+<div class="max-w-2xl">
+<h1 class="font-headline font-extrabold text-5xl tracking-tight text-on-surface mb-4">Templates</h1>
+<p class="text-on-surface-variant text-lg leading-relaxed">Start with a proven template, customize for your child. Our therapeutic tools are designed by experts and refined by parents.</p>
+</div>
+<!-- Category Tabs -->
+<div class="bg-surface-container-low p-1.5 rounded-lg inline-flex gap-1">
+<button class="px-6 py-2 rounded-md font-label font-semibold text-sm bg-surface-container-lowest text-primary shadow-sm transition-all">All</button>
+<button class="px-6 py-2 rounded-md font-label font-medium text-sm text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-all">Communication</button>
+<button class="px-6 py-2 rounded-md font-label font-medium text-sm text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-all">Rewards</button>
+<button class="px-6 py-2 rounded-md font-label font-medium text-sm text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-all">Routines</button>
+</div>
+</div>
+</section>
+<!-- Template Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+<!-- Card 1: Feelings Board -->
+<article class="bg-surface-container-lowest rounded-xl overflow-hidden flex flex-col group transition-all duration-300 hover:shadow-[0px_12px_32px_rgba(21,28,39,0.06)] ring-1 ring-outline-variant/10">
+<div class="h-56 w-full overflow-hidden bg-surface-container">
+<img alt="Feelings Board Visualization" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" data-alt="Abstract colorful illustrations of human facial expressions conveying emotions in a soft minimalist style with pastel colors" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAxE_uH5aNqyhQNPBnMj0FsF2FvtK5cGpQo0ybogu9Mo9QHkhEfRjrfRGZQK152A4TTZ12vcZeLNIc1awfFIXsPsRjr5SByRZafSDQHgXUNrFaGHjt_0i_ZxOVCR9OCHB8v8fcAMSLYonTrzXjQZxP0IcvxzglBH-AHTGy4I3v6O-bPKqbOyX0XSHWWg1WBlGtbH3vMGe4W4Z3-5l2edAWiSQd1-ZQ8B4Rdzb-k3VyqDYL3h4IeL4ouH1qMzrABDM6P1QCrzydqpG8"/>
+</div>
+<div class="p-6 flex flex-col flex-grow">
+<div class="mb-4">
+<span class="bg-tertiary-fixed text-on-tertiary-fixed-variant text-[10px] font-bold tracking-widest px-2.5 py-1 rounded-full uppercase">COMMUNICATION</span>
+</div>
+<h3 class="font-headline font-bold text-xl text-on-surface mb-2">Feelings Board</h3>
+<p class="text-on-surface-variant text-sm mb-6 flex-grow leading-relaxed">Helps children identify and express complex emotions using visual cues and relatable character icons.</p>
+<button class="w-full bg-gradient-primary text-on-primary py-3 rounded-DEFAULT font-label font-bold text-sm tracking-wide shadow-sm hover:opacity-90 active:scale-[0.98] transition-all">Use Template</button>
+</div>
+</article>
+<!-- Card 2: Basic Needs Board -->
+<article class="bg-surface-container-lowest rounded-xl overflow-hidden flex flex-col group transition-all duration-300 hover:shadow-[0px_12px_32px_rgba(21,28,39,0.06)] ring-1 ring-outline-variant/10">
+<div class="h-56 w-full overflow-hidden bg-surface-container">
+<img alt="Basic Needs Board Visualization" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" data-alt="Clean minimal icons representing hunger, thirst, and rest arranged on a soft blue aesthetic layout" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBD63T04r5WLESbXdA16RDXfHf28LDrHrR4Qpt5ZMdm01isYH1aYdErKQN9vSGAsOZJxOvfpKGCxHRrI8vM3hpRf7r7fZERfdCh9yiCIKgHVexfjyk-JVKO-WqYxzH0O83hb0WR8l1yLbYkH5ckDkEA7OnbyJLEauGbBaRS9NkDwwWHnzwo2eulpN1-glmAqBTujYw9uagnDeGKLKRv0fBWIc-RGW9aJ-OsQpuILKDhyQXcjvHuzizU4H2Av8vZv8AdR5IPavT5kNo"/>
+</div>
+<div class="p-6 flex flex-col flex-grow">
+<div class="mb-4">
+<span class="bg-tertiary-fixed text-on-tertiary-fixed-variant text-[10px] font-bold tracking-widest px-2.5 py-1 rounded-full uppercase">COMMUNICATION</span>
+</div>
+<h3 class="font-headline font-bold text-xl text-on-surface mb-2">Basic Needs Board</h3>
+<p class="text-on-surface-variant text-sm mb-6 flex-grow leading-relaxed">A simplified interface for non-verbal communication of immediate requirements like food, water, and rest.</p>
+<button class="w-full bg-gradient-primary text-on-primary py-3 rounded-DEFAULT font-label font-bold text-sm tracking-wide shadow-sm hover:opacity-90 active:scale-[0.98] transition-all">Use Template</button>
+</div>
+</article>
+<!-- Card 3: 5-Star Reward Chart -->
+<article class="bg-surface-container-lowest rounded-xl overflow-hidden flex flex-col group transition-all duration-300 hover:shadow-[0px_12px_32px_rgba(21,28,39,0.06)] ring-1 ring-outline-variant/10">
+<div class="h-56 w-full overflow-hidden bg-surface-container">
+<img alt="Reward Chart Visualization" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" data-alt="A bright playful star-themed board with golden rewards and a progress tracker in soft warm lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCYRw5ckDM2xmKEvCPes2oGcAIXRiGSp3PfeTZ51wJHpHBo88nZor00wWO07JDwD8JyHkfHPAz-WhD989BfHbjnSVkMZw_bw6fU4JzOsmLl_WDn_L2h654gNb4GQJ9Hk9_IHBv4Nz3aorJ_VKJSrdX122VVHS-VOpSIp3oEQrL1lhCqKr2O1W3y9j3A-MyORaZgqrUJYQLkYBewK5T9EAKsi9o3fADvxPJqZSAG65s61IvT-5fkOMn10gNU62CzioUKHDGH5GuNELk"/>
+</div>
+<div class="p-6 flex flex-col flex-grow">
+<div class="mb-4">
+<span class="bg-secondary-fixed text-on-secondary-fixed-variant text-[10px] font-bold tracking-widest px-2.5 py-1 rounded-full uppercase">REWARDS</span>
+</div>
+<h3 class="font-headline font-bold text-xl text-on-surface mb-2">5-Star Reward Chart</h3>
+<p class="text-on-surface-variant text-sm mb-6 flex-grow leading-relaxed">Encourages positive behavior reinforcement through incremental goals and visual achievement milestones.</p>
+<button class="w-full bg-gradient-primary text-on-primary py-3 rounded-DEFAULT font-label font-bold text-sm tracking-wide shadow-sm hover:opacity-90 active:scale-[0.98] transition-all">Use Template</button>
+</div>
+</article>
+<!-- Card 4: Sticker Collection -->
+<article class="bg-surface-container-lowest rounded-xl overflow-hidden flex flex-col group transition-all duration-300 hover:shadow-[0px_12px_32px_rgba(21,28,39,0.06)] ring-1 ring-outline-variant/10">
+<div class="h-56 w-full overflow-hidden bg-surface-container">
+<img alt="Sticker Collection Visualization" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" data-alt="A collection of cute animal-shaped stickers on a grid-like organizational board with soft shadows" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBxfrVfTggEg56snNbi86jvw-78kiMmNLAldcNes5PKASVyejGvseAFKxNgrG93A08mks0QauY1S6v9vILw_2QdrbHATaa0rlHOW5y9HDo-emDUYEGrLfq5LJvHJShkKg5ZxYT85hYwhyOXiULKzKIFLsBURyC918KsrdSuy9npe4sWe5YXI811676cIxKjYycCEOVTq6xqjUA8eFQYc_86O_asVv1rcdsW6pYp-9EnPIAIZRFmVt8GAJRMiEg5PbA8CcD5lKeMPEk"/>
+</div>
+<div class="p-6 flex flex-col flex-grow">
+<div class="mb-4">
+<span class="bg-secondary-fixed text-on-secondary-fixed-variant text-[10px] font-bold tracking-widest px-2.5 py-1 rounded-full uppercase">REWARDS</span>
+</div>
+<h3 class="font-headline font-bold text-xl text-on-surface mb-2">Sticker Collection</h3>
+<p class="text-on-surface-variant text-sm mb-6 flex-grow leading-relaxed">A gamified approach to task completion where children earn digital or printable stickers for their gallery.</p>
+<button class="w-full bg-gradient-primary text-on-primary py-3 rounded-DEFAULT font-label font-bold text-sm tracking-wide shadow-sm hover:opacity-90 active:scale-[0.98] transition-all">Use Template</button>
+</div>
+</article>
+<!-- Card 5: Morning Routine -->
+<article class="bg-surface-container-lowest rounded-xl overflow-hidden flex flex-col group transition-all duration-300 hover:shadow-[0px_12px_32px_rgba(21,28,39,0.06)] ring-1 ring-outline-variant/10">
+<div class="h-56 w-full overflow-hidden bg-surface-container">
+<img alt="Morning Routine Visualization" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" data-alt="Visual checklist showing morning activities like tooth brushing and dressing with soft sunlight morning atmosphere" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDmPLv76qNWlqCIk43iNQ9mwB3pZaSmJ6lIfbr8UVCkN3XDWDMPhSHdKBDQN_xi0_i2RnDXQs8-dbJdzCLu3oF18Iw6fK8pzq3Bevo3GKMU5ouvmbYmB_o3lW2dY_jAdKd87f2RdvZAjMTHncZNlNrWOm-J0byaotzmT16t66pNd87PGSRaEqUCknOsA0MxL8Bp2KeeSrTTfQxox_MMO6p-w9pqLcbxxUelrnfwrcOrRhm8PI-1lXuPa5dLeuPHkhACQan5zLlTl7I"/>
+</div>
+<div class="p-6 flex flex-col flex-grow">
+<div class="mb-4">
+<span class="bg-surface-container-highest text-on-surface-variant text-[10px] font-bold tracking-widest px-2.5 py-1 rounded-full uppercase">ROUTINES</span>
+</div>
+<h3 class="font-headline font-bold text-xl text-on-surface mb-2">Morning Routine</h3>
+<p class="text-on-surface-variant text-sm mb-6 flex-grow leading-relaxed">Step-by-step visual schedule to reduce morning anxiety and build independence in start-of-day tasks.</p>
+<button class="w-full bg-gradient-primary text-on-primary py-3 rounded-DEFAULT font-label font-bold text-sm tracking-wide shadow-sm hover:opacity-90 active:scale-[0.98] transition-all">Use Template</button>
+</div>
+</article>
+<!-- Card 6: Bedtime Routine -->
+<article class="bg-surface-container-lowest rounded-xl overflow-hidden flex flex-col group transition-all duration-300 hover:shadow-[0px_12px_32px_rgba(21,28,39,0.06)] ring-1 ring-outline-variant/10">
+<div class="h-56 w-full overflow-hidden bg-surface-container">
+<img alt="Bedtime Routine Visualization" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" data-alt="Calming night-themed sequence board with moon and stars icons for wind-down bedtime tasks" src="https://lh3.googleusercontent.com/aida-public/AB6AXuACodk5I4cH3RKdp5NbGm-jwir4afVr4qVcT9v3HKqwXsyRTrIXAkV1ziKlUmWXQt9utcjaDQhghqswP0oX5NXG7Xh9pVZUlfSO2pm5ExLY7dtMt7EsPNxm6doIsIU-MeLztTv-RmjW-Kj5gge2tlDxk_HRDyeujzgVrQ-jV4DUdnJ4YT5MhQSshnSnOhXQU3ZoBLmFCbN6T4I1MuyJG7t7ys6GYV8B9N7FkkzxotBxl8dLoYKKlXF-lSRs89YsPf1lu6pQCzIqTVc"/>
+</div>
+<div class="p-6 flex flex-col flex-grow">
+<div class="mb-4">
+<span class="bg-surface-container-highest text-on-surface-variant text-[10px] font-bold tracking-widest px-2.5 py-1 rounded-full uppercase">ROUTINES</span>
+</div>
+<h3 class="font-headline font-bold text-xl text-on-surface mb-2">Bedtime Routine</h3>
+<p class="text-on-surface-variant text-sm mb-6 flex-grow leading-relaxed">A calming visual guide for wind-down activities, helping transition into a restful night's sleep.</p>
+<button class="w-full bg-gradient-primary text-on-primary py-3 rounded-DEFAULT font-label font-bold text-sm tracking-wide shadow-sm hover:opacity-90 active:scale-[0.98] transition-all">Use Template</button>
+</div>
+</article>
+</div>
+<!-- Safe Space CTA Section -->
+<section class="mt-20 p-12 bg-surface-container-low rounded-xl relative overflow-hidden ring-1 ring-outline-variant/10">
+<div class="relative z-10 max-w-xl">
+<h2 class="font-headline font-bold text-3xl text-on-surface mb-4">Can't find what you're looking for?</h2>
+<p class="text-on-surface-variant text-lg mb-8">Our AI-powered builder can help you generate a custom tool from scratch based on your child's specific therapeutic goals.</p>
+<button class="flex items-center gap-2 text-primary font-bold hover:gap-3 transition-all duration-300">
+                    Build a custom template <span class="material-symbols-outlined">arrow_forward</span>
+</button>
+</div>
+<!-- Decorative element -->
+<div class="absolute -right-16 -bottom-16 w-64 h-64 bg-primary/5 rounded-full blur-3xl"></div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="w-full border-t border-opacity-10 border-[#bec9c9] bg-[#f9f9ff] dark:bg-slate-950 mt-20">
+<div class="flex flex-col md:flex-row justify-between items-center px-8 py-12 w-full max-w-7xl mx-auto gap-4">
+<div class="flex flex-col items-center md:items-start gap-2">
+<div class="text-lg font-bold text-[#0D7377] dark:text-teal-400 font-headline">Bridges</div>
+<p class="font-['Inter'] text-sm text-[#3e4949] dark:text-slate-400">© 2024 Bridges Therapy Tool Builder. All rights reserved.</p>
+</div>
+<div class="flex flex-wrap justify-center gap-6">
+<a class="font-['Inter'] text-sm text-[#3e4949] hover:text-[#0D7377] hover:underline transition-all" href="#">Privacy Policy</a>
+<a class="font-['Inter'] text-sm text-[#3e4949] hover:text-[#0D7377] hover:underline transition-all" href="#">Terms of Service</a>
+<a class="font-['Inter'] text-sm text-[#3e4949] hover:text-[#0D7377] hover:underline transition-all" href="#">Cookie Policy</a>
+<a class="font-['Inter'] text-sm text-[#3e4949] hover:text-[#0D7377] hover:underline transition-all" href="#">Accessibility</a>
+</div>
+</div>
+</footer>
+</body></html>

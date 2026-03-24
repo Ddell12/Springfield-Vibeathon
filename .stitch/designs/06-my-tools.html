@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>My Tools | Bridges Therapeutic</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&amp;family=Inter:wght@400;500;600&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "on-background": "#151c27",
+                        "secondary": "#4e52ba",
+                        "on-primary-fixed-variant": "#004f52",
+                        "surface": "#f9f9ff",
+                        "on-surface": "#151c27",
+                        "inverse-surface": "#2a313d",
+                        "inverse-primary": "#81d4d8",
+                        "on-secondary-fixed": "#05006d",
+                        "inverse-on-surface": "#ebf1ff",
+                        "secondary-container": "#8f93ff",
+                        "surface-dim": "#d3daea",
+                        "on-secondary": "#ffffff",
+                        "error": "#ba1a1a",
+                        "on-secondary-fixed-variant": "#3639a1",
+                        "primary": "#00595c",
+                        "on-error-container": "#93000a",
+                        "surface-container-low": "#f0f3ff",
+                        "tertiary-fixed-dim": "#ffb68e",
+                        "surface-container-highest": "#dce2f3",
+                        "surface-container-lowest": "#ffffff",
+                        "on-primary-container": "#a2f5f9",
+                        "surface-bright": "#f9f9ff",
+                        "tertiary-fixed": "#ffdbca",
+                        "tertiary-container": "#975731",
+                        "on-tertiary-fixed": "#331200",
+                        "surface-container-high": "#e2e8f8",
+                        "on-primary-fixed": "#002021",
+                        "outline-variant": "#bec9c9",
+                        "on-tertiary-fixed-variant": "#6f3814",
+                        "on-tertiary-container": "#ffe1d2",
+                        "outline": "#6e7979",
+                        "surface-container": "#e7eefe",
+                        "surface-tint": "#00696d",
+                        "surface-variant": "#dce2f3",
+                        "on-tertiary": "#ffffff",
+                        "tertiary": "#7a401c",
+                        "secondary-fixed": "#e1e0ff",
+                        "on-secondary-container": "#22248f",
+                        "error-container": "#ffdad6",
+                        "background": "#f9f9ff",
+                        "primary-fixed-dim": "#81d4d8",
+                        "primary-container": "#0d7377",
+                        "on-error": "#ffffff",
+                        "primary-fixed": "#9df0f4",
+                        "on-primary": "#ffffff",
+                        "secondary-fixed-dim": "#c0c1ff",
+                        "on-surface-variant": "#3e4949"
+                    },
+                    fontFamily: {
+                        "headline": ["Manrope"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .bg-primary-gradient {
+            background: linear-gradient(135deg, #00595c 0%, #0d7377 100%);
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(20px);
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body selection:bg-primary-container selection:text-on-primary-container">
+<!-- TopNavBar -->
+<header class="bg-[#f9f9ff] dark:bg-slate-950 sticky top-0 z-50">
+<nav class="flex justify-between items-center w-full px-8 py-4 max-w-7xl mx-auto">
+<div class="flex items-center gap-12">
+<span class="text-[#00595c] dark:text-[#0d7377] font-extrabold text-2xl tracking-tighter font-headline">Bridges</span>
+<div class="hidden md:flex items-center gap-8">
+<a class="text-[#3e4949] dark:text-slate-400 hover:text-[#00595c] transition-colors font-['Manrope'] font-bold text-lg tracking-tight hover:bg-[#f0f3ff] dark:hover:bg-slate-800 rounded-lg px-3 py-1 scale-95 active:scale-90 transition-transform duration-300 ease-in-out" href="#">Builder</a>
+<a class="text-[#3e4949] dark:text-slate-400 hover:text-[#00595c] transition-colors font-['Manrope'] font-bold text-lg tracking-tight hover:bg-[#f0f3ff] dark:hover:bg-slate-800 rounded-lg px-3 py-1 scale-95 active:scale-90 transition-transform duration-300 ease-in-out" href="#">Templates</a>
+<a class="text-[#00595c] dark:text-[#0d7377] border-b-2 border-[#00595c] pb-1 font-['Manrope'] font-bold text-lg tracking-tight" href="#">My Tools</a>
+<a class="text-[#3e4949] dark:text-slate-400 hover:text-[#00595c] transition-colors font-['Manrope'] font-bold text-lg tracking-tight hover:bg-[#f0f3ff] dark:hover:bg-slate-800 rounded-lg px-3 py-1 scale-95 active:scale-90 transition-transform duration-300 ease-in-out" href="#">Settings</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 text-[#3e4949] hover:bg-[#f0f3ff] rounded-lg transition-all active:scale-90">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="p-2 text-[#3e4949] hover:bg-[#f0f3ff] rounded-lg transition-all active:scale-90">
+<span class="material-symbols-outlined" data-icon="account_circle">account_circle</span>
+</button>
+</div>
+</nav>
+</header>
+<main class="max-w-7xl mx-auto px-8 pt-12 pb-24">
+<!-- Header Section -->
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+<div>
+<h1 class="font-headline font-bold text-5xl text-on-surface tracking-tight mb-2">My Tools</h1>
+<p class="text-on-surface-variant text-lg">3 tools created</p>
+</div>
+<button class="bg-primary-gradient text-on-primary px-8 py-4 rounded-lg font-semibold flex items-center gap-2 shadow-lg shadow-primary/10 hover:shadow-primary/20 transition-all active:scale-95 group">
+<span class="material-symbols-outlined" data-icon="add_circle">add_circle</span>
+                Create New Tool
+            </button>
+</div>
+<!-- Tools Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+<!-- Tool Card 1: Emma's Feelings Board -->
+<div class="group bg-surface-container-lowest rounded-xl overflow-hidden transition-all duration-300 hover:translate-y-[-4px] ring-1 ring-outline-variant/10 shadow-[0px_12px_32px_rgba(21,28,39,0.06)]">
+<div class="aspect-[4/3] relative overflow-hidden bg-surface-container-low">
+<img alt="Emma's Feelings Board" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" data-alt="Abstract soft fluid shapes in pastel lavender, mint, and peach colors creating a calm and supportive visual atmosphere" src="https://lh3.googleusercontent.com/aida-public/AB6AXuARv-CtpFzR3rU0gaN2jfJ1aJMsia4nJHse6kH79laVLVQ3VztVZIPJ7K1D8_gKnYRmoqc2tGQP83cR1BW_f35puf5R1dfZe6nEFVIxiR1Vt15C5h-gfuJeylgCc9_qanwk5Vagsy-aOQXK2bZAvXSszgqbTPFhhfrINteqCM2M83OGuS8gRestitc7r3H5AZ6h56GgBYdnR2mVzzyDU_1JTtnuMiWYyISRL6KkLxjI1fYny6PkUamWb0YL1-HZsBFSGXsSTMXcAu8"/>
+<div class="absolute top-4 left-4">
+<span class="bg-primary-container text-on-primary-fixed-variant px-3 py-1 rounded-full text-xs font-semibold tracking-wide uppercase">Communication Board</span>
+</div>
+</div>
+<div class="p-6">
+<div class="flex justify-between items-start mb-1">
+<h3 class="font-headline font-bold text-xl text-on-surface">Emma's Feelings Board</h3>
+</div>
+<p class="text-on-surface-variant text-sm mb-6">Created March 23, 2026</p>
+<div class="flex items-center justify-end gap-2">
+<button class="p-2 text-primary hover:bg-surface-container-high rounded-lg transition-colors" title="Share">
+<span class="material-symbols-outlined" data-icon="share">share</span>
+</button>
+<button class="p-2 text-primary hover:bg-surface-container-high rounded-lg transition-colors" title="Edit">
+<span class="material-symbols-outlined" data-icon="edit">edit</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Tool Card 2: Alex's Star Chart -->
+<div class="group bg-surface-container-lowest rounded-xl overflow-hidden transition-all duration-300 hover:translate-y-[-4px] ring-1 ring-outline-variant/10 shadow-[0px_12px_32px_rgba(21,28,39,0.06)]">
+<div class="aspect-[4/3] relative overflow-hidden bg-surface-container-low">
+<img alt="Alex's Star Chart" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" data-alt="A dark navy background with floating 3D golden stars of various sizes with soft cinematic lighting and depth of field" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAon1gGWYHduGSVuPVdul1L48FHWuOGHyhReW3hfWEMp3VwwzZjg_EGSX5mJRD4yv7fm8wclU_iva8eWe3z9jiW8q13hYmUdUYUHMTGmTIlL2GoC9EJxPFX4Q7nnzNXBm2dxNH0-YWlIk_mlV2HNkghgpxML91lOH_mxgwELJF-wpZ7a2Qw9zRiJO-KuWzL7GGFDUwzVkXUIGIP9Kxj3u_D-OC94lwDILIJ0jKgYMKMIDQRM9J80QPKzzOzAw1YVJ2OvSVSbc2aKm8"/>
+<div class="absolute top-4 left-4">
+<span class="bg-secondary-container text-on-secondary-container px-3 py-1 rounded-full text-xs font-semibold tracking-wide uppercase">Token Board</span>
+</div>
+</div>
+<div class="p-6">
+<div class="flex justify-between items-start mb-1">
+<h3 class="font-headline font-bold text-xl text-on-surface">Alex's Star Chart</h3>
+</div>
+<p class="text-on-surface-variant text-sm mb-6">Created March 23, 2026</p>
+<div class="flex items-center justify-end gap-2">
+<button class="p-2 text-primary hover:bg-surface-container-high rounded-lg transition-colors" title="Share">
+<span class="material-symbols-outlined" data-icon="share">share</span>
+</button>
+<button class="p-2 text-primary hover:bg-surface-container-high rounded-lg transition-colors" title="Edit">
+<span class="material-symbols-outlined" data-icon="edit">edit</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Tool Card 3: Morning Routine -->
+<div class="group bg-surface-container-lowest rounded-xl overflow-hidden transition-all duration-300 hover:translate-y-[-4px] ring-1 ring-outline-variant/10 shadow-[0px_12px_32px_rgba(21,28,39,0.06)]">
+<div class="aspect-[4/3] relative overflow-hidden bg-surface-container-low">
+<img alt="Morning Routine" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" data-alt="A clean minimalist checklist with rounded corners on a soft sky blue background with gentle natural morning sunlight shadows" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA9_TTm1CiX-gBS5JaFtYXUCHSgLjIrVqsUjPgGUa21ea1vHhY6ySZt4n-ZovvYxQSD6lFZUa98JDMHdsYtPyj8h5QJtBVDRwW3EqQ2b2OoR4eI4kSMUMU-cNNv5FII2pxXfnPTs4XiRI_y-npjSv6eWNwHNWQnM6LUzVADp1rahD_dumWL9y-r_yD4cF8pryjwAEOy30DfZgY1wvkfpPpwXIXxnkdpvvZJv76UFJkDudotaUKljP-TYRBHOjo0A-wM-cEs6q5wa8A"/>
+<div class="absolute top-4 left-4">
+<span class="bg-tertiary-container text-on-tertiary-container px-3 py-1 rounded-full text-xs font-semibold tracking-wide uppercase">Visual Schedule</span>
+</div>
+</div>
+<div class="p-6">
+<div class="flex justify-between items-start mb-1">
+<h3 class="font-headline font-bold text-xl text-on-surface">Morning Routine</h3>
+</div>
+<p class="text-on-surface-variant text-sm mb-6">Created March 22, 2026</p>
+<div class="flex items-center justify-end gap-2">
+<button class="p-2 text-primary hover:bg-surface-container-high rounded-lg transition-colors" title="Share">
+<span class="material-symbols-outlined" data-icon="share">share</span>
+</button>
+<button class="p-2 text-primary hover:bg-surface-container-high rounded-lg transition-colors" title="Edit">
+<span class="material-symbols-outlined" data-icon="edit">edit</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Safe Space Container: AI Assistant Callout -->
+<section class="mt-20 p-10 rounded-xl bg-surface-container-lowest ring-1 ring-outline-variant/10 relative overflow-hidden flex flex-col md:flex-row items-center gap-10">
+<div class="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -mr-20 -mt-20"></div>
+<div class="relative z-10 md:w-2/3">
+<h2 class="font-headline font-bold text-3xl text-on-surface mb-4">Need a custom tool?</h2>
+<p class="text-on-surface-variant text-lg max-w-xl">Tell Bridges what your child is working on, and we'll help you generate a tailored visual aid or communication board in seconds.</p>
+<div class="mt-8 flex gap-4">
+<button class="bg-primary text-on-primary px-6 py-3 rounded-lg font-semibold hover:bg-primary-container transition-colors">Start Building</button>
+<button class="text-primary font-semibold px-6 py-3 rounded-lg hover:bg-surface-container-high transition-colors">Browse Templates</button>
+</div>
+</div>
+<div class="relative z-10 md:w-1/3 flex justify-center">
+<div class="w-24 h-24 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container shadow-xl">
+<span class="material-symbols-outlined !text-5xl" data-icon="auto_awesome">auto_awesome</span>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="bg-[#f9f9ff] dark:bg-slate-950">
+<div class="flex flex-col md:flex-row justify-between items-center w-full px-8 py-10 mt-20 max-w-7xl mx-auto">
+<p class="font-['Inter'] text-sm font-normal text-[#3e4949] dark:text-slate-400">© 2024 Bridges Therapeutic. All rights reserved.</p>
+<div class="flex gap-8 mt-6 md:mt-0">
+<a class="font-['Inter'] text-sm font-normal text-[#3e4949] opacity-80 hover:text-[#00595c] dark:hover:text-[#0d7377] underline decoration-2 underline-offset-4 transition-opacity" href="#">Privacy Policy</a>
+<a class="font-['Inter'] text-sm font-normal text-[#3e4949] opacity-80 hover:text-[#00595c] dark:hover:text-[#0d7377] underline decoration-2 underline-offset-4 transition-opacity" href="#">Terms of Service</a>
+<a class="font-['Inter'] text-sm font-normal text-[#3e4949] opacity-80 hover:text-[#00595c] dark:hover:text-[#0d7377] underline decoration-2 underline-offset-4 transition-opacity" href="#">Help Center</a>
+</div>
+</div>
+</footer>
+</body></html>

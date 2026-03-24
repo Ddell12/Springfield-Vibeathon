@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Bridges Core Builder - Emma's Feelings Board</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "on-background": "#151c27",
+              "on-tertiary-fixed": "#331200",
+              "secondary": "#4e52ba",
+              "inverse-surface": "#2a313d",
+              "inverse-primary": "#81d4d8",
+              "inverse-on-surface": "#ebf1ff",
+              "secondary-fixed-dim": "#c0c1ff",
+              "surface-tint": "#00696d",
+              "on-tertiary-container": "#ffe1d2",
+              "primary-fixed": "#9df0f4",
+              "outline": "#6e7979",
+              "tertiary": "#7a401c",
+              "secondary-fixed": "#e1e0ff",
+              "error-container": "#ffdad6",
+              "error": "#ba1a1a",
+              "surface-container-highest": "#dce2f3",
+              "background": "#f9f9ff",
+              "primary": "#00595c",
+              "on-primary": "#ffffff",
+              "primary-container": "#0d7377",
+              "on-secondary-container": "#22248f",
+              "on-secondary-fixed-variant": "#3639a1",
+              "tertiary-fixed": "#ffdbca",
+              "secondary-container": "#8f93ff",
+              "on-primary-container": "#a2f5f9",
+              "on-surface": "#151c27",
+              "on-secondary-fixed": "#05006d",
+              "on-surface-variant": "#3e4949",
+              "surface-variant": "#dce2f3",
+              "on-error": "#ffffff",
+              "surface-container-lowest": "#ffffff",
+              "on-primary-fixed-variant": "#004f52",
+              "surface-container-low": "#f0f3ff",
+              "on-error-container": "#93000a",
+              "surface-container": "#e7eefe",
+              "on-tertiary-fixed-variant": "#6f3814",
+              "on-primary-fixed": "#002021",
+              "surface-dim": "#d3daea",
+              "surface": "#f9f9ff",
+              "outline-variant": "#bec9c9",
+              "on-tertiary": "#ffffff",
+              "surface-container-high": "#e2e8f8",
+              "tertiary-fixed-dim": "#ffb68e",
+              "surface-bright": "#f9f9ff"
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      }
+      body {
+        font-family: 'Inter', sans-serif;
+      }
+      h1, h2, h3 {
+        font-family: 'Manrope', sans-serif;
+      }
+      .no-scrollbar::-webkit-scrollbar {
+        display: none;
+      }
+      .custom-shadow {
+        box-shadow: 0px 12px 32px rgba(21, 28, 39, 0.06);
+      }
+    </style>
+</head>
+<body class="bg-surface text-on-surface overflow-hidden flex h-screen">
+<!-- Sidebar Navigation (Immutable Content from JSON) -->
+<aside class="hidden md:flex flex-col h-screen sticky top-0 bg-[#f9f9ff] dark:bg-slate-950 text-[#00595c] dark:text-[#0d7377] font-['Inter'] text-sm font-medium w-64 border-r-0">
+<div class="p-6">
+<div class="flex items-center gap-3 mb-8">
+<div class="w-10 h-10 rounded-xl bg-primary-container flex items-center justify-center text-white">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">construction</span>
+</div>
+<div class="flex flex-col">
+<span class="text-[#00595c] dark:text-[#0d7377] font-bold text-base">Emma's Feelings Board</span>
+<span class="text-xs text-on-surface-variant/70">Core Builder Active</span>
+</div>
+</div>
+<nav class="space-y-2">
+<a class="flex items-center gap-3 px-4 py-3 bg-[#0d7377] text-white rounded-lg shadow-sm transition-opacity active:opacity-80" href="#">
+<span class="material-symbols-outlined">construction</span>
+<span>Builder</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-[#3e4949] dark:text-slate-400 hover:bg-[#f0f3ff] dark:hover:bg-slate-900 hover:translate-x-1 transition-all duration-300 active:opacity-80" href="#">
+<span class="material-symbols-outlined">dashboard_customize</span>
+<span>Templates</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-[#3e4949] dark:text-slate-400 hover:bg-[#f0f3ff] dark:hover:bg-slate-900 hover:translate-x-1 transition-all duration-300 active:opacity-80" href="#">
+<span class="material-symbols-outlined">folder_open</span>
+<span>Library</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-[#3e4949] dark:text-slate-400 hover:bg-[#f0f3ff] dark:hover:bg-slate-900 hover:translate-x-1 transition-all duration-300 active:opacity-80" href="#">
+<span class="material-symbols-outlined">insights</span>
+<span>Analytics</span>
+</a>
+</nav>
+</div>
+<div class="mt-auto p-6">
+<div class="flex items-center gap-3 p-3 rounded-xl bg-surface-container-low">
+<img alt="Emma's Profile" class="w-10 h-10 rounded-full object-cover" data-alt="portrait of a professional friendly woman with warm smile in a well-lit modern office setting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDffvscdfJgL7-uP4b_FTCogxbPLr_1Y0wh1FDdf0YDk5XInJlHF67yt0m1qRm14oVvxDwcs16bfQZ4wYONJ9R8d18X0YpwNX5UKg4Okz1_VuRoKDrVW9upYmWEae1NwLMoruVDF1qfWNLMf4_RWC2_j0UcsV287noRDdts0vq4MiFm7F7ACIRk3YjNDciGg4Uw-4lVQOS5YbAov8PafmIKfi6dzCl7BYAFRE4yHnpvZA6pBAdN0MSaYpJL9M2xAEN2bPY4ippPRGo"/>
+<div class="flex flex-col overflow-hidden">
+<span class="font-bold text-xs truncate">Emma's Profile</span>
+<span class="text-[10px] opacity-60">Professional Plan</span>
+</div>
+</div>
+</div>
+</aside>
+<main class="flex-1 flex flex-col min-w-0 h-screen">
+<!-- TopAppBar (Immutable Content from JSON) -->
+<header class="bg-[#f9f9ff] dark:bg-slate-950 flex items-center justify-between px-6 w-full max-w-none h-[56px] border-b-0 z-10 custom-shadow">
+<div class="flex items-center gap-4">
+<span class="text-[#00595c] dark:text-[#0d7377] font-extrabold text-xl font-headline tracking-tight">Bridges</span>
+<div class="hidden sm:flex items-center gap-2 bg-surface-container-low px-3 py-1 rounded-full border border-outline-variant/10">
+<span class="text-[#00595c] font-bold text-sm">Emma's Feelings Board</span>
+<span class="material-symbols-outlined text-sm cursor-pointer opacity-60 hover:opacity-100">edit</span>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<button class="hidden lg:flex items-center gap-2 text-primary font-medium text-sm px-4 py-1.5 rounded-lg hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined text-[20px]">add</span>
+                    New Tool
+                </button>
+<button class="flex items-center gap-2 px-4 py-1.5 border-2 border-primary/20 text-primary rounded-lg font-bold text-sm hover:bg-primary/5 transition-colors active:scale-95 transition-transform duration-200">
+<span class="material-symbols-outlined text-[20px]">share</span>
+                    Share
+                </button>
+<div class="w-8 h-8 rounded-full bg-surface-container-highest flex items-center justify-center overflow-hidden">
+<span class="material-symbols-outlined text-[#00595c]">account_circle</span>
+</div>
+</div>
+</header>
+<!-- Main Content Area (Split Panel) -->
+<div class="flex-1 flex overflow-hidden">
+<!-- LEFT PANEL: AI Chat Interface -->
+<section class="w-full max-w-[400px] flex flex-col bg-surface-container-lowest border-r-0 relative z-0">
+<div class="flex-1 overflow-y-auto p-6 space-y-8 no-scrollbar">
+<!-- Chat History -->
+<div class="flex flex-col gap-6">
+<!-- User Message -->
+<div class="flex justify-end">
+<div class="max-w-[85%] bg-primary-container text-white p-4 rounded-2xl rounded-tr-none shadow-sm">
+<p class="text-sm leading-relaxed">I need a feelings communication board for my daughter Emma. She's 4 and nonverbal.</p>
+</div>
+</div>
+<!-- AI Message 1 -->
+<div class="flex justify-start">
+<div class="max-w-[85%] bg-surface-container-low text-on-surface p-4 rounded-2xl rounded-tl-none border border-outline-variant/10">
+<p class="text-sm leading-relaxed">I'd love to help! I'll create a feelings communication board for Emma using high-contrast icons and clear labels. I'll build that for you now...</p>
+</div>
+</div>
+<!-- AI Message 2 (Status update) -->
+<div class="flex justify-start">
+<div class="max-w-[85%] bg-surface-container-low text-on-surface p-4 rounded-2xl rounded-tl-none border border-outline-variant/10">
+<p class="text-sm leading-relaxed">Here's Emma's Feelings Board! It has 8 emotion cards — Happy, Sad, Angry, Scared, Tired, Hungry, Love, and Help. I've used warm, supportive colors to help with recognition. Would you like to adjust anything?</p>
+</div>
+</div>
+<!-- Active User Input Bubbled -->
+<div class="flex justify-end">
+<div class="max-w-[85%] bg-primary-container text-white p-4 rounded-2xl rounded-tr-none shadow-sm opacity-90 animate-pulse-slow">
+<p class="text-sm leading-relaxed">Can you add an 'Excited' card too?</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Chat Input Container -->
+<div class="p-6 bg-surface-container-lowest border-t border-outline-variant/10">
+<div class="relative flex items-center bg-surface-container-high rounded-xl p-2 transition-all focus-within:ring-2 focus-within:ring-primary/20">
+<textarea class="w-full bg-transparent border-none focus:ring-0 text-sm py-2 px-3 resize-none text-on-surface" placeholder="Ask to modify the board..." rows="1"></textarea>
+<button class="w-10 h-10 bg-primary-container text-white rounded-lg flex items-center justify-center hover:opacity-90 active:scale-95 transition-all">
+<span class="material-symbols-outlined">send</span>
+</button>
+</div>
+</div>
+</section>
+<!-- RIGHT PANEL: Preview Canvas -->
+<section class="flex-1 bg-surface-container-low p-8 lg:p-12 overflow-y-auto no-scrollbar flex items-center justify-center">
+<!-- RENDERED TOOL (The Safe Space Container) -->
+<div class="w-full max-w-4xl bg-white rounded-3xl p-8 custom-shadow border border-outline-variant/5">
+<div class="mb-10 text-center">
+<h2 class="text-3xl font-extrabold text-primary mb-2 font-headline">Emma's Feelings Board</h2>
+<div class="inline-flex items-center px-6 py-2 bg-primary/5 rounded-full">
+<span class="text-primary-container font-bold text-xl tracking-wide uppercase text-sm">I feel...</span>
+</div>
+</div>
+<!-- GRID (2x4) -->
+<div class="grid grid-cols-2 md:grid-cols-4 gap-6 mb-10">
+<!-- Card: Happy (Active/Selected) -->
+<button class="aspect-square bg-surface-container-lowest rounded-[2rem] flex flex-col items-center justify-center gap-4 transition-all duration-300 hover:scale-[1.02] border-4 border-primary shadow-[0_0_20px_rgba(0,89,92,0.15)] ring-4 ring-primary/5">
+<span class="text-6xl drop-shadow-sm">😊</span>
+<span class="font-bold text-primary text-lg">Happy</span>
+</button>
+<!-- Card: Sad -->
+<button class="aspect-square bg-surface-container-lowest rounded-[2rem] flex flex-col items-center justify-center gap-4 transition-all duration-300 hover:scale-[1.02] hover:bg-surface-container-high">
+<span class="text-6xl drop-shadow-sm">😢</span>
+<span class="font-semibold text-on-surface-variant text-lg">Sad</span>
+</button>
+<!-- Card: Angry -->
+<button class="aspect-square bg-surface-container-lowest rounded-[2rem] flex flex-col items-center justify-center gap-4 transition-all duration-300 hover:scale-[1.02] hover:bg-surface-container-high">
+<span class="text-6xl drop-shadow-sm">😠</span>
+<span class="font-semibold text-on-surface-variant text-lg">Angry</span>
+</button>
+<!-- Card: Scared -->
+<button class="aspect-square bg-surface-container-lowest rounded-[2rem] flex flex-col items-center justify-center gap-4 transition-all duration-300 hover:scale-[1.02] hover:bg-surface-container-high">
+<span class="text-6xl drop-shadow-sm">😨</span>
+<span class="font-semibold text-on-surface-variant text-lg">Scared</span>
+</button>
+<!-- Card: Tired -->
+<button class="aspect-square bg-surface-container-lowest rounded-[2rem] flex flex-col items-center justify-center gap-4 transition-all duration-300 hover:scale-[1.02] hover:bg-surface-container-high">
+<span class="text-6xl drop-shadow-sm">😴</span>
+<span class="font-semibold text-on-surface-variant text-lg">Tired</span>
+</button>
+<!-- Card: Hungry -->
+<button class="aspect-square bg-surface-container-lowest rounded-[2rem] flex flex-col items-center justify-center gap-4 transition-all duration-300 hover:scale-[1.02] hover:bg-surface-container-high">
+<span class="text-6xl drop-shadow-sm">🍽️</span>
+<span class="font-semibold text-on-surface-variant text-lg">Hungry</span>
+</button>
+<!-- Card: Love -->
+<button class="aspect-square bg-surface-container-lowest rounded-[2rem] flex flex-col items-center justify-center gap-4 transition-all duration-300 hover:scale-[1.02] hover:bg-surface-container-high">
+<span class="text-6xl drop-shadow-sm">❤️</span>
+<span class="font-semibold text-on-surface-variant text-lg">Love</span>
+</button>
+<!-- Card: Help -->
+<button class="aspect-square bg-surface-container-lowest rounded-[2rem] flex flex-col items-center justify-center gap-4 transition-all duration-300 hover:scale-[1.02] hover:bg-surface-container-high">
+<span class="text-6xl drop-shadow-sm">🙋</span>
+<span class="font-semibold text-on-surface-variant text-lg">Help</span>
+</button>
+</div>
+<!-- Footer Action -->
+<div class="flex justify-center">
+<button class="group relative px-16 py-6 bg-gradient-to-br from-primary to-primary-container text-white rounded-2xl text-2xl font-black tracking-widest shadow-xl hover:shadow-2xl transition-all duration-300 active:scale-[0.98]">
+<span class="relative z-10 flex items-center gap-3">
+<span class="material-symbols-outlined text-3xl">volume_up</span>
+                                SPEAK
+                            </span>
+<div class="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl"></div>
+</button>
+</div>
+</div>
+</section>
+</div>
+</main>
+<!-- Bottom Navigation (Mobile Only) -->
+<nav class="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-surface-bright flex items-center justify-around px-4 custom-shadow z-50">
+<a class="flex flex-col items-center gap-1 text-primary" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">construction</span>
+<span class="text-[10px] font-bold">Builder</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-on-surface-variant" href="#">
+<span class="material-symbols-outlined">dashboard_customize</span>
+<span class="text-[10px]">Templates</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-on-surface-variant" href="#">
+<span class="material-symbols-outlined">folder_open</span>
+<span class="text-[10px]">Library</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-on-surface-variant" href="#">
+<span class="material-symbols-outlined">account_circle</span>
+<span class="text-[10px]">Profile</span>
+</a>
+</nav>
+</body></html>

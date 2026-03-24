@@ -1,0 +1,82 @@
+{
+  "name": "projects/8590912414567125721",
+  "projectId": "8590912414567125721",
+  "title": "Bridges \u2014 AI Therapy Tool Builder",
+  "visibility": "PRIVATE",
+  "createTime": "2026-03-23T22:44:56.534758Z",
+  "updateTime": "2026-03-23T23:10:39.175353Z",
+  "projectType": "PROJECT_DESIGN",
+  "origin": "STITCH",
+  "deviceType": "DESKTOP",
+  "designTheme": {
+    "colorMode": "LIGHT",
+    "font": "MANROPE",
+    "headlineFont": "MANROPE",
+    "bodyFont": "INTER",
+    "labelFont": "INTER",
+    "roundness": "ROUND_EIGHT",
+    "customColor": "#0D7377",
+    "spacingScale": 3
+  },
+  "screens": {
+    "01-landing-page": {
+      "id": "1871824ab39242eba308035310eb4ee5",
+      "sourceScreen": "projects/8590912414567125721/screens/1871824ab39242eba308035310eb4ee5",
+      "title": "Bridges Landing Page",
+      "width": 2560,
+      "height": 4458
+    },
+    "02-builder-empty": {
+      "id": "88a6699a388f43929e4f257aa6453499",
+      "sourceScreen": "projects/8590912414567125721/screens/88a6699a388f43929e4f257aa6453499",
+      "title": "Bridges Core Builder - Welcome State",
+      "width": 2560,
+      "height": 2048
+    },
+    "03-builder-active": {
+      "id": "f89e8ca2e3d34602b6687f7a50e98641",
+      "sourceScreen": "projects/8590912414567125721/screens/f89e8ca2e3d34602b6687f7a50e98641",
+      "title": "Bridges Core Builder - Active State",
+      "width": 2560,
+      "height": 2048
+    },
+    "04-token-board": {
+      "id": "f8d50175040d44f0926fcbd6f8c4bd2a",
+      "sourceScreen": "projects/8590912414567125721/screens/f8d50175040d44f0926fcbd6f8c4bd2a",
+      "title": "Alex's Star Chart - Token Board",
+      "width": 2560,
+      "height": 2788
+    },
+    "05-visual-schedule": {
+      "id": "bc3f36e6ea3746bea101fc3ca930148c",
+      "sourceScreen": "projects/8590912414567125721/screens/bc3f36e6ea3746bea101fc3ca930148c",
+      "title": "Morning Routine - Visual Schedule Tool Preview",
+      "width": 2816,
+      "height": 2240
+    },
+    "06-my-tools": {
+      "id": "2dd2dcc105d3432f8afb1e350a483fd1",
+      "sourceScreen": "projects/8590912414567125721/screens/2dd2dcc105d3432f8afb1e350a483fd1",
+      "title": "My Tools Dashboard",
+      "width": 2560,
+      "height": 2680
+    },
+    "07-templates": {
+      "id": "e1418afed6d24e13a225534defd6c2cc",
+      "sourceScreen": "projects/8590912414567125721/screens/e1418afed6d24e13a225534defd6c2cc",
+      "title": "Templates Gallery",
+      "width": 2560,
+      "height": 3840
+    },
+    "08-shared-tool-view": {
+      "id": "ba9b7673f8c34ff0ae1124a610660dcf",
+      "sourceScreen": "projects/8590912414567125721/screens/ba9b7673f8c34ff0ae1124a610660dcf",
+      "title": "Shared Tool View - Emma's Feelings Board",
+      "width": 2560,
+      "height": 2048
+    }
+  },
+  "metadata": {
+    "userRole": "OWNER"
+  }
+}

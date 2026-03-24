@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Bridges - Build Therapy Tools with AI</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "on-tertiary-fixed-variant": "#6f3814",
+              "tertiary-container": "#975731",
+              "on-tertiary-fixed": "#331200",
+              "outline-variant": "#bec9c9",
+              "surface-container-high": "#e2e8f8",
+              "on-primary-fixed": "#002021",
+              "outline": "#6e7979",
+              "on-tertiary-container": "#ffe1d2",
+              "surface-variant": "#dce2f3",
+              "surface-container": "#e7eefe",
+              "surface-tint": "#00696d",
+              "primary-container": "#0d7377",
+              "on-error": "#ffffff",
+              "secondary-fixed-dim": "#c0c1ff",
+              "on-surface-variant": "#3e4949",
+              "primary-fixed": "#9df0f4",
+              "on-primary": "#ffffff",
+              "on-tertiary": "#ffffff",
+              "primary-fixed-dim": "#81d4d8",
+              "tertiary": "#7a401c",
+              "secondary-fixed": "#e1e0ff",
+              "on-secondary-container": "#22248f",
+              "error-container": "#ffdad6",
+              "background": "#f9f9ff",
+              "surface": "#f9f9ff",
+              "on-primary-fixed-variant": "#004f52",
+              "on-surface": "#151c27",
+              "inverse-surface": "#2a313d",
+              "inverse-primary": "#81d4d8",
+              "on-background": "#151c27",
+              "secondary": "#4e52ba",
+              "on-secondary-fixed-variant": "#3639a1",
+              "on-secondary": "#ffffff",
+              "error": "#ba1a1a",
+              "on-secondary-fixed": "#05006d",
+              "inverse-on-surface": "#ebf1ff",
+              "surface-dim": "#d3daea",
+              "secondary-container": "#8f93ff",
+              "surface-container-highest": "#dce2f3",
+              "tertiary-fixed-dim": "#ffb68e",
+              "surface-container-lowest": "#ffffff",
+              "primary": "#00595c",
+              "surface-container-low": "#f0f3ff",
+              "on-error-container": "#93000a",
+              "surface-bright": "#f9f9ff",
+              "tertiary-fixed": "#ffdbca",
+              "on-primary-container": "#a2f5f9"
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      }
+      .bg-primary-gradient {
+        background: linear-gradient(135deg, #00595c 0%, #0d7377 100%);
+      }
+      .glass-card {
+        background: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(20px);
+      }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body selection:bg-primary-fixed-dim">
+<!-- Top Navigation Shell -->
+<nav class="fixed top-0 w-full z-50 bg-slate-50/80 dark:bg-slate-900/80 backdrop-blur-md shadow-sm dark:shadow-none">
+<div class="flex justify-between items-center px-6 py-4 max-w-7xl mx-auto">
+<div class="text-2xl font-bold tracking-tight text-teal-900 dark:text-teal-50 font-headline">Bridges</div>
+<div class="hidden md:flex items-center gap-8 font-headline font-semibold text-sm tracking-tight">
+<a class="text-teal-700 dark:text-teal-300 border-b-2 border-teal-600 pb-1" href="#">How it Works</a>
+<a class="text-slate-600 dark:text-slate-400 hover:text-teal-700 dark:hover:text-teal-300 transition-colors" href="#">For Parents</a>
+<a class="text-slate-600 dark:text-slate-400 hover:text-teal-700 dark:hover:text-teal-300 transition-colors" href="#">Tools</a>
+</div>
+<button class="bg-primary-gradient text-on-primary px-5 py-2.5 rounded-lg font-headline font-bold text-sm transition-all duration-300 ease-in-out active:scale-95 shadow-sm">
+                Start Building
+            </button>
+</div>
+</nav>
+<main class="pt-24 overflow-x-hidden">
+<!-- Hero Section -->
+<section class="max-w-7xl mx-auto px-6 py-12 md:py-24 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+<div class="lg:col-span-6 space-y-8">
+<div class="inline-flex items-center gap-2 px-3 py-1 bg-tertiary-fixed text-on-tertiary-fixed rounded-full text-xs font-semibold uppercase tracking-wider">
+<span class="material-symbols-outlined text-sm" data-icon="auto_awesome">auto_awesome</span>
+                    AI-Powered Support
+                </div>
+<h1 class="text-5xl md:text-6xl font-extrabold font-headline leading-[1.1] text-on-surface tracking-tight">
+                    Build therapy tools for your child — <span class="text-primary">just describe what you need</span>
+</h1>
+<p class="text-xl text-on-surface-variant leading-relaxed max-w-xl">
+                    Bridges uses AI to turn your words into interactive visual schedules, communication boards, and token systems. No technical skills required.
+                </p>
+<div class="flex flex-col sm:flex-row gap-4 pt-4">
+<button class="bg-primary-gradient text-on-primary px-8 py-4 rounded-lg font-headline font-bold text-lg flex items-center justify-center gap-2 transition-all duration-300 ease-in-out active:scale-95 group">
+                        Start Building — It's Free
+                        <span class="material-symbols-outlined transition-transform group-hover:translate-x-1" data-icon="arrow_forward">arrow_forward</span>
+</button>
+<button class="bg-surface-container-high text-on-surface px-8 py-4 rounded-lg font-headline font-bold text-lg hover:bg-surface-container-highest transition-colors">
+                        View Templates
+                    </button>
+</div>
+</div>
+<!-- Asymmetric Bento-style Hero Visual -->
+<div class="lg:col-span-6 relative">
+<div class="absolute -z-10 w-[120%] h-[120%] bg-surface-container-low rounded-[3rem] -top-[10%] -right-[10%] rotate-3"></div>
+<div class="relative z-10 p-4 bg-surface-container-lowest rounded-xl shadow-2xl overflow-hidden border border-outline-variant/10">
+<img alt="Therapy tool preview" class="w-full h-auto rounded-lg object-cover aspect-[4/3]" data-alt="Modern tablet display showing a colorful visual therapy schedule in a sunlit warm minimalist living room setting with soft textures" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDuI6wuQW4cpKpv59TAE50uAWGCBcrIa4B2dGpE73SPlQQKFPRqOZft4ZKJM8lCAKT7y7c9OrGXW5p8xZz2sl9Rsyc2eiKEKmnHQ7cSvTYV6YSFQ2Ak3Y6CJD5cT50nAcIv6cu-ckDqfjdm5tykbGSqCwh1uxNvmZKnN34V8BEjHduH-oE3u3DYjTplqI4yLQOb83lR8jjjlmF6NsUuOrLzufvcsgrs1FoG9RBUrAYm1CqfdyDGnKv__x7BrMXLMsPx1Pt12-M9ejI"/>
+<!-- Floating Overlay Card -->
+<div class="absolute bottom-10 -left-6 glass-card p-6 rounded-xl shadow-xl border border-white/20 max-w-[280px]">
+<div class="flex items-center gap-3 mb-3">
+<div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined" data-icon="chat_bubble">chat_bubble</span>
+</div>
+<div class="font-headline font-bold text-sm text-on-surface">AI Assistant</div>
+</div>
+<p class="text-xs text-on-surface-variant italic leading-normal">
+                            "Create a bedtime routine with 5 steps using calm blue colors and friendly icons."
+                        </p>
+</div>
+</div>
+</div>
+</section>
+<!-- How It Works Section -->
+<section class="bg-surface-container-low py-24 px-6">
+<div class="max-w-7xl mx-auto">
+<div class="mb-16 text-center md:text-left">
+<h2 class="text-4xl font-extrabold font-headline text-on-surface mb-4">How it Works</h2>
+<div class="h-1.5 w-24 bg-primary rounded-full mb-6 mx-auto md:mx-0"></div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+<!-- Step 1 -->
+<div class="bg-surface-container-lowest p-8 rounded-xl shadow-sm hover:shadow-md transition-shadow group">
+<div class="w-14 h-14 bg-primary-fixed text-on-primary-fixed rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-3xl" data-icon="chat_bubble">chat_bubble</span>
+</div>
+<h3 class="text-2xl font-bold font-headline mb-4 text-on-surface">Describe</h3>
+<p class="text-on-surface-variant leading-relaxed">
+                            Tell Bridges what your child needs in everyday language. <span class="font-medium text-primary">"A visual schedule for a trip to the dentist."</span>
+</p>
+</div>
+<!-- Step 2 -->
+<div class="bg-surface-container-lowest p-8 rounded-xl shadow-sm hover:shadow-md transition-shadow group">
+<div class="w-14 h-14 bg-secondary-fixed text-on-secondary-fixed rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-3xl" data-icon="auto_awesome">auto_awesome</span>
+</div>
+<h3 class="text-2xl font-bold font-headline mb-4 text-on-surface">Build</h3>
+<p class="text-on-surface-variant leading-relaxed">
+                            AI creates an interactive therapy tool in seconds, complete with vetted icons and clear structures designed for cognitive clarity.
+                        </p>
+</div>
+<!-- Step 3 -->
+<div class="bg-surface-container-lowest p-8 rounded-xl shadow-sm hover:shadow-md transition-shadow group">
+<div class="w-14 h-14 bg-tertiary-fixed text-on-tertiary-fixed rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-3xl" data-icon="share">share</span>
+</div>
+<h3 class="text-2xl font-bold font-headline mb-4 text-on-surface">Share</h3>
+<p class="text-on-surface-variant leading-relaxed">
+                            Use at home, school, or therapy — share with your team instantly via private link or high-quality printouts for physical use.
+                        </p>
+</div>
+</div>
+</div>
+</section>
+<!-- Product Preview Section (Bento Style) -->
+<section class="py-24 px-6 max-w-7xl mx-auto">
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+<div class="lg:col-span-8 bg-surface-container h-[400px] rounded-2xl p-8 relative overflow-hidden flex flex-col justify-end">
+<img alt="Schedule Preview" class="absolute inset-0 w-full h-full object-cover mix-blend-overlay opacity-30" data-alt="Detailed close up of a colorful digital visual schedule with clear icons for bathroom, breakfast, and school bus on a clean user interface" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDI1WAquY5JbH2SPKvNzN04yEp-qJXgRQz1BM2Np04uV3_Qq_Gze78oXLG02kI15cejXT26akElKw7SabVyRkfJQtY4IAU55abI0P46sgKgQidrLq1F--r0Pvi0SvGt1B9hG_YVkkt7xqJvsMpfDd7fCSk4FDiBplkblc3VeoC75oCwRf9IoX8ELc2wM4cJ9vEJNBpigYZ2SMuCTOscR8qH3jlcI9P-a4i2bproZMHtoFvsOrBNAwZC0Z3LOb9uA2a9-T_AoultHBE"/>
+<div class="relative z-10">
+<span class="px-3 py-1 bg-primary-container text-on-primary-container rounded-full text-xs font-bold mb-4 inline-block">MOST POPULAR</span>
+<h4 class="text-3xl font-headline font-extrabold mb-2 text-on-surface">Visual Schedules</h4>
+<p class="text-on-surface-variant max-w-md">Reduce transition anxiety with step-by-step interactive flows customized for any routine.</p>
+</div>
+</div>
+<div class="lg:col-span-4 bg-tertiary-fixed text-on-tertiary-fixed rounded-2xl p-8 flex flex-col justify-between">
+<div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined" data-icon="grid_view">grid_view</span>
+</div>
+<div>
+<h4 class="text-2xl font-headline font-extrabold mb-2">Communication Boards</h4>
+<p class="opacity-80">Give every child a voice with instant PECS-style boards based on their specific environment.</p>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer Shell -->
+<footer class="w-full border-t border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-950 mt-12">
+<div class="flex flex-col md:flex-row justify-between items-center py-12 px-8 max-w-7xl mx-auto gap-4">
+<div class="flex flex-col items-center md:items-start gap-2">
+<div class="text-lg font-bold text-teal-900 dark:text-teal-50 font-headline">Bridges</div>
+<div class="font-['Inter'] text-xs font-normal text-slate-500 dark:text-slate-400">© 2024 Bridges AI. All rights reserved.</div>
+</div>
+<div class="flex gap-8">
+<a class="font-['Inter'] text-xs font-normal text-slate-500 dark:text-slate-400 hover:text-teal-600 dark:hover:text-teal-400 transition-colors" href="#">Privacy Policy</a>
+<a class="font-['Inter'] text-xs font-normal text-slate-500 dark:text-slate-400 hover:text-teal-600 dark:hover:text-teal-400 transition-colors" href="#">Terms of Service</a>
+<a class="font-['Inter'] text-xs font-normal text-slate-500 dark:text-slate-400 hover:text-teal-600 dark:hover:text-teal-400 transition-colors" href="#">Contact Info</a>
+</div>
+</div>
+</footer>
+</body></html>
