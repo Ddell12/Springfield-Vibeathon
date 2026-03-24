@@ -105,6 +105,7 @@ describe("projects CRUD", () => {
 
     const projects = await t.query(api.projects.list, {});
     expect(projects.length).toBeGreaterThanOrEqual(2);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Convex test query returns unknown shape
     const titles = projects.map((p: any) => p.title);
     expect(titles).toContain("Project Alpha");
     expect(titles).toContain("Project Beta");

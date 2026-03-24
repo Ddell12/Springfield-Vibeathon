@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
+import { useEffect, useState } from "react";
 
 type Particle = {
   id: number;
@@ -10,6 +10,7 @@ type Particle = {
   color: string;
   size: number;
   angle: number;
+  dy: number;
 };
 
 const COLORS = ["#00595c", "#4e52ba", "#7a401c", "#0d7377", "#8f93ff", "#975731"];
@@ -22,6 +23,7 @@ function generateParticles(count: number): Particle[] {
     color: COLORS[Math.floor(Math.random() * COLORS.length)],
     size: 6 + Math.random() * 8,
     angle: Math.random() * 360,
+    dy: -120 + Math.random() * 240,
   }));
 }
 
@@ -34,6 +36,7 @@ export function Confetti({ trigger }: ConfettiProps) {
 
   useEffect(() => {
     if (trigger) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- confetti must render immediately on trigger
       setParticles(generateParticles(30));
       const timer = setTimeout(() => {
         setParticles([]);
@@ -65,7 +68,7 @@ export function Confetti({ trigger }: ConfettiProps) {
                 rotate: p.angle,
               }}
               initial={{ opacity: 1, y: 0, scale: 1 }}
-              animate={{ opacity: 0, y: -120 + Math.random() * 240, scale: 0.5 }}
+              animate={{ opacity: 0, y: p.dy, scale: 0.5 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 1.8, ease: [0.4, 0, 0.2, 1] }}
             />

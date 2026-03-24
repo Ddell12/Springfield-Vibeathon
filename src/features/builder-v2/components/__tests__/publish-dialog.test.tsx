@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -83,7 +83,6 @@ describe("PublishDialog", () => {
   });
 
   it("copy URL button calls navigator.clipboard.writeText when status is done", async () => {
-    const user = userEvent.setup();
     render(
       <PublishDialog
         {...defaultProps}
@@ -93,7 +92,7 @@ describe("PublishDialog", () => {
     );
 
     const copyBtn = screen.getByRole("button", { name: /copy/i });
-    await user.click(copyBtn);
+    fireEvent.click(copyBtn);
 
     await waitFor(() => {
       expect(mockWriteText).toHaveBeenCalledWith("https://bridges-morning-routine.vercel.app");

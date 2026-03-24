@@ -11,7 +11,7 @@ describe("toolState CRUD", () => {
     const t = convexTest(schema, modules);
 
     const result = await t.query(api.tool_state.get, {
-      projectId: "project-abc" as any,
+      projectId: "project-abc" as unknown as import("convex/values").GenericId<"projects">,
       key: "tokenCount",
     });
 
