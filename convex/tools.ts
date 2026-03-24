@@ -89,9 +89,9 @@ export const update = mutation({
 });
 
 export const remove = mutation({
-  args: { toolId: v.id("tools") },
+  args: { id: v.id("tools") },
   handler: async (ctx, args) => {
-    await ctx.db.delete(args.toolId);
+    await ctx.db.delete(args.id);
     return null;
   },
 });

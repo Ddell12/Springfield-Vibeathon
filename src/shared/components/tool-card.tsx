@@ -9,6 +9,8 @@ type ToolCardProps = {
   date?: string;
   variant: "tool" | "template";
   onAction?: () => void;
+  onShare?: () => void;
+  onDelete?: () => void;
 };
 
 export function ToolCard({
@@ -17,7 +19,15 @@ export function ToolCard({
   description,
   date,
   variant,
+  onShare,
+  onDelete,
 }: ToolCardProps) {
+  function handleDelete() {
+    if (window.confirm(`Delete "${title}"? This cannot be undone.`)) {
+      onDelete?.();
+    }
+  }
+
   return (
     <div className="group bg-surface-container-lowest rounded-xl ring-1 ring-outline-variant/10 sanctuary-shadow overflow-hidden transition-all duration-300 hover:translate-y-[-4px] hover:shadow-lg flex flex-col">
       {/* Image area */}
@@ -49,14 +59,18 @@ export function ToolCard({
             <button
               className="p-2 text-primary hover:bg-surface-container-high rounded-lg transition-colors"
               title="Share"
+              aria-label="Share"
+              onClick={onShare}
             >
               <MaterialIcon icon="share" size="sm" />
             </button>
             <button
               className="p-2 text-primary hover:bg-surface-container-high rounded-lg transition-colors"
-              title="Edit"
+              title="Delete"
+              aria-label="Delete"
+              onClick={handleDelete}
             >
-              <MaterialIcon icon="edit" size="sm" />
+              <MaterialIcon icon="delete" size="sm" />
             </button>
           </div>
         ) : (
