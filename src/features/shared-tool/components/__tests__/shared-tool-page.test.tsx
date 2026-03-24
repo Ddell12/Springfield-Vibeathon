@@ -22,13 +22,6 @@ vi.mock("next/link", () => ({
   }) => <a href={href}>{children}</a>,
 }));
 
-// Mock ToolRenderer to avoid rendering tool internals
-vi.mock("@/features/therapy-tools/components/tool-renderer", () => ({
-  ToolRenderer: (props: { config: unknown }) => (
-    <div data-testid="tool-renderer" data-config={JSON.stringify(props.config)} />
-  ),
-}));
-
 // Mock MaterialIcon to avoid font-loading issues
 vi.mock("@/shared/components/material-icon", () => ({
   MaterialIcon: ({ icon }: { icon: string }) => (
@@ -36,39 +29,25 @@ vi.mock("@/shared/components/material-icon", () => ({
   ),
 }));
 
-// Mock motion to avoid animation side effects
-vi.mock("motion/react", () => ({
-  motion: {
-    div: ({ children, ...rest }: React.HTMLAttributes<HTMLDivElement>) => (
-      <div {...rest}>{children}</div>
-    ),
-  },
-  AnimatePresence: ({ children }: { children: React.ReactNode }) => (
-    <>{children}</>
-  ),
-}));
-
 import * as convexReact from "convex/react";
 
 import { SharedToolPage } from "../shared-tool-page";
 
-const mockTool = {
-  _id: "tool1",
+const mockProject = {
+  _id: "project1",
   _creationTime: Date.now(),
   title: "Emma's Feelings Board",
   description: "Tap an emoji to express how you're feeling today",
-  toolType: "communication-board",
-  config: {
-    type: "communication-board",
-    title: "Emma's Feelings Board",
-    sentenceStarter: "I FEEL",
-    cards: [],
-    enableTTS: false,
-    voiceId: "default",
-    columns: 3,
-  },
   shareSlug: "abc123",
-  isTemplate: false,
+  fragment: {
+    title: "Emma's Feelings Board",
+    description: "Feelings board",
+    template: "nextjs-developer",
+    code: "export default function App() { return <div>Feelings Board</div>; }",
+    file_path: "app/page.tsx",
+    has_additional_dependencies: false,
+    port: 3000,
+  },
   createdAt: Date.now(),
   updatedAt: Date.now(),
 };
@@ -79,9 +58,7 @@ describe("SharedToolPage", () => {
 
     render(<SharedToolPage />);
 
-    // Loading state: tool renderer should not be visible yet
-    expect(screen.queryByTestId("tool-renderer")).not.toBeInTheDocument();
-    // A loading indicator should be present
+    // Loading state: loading skeleton should be present
     const loadingEl =
       screen.queryByRole("status") ||
       screen.queryByText(/loading/i) ||
@@ -96,19 +73,17 @@ describe("SharedToolPage", () => {
     render(<SharedToolPage />);
 
     // Not-found state should be shown
-    expect(screen.queryByTestId("tool-renderer")).not.toBeInTheDocument();
     // Should have a link to the builder
     const builderLink = screen.getByRole("link", { name: /build|create|builder/i });
     expect(builderLink).toHaveAttribute("href", "/builder");
   });
 
-  test("renders tool title and tool renderer when tool data is returned", () => {
-    vi.mocked(convexReact.useQuery).mockReturnValue(mockTool);
+  test("renders project title when project data is returned", () => {
+    vi.mocked(convexReact.useQuery).mockReturnValue(mockProject);
 
     render(<SharedToolPage />);
 
     expect(screen.getByText("Emma's Feelings Board")).toBeInTheDocument();
-    expect(screen.getByTestId("tool-renderer")).toBeInTheDocument();
   });
 
   test("not-found state shows Build your own CTA", () => {
@@ -116,9 +91,9 @@ describe("SharedToolPage", () => {
 
     render(<SharedToolPage />);
 
-    // CTA text should reference building a tool
-    expect(
-      screen.getByText(/build your own|create your own|not found|tool not found/i),
-    ).toBeInTheDocument();
+    // CTA link should be present
+    const ctaLinks = screen.getAllByRole("link", { name: /build your own|create|builder/i });
+    expect(ctaLinks.length).toBeGreaterThanOrEqual(1);
+    expect(ctaLinks[0]).toHaveAttribute("href", "/builder");
   });
 });

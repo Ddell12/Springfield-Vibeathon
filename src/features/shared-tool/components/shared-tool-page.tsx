@@ -3,9 +3,8 @@
 import { useQuery } from "convex/react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { useEffect, useState } from "react";
 
-import { ToolRenderer } from "@/features/therapy-tools/components/tool-renderer";
-import type { ToolConfig } from "@/features/therapy-tools/types/tool-configs";
 import { MaterialIcon } from "@/shared/components/material-icon";
 
 import { api } from "../../../../convex/_generated/api";
@@ -13,36 +12,65 @@ import { api } from "../../../../convex/_generated/api";
 export function SharedToolPage() {
   const params = useParams();
   const slug = params?.toolId as string;
-  const tool = useQuery(api.tools.getBySlug, slug ? { slug } : "skip");
+  const project = useQuery(api.projects.getBySlug, slug ? { slug } : "skip");
+  const [sandboxUrl, setSandboxUrl] = useState<string | null>(null);
+  const [sandboxError, setSandboxError] = useState<string | null>(null);
+  const [isBooting, setIsBooting] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
 
-  // Loading state
-  if (tool === undefined) {
+  useEffect(() => {
+    if (!project?._id || !project?.fragment) return;
+    let cancelled = false;
+
+    async function bootSandbox() {
+      setIsBooting(true);
+      setSandboxError(null);
+      try {
+        const res = await fetch("/api/sandbox", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ fragment: project!.fragment }),
+        });
+        if (!res.ok) throw new Error("Failed to start sandbox");
+        const { url } = await res.json();
+        if (!cancelled) setSandboxUrl(url);
+      } catch {
+        if (!cancelled) setSandboxError("Unable to load this tool right now. Please try again later.");
+      } finally {
+        if (!cancelled) setIsBooting(false);
+      }
+    }
+
+    bootSandbox();
+    return () => { cancelled = true; };
+  }, [project?._id, retryCount]);
+
+  if (project === undefined) {
     return (
       <div className="bg-surface font-body text-on-surface min-h-screen flex flex-col items-center justify-center">
         <div data-testid="loading-skeleton" className="animate-pulse space-y-4 max-w-4xl w-full px-8">
           <div className="h-10 bg-surface-container-low rounded-xl w-64" />
-          <div className="h-64 bg-surface-container-low rounded-xl" />
+          <div className="h-[60vh] bg-surface-container-low rounded-xl" />
         </div>
       </div>
     );
   }
 
-  // Not found state
-  if (tool === null) {
+  if (project === null) {
     return (
       <div className="bg-surface font-body text-on-surface min-h-screen flex flex-col items-center justify-center gap-6 text-center px-4">
         <MaterialIcon icon="search_off" className="text-6xl text-primary/40" />
         <h1 className="font-headline font-bold text-3xl text-on-surface">
-          Build your own therapy tools with Bridges
+          This tool doesn&apos;t exist
         </h1>
         <p className="text-on-surface-variant text-lg">
-          This tool doesn&apos;t exist or has been removed.
+          It may have been removed, or the link might be incorrect.
         </p>
         <Link
           href="/builder"
           className="bg-primary-gradient text-white px-8 py-4 rounded-lg font-semibold hover:opacity-90 transition-all active:scale-95"
         >
-          Create Tool
+          Build Your Own
         </Link>
       </div>
     );
@@ -50,73 +78,50 @@ export function SharedToolPage() {
 
   return (
     <div className="bg-surface font-body text-on-surface min-h-screen flex flex-col">
-      {/* Minimal Header */}
       <header className="flex justify-center items-center w-full px-6 py-4 bg-surface">
         <div className="max-w-7xl w-full flex justify-between items-center">
           <Link href="/" className="text-primary-container font-extrabold tracking-tight font-headline text-lg">
             Bridges
           </Link>
           <span className="hidden md:block text-on-surface-variant font-label text-sm">
-            Public Tool View
+            {project.title}
           </span>
-          <div className="flex items-center gap-3">
-            <button className="hover:bg-surface-container-low p-2 rounded-full transition-colors">
-              <MaterialIcon icon="share" className="text-on-surface-variant" />
-            </button>
-            <button className="hover:bg-surface-container-low p-2 rounded-full transition-colors">
-              <MaterialIcon icon="info" className="text-on-surface-variant" />
-            </button>
-          </div>
         </div>
       </header>
 
-      {/* Content */}
-      <main className="flex-grow flex items-start justify-center px-4 py-12 md:py-20">
-        <div className="max-w-4xl w-full">
-          {/* Tool Header */}
-          <div className="mb-10 ml-2 md:ml-8">
-            <h1 className="font-headline font-extrabold text-3xl md:text-4xl text-primary tracking-tight mb-2">
-              {tool.title}
-            </h1>
-            <p className="font-body text-on-surface-variant text-base max-w-lg">
-              {tool.description}
-            </p>
+      <main className="flex-1 flex flex-col items-center px-4 py-6">
+        {isBooting ? (
+          <div className="flex-1 flex flex-col items-center justify-center gap-4 w-full max-w-5xl">
+            <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary/20 border-t-primary" />
+            <p className="text-on-surface-variant font-medium">Loading your therapy tool...</p>
+            <p className="text-on-surface-variant/60 text-sm">This usually takes 10-15 seconds</p>
           </div>
-
-          {/* Safe Space Container */}
-          <div className="safe-space-container bg-surface-container-lowest p-6 md:p-10 sanctuary-shadow relative overflow-hidden">
-            <div className="absolute -top-24 -right-24 w-64 h-64 rounded-full bg-secondary-container/10 blur-3xl" />
-            <div className="absolute -bottom-24 -left-24 w-64 h-64 rounded-full bg-primary-container/5 blur-3xl" />
-
-            <div className="relative z-10">
-              <ToolRenderer config={tool.config as ToolConfig} />
-            </div>
+        ) : sandboxError ? (
+          <div className="flex-1 flex flex-col items-center justify-center gap-4 text-center">
+            <MaterialIcon icon="error_outline" className="text-5xl text-error/60" />
+            <p className="text-on-surface-variant">{sandboxError}</p>
+            <button
+              onClick={() => { setSandboxError(null); setRetryCount(c => c + 1); }}
+              className="text-primary font-semibold hover:underline"
+            >
+              Try Again
+            </button>
           </div>
-
-          {/* Notes Section */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
-            {/* Therapist Tip */}
-            <div className="bg-tertiary-fixed rounded-xl p-6 flex gap-4 items-start">
-              <MaterialIcon icon="lightbulb" filled className="text-on-tertiary-fixed-variant" />
-              <div>
-                <h4 className="font-headline font-bold text-on-tertiary-fixed mb-1">
-                  Therapist&apos;s Tip
-                </h4>
-                <p className="font-body text-sm text-on-tertiary-fixed-variant">
-                  Try to name the physical sensation you feel in your body along with
-                  the emoji you choose.
-                </p>
-              </div>
-            </div>
+        ) : sandboxUrl ? (
+          <div className="w-full max-w-5xl flex-1">
+            <iframe
+              src={sandboxUrl}
+              title={project.title}
+              className="w-full h-[70vh] rounded-xl border border-outline-variant/20 shadow-lg"
+              sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+            />
           </div>
-        </div>
+        ) : null}
       </main>
 
-      {/* Spacer for sticky footer */}
       <div className="h-24" />
 
-      {/* Bottom Sticky Footer */}
-      <footer className="fixed bottom-0 inset-x-0 z-50 glass-effect border-t border-outline-variant/10">
+      <footer className="fixed bottom-0 inset-x-0 z-50 bg-surface/80 backdrop-blur-md border-t border-outline-variant/10">
         <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
           <span className="text-sm font-medium text-on-surface-variant">
             Build your own — powered by{" "}

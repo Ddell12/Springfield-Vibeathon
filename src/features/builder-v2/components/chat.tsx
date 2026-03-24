@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import type { FragmentResult } from "../lib/schema";
 import { FragmentSchema } from "../lib/schema";
@@ -17,6 +17,7 @@ type ChatProps = {
   projectId?: string;
   onFragmentGenerated?: (fragment: FragmentResult) => void;
   currentCode?: string;
+  initialMessage?: string | null;
 };
 
 const WELCOME_MESSAGE: Message = {
@@ -30,10 +31,20 @@ export function Chat({
   projectId: _projectId,
   onFragmentGenerated,
   currentCode,
+  initialMessage,
 }: ChatProps) {
   const [messages, setMessages] = useState<Message[]>([WELCOME_MESSAGE]);
   const [isLoading, setIsLoading] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
+  const [hasAutoSent, setHasAutoSent] = useState(false);
+
+  useEffect(() => {
+    if (initialMessage && !hasAutoSent && !isLoading) {
+      setHasAutoSent(true);
+      handleSubmit(initialMessage);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialMessage, hasAutoSent, isLoading]);
 
   const handleSubmit = async (message: string) => {
     const userMessage: Message = {

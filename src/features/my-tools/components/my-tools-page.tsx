@@ -1,25 +1,21 @@
 "use client";
 
-import { useMutation,useQuery } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import Link from "next/link";
 import { useState } from "react";
 
 import { ShareDialog } from "@/features/sharing/components/share-dialog";
 import { MaterialIcon } from "@/shared/components/material-icon";
-import { ToolCard } from "@/shared/components/tool-card";
 
 import { api } from "../../../../convex/_generated/api";
 import type { Doc } from "../../../../convex/_generated/dataModel";
 
 export function MyToolsPage() {
-  const tools = useQuery(api.tools.list);
-  const remove = useMutation(api.tools.remove);
-  const [sharingTool, setSharingTool] = useState<Doc<"tools"> | null>(null);
+  const projects = useQuery(api.projects.list);
+  const removeProject = useMutation(api.projects.remove);
+  const [sharingProject, setSharingProject] = useState<Doc<"projects"> | null>(null);
 
-  const userTools = tools ? tools.filter((t) => !t.isTemplate) : null;
-
-  // Loading state
-  if (tools === undefined) {
+  if (projects === undefined) {
     return (
       <div className="max-w-7xl mx-auto px-8 pt-12 pb-24">
         <div data-testid="loading-skeleton" className="animate-pulse space-y-6">
@@ -34,8 +30,7 @@ export function MyToolsPage() {
     );
   }
 
-  // Empty state
-  if (userTools!.length === 0) {
+  if (projects.length === 0) {
     return (
       <div className="max-w-7xl mx-auto px-8 pt-12 pb-24 flex flex-col items-center justify-center gap-6 min-h-[60vh]">
         <div className="text-center">
@@ -58,21 +53,16 @@ export function MyToolsPage() {
     );
   }
 
-  function handleDelete(tool: Doc<"tools">) {
-    remove({ id: tool._id });
-  }
-
   return (
     <>
       <div className="max-w-7xl mx-auto px-8 pt-12 pb-24">
-        {/* Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
           <div>
             <h1 className="font-headline font-bold text-4xl md:text-5xl text-on-surface tracking-tight mb-2">
               My Tools
             </h1>
             <p className="text-on-surface-variant text-lg">
-              {userTools!.length} tool{userTools!.length !== 1 ? "s" : ""} created
+              {projects.length} tool{projects.length !== 1 ? "s" : ""} created
             </p>
           </div>
           <Link
@@ -84,22 +74,54 @@ export function MyToolsPage() {
           </Link>
         </div>
 
-        {/* Tools Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {userTools!.map((tool) => (
-            <ToolCard
-              key={tool._id}
-              title={tool.title}
-              toolType={tool.toolType}
-              date={`Created ${new Date(tool.createdAt).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}`}
-              variant="tool"
-              onShare={() => setSharingTool(tool)}
-              onDelete={() => handleDelete(tool)}
-            />
+          {projects.map((project) => (
+            <div
+              key={project._id}
+              className="group bg-surface-container-lowest rounded-xl p-6 ring-1 ring-outline-variant/10 hover:ring-primary/30 transition-all hover:shadow-lg"
+            >
+              <h3 className="font-headline font-bold text-lg text-on-surface mb-2">
+                {project.title}
+              </h3>
+              {project.description && (
+                <p className="text-on-surface-variant text-sm mb-4 line-clamp-2">
+                  {project.description}
+                </p>
+              )}
+              <p className="text-on-surface-variant/60 text-xs mb-4">
+                Created {new Date(project.createdAt).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+              </p>
+              <div className="flex gap-2">
+                <Link
+                  href={`/builder?project=${project._id}`}
+                  className="flex items-center gap-1 text-primary font-semibold text-sm hover:underline"
+                >
+                  <MaterialIcon icon="open_in_new" size="sm" />
+                  Open
+                </Link>
+                <button
+                  onClick={() => setSharingProject(project)}
+                  className="flex items-center gap-1 text-on-surface-variant font-medium text-sm hover:text-primary transition-colors"
+                >
+                  <MaterialIcon icon="share" size="sm" />
+                  Share
+                </button>
+                <button
+                  aria-label="delete"
+                  onClick={() => {
+                    if (confirm("Delete this tool?")) {
+                      removeProject({ projectId: project._id });
+                    }
+                  }}
+                  className="flex items-center gap-1 text-on-surface-variant font-medium text-sm hover:text-error transition-colors ml-auto"
+                >
+                  <MaterialIcon icon="delete" size="sm" />
+                </button>
+              </div>
+            </div>
           ))}
         </div>
 
-        {/* Safe Space CTA */}
         <section className="mt-20 p-10 rounded-xl bg-surface-container-lowest ring-1 ring-outline-variant/10 relative overflow-hidden flex flex-col md:flex-row items-center gap-10">
           <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -mr-20 -mt-20" />
           <div className="relative z-10 md:w-2/3">
@@ -133,12 +155,12 @@ export function MyToolsPage() {
         </section>
       </div>
 
-      {sharingTool && (
+      {sharingProject && (
         <ShareDialog
-          open={!!sharingTool}
-          onOpenChange={(open) => { if (!open) setSharingTool(null); }}
-          shareSlug={sharingTool.shareSlug}
-          toolTitle={sharingTool.title}
+          open={!!sharingProject}
+          onOpenChange={(open) => { if (!open) setSharingProject(null); }}
+          shareSlug={sharingProject.shareSlug}
+          toolTitle={sharingProject.title}
         />
       )}
     </>

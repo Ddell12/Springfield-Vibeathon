@@ -6,34 +6,36 @@ import { useState } from "react";
 
 import { cn } from "@/core/utils";
 import { MaterialIcon } from "@/shared/components/material-icon";
-import { ToolCard } from "@/shared/components/tool-card";
 import { Skeleton } from "@/shared/components/ui/skeleton";
 
 import { api } from "../../../../convex/_generated/api";
-import { Doc } from "../../../../convex/_generated/dataModel";
 
-type Category = "all" | "communication" | "rewards" | "routines";
+type Category = "all" | "Communication" | "Behavior Support" | "Daily Routines" | "Academic";
 
 const categories: { value: Category; label: string }[] = [
   { value: "all", label: "All" },
-  { value: "communication", label: "Communication" },
-  { value: "rewards", label: "Rewards" },
-  { value: "routines", label: "Routines" },
+  { value: "Communication", label: "Communication" },
+  { value: "Behavior Support", label: "Behavior Support" },
+  { value: "Daily Routines", label: "Daily Routines" },
+  { value: "Academic", label: "Academic" },
 ];
 
 export function TemplatesPage() {
   const [active, setActive] = useState<Category>("all");
 
-  const filteredTemplates = useQuery(
-    api.templates.queries.listTemplates,
-    active === "all" ? {} : { category: active },
+  const allTemplates = useQuery(
+    api.therapy_templates.list,
+    active === "all" ? {} : "skip"
   );
-
-  const isLoading = filteredTemplates === undefined;
+  const categoryTemplates = useQuery(
+    api.therapy_templates.getByCategory,
+    active !== "all" ? { category: active } : "skip"
+  );
+  const templates = active === "all" ? allTemplates : categoryTemplates;
+  const isLoading = templates === undefined;
 
   return (
     <div className="max-w-7xl mx-auto px-8 py-12">
-      {/* Header */}
       <section className="mb-16">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div className="max-w-2xl">
@@ -46,7 +48,6 @@ export function TemplatesPage() {
             </p>
           </div>
 
-          {/* Category Tabs */}
           <div className="inline-flex bg-surface-container-low p-1.5 rounded-lg gap-1">
             {categories.map((cat) => (
               <button
@@ -66,14 +67,13 @@ export function TemplatesPage() {
         </div>
       </section>
 
-      {/* Template Grid */}
       {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {Array.from({ length: 6 }).map((_, i) => (
             <Skeleton key={i} className="h-48 rounded-xl" />
           ))}
         </div>
-      ) : !isLoading && (filteredTemplates as Doc<"tools">[]).length === 0 ? (
+      ) : templates.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-24 text-center gap-4">
           <p className="text-on-surface-variant text-lg font-medium">
             No templates found for this category.
@@ -87,19 +87,32 @@ export function TemplatesPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {(filteredTemplates as Doc<"tools">[]).map((template) => (
-            <ToolCard
+          {(templates as Array<{ _id: string; name: string; category: string; description: string; starterPrompt: string }>).map((template) => (
+            <Link
               key={template._id}
-              title={template.title}
-              toolType={template.toolType}
-              description={template.description}
-              variant="template"
-            />
+              href={`/builder?template=${template._id}`}
+              className="group bg-surface-container-lowest rounded-xl p-6 ring-1 ring-outline-variant/10 hover:ring-primary/30 transition-all hover:shadow-lg"
+            >
+              <div className="mb-3">
+                <span className="text-xs font-semibold uppercase tracking-wider text-primary bg-primary/10 px-2 py-1 rounded-md">
+                  {template.category}
+                </span>
+              </div>
+              <h3 className="font-headline font-bold text-lg text-on-surface mb-2 group-hover:text-primary transition-colors">
+                {template.name}
+              </h3>
+              <p className="text-on-surface-variant text-sm leading-relaxed mb-4">
+                {template.description}
+              </p>
+              <span className="text-primary font-semibold text-sm flex items-center gap-1">
+                Use Template
+                <MaterialIcon icon="arrow_forward" size="sm" className="transition-transform group-hover:translate-x-1" />
+              </span>
+            </Link>
           ))}
         </div>
       )}
 
-      {/* CTA Section */}
       <section className="mt-20 p-12 bg-surface-container-low rounded-xl relative overflow-hidden ring-1 ring-outline-variant/10">
         <div className="relative z-10 max-w-xl">
           <h2 className="font-headline font-bold text-3xl text-on-surface mb-4">

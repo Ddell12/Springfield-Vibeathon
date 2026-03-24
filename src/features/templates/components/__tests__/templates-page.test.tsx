@@ -34,12 +34,6 @@ vi.mock("@/shared/components/material-icon", () => ({
   ),
 }));
 
-vi.mock("@/shared/components/tool-card", () => ({
-  ToolCard: ({ title }: { title: string }) => (
-    <div data-testid="tool-card">{title}</div>
-  ),
-}));
-
 vi.mock("@/shared/components/ui/skeleton", () => ({
   Skeleton: ({ className }: { className?: string }) => (
     <div data-testid="skeleton" className={className} />
@@ -48,10 +42,9 @@ vi.mock("@/shared/components/ui/skeleton", () => ({
 
 vi.mock("../../../../convex/_generated/api", () => ({
   api: {
-    templates: {
-      queries: {
-        listTemplates: "templates:queries:listTemplates",
-      },
+    therapy_templates: {
+      list: "therapy_templates:list",
+      getByCategory: "therapy_templates:getByCategory",
     },
   },
 }));
@@ -89,21 +82,21 @@ describe("TemplatesPage", () => {
     vi.mocked(useQuery).mockReturnValue([
       {
         _id: "1",
-        title: "Feelings Board",
-        toolType: "communication-board",
+        name: "Feelings Board",
+        category: "Communication",
         description: "Express emotions",
+        starterPrompt: "Build a feelings board",
       },
       {
         _id: "2",
-        title: "Star Chart",
-        toolType: "token-board",
+        name: "Star Chart",
+        category: "Behavior Support",
         description: "Earn rewards",
+        starterPrompt: "Build a star chart",
       },
     ]);
     render(<TemplatesPage />);
 
-    const cards = screen.getAllByTestId("tool-card");
-    expect(cards).toHaveLength(2);
     expect(screen.getByText("Feelings Board")).toBeInTheDocument();
     expect(screen.getByText("Star Chart")).toBeInTheDocument();
   });
@@ -117,10 +110,13 @@ describe("TemplatesPage", () => {
       screen.getByRole("button", { name: /communication/i }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: /rewards/i }),
+      screen.getByRole("button", { name: /behavior support/i }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: /routines/i }),
+      screen.getByRole("button", { name: /daily routines/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /academic/i }),
     ).toBeInTheDocument();
   });
 

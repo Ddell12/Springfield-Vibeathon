@@ -34,12 +34,6 @@ vi.mock("@/shared/components/material-icon", () => ({
   ),
 }));
 
-vi.mock("@/shared/components/tool-card", () => ({
-  ToolCard: ({ title }: { title: string }) => (
-    <div data-testid="tool-card">{title}</div>
-  ),
-}));
-
 vi.mock("@/shared/components/ui/skeleton", () => ({
   Skeleton: ({ className }: { className?: string }) => (
     <div data-testid="skeleton" className={className} />
@@ -48,10 +42,9 @@ vi.mock("@/shared/components/ui/skeleton", () => ({
 
 vi.mock("../../../../convex/_generated/api", () => ({
   api: {
-    templates: {
-      queries: {
-        listTemplates: "templates:queries:listTemplates",
-      },
+    therapy_templates: {
+      list: "therapy_templates:list",
+      getByCategory: "therapy_templates:getByCategory",
     },
   },
 }));
@@ -72,7 +65,7 @@ describe("TemplatesPage — empty state", () => {
     vi.mocked(useQuery).mockReturnValue([]);
     render(<TemplatesPage />);
 
-    const builderLink = screen.getByRole("link", { name: /builder|build/i });
+    const builderLink = screen.getByRole("link", { name: /build your own tool/i });
     expect(builderLink).toHaveAttribute("href", "/builder");
   });
 
@@ -80,14 +73,15 @@ describe("TemplatesPage — empty state", () => {
     vi.mocked(useQuery).mockReturnValue([
       {
         _id: "1",
-        title: "Feelings Board",
-        toolType: "communication-board",
+        name: "Feelings Board",
+        category: "Communication",
         description: "Express emotions",
+        starterPrompt: "Build a feelings board",
       },
     ]);
     render(<TemplatesPage />);
 
     expect(screen.queryByText(/no templates/i)).not.toBeInTheDocument();
-    expect(screen.getByTestId("tool-card")).toBeInTheDocument();
+    expect(screen.getByText("Feelings Board")).toBeInTheDocument();
   });
 });
