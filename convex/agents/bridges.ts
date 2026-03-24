@@ -99,11 +99,25 @@ export const bridgesAgent = new Agent(components.agent, {
         config: z.any().describe("The complete tool configuration object"),
       }),
       execute: async (ctx, args): Promise<string> => {
+        // Parse config if AI sent it as a JSON string instead of an object
+        let config = args.config;
+        if (typeof config === "string") {
+          try {
+            config = JSON.parse(config);
+          } catch {
+            // If parse fails, wrap raw string as a minimal config
+            config = { type: args.toolType, title: args.title };
+          }
+        }
+        // Ensure the discriminator `type` field is present (AI sends toolType separately)
+        if (typeof config === "object" && config !== null && !config.type) {
+          config = { ...config, type: args.toolType };
+        }
         const toolId = await ctx.runMutation(api.tools.create, {
           title: args.title,
           description: args.description,
           toolType: args.toolType,
-          config: args.config,
+          config,
           threadId: ctx.threadId,
         });
         return `Tool created: ${toolId}`;

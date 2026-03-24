@@ -40,7 +40,8 @@ function ToolRendererInner({ config }: { config: unknown }) {
   const result = ToolConfigSchema.safeParse(config);
   if (!result.success) {
     if (process.env.NODE_ENV === "development") {
-      console.warn("ToolRenderer: config validation failed", result.error.format());
+      console.warn("ToolRenderer: config validation failed", JSON.stringify(result.error.issues));
+      console.warn("ToolRenderer: received config", JSON.stringify(config));
     }
     return (
       <div className="p-8 text-center text-muted">
