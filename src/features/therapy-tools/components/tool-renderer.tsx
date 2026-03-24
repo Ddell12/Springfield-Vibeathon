@@ -2,6 +2,9 @@
 
 import { ErrorBoundary } from "react-error-boundary";
 import { ToolConfigSchema, type ToolConfig } from "../types/tool-configs";
+import { TokenBoard } from "./token-board";
+import { VisualSchedule } from "./visual-schedule";
+import { CommunicationBoard } from "./communication-board";
 
 function ToolRendererInner({ config }: { config: unknown }) {
   const result = ToolConfigSchema.safeParse(config);
@@ -11,15 +14,25 @@ function ToolRendererInner({ config }: { config: unknown }) {
 
   switch (result.data.type) {
     case "visual-schedule":
-      return <div className="p-4">Visual Schedule: {result.data.title}</div>;
+      return <VisualSchedule config={result.data} />;
     case "token-board":
-      return <div className="p-4">Token Board: {result.data.title}</div>;
+      return <TokenBoard config={result.data} />;
     case "communication-board":
-      return <div className="p-4">Communication Board: {result.data.title}</div>;
+      return <CommunicationBoard config={result.data} />;
     case "choice-board":
-      return <div className="p-4">Choice Board: {result.data.title}</div>;
+      return (
+        <div className="p-8 text-center">
+          <p className="font-headline text-xl font-bold text-primary">{result.data.title}</p>
+          <p className="text-on-surface-variant mt-2">Choice Board — coming soon</p>
+        </div>
+      );
     case "first-then-board":
-      return <div className="p-4">First-Then Board: {result.data.title}</div>;
+      return (
+        <div className="p-8 text-center">
+          <p className="font-headline text-xl font-bold text-primary">{result.data.title}</p>
+          <p className="text-on-surface-variant mt-2">First-Then Board — coming soon</p>
+        </div>
+      );
     default:
       return <div className="p-4 text-muted">Tool type coming soon</div>;
   }

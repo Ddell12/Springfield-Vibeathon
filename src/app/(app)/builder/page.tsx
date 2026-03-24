@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useMutation, useQuery } from "convex/react";
-import { api } from "../../../convex/_generated/api";
+import { api } from "../../../../convex/_generated/api";
 import { BuilderLayout } from "@/features/builder/components/builder-layout";
 import { BridgesChat } from "@/features/builder/components/chat/bridges-chat";
 import { ToolPreview } from "@/features/builder/components/tool-preview";

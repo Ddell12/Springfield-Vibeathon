@@ -18,7 +18,7 @@ export function BuilderLayout({
 
   if (isMobile) {
     return (
-      <div className="flex flex-col h-[calc(100vh-64px)]">
+      <div className="flex flex-col h-full">
         {chatPanel}
         {previewPanel}
       </div>
@@ -26,7 +26,7 @@ export function BuilderLayout({
   }
 
   return (
-    <ResizablePanelGroup orientation="horizontal" className="h-[calc(100vh-64px)]">
+    <ResizablePanelGroup orientation="horizontal" className="h-full">
       <ResizablePanel defaultSize="35%" minSize="25%" maxSize="50%">
         {chatPanel}
       </ResizablePanel>

@@ -1,0 +1,92 @@
+import Link from "next/link";
+import { MaterialIcon } from "@/shared/components/material-icon";
+import { ToolCard } from "@/shared/components/tool-card";
+
+const mockTools = [
+  {
+    title: "Emma's Feelings Board",
+    toolType: "communication-board",
+    date: "Created March 23, 2026",
+  },
+  {
+    title: "Alex's Star Chart",
+    toolType: "token-board",
+    date: "Created March 23, 2026",
+  },
+  {
+    title: "Morning Routine",
+    toolType: "visual-schedule",
+    date: "Created March 22, 2026",
+  },
+];
+
+export function MyToolsPage() {
+  return (
+    <div className="max-w-7xl mx-auto px-8 pt-12 pb-24">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+        <div>
+          <h1 className="font-headline font-bold text-4xl md:text-5xl text-on-surface tracking-tight mb-2">
+            My Tools
+          </h1>
+          <p className="text-on-surface-variant text-lg">
+            {mockTools.length} tools created
+          </p>
+        </div>
+        <Link
+          href="/builder"
+          className="bg-primary-gradient text-white px-8 py-4 rounded-lg font-semibold flex items-center gap-2 shadow-lg shadow-primary/10 hover:shadow-primary/20 transition-all active:scale-95"
+        >
+          <MaterialIcon icon="add_circle" />
+          Create New Tool
+        </Link>
+      </div>
+
+      {/* Tools Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {mockTools.map((tool) => (
+          <ToolCard
+            key={tool.title}
+            title={tool.title}
+            toolType={tool.toolType}
+            date={tool.date}
+            variant="tool"
+          />
+        ))}
+      </div>
+
+      {/* Safe Space CTA */}
+      <section className="mt-20 p-10 rounded-xl bg-surface-container-lowest ring-1 ring-outline-variant/10 relative overflow-hidden flex flex-col md:flex-row items-center gap-10">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -mr-20 -mt-20" />
+        <div className="relative z-10 md:w-2/3">
+          <h2 className="font-headline font-bold text-3xl text-on-surface mb-4">
+            Need a custom tool?
+          </h2>
+          <p className="text-on-surface-variant text-lg max-w-xl">
+            Tell Bridges what your child is working on, and we&apos;ll help you
+            generate a tailored visual aid or communication board in seconds.
+          </p>
+          <div className="mt-8 flex gap-4">
+            <Link
+              href="/builder"
+              className="bg-primary text-on-primary px-6 py-3 rounded-lg font-semibold hover:bg-primary-container transition-colors"
+            >
+              Start Building
+            </Link>
+            <Link
+              href="/templates"
+              className="text-primary font-semibold px-6 py-3 rounded-lg hover:bg-surface-container-high transition-colors"
+            >
+              Browse Templates
+            </Link>
+          </div>
+        </div>
+        <div className="relative z-10 md:w-1/3 flex justify-center">
+          <div className="w-24 h-24 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container shadow-xl">
+            <MaterialIcon icon="auto_awesome" className="text-5xl" />
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
