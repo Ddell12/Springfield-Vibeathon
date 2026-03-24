@@ -13,7 +13,10 @@ export function MaterialIcon({ icon, filled = false, className, size = "md" }: M
   return (
     <span
       className={cn("material-symbols-outlined select-none", sizeMap[size], className)}
-      style={{ fontVariationSettings: `'FILL' ${filled ? 1 : 0}, 'wght' 400, 'GRAD' 0, 'opsz' 24` }}
+      style={{
+        fontFamily: "'Material Symbols Outlined'",
+        fontVariationSettings: `'FILL' ${filled ? 1 : 0}, 'wght' 400, 'GRAD' 0, 'opsz' 24`,
+      }}
     >
       {icon}
     </span>
