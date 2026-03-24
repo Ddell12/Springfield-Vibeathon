@@ -64,9 +64,12 @@ describe("ChatInput", () => {
     expect(input).toHaveValue("");
   });
 
-  it("disables the submit button when isLoading is true", () => {
+  it("shows stop button when isLoading is true", () => {
     render(<ChatInput onSubmit={vi.fn()} isLoading={true} />);
-    expect(screen.getByRole("button")).toBeDisabled();
+    const btn = screen.getByRole("button");
+    expect(btn).toBeInTheDocument();
+    expect(btn).toHaveAttribute("aria-label", "Stop generation");
+    expect(btn).not.toBeDisabled();
   });
 
   it("disables the submit button when input is empty", () => {

@@ -147,6 +147,7 @@ export function Chat({
       </div>
       <ChatInput
         onSubmit={handleSubmit}
+        onStop={() => abortRef.current?.abort()}
         isLoading={isLoading}
         placeholder={
           currentCode
