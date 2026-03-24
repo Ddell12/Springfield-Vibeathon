@@ -143,7 +143,15 @@ export const setDiscordMetadata = mutation({
 });
 ```
 
-- [ ] **Step 5: Run test to verify it passes**
+- [ ] **Step 5: Run Convex codegen to update `_generated/api.d.ts`**
+
+```bash
+npx convex dev --typecheck=disable --once 2>/dev/null || npx convex codegen
+```
+
+This generates TypeScript types for the new `setDiscordMetadata` mutation so tests can import `api.projects.setDiscordMetadata`.
+
+- [ ] **Step 6: Run test to verify it passes**
 
 ```bash
 npx vitest run convex/__tests__/projects.test.ts -t "setDiscordMetadata"
@@ -151,7 +159,7 @@ npx vitest run convex/__tests__/projects.test.ts -t "setDiscordMetadata"
 
 Expected: PASS
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 7: Commit**
 
 ```bash
 git add convex/schema.ts convex/projects.ts convex/__tests__/projects.test.ts
@@ -235,7 +243,7 @@ npx vitest run convex/__tests__/projects.test.ts -t "countByDiscordUser"
 
 Expected: FAIL — `api.projects.countByDiscordUser` does not exist.
 
-- [ ] **Step 3: Implement `countByDiscordUser`**
+- [ ] **Step 3: Implement `countByDiscordUser` and run codegen**
 
 Add to `convex/projects.ts`:
 
@@ -257,7 +265,13 @@ export const countByDiscordUser = query({
 });
 ```
 
-- [ ] **Step 4: Run tests to verify they pass**
+- [ ] **Step 4: Run Convex codegen**
+
+```bash
+npx convex dev --typecheck=disable --once 2>/dev/null || npx convex codegen
+```
+
+- [ ] **Step 5: Run tests to verify they pass**
 
 ```bash
 npx vitest run convex/__tests__/projects.test.ts -t "countByDiscordUser"
@@ -265,7 +279,7 @@ npx vitest run convex/__tests__/projects.test.ts -t "countByDiscordUser"
 
 Expected: PASS (all 3 tests)
 
-- [ ] **Step 5: Write failing test for `getByDiscordThread`**
+- [ ] **Step 6: Write failing test for `getByDiscordThread`**
 
 Add to `convex/__tests__/projects.test.ts`:
 
@@ -300,7 +314,7 @@ test("projects.getByDiscordThread returns null for unknown thread", async () => 
 });
 ```
 
-- [ ] **Step 6: Run tests to verify they fail**
+- [ ] **Step 7: Run tests to verify they fail**
 
 ```bash
 npx vitest run convex/__tests__/projects.test.ts -t "getByDiscordThread"
@@ -308,7 +322,7 @@ npx vitest run convex/__tests__/projects.test.ts -t "getByDiscordThread"
 
 Expected: FAIL
 
-- [ ] **Step 7: Implement `getByDiscordThread`**
+- [ ] **Step 8: Implement `getByDiscordThread`**
 
 Add to `convex/projects.ts`:
 
@@ -328,7 +342,13 @@ export const getByDiscordThread = query({
 });
 ```
 
-- [ ] **Step 8: Run tests to verify they pass**
+- [ ] **Step 9: Run Convex codegen**
+
+```bash
+npx convex dev --typecheck=disable --once 2>/dev/null || npx convex codegen
+```
+
+- [ ] **Step 10: Run tests to verify they pass**
 
 ```bash
 npx vitest run convex/__tests__/projects.test.ts -t "getByDiscordThread"
@@ -336,7 +356,7 @@ npx vitest run convex/__tests__/projects.test.ts -t "getByDiscordThread"
 
 Expected: PASS
 
-- [ ] **Step 9: Run full projects test suite**
+- [ ] **Step 11: Run full projects test suite**
 
 ```bash
 npx vitest run convex/__tests__/projects.test.ts
@@ -344,7 +364,7 @@ npx vitest run convex/__tests__/projects.test.ts
 
 Expected: All tests pass (existing + new).
 
-- [ ] **Step 10: Commit**
+- [ ] **Step 12: Commit**
 
 ```bash
 git add convex/projects.ts convex/__tests__/projects.test.ts
