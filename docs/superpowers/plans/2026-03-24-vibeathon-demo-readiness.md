@@ -918,25 +918,52 @@ export function Chat({
 
 - [ ] **Step 3: Wire it up in the builder page**
 
-In `src/app/(app)/builder/page.tsx`, add:
+**IMPORTANT (Next.js best practice):** `useSearchParams()` requires a `<Suspense>` boundary to avoid opting the entire page out of static optimization. Since the hook is called inside `useTemplateStarter`, wrap the builder page content in Suspense.
+
+In `src/app/(app)/builder/page.tsx`, add imports:
 
 ```tsx
+import { Suspense } from "react";
 import { useTemplateStarter } from "@/features/builder-v2/hooks/use-template-starter";
 ```
 
-Inside the component:
+The simplest approach: since the page is already `"use client"`, extract the content into an inner component and wrap with Suspense:
+
 ```tsx
-const { starterPrompt } = useTemplateStarter();
+function BuilderContent() {
+  const { starterPrompt } = useTemplateStarter();
+  // ... all existing BuilderPage state and JSX moves here ...
+
+  return (
+    <div className="flex flex-col h-full">
+      <BuilderV2Header ... />
+      <div className="flex-1 overflow-hidden">
+        <BuilderV2Layout
+          chatPanel={
+            <Chat
+              onFragmentGenerated={handleFragmentGenerated}
+              currentCode={fragment?.code}
+              initialMessage={starterPrompt}
+            />
+          }
+          previewPanel={<Preview ... />}
+        />
+      </div>
+      {/* ShareDialog here */}
+    </div>
+  );
+}
+
+export default function BuilderPage() {
+  return (
+    <Suspense fallback={<div className="flex h-full items-center justify-center">Loading...</div>}>
+      <BuilderContent />
+    </Suspense>
+  );
+}
 ```
 
-Pass to Chat:
-```tsx
-<Chat
-  onFragmentGenerated={handleFragmentGenerated}
-  currentCode={fragment?.code}
-  initialMessage={starterPrompt}
-/>
-```
+This follows the [Next.js docs recommendation](https://nextjs.org/docs/app/api-reference/functions/use-search-params) for `useSearchParams`.
 
 - [ ] **Step 4: Verify it compiles**
 
