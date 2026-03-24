@@ -14,7 +14,7 @@ const mockTokenConfig: TokenBoardConfig = {
   earnedTokens: 0,
   tokenIcon: "star",
   reinforcers: [{ id: "r1", label: "iPad Time", icon: "tablet" }],
-  celebrationAnimation: true,
+  celebrationAnimation: "confetti",
 };
 
 describe("TokenBoard", () => {

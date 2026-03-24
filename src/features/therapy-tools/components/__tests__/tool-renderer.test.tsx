@@ -56,7 +56,7 @@ describe("ToolRenderer", () => {
           earnedTokens: 0,
           tokenIcon: "star",
           reinforcers: [],
-          celebrationAnimation: true,
+          celebrationAnimation: "confetti",
         }}
       />,
     );
@@ -144,7 +144,7 @@ describe("ToolRenderer", () => {
 
     const { unmount: u2 } = render(
       <Suspense fallback={<div>loading</div>}>
-        <LazyTokenBoard config={{ type: "token-board", title: "T", totalTokens: 5, earnedTokens: 0, tokenIcon: "star", reinforcers: [], celebrationAnimation: false }} />
+        <LazyTokenBoard config={{ type: "token-board", title: "T", totalTokens: 5, earnedTokens: 0, tokenIcon: "star", reinforcers: [], celebrationAnimation: "none" }} />
       </Suspense>,
     );
     expect(await screen.findByTestId("token-board")).toBeInTheDocument();

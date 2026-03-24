@@ -23,7 +23,7 @@ const validTokenBoard = {
   earnedTokens: 2,
   tokenIcon: "star",
   reinforcers: [{ id: "1", label: "iPad time", icon: "tablet" }],
-  celebrationAnimation: true,
+  celebrationAnimation: "confetti",
 };
 
 const validCommunicationBoard = {

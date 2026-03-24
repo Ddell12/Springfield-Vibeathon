@@ -30,7 +30,7 @@ Config: title, steps (id, label, icon, completed), orientation (vertical/horizon
 
 ### token-board
 A reward system. Child earns tokens for desired behavior, chooses a reinforcer when full.
-Config: title, totalTokens (3/5/10), earnedTokens, tokenIcon, reinforcers (id, label, icon), celebrationAnimation.
+Config: title, totalTokens (3/5/10), earnedTokens, tokenIcon, reinforcers (id, label, icon), celebrationAnimation ("confetti" | "stars" | "bounce" | "none").
 
 ### communication-board
 A grid of picture cards with a sentence starter. Child taps cards to build requests. Supports text-to-speech.
@@ -177,5 +177,5 @@ export const bridgesAgent = new Agent(components.agent, {
       },
     }),
   },
-  maxSteps: 5,
+  maxSteps: 3,
 });

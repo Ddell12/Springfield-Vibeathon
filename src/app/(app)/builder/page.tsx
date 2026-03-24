@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import { BuilderHeader } from "@/features/builder/components/builder-header";
@@ -12,20 +12,23 @@ import { useBuilderState } from "@/features/builder/hooks/use-builder-state";
 export default function BuilderPage() {
   const { threadId, toolId, setThreadId, setToolId, reset } = useBuilderState();
   const createThread = useMutation(api.chat.streaming.createNewThread);
+  const isCreatingRef = useRef(false);
 
   // Rehydrate persisted state from localStorage on client mount
   useEffect(() => {
     useBuilderState.persist.rehydrate();
   }, []);
 
-  // Create a thread on first render (after rehydration)
+  // Create a thread when needed (guarded against React Strict Mode double-fire)
   useEffect(() => {
-    if (!threadId) {
+    if (!threadId && !isCreatingRef.current) {
+      isCreatingRef.current = true;
       createThread({}).then((id) => {
         setThreadId(id);
+        isCreatingRef.current = false;
       });
     }
-  }, [threadId]); // re-run after rehydration sets threadId
+  }, [threadId]);
 
   // Query for tools linked to this thread (reactive — auto-updates when AI creates a tool)
   const threadTools = useQuery(

@@ -33,7 +33,7 @@ export const TokenBoardSchema = z.object({
       icon: z.string(),
     }),
   ),
-  celebrationAnimation: z.boolean(),
+  celebrationAnimation: z.enum(["confetti", "stars", "bounce", "none"]).default("confetti"),
 });
 
 export type TokenBoardConfig = z.infer<typeof TokenBoardSchema>;

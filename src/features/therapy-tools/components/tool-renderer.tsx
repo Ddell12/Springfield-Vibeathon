@@ -39,6 +39,9 @@ function ToolSkeleton() {
 function ToolRendererInner({ config }: { config: unknown }) {
   const result = ToolConfigSchema.safeParse(config);
   if (!result.success) {
+    if (process.env.NODE_ENV === "development") {
+      console.warn("ToolRenderer: config validation failed", result.error.format());
+    }
     return (
       <div className="p-8 text-center text-muted">
         This tool couldn&apos;t be displayed.
