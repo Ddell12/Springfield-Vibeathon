@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { createSandbox } from "@/features/builder-v2/lib/e2b";
+import { createSandbox, executeFragment } from "@/features/builder-v2/lib/e2b";
 import { FragmentSchema } from "@/features/builder-v2/lib/schema";
 
 export async function POST(req: Request): Promise<Response> {
@@ -16,7 +16,18 @@ export async function POST(req: Request): Promise<Response> {
   }
 
   try {
-    const result = await createSandbox(parsed.data);
+    let result;
+    if (body.sandboxId) {
+      try {
+        // Reconnect to existing sandbox and update code
+        result = await executeFragment(body.sandboxId, parsed.data);
+      } catch {
+        // Sandbox expired or unreachable — fall back to creating a new one
+        result = await createSandbox(parsed.data);
+      }
+    } else {
+      result = await createSandbox(parsed.data);
+    }
     return NextResponse.json(result);
   } catch (err) {
     const message = err instanceof Error ? err.message : "Sandbox creation failed";

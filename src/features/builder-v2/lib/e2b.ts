@@ -13,7 +13,7 @@ export function getSandboxUrl(host: string, _port: number): string {
 
 export async function createSandbox(fragment: FragmentResult): Promise<SandboxResult> {
   const sandbox = await Sandbox.create(fragment.template, {
-    timeoutMs: 60_000,
+    timeoutMs: 300_000,
   });
 
   // Write the generated code to the sandbox

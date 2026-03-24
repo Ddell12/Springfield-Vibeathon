@@ -72,72 +72,86 @@ export function Chat({
       type: "thinking",
     };
 
-    setMessages((prev) => [...prev, userMessage, thinkingMessage]);
+    const isIteration = !!currentCode;
+
+    setMessages((prev) => [
+      ...prev,
+      userMessage,
+      ...(isIteration ? [] : [thinkingMessage]),
+    ]);
     setIsLoading(true);
 
     abortRef.current = new AbortController();
 
     try {
-      const allMessages = [...messages, userMessage].map((m) => ({
-        role: m.role,
-        content: m.content,
-      }));
+      // Filter messages for API: only user messages + meaningful assistant responses
+      const apiMessages = [...messages, userMessage]
+        .filter((m) => {
+          if (m.role === "user") return true;
+          if (m.type === "text" || m.type === "complete") return true;
+          return false;
+        })
+        .map((m) => ({
+          role: m.role,
+          content:
+            m.type === "complete" && m.fragment
+              ? `I built a ${m.fragment.title}: ${m.fragment.description}`
+              : m.content,
+        }));
 
-      // ── Phase 1: Design Plan ──────────────────────────────────────────────
-      const planResponse = await fetch("/api/chat/plan", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: allMessages }),
-        signal: abortRef.current.signal,
-      });
+      // ── Phase 1: Design Plan (first generation only) ────────────────────
+      if (!isIteration) {
+        const planResponse = await fetch("/api/chat/plan", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ messages: apiMessages }),
+          signal: abortRef.current.signal,
+        });
 
-      if (!planResponse.ok || !planResponse.body) {
-        throw new Error("Plan request failed");
-      }
-
-      // Stream plan text live into the thinking message
-      const planReader = planResponse.body.getReader();
-      const planDecoder = new TextDecoder();
-      let planText = "";
-
-      while (true) {
-        const { done, value } = await planReader.read();
-        if (done) break;
-
-        const chunk = planDecoder.decode(value, { stream: true });
-        // Vercel AI SDK text stream format: lines like `0:"text chunk"\n`
-        // We need to extract raw text from these chunks
-        const lines = chunk.split("\n");
-        for (const line of lines) {
-          if (line.startsWith("0:")) {
-            try {
-              // Parse the JSON-encoded string value after "0:"
-              const jsonStr = line.slice(2);
-              const textChunk = JSON.parse(jsonStr) as string;
-              planText += textChunk;
-            } catch {
-              // If parsing fails, treat as raw text (fallback)
-              planText += line.slice(2);
-            }
-          }
+        if (!planResponse.ok || !planResponse.body) {
+          throw new Error("Plan request failed");
         }
 
-        // Update the thinking message content as it streams
+        // Stream plan text live into the thinking message
+        const planReader = planResponse.body.getReader();
+        const planDecoder = new TextDecoder();
+        let planText = "";
+
+        while (true) {
+          const { done, value } = await planReader.read();
+          if (done) break;
+
+          const chunk = planDecoder.decode(value, { stream: true });
+          // Vercel AI SDK text stream format: lines like `0:"text chunk"\n`
+          const lines = chunk.split("\n");
+          for (const line of lines) {
+            if (line.startsWith("0:")) {
+              try {
+                const jsonStr = line.slice(2);
+                const textChunk = JSON.parse(jsonStr) as string;
+                planText += textChunk;
+              } catch {
+                planText += line.slice(2);
+              }
+            }
+          }
+
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === thinkingMessageId ? { ...m, content: planText } : m
+            )
+          );
+        }
+
+        // Phase 1 complete — mark as "plan"
         setMessages((prev) =>
           prev.map((m) =>
-            m.id === thinkingMessageId ? { ...m, content: planText } : m
+            m.id === thinkingMessageId ? { ...m, type: "plan" } : m
           )
         );
       }
 
-      // Phase 1 complete — mark as "plan"
-      setMessages((prev) =>
-        prev.map((m) =>
-          m.id === thinkingMessageId ? { ...m, type: "plan" } : m
-        )
-      );
-
-      // ── Phase 2: Code Generation ──────────────────────────────────────────
+      // ── Phase 2: Code Generation (always runs) ─────────────────────────
       const buildingMessageId = `building-${Date.now()}`;
       const buildingMessage: Message = {
         id: buildingMessageId,
@@ -155,7 +169,7 @@ export function Chat({
       const generateResponse = await fetch("/api/chat/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: allMessages, context }),
+        body: JSON.stringify({ messages: apiMessages, context }),
         signal: abortRef.current.signal,
       });
 

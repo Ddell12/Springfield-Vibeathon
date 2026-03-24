@@ -26,6 +26,7 @@ function BuilderContent() {
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [projectId, setProjectId] = useState<Id<"projects"> | null>(null);
   const [initialMessage, setInitialMessage] = useState<string | undefined>(undefined);
+  const [currentSandboxId, setCurrentSandboxId] = useState<string | null>(null);
 
   const createProject = useMutation(api.projects.create);
   const updateProject = useMutation(api.projects.update);
@@ -66,7 +67,10 @@ function BuilderContent() {
       body: JSON.stringify({ fragment: restoredFragment }),
     })
       .then((res) => (res.ok ? res.json() : Promise.reject()))
-      .then(({ url }) => setSandboxUrl(url))
+      .then(({ url, sandboxId }) => {
+        setSandboxUrl(url);
+        setCurrentSandboxId(sandboxId);
+      })
       .catch(() => {})
       .finally(() => setIsPreviewLoading(false));
   }, [loadedProject]);
@@ -92,11 +96,12 @@ function BuilderContent() {
       const res = await fetch("/api/sandbox", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fragment: result }),
+        body: JSON.stringify({ fragment: result, sandboxId: currentSandboxId }),
       });
       if (res.ok) {
         const { url, sandboxId } = await res.json();
         setSandboxUrl(url);
+        setCurrentSandboxId(sandboxId);
         await updateProject({
           projectId: currentProjectId,
           title: result.title,
@@ -117,6 +122,7 @@ function BuilderContent() {
     setProjectId(null);
     setShowShareDialog(false);
     setInitialMessage(undefined);
+    setCurrentSandboxId(null);
     hasRestoredProject.current = false;
     setMode("prompt");
   };
