@@ -1,12 +1,14 @@
 "use client";
 
 import { useMutation, useQuery } from "convex/react";
+import { AnimatePresence, motion } from "motion/react";
 import { Suspense, useEffect, useRef, useState } from "react";
 
 import { BuilderV2Header } from "@/features/builder-v2/components/builder-header";
 import { BuilderV2Layout } from "@/features/builder-v2/components/builder-layout";
 import { Chat } from "@/features/builder-v2/components/chat";
 import { Preview } from "@/features/builder-v2/components/preview";
+import { PromptHome } from "@/features/builder-v2/components/prompt-home";
 import { useProjectLoader } from "@/features/builder-v2/hooks/use-project-loader";
 import { useTemplateStarter } from "@/features/builder-v2/hooks/use-template-starter";
 import type { FragmentResult } from "@/features/builder-v2/lib/schema";
@@ -15,12 +17,15 @@ import { ShareDialog } from "@/features/sharing/components/share-dialog";
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 
+type BuilderMode = "prompt" | "building";
+
 function BuilderContent() {
   const [fragment, setFragment] = useState<FragmentResult | null>(null);
   const [sandboxUrl, setSandboxUrl] = useState<string | null>(null);
   const [isPreviewLoading, setIsPreviewLoading] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [projectId, setProjectId] = useState<Id<"projects"> | null>(null);
+  const [initialMessage, setInitialMessage] = useState<string | undefined>(undefined);
 
   const createProject = useMutation(api.projects.create);
   const updateProject = useMutation(api.projects.update);
@@ -35,7 +40,15 @@ function BuilderContent() {
   const hasRestoredProject = useRef(false);
   const { loadedProject, isLoadingProject } = useProjectLoader();
 
-  // Restore project from ?project= URL param
+  // Determine initial mode: skip prompt when starterPrompt or loadedProject is present
+  const getInitialMode = (): BuilderMode => {
+    if (starterPrompt) return "building";
+    return "prompt";
+  };
+
+  const [mode, setMode] = useState<BuilderMode>(getInitialMode);
+
+  // Restore project from ?project= URL param — also skip prompt mode
   useEffect(() => {
     if (!loadedProject || hasRestoredProject.current) return;
     if (!loadedProject.fragment) return;
@@ -45,6 +58,7 @@ function BuilderContent() {
     setFragment(restoredFragment);
     setProjectId(loadedProject._id);
     setIsPreviewLoading(true);
+    setMode("building");
 
     fetch("/api/sandbox", {
       method: "POST",
@@ -56,6 +70,11 @@ function BuilderContent() {
       .catch(() => {})
       .finally(() => setIsPreviewLoading(false));
   }, [loadedProject]);
+
+  const handlePromptSubmit = (message: string) => {
+    setInitialMessage(message);
+    setMode("building");
+  };
 
   const handleFragmentGenerated = async (result: FragmentResult) => {
     setFragment(result);
@@ -97,7 +116,9 @@ function BuilderContent() {
     setIsPreviewLoading(false);
     setProjectId(null);
     setShowShareDialog(false);
+    setInitialMessage(undefined);
     hasRestoredProject.current = false;
+    setMode("prompt");
   };
 
   const handleDownload = () => {
@@ -113,39 +134,63 @@ function BuilderContent() {
 
   return (
     <div className="flex flex-col h-full">
-      <BuilderV2Header
-        projectName={fragment?.title}
-        onNewProject={handleNewProject}
-        onShare={() => setShowShareDialog(true)}
-        onDownload={handleDownload}
-        hasProject={!!projectId}
-      />
-      <div className="flex-1 overflow-hidden">
-        <BuilderV2Layout
-          chatPanel={
-            <Chat
-              onFragmentGenerated={handleFragmentGenerated}
-              currentCode={fragment?.code}
-              initialMessage={starterPrompt}
+      <AnimatePresence mode="wait">
+        {mode === "prompt" ? (
+          <motion.div
+            key="prompt"
+            className="flex-1 overflow-auto"
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.96 }}
+            transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+          >
+            <PromptHome onSubmit={handlePromptSubmit} />
+          </motion.div>
+        ) : (
+          <motion.div
+            key="building"
+            className="flex flex-col h-full"
+            initial={{ opacity: 0, scale: 1.02 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.98 }}
+            transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+          >
+            <BuilderV2Header
+              projectName={fragment?.title}
+              onNewProject={handleNewProject}
+              onShare={() => setShowShareDialog(true)}
+              onDownload={handleDownload}
+              hasProject={!!projectId}
             />
-          }
-          previewPanel={
-            <Preview
-              fragment={fragment}
-              sandboxUrl={sandboxUrl}
-              isLoading={isPreviewLoading || isLoadingProject}
-            />
-          }
-        />
-      </div>
-      {showShareDialog && projectData && (
-        <ShareDialog
-          open={showShareDialog}
-          onOpenChange={setShowShareDialog}
-          shareSlug={projectData.shareSlug}
-          toolTitle={projectData.title}
-        />
-      )}
+            <div className="flex-1 overflow-hidden">
+              <BuilderV2Layout
+                chatPanel={
+                  <Chat
+                    onFragmentGenerated={handleFragmentGenerated}
+                    currentCode={fragment?.code}
+                    initialMessage={initialMessage ?? starterPrompt}
+                  />
+                }
+                previewPanel={
+                  <Preview
+                    fragment={fragment}
+                    sandboxUrl={sandboxUrl}
+                    isLoading={isPreviewLoading || isLoadingProject}
+                  />
+                }
+              />
+            </div>
+            {showShareDialog && projectData && (
+              <ShareDialog
+                open={showShareDialog}
+                onOpenChange={setShowShareDialog}
+                shareSlug={projectData.shareSlug}
+                toolTitle={projectData.title}
+              />
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
