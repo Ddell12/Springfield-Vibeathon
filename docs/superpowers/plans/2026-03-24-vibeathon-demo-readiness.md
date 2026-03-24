@@ -714,13 +714,12 @@ Run: `npx tsc --noEmit`
 
 - [ ] **Step 3: Run the seed**
 
-After deploying (`npx convex dev`), run the seed from the Convex dashboard or CLI:
+The `seed` function is an `internalMutation` — it cannot be called from the CLI (`npx convex run` only works with public functions). Use one of these approaches:
 
-```bash
-npx convex run --no-push therapy_templates:seed
-```
+1. **Convex Dashboard (recommended):** Navigate to Functions → `therapy_templates` → `seed` → click "Run"
+2. **Temporary public mutation:** Change `internalMutation` to `mutation`, run `npx convex run therapy_templates:seed`, then change back to `internalMutation`
 
-If `--no-push` flag doesn't work, the seed will run automatically on next `npx convex dev` if you call it from the dashboard Functions tab.
+Verify: Check the Convex dashboard Data tab — `therapyTemplates` should have 8 rows.
 
 - [ ] **Step 4: Commit**
 
@@ -786,15 +785,12 @@ const categories: { value: Category; label: string }[] = [
 ];
 ```
 
-2. Update the query:
+2. Update the query (single subscription, not two):
 ```tsx
-const allTemplates = useQuery(api.therapy_templates.list);
-const categoryTemplates = useQuery(
-  api.therapy_templates.getByCategory,
-  active !== "all" ? { category: active } : "skip"
+const templates = useQuery(
+  active === "all" ? api.therapy_templates.list : api.therapy_templates.getByCategory,
+  active === "all" ? {} : { category: active }
 );
-
-const templates = active === "all" ? allTemplates : categoryTemplates;
 const isLoading = templates === undefined;
 ```
 
@@ -849,6 +845,11 @@ git add -A && git commit -m "feat: rewire templates page to therapyTemplates tab
 When a user clicks "Use Template", the builder should auto-send the template's `starterPrompt`.
 
 - [ ] **Step 1: Create the template starter hook**
+
+First create the hooks directory (it doesn't exist yet):
+```bash
+mkdir -p src/features/builder-v2/hooks
+```
 
 Create `src/features/builder-v2/hooks/use-template-starter.ts`:
 
@@ -1109,7 +1110,11 @@ npm update
 
 Run tests after: `npm test -- --run`
 
-- [ ] **Step 3: Add optional userId to projects schema**
+- [ ] **Step 3: Remove orphaned v1 template code**
+
+Delete `convex/templates/` directory (queries `tools` table — dead code after Task 8 rewired to `therapyTemplates`). Also consider removing `convex/__tests__/tools.test.ts` if the `tools` table is no longer used by any UI.
+
+- [ ] **Step 4: Add optional userId to projects schema**
 
 In `convex/schema.ts`, add to the projects table:
 ```typescript
