@@ -6,14 +6,25 @@ import { useState } from "react";
 
 import { ShareDialog } from "@/features/sharing/components/share-dialog";
 import { MaterialIcon } from "@/shared/components/material-icon";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/shared/components/ui/alert-dialog";
 
 import { api } from "../../../../convex/_generated/api";
-import type { Doc } from "../../../../convex/_generated/dataModel";
+import type { Doc, Id } from "../../../../convex/_generated/dataModel";
 
 export function MyToolsPage() {
   const projects = useQuery(api.projects.list);
   const removeProject = useMutation(api.projects.remove);
   const [sharingProject, setSharingProject] = useState<Doc<"projects"> | null>(null);
+  const [deletingProjectId, setDeletingProjectId] = useState<Id<"projects"> | null>(null);
 
   if (projects === undefined) {
     return (
@@ -108,14 +119,11 @@ export function MyToolsPage() {
                 </button>
                 <button
                   aria-label="delete"
-                  onClick={() => {
-                    if (confirm("Delete this tool?")) {
-                      removeProject({ projectId: project._id });
-                    }
-                  }}
+                  onClick={() => setDeletingProjectId(project._id)}
                   className="flex items-center gap-1 text-on-surface-variant font-medium text-sm hover:text-error transition-colors ml-auto"
                 >
                   <MaterialIcon icon="delete" size="sm" />
+                  Delete
                 </button>
               </div>
             </div>
@@ -163,6 +171,30 @@ export function MyToolsPage() {
           toolTitle={sharingProject.title}
         />
       )}
+
+      <AlertDialog open={!!deletingProjectId} onOpenChange={(open) => { if (!open) setDeletingProjectId(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this tool?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. Your therapy tool will be permanently removed.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setDeletingProjectId(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (deletingProjectId) {
+                  removeProject({ projectId: deletingProjectId });
+                  setDeletingProjectId(null);
+                }
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

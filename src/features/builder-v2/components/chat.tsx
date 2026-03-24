@@ -11,7 +11,7 @@ import type { MessageType } from "./chat-message";
 import { ChatMessage } from "./chat-message";
 import { SuggestedActions } from "./suggested-actions";
 
-type Message = {
+export type Message = {
   id: string;
   role: "user" | "assistant";
   content: string;
@@ -22,6 +22,8 @@ type Message = {
 type ChatProps = {
   projectId?: string;
   onFragmentGenerated?: (fragment: FragmentResult) => void;
+  onMessagesChange?: (messages: Message[]) => void;
+  initialMessages?: Message[];
   currentCode?: string;
   initialMessage?: string | null;
 };
@@ -36,10 +38,12 @@ const WELCOME_MESSAGE: Message = {
 
 export function Chat({
   onFragmentGenerated,
+  onMessagesChange,
+  initialMessages,
   currentCode,
   initialMessage,
 }: ChatProps) {
-  const [messages, setMessages] = useState<Message[]>([WELCOME_MESSAGE]);
+  const [messages, setMessages] = useState<Message[]>(initialMessages ?? [WELCOME_MESSAGE]);
   const [isLoading, setIsLoading] = useState(false);
   const [progressPhase, setProgressPhase] = useState<ProgressPhase>("started");
   const [latestFragment, setLatestFragment] = useState<FragmentResult | null>(null);
@@ -237,6 +241,7 @@ export function Chat({
 
         setLatestFragment(fragment);
         onFragmentGenerated?.(fragment);
+        onMessagesChange?.(messages);
       } else {
         throw new Error("Failed to parse generated code");
       }

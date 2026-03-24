@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { CheckCircle2, MousePointer, Pencil, Share2 } from "lucide-react";
 import { motion } from "motion/react";
 
@@ -8,6 +9,7 @@ import type { FragmentResult } from "../lib/schema";
 
 type CompletionMessageProps = {
   fragment: FragmentResult;
+  onConfetti?: () => void;
 };
 
 const tips = [
@@ -31,7 +33,12 @@ const tips = [
   },
 ];
 
-export function CompletionMessage({ fragment }: CompletionMessageProps) {
+export function CompletionMessage({ fragment, onConfetti }: CompletionMessageProps) {
+  useEffect(() => {
+    onConfetti?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
