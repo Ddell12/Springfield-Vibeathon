@@ -245,8 +245,8 @@ New template registered with E2B. Existing sandboxes unaffected.
 **Modified tables:**
 
 `sessions`:
-- Remove: `currentPhaseIndex`, `phasesRemaining`, `mvpGenerated`, `templateId`
-- Add: `sandboxId` and `previewUrl` as top-level fields
+- Remove: `currentPhaseIndex`, `phasesRemaining`, `mvpGenerated`, `templateName`
+- Keep: `sandboxId` and `previewUrl` (already exist as top-level fields)
 - Simplify `state` to: `idle | generating | live | failed`
 
 `files` (module: `convex/generated_files.ts`):
@@ -338,10 +338,10 @@ File written to sandbox
 
 | File | Changes |
 |------|---------|
-| `convex/schema.ts` | Remove `phases`, `agent_context`, `versions` tables. Simplify `sessions` |
+| `convex/schema.ts` | Remove `phases`, `agentContext`, `versions`, `blueprints` tables. Simplify `sessions` |
 | `convex/sessions.ts` | 4-state machine (idle/generating/live/failed). Remove phase/template/blueprint mutations |
 | `convex/generated_files.ts` | Remove `phaseId`. Add `version` field |
-| `convex/e2b.ts` | Simplify to create/connect/writeFiles. Remove `getRuntimeErrors`, `ensureViteRunning` |
+| `convex/e2b.ts` | Simplify to create/connect/writeFiles. Remove `getRuntimeErrors` and deploy orchestration logic |
 | `src/features/builder/components/builder-page.tsx` | Remove phase timeline, update state handling |
 | `src/features/builder/components/chat-panel.tsx` | Add streaming status, remove phase messages |
 | `src/features/builder/components/preview-panel.tsx` | Remove URL probing/retry. Direct iframe with sandbox URL |
@@ -369,4 +369,4 @@ File written to sandbox
 | LLM calls per initial build | 8-16 | 1 |
 | Pipeline states | 11 | 4 |
 | `pipeline.ts` line count | 842 | 0 (deleted) |
-| Schema tables | ~13 | ~9 (remove 4: phases, agentContext, versions, blueprints) |
+| Schema tables | 12 | 8 (remove 4: phases, agentContext, versions, blueprints) |
