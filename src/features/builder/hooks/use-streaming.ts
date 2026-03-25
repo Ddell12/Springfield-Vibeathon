@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 export type StreamingStatus = "idle" | "generating" | "live" | "failed";
 
@@ -245,6 +245,18 @@ export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn 
     },
     [handleEvent]
   );
+
+  // Cleanup on unmount: cancel pending rAF and abort in-flight request
+  useEffect(() => {
+    return () => {
+      if (rafIdRef.current) {
+        cancelAnimationFrame(rafIdRef.current);
+      }
+      if (abortRef.current) {
+        abortRef.current.abort();
+      }
+    };
+  }, []);
 
   return {
     status,
