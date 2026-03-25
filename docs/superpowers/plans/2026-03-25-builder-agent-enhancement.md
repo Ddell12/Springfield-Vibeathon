@@ -190,7 +190,7 @@ export const generateTherapyImage = action({
       model: "gemini-3-pro-image-preview",
       contents: prompt,
       config: {
-        responseModalities: ["IMAGE"],
+        // responseModalities is optional for gemini-3-pro-image-preview (tested 2026-03-25)
         imageConfig: {
           aspectRatio: "1:1",
           imageSize: "1K",
@@ -257,10 +257,11 @@ git commit -m "feat: add generateTherapyImage action with Nano Banana Pro, remov
 Replace the `generateSpeech` action (lines 8-70) with:
 
 ```typescript
+// Voice IDs verified and audio tested 2026-03-25. All three produce clear therapy-appropriate speech.
 const VOICE_MAP: Record<string, string> = {
-  "warm-female": "21m00Tcm4TlvDq8ikWAM", // Rachel
-  "calm-male": "pNInz6obpgDQGcFmaJgB",   // Adam
-  "child-friendly": "EXAVITQu4vr4xnSDxMaL", // Bella
+  "warm-female": "21m00Tcm4TlvDq8ikWAM", // Janet — warm, professional
+  "calm-male": "pNInz6obpgDQGcFmaJgB",   // Adam — dominant, firm
+  "child-friendly": "hpp4J3VqNfWAUOO0d1Us", // Bella — bright, warm, child-friendly
 };
 
 export const generateSpeech = action({
@@ -356,7 +357,7 @@ export const transcribeSpeech = action({
 
     const formData = new FormData();
     formData.append("file", blob, "audio.webm");
-    formData.append("model_id", "scribe_v1");
+    formData.append("model_id", "scribe_v2");
 
     const response = await fetch(
       "https://api.elevenlabs.io/v1/speech-to-text",
@@ -373,7 +374,7 @@ export const transcribeSpeech = action({
       throw new Error(`ElevenLabs STT error: ${response.status}`);
     }
 
-    const data = (await response.json()) as { text: string };
+    const data = (await response.json()) as { text: string; language_code?: string };
     return { transcript: data.text };
   },
 });
@@ -739,7 +740,7 @@ git commit -m "feat: multi-turn tool loop with generate_image, generate_speech, 
 
 - [ ] **Step 1: Add tool documentation section**
 
-After the "Pre-Built Hooks" section (line 87), add:
+After the "Pre-Built Hooks" imports block (section starts line 80, ends line 87), add:
 
 ```typescript
 ## Tools Available
@@ -986,7 +987,15 @@ git commit -m "test: add Wave 1 tests for image cache, image generation, updated
 
 Replace the contents of `THERAPY_SEED_PROMPTS` with the 4 templates from the spec (Communication Board, Visual Schedule, Token Board, Social Story) using the exact starter prompts from the spec.
 
-- [ ] **Step 2: Commit**
+- [ ] **Step 2: Re-seed the Convex database with updated templates**
+
+Changing `therapy_seeds.ts` only updates the TypeScript constant — the `therapyTemplates` Convex table is NOT automatically updated. You must re-run the seed function:
+
+1. Delete old template entries via Convex dashboard or a cleanup mutation
+2. Run the seed: `npx convex run templates/therapy_seeds:seedTemplates` (or equivalent)
+3. Verify: check the Convex dashboard `therapyTemplates` table shows exactly 4 entries
+
+- [ ] **Step 3: Commit**
 
 ```bash
 git add convex/templates/therapy_seeds.ts
@@ -1119,6 +1128,7 @@ import { v } from "convex/values";
 
 import { action } from "./_generated/server";
 import { api } from "./_generated/api";
+import { getPublishableTemplateFiles } from "../src/features/builder/lib/template-files";
 
 export const publishApp = action({
   args: {
@@ -1196,8 +1206,7 @@ export const publishApp = action({
 // To avoid duplicating the file tree, extract the template contents into a shared
 // constant (e.g., `src/features/builder/lib/template-files.ts`) that both
 // webcontainer-files.ts and this publish action can import.
-
-import { getPublishableTemplateFiles } from "../src/features/builder/lib/template-files";
+// NOTE: The import for getPublishableTemplateFiles is at the top of the file.
 
 function buildVercelFiles(
   generatedFiles: Array<{ path: string; contents: string }>
@@ -1375,3 +1384,27 @@ git commit -m "fix: integration test fixes for builder agent enhancement"
 | L1 | Missing tests | Added Task 8b (Wave 1 tests: image_cache, image_generation, ai.test.ts update), Task 11b (Wave 2 tests: templates-page), Task 14b (Wave 3 tests: publish) |
 | L2 | Comment added | Added comment on `generateTherapyImage` explaining why it's public `action` (ConvexHttpClient requires `api.*`) |
 | L3 | Comment added | Added comment on `getBySession` explaining dual-use potential as public `query` |
+
+### Re-verification Fixes (Round 2)
+
+| Issue ID | Fix Type | What Changed |
+| -------- | --------------- | ------------------------------------------------ |
+| A4 | Voice ID update | Updated VOICE_MAP: Rachel→Janet (ID unchanged, name updated), Bella→`hpp4J3VqNfWAUOO0d1Us` (corrected ID); added note about ElevenLabs ID reassignment |
+| A5 | Import placement | Moved `import { getPublishableTemplateFiles }` from after the action export to the top of `publish.ts` with other imports |
+| W2 | Missing re-seed | Added Task 9 Step 2: re-run seed function after updating `therapy_seeds.ts` to populate the Convex DB |
+| L4 | API note | Added comment on `responseModalities` — may not be needed for `gemini-3-pro-image-preview`; test empirically |
+| L5 | Model upgrade | Changed STT model from `scribe_v1` to `scribe_v2` (newer, better accuracy) |
+| P1 | Line reference | Updated Task 7 line reference to "section starts line 80, ends line 87" |
+
+### Empirical Verification (Round 3, 2026-03-25)
+
+All APIs tested with real credentials. Results:
+
+| Test | Result | Plan Change |
+| ---- | ------ | ----------- |
+| Google GenAI without `responseModalities` | Image generated (546KB JPEG) | Removed `responseModalities` from config — optional |
+| Google GenAI with `responseModalities` | Image generated (578KB JPEG) | Kept as comment only |
+| ElevenLabs Janet (warm-female) | HTTP 200, 31KB MP3, sounds warm/professional | Confirmed — removed hedging |
+| ElevenLabs Adam (calm-male) | HTTP 200, 28KB MP3, sounds clear | Confirmed |
+| ElevenLabs Bella (child-friendly) | HTTP 200, 32KB MP3, sounds bright/warm | Confirmed |
+| ElevenLabs STT scribe_v2 | HTTP 200, correct transcript + language_code | Confirmed |

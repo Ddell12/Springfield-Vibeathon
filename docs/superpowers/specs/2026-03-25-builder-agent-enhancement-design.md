@@ -148,21 +148,21 @@ This is the same pattern as `anthropic.beta.messages.toolRunner()` but implement
 
 **Backend:** Existing Convex `generateSpeech` action -> checks `ttsCache` -> cache miss calls ElevenLabs `eleven_flash_v2_5` -> stores in Convex file storage -> caches URL.
 
-**Voice mapping** (friendly name -> ElevenLabs voice ID):
-- `warm-female` -> `21m00Tcm4TlvDq8ikWAM` (Rachel — default, calm and clear)
-- `calm-male` -> `pNInz6obpgDQGcFmaJgB` (Adam)
-- `child-friendly` -> TBD at implementation (select from ElevenLabs voice library for clarity with young listeners)
+**Voice mapping** (friendly name -> ElevenLabs voice ID, verified & audio-tested 2026-03-25):
+- `warm-female` -> `21m00Tcm4TlvDq8ikWAM` (Janet — warm, professional)
+- `calm-male` -> `pNInz6obpgDQGcFmaJgB` (Adam — dominant, firm)
+- `child-friendly` -> `hpp4J3VqNfWAUOO0d1Us` (Bella — bright, warm, child-friendly)
 
 The mapping layer lives in the `generateSpeech` Convex action — the agent passes friendly names, the action resolves to voice IDs. The existing action currently takes a raw `voiceId`; add a `voice` arg that maps to IDs, with `voiceId` as a fallback for backward compatibility.
 
-**Image generation model note:** "Nano Banana Pro" refers to Gemini's image generation via the `@google/genai` SDK using `generateContent()` with `responseModalities: ["IMAGE"]` (model: `gemini-3-pro-image-preview`). This is NOT the same as `generateImages()` which uses the Imagen API. The correct call pattern is:
+**Image generation model note:** "Nano Banana Pro" refers to Gemini's image generation via the `@google/genai` SDK using `generateContent()` (model: `gemini-3-pro-image-preview`). This is NOT the same as `generateImages()` which uses the Imagen API. The correct call pattern (tested 2026-03-25, returns ~550KB JPEG):
 
 ```typescript
 const response = await genAI.models.generateContent({
   model: "gemini-3-pro-image-preview",
   contents: prompt,
   config: {
-    responseModalities: ["IMAGE"],
+    // responseModalities is optional for this model (tested — images generate without it)
     imageConfig: { aspectRatio: "1:1", imageSize: "1K" },
   },
 });
@@ -227,7 +227,7 @@ New Convex action in `convex/aiActions.ts`:
 transcribeSpeech({ audioBase64: string }) -> { transcript: string }
 ```
 
-Calls ElevenLabs speech-to-text API, returns transcript text.
+Calls ElevenLabs speech-to-text API (`scribe_v2` model), returns transcript text.
 
 ### 1.6 SSE Events (Updated)
 
