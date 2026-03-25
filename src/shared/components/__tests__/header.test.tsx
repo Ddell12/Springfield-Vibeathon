@@ -44,7 +44,7 @@ describe("Header", () => {
     render(<Header />);
     expect(screen.getAllByText("Builder").length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText("Templates").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText("My Tools").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("My Apps").length).toBeGreaterThanOrEqual(1);
   });
 
   it("applies active styling to the current path link", () => {

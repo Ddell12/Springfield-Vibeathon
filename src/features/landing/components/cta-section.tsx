@@ -14,7 +14,7 @@ export function CtaSection() {
             <MaterialIcon icon="auto_awesome" className="text-white text-3xl" />
           </div>
           <h2 className="font-headline text-3xl md:text-4xl font-extrabold text-white leading-tight">
-            Start building therapy tools today — for free.
+            Start building therapy apps today — for free.
           </h2>
           <p className="text-white/80 text-lg max-w-lg leading-relaxed">
             No account required. Describe what you need, and Bridges builds it in seconds.
@@ -23,7 +23,7 @@ export function CtaSection() {
             href="/builder"
             className="bg-white text-primary px-10 py-4 rounded-xl text-lg font-bold font-headline hover:bg-white/90 transition-colors active:scale-95 inline-flex items-center gap-2 group"
           >
-            Build Your First Tool
+            Build Your First App
             <MaterialIcon
               icon="arrow_forward"
               size="sm"

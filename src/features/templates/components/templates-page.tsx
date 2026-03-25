@@ -44,7 +44,7 @@ export function TemplatesPage() {
             </h1>
             <p className="text-on-surface-variant text-lg leading-relaxed">
               Start with a proven template, customize for your child. Our
-              therapeutic tools are designed by experts and refined by parents.
+              therapeutic apps are designed by experts and refined by parents.
             </p>
           </div>
 
@@ -82,7 +82,7 @@ export function TemplatesPage() {
             href="/builder"
             className="text-primary font-semibold hover:underline"
           >
-            Build your own tool
+            Build your own app
           </Link>
         </div>
       ) : (
@@ -119,14 +119,14 @@ export function TemplatesPage() {
             Can&apos;t find what you&apos;re looking for?
           </h2>
           <p className="text-on-surface-variant text-lg mb-8">
-            Our AI-powered builder can help you generate a custom tool from
+            Our AI-powered builder can help you generate a custom app from
             scratch based on your child&apos;s specific therapeutic goals.
           </p>
           <Link
             href="/builder"
             className="flex items-center gap-2 text-primary font-bold hover:gap-3 transition-all duration-300"
           >
-            Create a custom tool
+            Create a custom app
             <MaterialIcon icon="arrow_forward" size="sm" />
           </Link>
         </div>

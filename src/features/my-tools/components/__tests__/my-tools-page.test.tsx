@@ -71,7 +71,7 @@ describe("MyToolsPage", () => {
     render(<MyToolsPage />);
 
     expect(
-      screen.getByText(/no tools yet|create your first|get started/i),
+      screen.getByText(/no apps yet|create your first|get started/i),
     ).toBeInTheDocument();
   });
 

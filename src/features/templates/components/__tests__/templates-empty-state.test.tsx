@@ -65,7 +65,7 @@ describe("TemplatesPage — empty state", () => {
     vi.mocked(useQuery).mockReturnValue([]);
     render(<TemplatesPage />);
 
-    const builderLink = screen.getByRole("link", { name: /build your own tool/i });
+    const builderLink = screen.getByRole("link", { name: /build your own app/i });
     expect(builderLink).toHaveAttribute("href", "/builder");
   });
 

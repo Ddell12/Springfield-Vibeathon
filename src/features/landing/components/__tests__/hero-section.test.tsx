@@ -25,7 +25,7 @@ describe("HeroSection", () => {
   it("renders the headline text", () => {
     render(<HeroSection />);
     expect(
-      screen.getByText(/Build therapy tools for your child/)
+      screen.getByText(/Build therapy apps for your child/)
     ).toBeInTheDocument();
     expect(
       screen.getByText(/just describe what you need/)

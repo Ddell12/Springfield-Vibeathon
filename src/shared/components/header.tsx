@@ -16,7 +16,7 @@ import {
 const navLinks = [
   { href: "/builder", label: "Builder" },
   { href: "/templates", label: "Templates" },
-  { href: "/my-tools", label: "My Tools" },
+  { href: "/my-tools", label: "My Apps" },
 ];
 
 export function Header() {

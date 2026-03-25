@@ -40,7 +40,7 @@ describe("HowItWorks", () => {
   it("renders description text for Build and Share steps", () => {
     render(<HowItWorks />);
     expect(
-      screen.getByText(/AI creates an interactive therapy tool in seconds/)
+      screen.getByText(/AI creates an interactive therapy app in seconds/)
     ).toBeInTheDocument();
     expect(
       screen.getByText(

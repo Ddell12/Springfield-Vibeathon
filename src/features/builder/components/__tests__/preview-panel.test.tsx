@@ -20,14 +20,14 @@ describe("PreviewPanel", () => {
   it("shows placeholder when session is null", () => {
     render(<PreviewPanel session={null} />);
     expect(
-      screen.getByText("Your app preview will appear here.")
+      screen.getByText("Your tool will appear here")
     ).toBeInTheDocument();
   });
 
   it("shows placeholder when session has no previewUrl", () => {
     render(<PreviewPanel session={{ state: "idle" }} />);
     expect(
-      screen.getByText("Your app preview will appear here.")
+      screen.getByText("Your tool will appear here")
     ).toBeInTheDocument();
   });
 
@@ -69,32 +69,32 @@ describe("PreviewPanel", () => {
 
   it("renders all three device toggle buttons", () => {
     render(<PreviewPanel session={null} />);
-    expect(screen.getByRole("button", { name: "Mobile" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Tablet" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Mobile/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Tablet/ })).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: "Desktop" })
+      screen.getByRole("button", { name: /Desktop/ })
     ).toBeInTheDocument();
   });
 
   it("Desktop button is active by default (has bg-primary class)", () => {
     render(<PreviewPanel session={null} />);
     // shadcn Button variant="default" compiles to bg-primary; "ghost" compiles to hover:bg-accent
-    const desktopBtn = screen.getByRole("button", { name: "Desktop" });
+    const desktopBtn = screen.getByRole("button", { name: /Desktop/ });
     expect(desktopBtn.className).toContain("bg-primary");
   });
 
   it("Mobile and Tablet buttons are inactive by default (no bg-primary)", () => {
     render(<PreviewPanel session={null} />);
-    const mobileBtn = screen.getByRole("button", { name: "Mobile" });
-    const tabletBtn = screen.getByRole("button", { name: "Tablet" });
+    const mobileBtn = screen.getByRole("button", { name: /Mobile/ });
+    const tabletBtn = screen.getByRole("button", { name: /Tablet/ });
     expect(mobileBtn.className).not.toContain("bg-primary");
     expect(tabletBtn.className).not.toContain("bg-primary");
   });
 
   it("clicking Mobile button makes it active (bg-primary) and Desktop inactive", () => {
     render(<PreviewPanel session={null} />);
-    const mobileBtn = screen.getByRole("button", { name: "Mobile" });
-    const desktopBtn = screen.getByRole("button", { name: "Desktop" });
+    const mobileBtn = screen.getByRole("button", { name: /Mobile/ });
+    const desktopBtn = screen.getByRole("button", { name: /Desktop/ });
 
     fireEvent.click(mobileBtn);
 
@@ -104,7 +104,7 @@ describe("PreviewPanel", () => {
 
   it("clicking Tablet button makes it active", () => {
     render(<PreviewPanel session={null} />);
-    const tabletBtn = screen.getByRole("button", { name: "Tablet" });
+    const tabletBtn = screen.getByRole("button", { name: /Tablet/ });
     fireEvent.click(tabletBtn);
     expect(tabletBtn.className).toContain("bg-primary");
   });

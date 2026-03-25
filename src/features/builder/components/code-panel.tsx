@@ -54,42 +54,58 @@ export function CodePanel({ sessionId, session }: CodePanelProps) {
 
   const isGenerating =
     session &&
-    ["generating", "implementing"].includes(session.state);
+    ["phase_generating", "phase_implementing"].includes(session.state);
 
   if (!sessionId || !files || files.length === 0) {
     if (isGenerating) {
       return (
-        <div className="space-y-3 p-4">
-          <Skeleton className="h-4 w-3/4" />
-          <Skeleton className="h-4 w-1/2" />
-          <Skeleton className="h-4 w-5/6" />
-          <Skeleton className="h-4 w-2/3" />
+        <div className="flex h-full flex-col bg-surface-container-low p-6">
+          <div className="mb-4 text-xs font-semibold uppercase tracking-wider text-on-surface-variant">
+            Generating files...
+          </div>
+          <div className="space-y-3">
+            <Skeleton className="h-4 w-3/4" />
+            <Skeleton className="h-4 w-1/2" />
+            <Skeleton className="h-4 w-5/6" />
+            <Skeleton className="h-4 w-2/3" />
+            <Skeleton className="h-4 w-4/5" />
+            <Skeleton className="h-4 w-1/3" />
+          </div>
         </div>
       );
     }
     return (
-      <div className="flex h-full items-center justify-center text-muted-foreground">
-        <p className="text-sm">Files will appear here as your app is built.</p>
+      <div className="flex h-full flex-col items-center justify-center bg-surface-container-low p-8">
+        <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-surface-container-highest">
+          <span className="material-symbols-outlined text-3xl text-outline">
+            code
+          </span>
+        </div>
+        <p className="text-sm text-on-surface-variant">
+          Files will appear here as your app is built.
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="flex h-full">
+    <div className="flex h-full bg-surface-container-low">
       {/* File explorer sidebar */}
-      <div className="w-48 shrink-0 border-r">
-        <div className="p-2 text-xs font-medium uppercase text-muted-foreground">
+      <div className="w-48 shrink-0 bg-surface-container-lowest">
+        <div className="p-3 text-xs font-semibold uppercase tracking-wider text-on-surface-variant">
           Files
         </div>
-        <ScrollArea className="h-[calc(100%-2rem)]">
+        <ScrollArea className="h-[calc(100%-2.5rem)]">
           {files.map((file: Doc<"files">) => (
             <button
               key={file._id}
               onClick={() => setSelectedPath(file.path)}
               className={cn(
-                "block w-full truncate px-3 py-1.5 text-left text-xs",
-                "hover:bg-muted",
-                selectedPath === file.path && "bg-muted font-medium"
+                "block w-full truncate px-3 py-2 text-left text-xs transition-colors",
+                "hover:bg-surface-container-high",
+                selectedPath === file.path
+                  ? "bg-primary/5 font-medium text-primary"
+                  : "text-on-surface-variant"
               )}
               title={file.path}
             >
@@ -103,10 +119,10 @@ export function CodePanel({ sessionId, session }: CodePanelProps) {
       </div>
 
       {/* File contents */}
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 overflow-hidden bg-surface-container-low">
         {selectedFile ? (
           <ScrollArea className="h-full">
-            <div className="border-b p-2 text-xs text-muted-foreground">
+            <div className="bg-surface-container-high px-4 py-2 text-xs font-medium text-on-surface-variant">
               {selectedFile.path}
             </div>
             <Highlight
@@ -134,7 +150,7 @@ export function CodePanel({ sessionId, session }: CodePanelProps) {
             </Highlight>
           </ScrollArea>
         ) : (
-          <div className="flex h-full items-center justify-center text-muted-foreground">
+          <div className="flex h-full items-center justify-center text-on-surface-variant">
             <p className="text-sm">Select a file to view its contents.</p>
           </div>
         )}

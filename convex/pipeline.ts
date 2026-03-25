@@ -61,6 +61,76 @@ export const executeStep = internalAction({
   },
 });
 
+// Extract JSON from LLM response — handles code fences, leading/trailing text
+function extractJson(text: string): string {
+  let s = text.trim();
+  // Strip markdown code fences
+  const fenceMatch = s.match(/```(?:json)?\s*([\s\S]*?)```/);
+  if (fenceMatch) {
+    s = fenceMatch[1].trim();
+  }
+  // If it doesn't start with {, try to find the first {
+  if (!s.startsWith("{")) {
+    const idx = s.indexOf("{");
+    if (idx !== -1) s = s.slice(idx);
+  }
+  // If it doesn't end with }, try to find the last }
+  if (!s.endsWith("}")) {
+    const idx = s.lastIndexOf("}");
+    if (idx !== -1) s = s.slice(0, idx + 1);
+  }
+  return s;
+}
+
+// Parse + validate blueprint JSON, with one LLM retry on validation failure
+async function parseAndValidateBlueprint(
+  _ctx: ActionCtx,
+  rawText: string,
+  _messages: Anthropic.MessageParam[],
+): Promise<import("../src/features/builder/lib/schemas/index").TherapyBlueprint> {
+  const jsonStr = extractJson(rawText);
+  let parsed;
+  try {
+    parsed = JSON.parse(jsonStr);
+  } catch {
+    throw new Error(`Blueprint JSON parse error. Raw text started with: ${rawText.substring(0, 200)}`);
+  }
+
+  const result = TherapyBlueprintSchema.safeParse(parsed);
+  if (result.success) return result.data;
+
+  // First attempt failed — try a corrective LLM call
+  const errorSummary = result.error.issues
+    .slice(0, 10)
+    .map((e) => `${e.path.join(".")}: ${e.message}`)
+    .join("\n");
+
+  const correctionResponse = await anthropic.messages.create({
+    model: "claude-sonnet-4-20250514",
+    max_tokens: 4096,
+    system: "Fix the JSON to match the required schema. Return ONLY the corrected JSON, no explanation.",
+    messages: [
+      {
+        role: "user",
+        content: `This JSON has validation errors:\n\n${jsonStr}\n\nErrors:\n${errorSummary}\n\nReturn the corrected JSON only.`,
+      },
+    ],
+  });
+
+  const correctionText = correctionResponse.content.find(
+    (b): b is Anthropic.TextBlock => b.type === "text",
+  );
+  if (!correctionText) {
+    throw new Error(`Blueprint validation failed (no correction available):\n${errorSummary}`);
+  }
+
+  const correctedJson = extractJson(correctionText.text);
+  const retryResult = TherapyBlueprintSchema.safeParse(JSON.parse(correctedJson));
+  if (retryResult.success) return retryResult.data;
+
+  throw new Error(`Blueprint validation failed after retry:\n${retryResult.error.issues.slice(0, 5).map((e) => `${e.path.join(".")}: ${e.message}`).join("\n")}`);
+}
+
 async function generateBlueprint(
   ctx: ActionCtx,
   sessionId: Id<"sessions">,
@@ -102,19 +172,8 @@ async function generateBlueprint(
     throw new Error("No text response from blueprint generation");
   }
 
-  // Parse the JSON response — LLM may wrap in markdown code fences
-  let jsonStr = textBlock.text.trim();
-  const fenceMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
-  if (fenceMatch) {
-    jsonStr = fenceMatch[1].trim();
-  }
-
-  const parsed = TherapyBlueprintSchema.safeParse(JSON.parse(jsonStr));
-  if (!parsed.success) {
-    throw new Error(`Blueprint validation failed: ${parsed.error.message}`);
-  }
-
-  const blueprint = parsed.data;
+  // Parse the JSON response — extract from code fences or raw text
+  const blueprint = await parseAndValidateBlueprint(ctx, textBlock.text, messages);
 
   // Generate markdown preview for the UI
   const markdownPreview = [
@@ -135,7 +194,7 @@ async function generateBlueprint(
   // Save blueprint to Convex
   await ctx.runMutation(internal.blueprints.create, {
     sessionId,
-    blueprint: parsed.data,
+    blueprint,
     markdownPreview,
   });
 
@@ -253,12 +312,9 @@ Design the next phase as a deployable milestone.`;
   );
   if (!textBlock) throw new Error("No text response from phase generation");
 
-  // Parse JSON — strip markdown code fences if present
-  let jsonStr = textBlock.text.trim();
-  const fenceMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
-  if (fenceMatch) jsonStr = fenceMatch[1].trim();
-
-  const parsed = PhaseConceptSchema.safeParse(JSON.parse(jsonStr));
+  // Parse JSON response
+  const phaseJson = extractJson(textBlock.text);
+  const parsed = PhaseConceptSchema.safeParse(JSON.parse(phaseJson));
   if (!parsed.success) {
     throw new Error(`Phase concept validation failed: ${parsed.error.message}`);
   }
@@ -338,29 +394,69 @@ ${existingFiles.length > 0 ? `Existing project files:\n${existingFileList}` : "T
 
 Generate complete file contents for each file.`;
 
-  const response = await anthropic.messages.create({
-    model: "claude-sonnet-4-20250514",
-    max_tokens: 8192,
-    system: PHASE_IMPLEMENTATION_PROMPT,
-    messages: [{ role: "user" as const, content: userPrompt }],
-  });
+  // Use tool_use pattern — avoids JSON-in-JSON escaping issues with code contents
+  const writeFileTool: Anthropic.Tool = {
+    name: "write_file",
+    description: "Write a complete file to the project. Call once per file.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        filePath: { type: "string", description: "File path relative to project root, e.g. src/App.tsx" },
+        fileContents: { type: "string", description: "Complete file source code" },
+        filePurpose: { type: "string", description: "What this file does" },
+      },
+      required: ["filePath", "fileContents", "filePurpose"],
+    },
+  };
 
-  const textBlock = response.content.find(
-    (block): block is Anthropic.TextBlock => block.type === "text",
-  );
-  if (!textBlock) throw new Error("No text response from phase implementation");
+  const collectedFiles: Array<{ filePath: string; fileContents: string; filePurpose: string }> = [];
+  let implMessages: Anthropic.MessageParam[] = [{ role: "user" as const, content: userPrompt }];
 
-  // Parse JSON — strip markdown code fences if present
-  let jsonStr = textBlock.text.trim();
-  const fenceMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
-  if (fenceMatch) jsonStr = fenceMatch[1].trim();
+  // Tool loop: LLM calls write_file for each file, we collect them
+  for (let iteration = 0; iteration < 10; iteration++) {
+    const response = await anthropic.messages.create({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 8192,
+      system: PHASE_IMPLEMENTATION_PROMPT + "\n\nUse the write_file tool to write each file. Call it once per file with the complete source code.",
+      messages: implMessages,
+      tools: [writeFileTool],
+    });
 
-  const parsed = PhaseImplementationSchema.safeParse(JSON.parse(jsonStr));
-  if (!parsed.success) {
-    throw new Error(`Phase implementation validation failed: ${parsed.error.message}`);
+    // Collect any tool_use blocks
+    const toolUseBlocks = response.content.filter(
+      (block): block is Anthropic.ToolUseBlock => block.type === "tool_use",
+    );
+
+    for (const toolUse of toolUseBlocks) {
+      if (toolUse.name === "write_file") {
+        const input = toolUse.input as { filePath: string; fileContents: string; filePurpose: string };
+        collectedFiles.push(input);
+      }
+    }
+
+    // If the model stopped because it's done (no more tool calls), break
+    if (response.stop_reason === "end_turn" || toolUseBlocks.length === 0) break;
+
+    // Feed tool results back for the next iteration
+    implMessages = [
+      ...implMessages,
+      { role: "assistant" as const, content: response.content },
+      {
+        role: "user" as const,
+        content: toolUseBlocks.map((tu) => ({
+          type: "tool_result" as const,
+          tool_use_id: tu.id,
+          content: `File written: ${(tu.input as { filePath: string }).filePath}`,
+        })),
+      },
+    ];
   }
 
-  const implementation = parsed.data;
+  if (collectedFiles.length === 0) {
+    throw new Error("No files generated during phase implementation");
+  }
+
+  const implementation = { files: collectedFiles, commands: [] as string[] };
 
   // Write files to generated_files table
   for (const file of implementation.files) {
@@ -380,15 +476,14 @@ Generate complete file contents for each file.`;
     status: "implementing",
   });
 
-  // Save conversation context (implementation prompts are not accumulated — they're large
-  // and self-contained, so we don't append to the prior conversation thread)
+  // Save conversation context (implementation prompts are large + self-contained)
   await ctx.runMutation(internal.agent_context.save, {
     sessionId,
     messages: [
       { role: "user" as const, content: userPrompt },
-      { role: "assistant" as const, content: textBlock.text },
+      { role: "assistant" as const, content: `Generated ${collectedFiles.length} files: ${collectedFiles.map(f => f.filePath).join(", ")}` },
     ],
-    tokenCount: (response.usage?.input_tokens ?? 0) + (response.usage?.output_tokens ?? 0),
+    tokenCount: 0, // Token tracking not available in multi-turn tool_use flow
   });
 
   // Advance to deployment
@@ -519,13 +614,10 @@ async function validatePhase(
         (block): block is Anthropic.TextBlock => block.type === "text",
       );
       if (textBlock) {
-        let jsonStr = textBlock.text.trim();
-        const fenceMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
-        if (fenceMatch) jsonStr = fenceMatch[1].trim();
-
         try {
+          const reviewJson = extractJson(textBlock.text);
           const parsed = PhaseImplementationSchema.safeParse(
-            JSON.parse(jsonStr),
+            JSON.parse(reviewJson),
           );
           if (parsed.success) {
             for (const file of parsed.data.files) {

@@ -79,7 +79,7 @@ describe("BuilderPage", () => {
     // The ResizablePanelGroup wraps ChatPanel, CodePanel, PreviewPanel
     // Check for the chat panel's placeholder text
     expect(
-      screen.getByText("What would you like to build?")
+      screen.getByText("What does your child need?")
     ).toBeInTheDocument();
     // Check for code panel empty state
     expect(
@@ -87,7 +87,7 @@ describe("BuilderPage", () => {
     ).toBeInTheDocument();
     // Check for preview panel placeholder
     expect(
-      screen.getByText("Your app preview will appear here.")
+      screen.getByText("Your tool will appear here")
     ).toBeInTheDocument();
   });
 

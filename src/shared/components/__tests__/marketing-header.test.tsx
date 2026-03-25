@@ -52,7 +52,7 @@ describe("MarketingHeader", () => {
     render(<MarketingHeader />);
     expect(screen.getAllByText("Builder").length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText("Templates").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText("My Tools").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("My Apps").length).toBeGreaterThanOrEqual(1);
   });
 
   it("renders the Start Building CTA button", () => {

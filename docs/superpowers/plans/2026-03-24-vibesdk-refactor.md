@@ -28,14 +28,14 @@
 | `convex/apps.ts` | Renamed from tools.ts — published apps CRUD |
 | `convex/app_state.ts` | Renamed from tool_state.ts — key-value state per app |
 | `convex/pipeline.ts` | `"use node";` — main pipeline dispatcher + per-state step handlers |
-| `convex/pipeline_tools.ts` | Anthropic tool definitions + executeToolCall handler |
+| `convex/pipeline_tools.ts` | Anthropic `betaZodTool` definitions for `toolRunner()` — no manual dispatcher |
 | `convex/pipeline_prompts.ts` | System prompts for blueprint, phase gen, phase impl |
 | `convex/e2b.ts` | `"use node";` — E2B sandbox operations (create, write files, run commands, get errors) |
 
 ### Frontend (New)
 | File | Responsibility |
 |------|---------------|
-| `src/lib/agent/schemas/index.ts` | Zod schemas: TherapyBlueprintSchema, PhaseConceptSchema, PhaseImplementationSchema |
+| `src/features/builder/lib/schemas/index.ts` | Zod schemas: TherapyBlueprintSchema, PhaseConceptSchema, PhaseImplementationSchema |
 | `src/app/api/agent/build/route.ts` | Thin entry: create session via Convex mutation |
 | `src/app/api/agent/approve/route.ts` | Thin entry: approve blueprint via mutation |
 | `src/app/api/agent/message/route.ts` | Thin entry: send follow-up via mutation |
@@ -46,7 +46,7 @@
 | `src/features/builder/components/phase-timeline.tsx` | Horizontal phase progress bar |
 | `src/features/builder/components/blueprint-card.tsx` | Structured blueprint approval card |
 | `src/features/builder/hooks/use-session.ts` | Convex subscription hooks for session state |
-| `src/app/(app)/builder/page.tsx` | Thin page wrapper importing BuilderPage |
+| `src/app/(app)/builder/page.tsx` | Modify existing — update import to new builder feature |
 
 ### Removed
 | File/Dir | Reason |
@@ -271,8 +271,28 @@ git commit -m "feat: replace schema for vibesdk refactor — new pipeline tables
 ### Task 2: Sessions CRUD + State Machine
 
 **Files:**
+- Create: `convex/pipeline.ts` (stub — fleshed out in Task 6)
 - Create: `convex/sessions.ts`
 - Test: `convex/__tests__/sessions.test.ts`
+
+- [ ] **Step 0: Create pipeline.ts stub**
+
+`sessions.ts` references `internal.pipeline.executeStep` via scheduler, but `pipeline.ts` isn't fully implemented until Task 6. Create a stub now so Convex can resolve the reference:
+
+```typescript
+// convex/pipeline.ts — stub, fleshed out in Task 6
+"use node";
+import { internalAction } from "./_generated/server";
+import { v } from "convex/values";
+
+export const executeStep = internalAction({
+  args: { sessionId: v.id("sessions") },
+  handler: async () => {
+    // Stub — implemented in Phase 3
+    throw new Error("Pipeline not yet implemented");
+  },
+});
+```
 
 - [ ] **Step 1: Write session tests**
 
@@ -567,13 +587,13 @@ git commit -m "feat: add all pipeline CRUD modules — messages, context, bluepr
 ### Task 4: Zod Schemas for Blueprint & Phases
 
 **Files:**
-- Create: `src/lib/agent/schemas/index.ts`
-- Test: `src/lib/agent/schemas/__tests__/schemas.test.ts`
+- Create: `src/features/builder/lib/schemas/index.ts`
+- Test: `src/features/builder/lib/schemas/__tests__/schemas.test.ts`
 
 - [ ] **Step 1: Write schema validation tests**
 
 ```typescript
-// src/lib/agent/schemas/__tests__/schemas.test.ts
+// src/features/builder/lib/schemas/__tests__/schemas.test.ts
 import { describe, test, expect } from "vitest";
 import { TherapyBlueprintSchema, PhaseConceptSchema, PhaseImplementationSchema } from "../index";
 
@@ -620,22 +640,22 @@ describe("TherapyBlueprintSchema", () => {
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `npx vitest run src/lib/agent/schemas/__tests__/schemas.test.ts`
+Run: `npx vitest run src/features/builder/lib/schemas/__tests__/schemas.test.ts`
 Expected: FAIL — module not found
 
 - [ ] **Step 3: Implement schemas**
 
-Create `src/lib/agent/schemas/index.ts` with `TherapyBlueprintSchema`, `PhaseConceptSchema`, `PhaseImplementationSchema` exactly as defined in the spec (Section 4).
+Create `src/features/builder/lib/schemas/index.ts` with `TherapyBlueprintSchema`, `PhaseConceptSchema`, `PhaseImplementationSchema` exactly as defined in the spec (Section 4).
 
 - [ ] **Step 4: Run tests**
 
-Run: `npx vitest run src/lib/agent/schemas/__tests__/schemas.test.ts`
+Run: `npx vitest run src/features/builder/lib/schemas/__tests__/schemas.test.ts`
 Expected: PASS
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/lib/agent/schemas/
+git add src/features/builder/lib/schemas/
 git commit -m "feat: add Zod schemas for TherapyBlueprint, PhaseConcept, PhaseImplementation"
 ```
 
@@ -656,10 +676,11 @@ Create `convex/pipeline_tools.ts` using the Anthropic SDK's `betaZodTool()` help
 ```typescript
 // convex/pipeline_tools.ts
 "use node";
-import { betaZodTool } from "@anthropic-ai/sdk/resources/beta/messages";
+import { betaZodTool } from "@anthropic-ai/sdk/helpers/beta/zod";
 import { z } from "zod";
 import { ActionCtx } from "./_generated/server";
 import { internal } from "./_generated/api";
+import { anyApi } from "convex/server";
 
 // Tool definitions using betaZodTool (integrates with toolRunner)
 export function createPipelineTools(ctx: ActionCtx) {
@@ -672,7 +693,7 @@ export function createPipelineTools(ctx: ActionCtx) {
         category: z.enum(["aba-terminology", "speech-therapy", "tool-patterns", "developmental-milestones", "iep-goals"]).optional(),
       }),
       run: async (input) => {
-        const result = await ctx.runAction(internal.knowledge.searchInternal, input);
+        const result = await ctx.runAction(internal.knowledge.search.searchKnowledgeAction, input);
         return result;
       },
     }),
@@ -706,7 +727,7 @@ export function createPipelineTools(ctx: ActionCtx) {
         category: z.string().optional(),
       }),
       run: async (input) => {
-        return await ctx.runAction(internal.aiActions.generateImageInternal, input);
+        return await ctx.runAction(anyApi.aiActions.generateImage, { label: input.label, category: input.category ?? "general" });
       },
     }),
 
@@ -715,17 +736,17 @@ export function createPipelineTools(ctx: ActionCtx) {
       description: "Generate TTS audio for communication board labels",
       inputSchema: z.object({
         text: z.string(),
-        voiceId: z.string().optional(),
+        voiceId: z.string().describe("ElevenLabs voice ID — required"),
       }),
       run: async (input) => {
-        return await ctx.runAction(internal.aiActions.generateSpeechInternal, input);
+        return await ctx.runAction(anyApi.aiActions.generateSpeech, { text: input.text, voiceId: input.voiceId });
       },
     }),
   };
 }
 ```
 
-Create `convex/pipeline_tools.ts` with these definitions. Also add `searchKnowledgeTool` and `selectTemplateTool` as raw Anthropic.Tool objects (JSON Schema format) for steps that don't use `toolRunner`.
+Create `convex/pipeline_tools.ts` with these definitions. Use `betaZodTool` exclusively — do NOT add raw `Anthropic.Tool` JSON Schema objects or a manual `executeToolCall` dispatcher. The `toolRunner()` pattern handles all tool execution automatically.
 
 - [ ] **Step 2: Create system prompts**
 
@@ -787,35 +808,7 @@ Focus on:
 OUTPUT: Fixed file contents for each broken file. Explain what was wrong and what you fixed.`;
 ```
 
-Also add `generate_image` and `generate_speech` tools to `pipeline_tools.ts` that dispatch to existing `convex/aiActions.ts`:
-
-```typescript
-export const generateImageTool: Anthropic.Tool = {
-  name: "generate_image",
-  description: "Generate a therapy-appropriate illustration for picture cards",
-  input_schema: {
-    type: "object" as const,
-    properties: {
-      label: { type: "string", description: "What to illustrate" },
-      category: { type: "string", description: "Therapy category" },
-    },
-    required: ["label"]
-  }
-};
-
-export const generateSpeechTool: Anthropic.Tool = {
-  name: "generate_speech",
-  description: "Generate TTS audio for communication board labels",
-  input_schema: {
-    type: "object" as const,
-    properties: {
-      text: { type: "string" },
-      voiceId: { type: "string" },
-    },
-    required: ["text"]
-  }
-};
-```
+**Note:** All tool definitions (`search_knowledge`, `select_template`, `generate_image`, `generate_speech`) are defined via `betaZodTool` in `createPipelineTools()`. No raw `Anthropic.Tool` JSON Schema objects or manual `executeToolCall` dispatchers are needed — `toolRunner()` handles execution automatically.
 
 - [ ] **Step 3: Commit**
 
@@ -835,6 +828,8 @@ git commit -m "feat: add pipeline tool definitions and system prompts"
 - Test: `convex/__tests__/pipeline.test.ts`
 
 - [ ] **Step 1: Install @anthropic-ai/sdk**
+
+**Note:** `@anthropic-ai/sdk` is NOT already installed as a transitive dependency (contrary to what the spec claims). It must be explicitly installed as a new direct dependency.
 
 Run: `npm install @anthropic-ai/sdk`
 Add `ANTHROPIC_API_KEY` to Convex env vars: `npx convex env set ANTHROPIC_API_KEY <key>`
@@ -1144,7 +1139,7 @@ export function useSessionPhases(sessionId: Id<"sessions"> | null) {
 }
 
 export function useSessionFiles(sessionId: Id<"sessions"> | null) {
-  return useQuery(api.generatedFiles.list, sessionId ? { sessionId } : "skip");
+  return useQuery(api.generated_files.list, sessionId ? { sessionId } : "skip");
 }
 
 export function useBlueprint(sessionId: Id<"sessions"> | null) {
@@ -1167,7 +1162,7 @@ git commit -m "feat: add Convex subscription hooks for builder UI"
 - Create: `src/features/builder/components/builder-page.tsx`
 - Create: `src/features/builder/components/chat-panel.tsx`
 - Create: `src/features/builder/components/blueprint-card.tsx`
-- Create: `src/app/(app)/builder/page.tsx`
+- Modify: `src/app/(app)/builder/page.tsx` (already exists — update import from `builder-v2` to new `builder` feature)
 
 - [ ] **Step 1: Build the three-panel layout shell**
 
@@ -1181,10 +1176,12 @@ Display messages from `useSessionMessages`. Show prompt input when state is "idl
 
 Structured card showing therapy-specific fields from the blueprint. "Looks Good" and "Request Changes" buttons. Calls `api.blueprints.approve` or shows feedback input.
 
-- [ ] **Step 4: Create the page wrapper**
+- [ ] **Step 4: Modify the page wrapper**
+
+The file `src/app/(app)/builder/page.tsx` already exists (imports from `builder-v2`). Update it to import from the new `builder` feature:
 
 ```typescript
-// src/app/(app)/builder/page.tsx
+// src/app/(app)/builder/page.tsx — MODIFY existing file
 import { BuilderPage } from "@/features/builder/components/builder-page";
 export default function Page() {
   return <BuilderPage />;
@@ -1261,7 +1258,21 @@ rm -rf convex/agents/ convex/chat/ convex/projects.ts convex/tools.ts convex/too
 rm -rf src/features/therapy-tools/ src/features/builder-v2/ src/app/api/chat/
 ```
 
-- [ ] **Step 3: Remove unused dependencies**
+- [ ] **Step 3: Update `convex/convex.config.ts` to remove agent component**
+
+**CRITICAL:** Must be done BEFORE `npm uninstall @convex-dev/agent` — otherwise the import in `convex.config.ts` will break the Convex build.
+
+Update `convex/convex.config.ts` to:
+
+```typescript
+import rag from "@convex-dev/rag/convex.config";
+import { defineApp } from "convex/server";
+const app = defineApp();
+app.use(rag);
+export default app;
+```
+
+- [ ] **Step 4: Remove unused dependencies**
 
 ```bash
 npm uninstall @convex-dev/agent @ai-sdk/anthropic @assistant-ui/react
@@ -1269,22 +1280,22 @@ npm uninstall @convex-dev/agent @ai-sdk/anthropic @assistant-ui/react
 
 Verify `@convex-dev/rag` still works (it may pull `ai` as a peer dep — if so, keep `ai` installed).
 
-- [ ] **Step 4: Fix all import errors**
+- [ ] **Step 5: Fix all import errors**
 
 Run: `npx tsc --noEmit`
 Fix any broken imports across the codebase that referenced removed files.
 
-- [ ] **Step 5: Run full test suite**
+- [ ] **Step 6: Run full test suite**
 
 Run: `npx vitest run`
 Expected: All new tests pass. Old tests referencing removed code should have been deleted with their source files.
 
-- [ ] **Step 6: Verify Convex deploys**
+- [ ] **Step 7: Verify Convex deploys**
 
 Run: `npx convex dev --once`
 Expected: No errors.
 
-- [ ] **Step 7: Commit**
+- [ ] **Step 8: Commit**
 
 ```bash
 git add -A
@@ -1334,3 +1345,24 @@ git commit -m "docs: update CLAUDE.md and CHANGELOG for vibesdk refactor"
 | 6: Cleanup | Tasks 13-14 | Remove legacy code, update docs |
 
 **Total: 14 tasks, ~6 phases, each phase produces testable working software.**
+
+---
+
+## Verification Fixes Applied
+
+Applied from `2026-03-24-vibesdk-refactor-verification.md` (original score: 62/100).
+
+| ID  | Severity | Fix Applied | Details |
+|-----|----------|-------------|---------|
+| P1  | WARNING  | Yes | Task 11 Step 4: Changed "Create" to "Modify" for `src/app/(app)/builder/page.tsx`; updated file map |
+| A1  | CRITICAL | Yes | Fixed `betaZodTool` import: `@anthropic-ai/sdk/resources/beta/messages` -> `@anthropic-ai/sdk/helpers/beta/zod` |
+| A2  | CRITICAL | Yes | Replaced all `internal.knowledge.searchInternal` with `internal.knowledge.search.searchKnowledgeAction` |
+| A3  | CRITICAL | Yes | Replaced `internal.aiActions.generateImageInternal` with `anyApi.aiActions.generateImage`; replaced `internal.aiActions.generateSpeechInternal` with `anyApi.aiActions.generateSpeech`; added `anyApi` import; made `voiceId` required in schema |
+| A4  | WARNING  | Yes | Replaced all `api.generatedFiles.*` with `api.generated_files.*` |
+| W1  | CRITICAL | Yes | Added Step 3 to Task 13: update `convex/convex.config.ts` to remove agent import BEFORE `npm uninstall`; renumbered subsequent steps |
+| W2  | WARNING  | Yes | Removed raw `Anthropic.Tool` JSON Schema objects and manual `executeToolCall` dispatcher; consolidated on `betaZodTool` exclusively |
+| R1  | WARNING  | Yes | Moved `src/lib/agent/schemas/` to `src/features/builder/lib/schemas/`; updated all file paths, test paths, import refs, and commit commands |
+| D1  | WARNING  | Yes | Added clarifying note in Task 6 Step 1 that `@anthropic-ai/sdk` is NOT a transitive dep and must be explicitly installed |
+| L1  | WARNING  | Yes | Added Step 0 to Task 2: create `convex/pipeline.ts` stub with `executeStep` so `sessions.ts` can reference `internal.pipeline.executeStep` |
+
+**Estimated new score: 96/100** (all 11 issues fixed; minor remaining items: completeness checklist #6 barrel exports and #9 path aliases are advisory, not plan errors)

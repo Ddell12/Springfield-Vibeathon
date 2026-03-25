@@ -32,14 +32,14 @@ export function CloseTheGapHero() {
 
         <p className="mt-6 text-lg md:text-xl text-on-surface-variant max-w-2xl mx-auto leading-relaxed">
           Bridges helps ABA therapists, speech therapists, and parents of autistic
-          children build personalized interactive therapy tools — just by describing
+          children build personalized interactive therapy apps — just by describing
           what they need. No coding. No waiting. No gap.
         </p>
 
         {/* Stats row */}
         <div className="mt-12 grid grid-cols-3 gap-6 max-w-lg mx-auto">
           {[
-            { value: "5 min", label: "to build a tool" },
+            { value: "5 min", label: "to build an app" },
             { value: "0 code", label: "required" },
             { value: "∞", label: "personalization" },
           ].map(({ value, label }) => (
@@ -60,7 +60,7 @@ export function CloseTheGapHero() {
             href="/builder"
             className="w-full sm:w-auto bg-gradient-to-br from-primary to-primary-container text-white px-8 py-4 rounded-2xl text-base font-bold font-headline inline-flex items-center justify-center gap-2 transition-all duration-300 hover:opacity-90 active:scale-95 min-h-[52px]"
           >
-            Build Your First Tool
+            Build Your First App
             <span aria-hidden>&#8594;</span>
           </Link>
           <Link

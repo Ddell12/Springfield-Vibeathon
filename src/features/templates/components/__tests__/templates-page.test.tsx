@@ -132,7 +132,7 @@ describe("TemplatesPage", () => {
     ).toBeInTheDocument();
 
     const ctaLink = screen.getByRole("link", {
-      name: /create a custom tool/i,
+      name: /create a custom app/i,
     });
     expect(ctaLink).toHaveAttribute("href", "/builder");
   });

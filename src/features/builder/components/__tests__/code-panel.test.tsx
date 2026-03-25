@@ -64,7 +64,7 @@ describe("CodePanel", () => {
     render(
       <CodePanel
         sessionId={"s1" as Parameters<typeof CodePanel>[0]["sessionId"]}
-        session={{ state: "generating" }}
+        session={{ state: "phase_generating" }}
       />
     );
     // Skeletons render via shadcn Skeleton — check they exist

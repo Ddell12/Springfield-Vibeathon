@@ -32,10 +32,10 @@ export function MyToolsPage() {
         <div className="text-center">
           <MaterialIcon icon="dashboard_customize" className="text-6xl text-primary/40 mb-4" />
           <h1 className="font-headline font-bold text-3xl text-on-surface mb-3">
-            No tools yet
+            No apps yet
           </h1>
           <p className="text-on-surface-variant text-lg mb-8">
-            Describe a therapy activity and Bridges will build a visual tool for you.
+            Describe a therapy activity and Bridges will build a visual app for you.
           </p>
           <Link
             href="/builder"
@@ -54,10 +54,10 @@ export function MyToolsPage() {
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
         <div>
           <h1 className="font-headline font-bold text-4xl md:text-5xl text-on-surface tracking-tight mb-2">
-            My Tools
+            My Apps
           </h1>
           <p className="text-on-surface-variant text-lg">
-            {sessions.length} tool{sessions.length !== 1 ? "s" : ""} created
+            {sessions.length} app{sessions.length !== 1 ? "s" : ""} created
           </p>
         </div>
         <Link
@@ -65,7 +65,7 @@ export function MyToolsPage() {
           className="bg-primary-gradient text-white px-8 py-4 rounded-lg font-semibold flex items-center gap-2 shadow-lg shadow-primary/10 hover:shadow-primary/20 transition-all active:scale-95"
         >
           <MaterialIcon icon="add_circle" />
-          Create New Tool
+          Create New App
         </Link>
       </div>
 
@@ -103,7 +103,7 @@ export function MyToolsPage() {
         <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -mr-20 -mt-20" />
         <div className="relative z-10 md:w-2/3">
           <h2 className="font-headline font-bold text-3xl text-on-surface mb-4">
-            Need a custom tool?
+            Need a custom app?
           </h2>
           <p className="text-on-surface-variant text-lg max-w-xl">
             Tell Bridges what your child is working on, and we&apos;ll help you

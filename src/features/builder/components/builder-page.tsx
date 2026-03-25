@@ -34,8 +34,8 @@ function BuilderPageInner() {
   };
 
   return (
-    <div className="flex h-[calc(100vh-64px)] flex-col">
-      <ResizablePanelGroup orientation="horizontal" className="flex-1">
+    <div className="flex h-[calc(100vh-64px)] flex-col bg-surface">
+      <ResizablePanelGroup orientation="horizontal" className="flex-1 overflow-hidden">
         {/* Chat Panel — left */}
         <ResizablePanel defaultSize={30} minSize={20}>
           <ChatPanel
@@ -45,14 +45,14 @@ function BuilderPageInner() {
           />
         </ResizablePanel>
 
-        <ResizableHandle withHandle />
+        <ResizableHandle className="w-px bg-outline-variant/20" />
 
         {/* Code Panel — middle */}
         <ResizablePanel defaultSize={35} minSize={20}>
           <CodePanel sessionId={sessionId} session={session} />
         </ResizablePanel>
 
-        <ResizableHandle withHandle />
+        <ResizableHandle className="w-px bg-outline-variant/20" />
 
         {/* Preview Panel — right */}
         <ResizablePanel defaultSize={35} minSize={20}>

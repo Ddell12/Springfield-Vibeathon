@@ -1,4 +1,4 @@
-import { fireEvent,render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 
 import { ChatPanel } from "../chat-panel";
 
@@ -32,7 +32,7 @@ vi.mock("../../hooks/use-session", () => ({
   useBlueprint: vi.fn(() => null),
 }));
 
-import { useBlueprint,useSessionMessages } from "../../hooks/use-session";
+import { useBlueprint, useSessionMessages } from "../../hooks/use-session";
 
 const defaultProps = {
   sessionId: null,
@@ -50,41 +50,59 @@ describe("ChatPanel", () => {
   it("shows welcome header when no session", () => {
     render(<ChatPanel {...defaultProps} />);
     expect(
-      screen.getByText("What would you like to build?")
+      screen.getByText("What does your child need?")
     ).toBeInTheDocument();
     expect(
-      screen.getByText("Describe a therapy tool and I'll build it for you.")
+      screen.getByText(/Describe the therapy tool you're imagining/)
     ).toBeInTheDocument();
+  });
+
+  it("shows suggestion chips when no session", () => {
+    render(<ChatPanel {...defaultProps} />);
+    expect(screen.getByText("Morning routine schedule")).toBeInTheDocument();
+    expect(screen.getByText("Feelings communication board")).toBeInTheDocument();
+    expect(screen.getByText("Star reward chart")).toBeInTheDocument();
+  });
+
+  it("clicking a suggestion chip calls onSubmit", () => {
+    render(<ChatPanel {...defaultProps} />);
+    fireEvent.click(screen.getByText("Star reward chart"));
+    expect(defaultProps.onSubmit).toHaveBeenCalledWith("Star reward chart");
   });
 
   it("shows prompt input when no session", () => {
     render(<ChatPanel {...defaultProps} />);
     expect(
-      screen.getByPlaceholderText("Describe your therapy tool...")
+      screen.getByPlaceholderText("Describe what you need...")
     ).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Build" })).toBeInTheDocument();
   });
 
   it("shows prompt input when session state is idle", () => {
     render(<ChatPanel {...defaultProps} session={{ state: "idle" }} />);
     expect(
-      screen.getByPlaceholderText("Describe your therapy tool...")
+      screen.getByPlaceholderText("Describe what you need...")
     ).toBeInTheDocument();
   });
 
-  it("shows prompt input when session state is complete with 'Request changes' placeholder", () => {
+  it("shows prompt input when session state is complete", () => {
     render(<ChatPanel {...defaultProps} session={{ state: "complete" }} />);
     expect(
-      screen.getByPlaceholderText("Request changes...")
+      screen.getByPlaceholderText("Ask to modify the board...")
     ).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Send" })).toBeInTheDocument();
+  });
+
+  it("shows prompt input when session state is failed", () => {
+    render(<ChatPanel {...defaultProps} session={{ state: "failed" }} />);
+    expect(
+      screen.getByPlaceholderText("Describe what you need...")
+    ).toBeInTheDocument();
   });
 
   it("hides prompt input during active pipeline states", () => {
     const activePipelineStates = [
       "blueprinting",
-      "generating",
-      "implementing",
+      "phase_generating",
+      "phase_implementing",
       "deploying",
       "validating",
     ];
@@ -93,7 +111,7 @@ describe("ChatPanel", () => {
         <ChatPanel {...defaultProps} session={{ state }} />
       );
       expect(
-        screen.queryByPlaceholderText("Describe your therapy tool...")
+        screen.queryByPlaceholderText("Describe what you need...")
       ).toBeNull();
       unmount();
     }
@@ -101,14 +119,14 @@ describe("ChatPanel", () => {
 
   it("submit button is disabled when input is empty", () => {
     render(<ChatPanel {...defaultProps} />);
-    expect(screen.getByRole("button", { name: "Build" })).toBeDisabled();
+    const sendButton = screen.getByRole("button", { name: "send" });
+    expect(sendButton).toBeDisabled();
   });
 
   it("calls onSubmit when form is submitted with input", () => {
     render(<ChatPanel {...defaultProps} />);
-    const input = screen.getByPlaceholderText("Describe your therapy tool...");
+    const input = screen.getByPlaceholderText("Describe what you need...");
     fireEvent.change(input, { target: { value: "Morning routine schedule" } });
-    expect(screen.getByRole("button", { name: "Build" })).not.toBeDisabled();
     fireEvent.submit(input.closest("form")!);
     expect(defaultProps.onSubmit).toHaveBeenCalledWith(
       "Morning routine schedule"
@@ -118,7 +136,7 @@ describe("ChatPanel", () => {
   it("clears input after submit", () => {
     render(<ChatPanel {...defaultProps} />);
     const input = screen.getByPlaceholderText(
-      "Describe your therapy tool..."
+      "Describe what you need..."
     ) as HTMLInputElement;
     fireEvent.change(input, { target: { value: "Star reward chart" } });
     fireEvent.submit(input.closest("form")!);
@@ -176,31 +194,23 @@ describe("ChatPanel", () => {
     expect(screen.getByText("Morning Routine")).toBeInTheDocument();
   });
 
-  it("does not show blueprint card when blueprint is approved", () => {
-    const blueprint = {
-      blueprint: { title: "Morning Routine" },
-      markdownPreview: "...",
-      approved: true,
-    };
-    vi.mocked(useBlueprint).mockReturnValue(
-      blueprint as ReturnType<typeof useBlueprint>
-    );
+  it("shows error state when session failed", () => {
     render(
       <ChatPanel
         {...defaultProps}
-        session={{ state: "blueprinting" }}
-        sessionId={"s1" as ReturnType<typeof useSessionMessages>[0]["sessionId"]}
+        session={{ state: "failed", failureReason: "E2B sandbox timed out" }}
       />
     );
-    expect(screen.queryByText("App Blueprint")).toBeNull();
+    expect(screen.getByText("Something went wrong")).toBeInTheDocument();
+    expect(screen.getByText("E2B sandbox timed out")).toBeInTheDocument();
   });
 
-  it("shows working status message when pipeline is active (not idle/complete/failed/blueprinting)", () => {
+  it("shows working status message when pipeline is active", () => {
     render(
       <ChatPanel
         {...defaultProps}
         session={{
-          state: "generating",
+          state: "phase_generating",
           stateMessage: "Generating phase 1...",
           currentPhaseIndex: 0,
           totalPhasesPlanned: 3,

@@ -18,7 +18,7 @@ const steps = [
     icon: "auto_awesome",
     title: "Build",
     description:
-      "AI creates an interactive therapy tool in seconds, complete with vetted icons and clear structures designed for cognitive clarity.",
+      "AI creates an interactive therapy app in seconds, complete with vetted icons and clear structures designed for cognitive clarity.",
     bg: "bg-secondary-fixed text-on-secondary-fixed",
   },
   {

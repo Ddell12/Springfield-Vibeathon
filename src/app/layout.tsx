@@ -7,8 +7,8 @@ import { SkipToContent } from "@/shared/components/skip-to-content";
 import { Toaster } from "@/shared/components/ui/sonner";
 
 export const metadata: Metadata = {
-  title: "Bridges — AI Therapy Tool Builder",
-  description: "Build interactive therapy tools with AI. Designed for ABA therapists, speech therapists, and parents of autistic children.",
+  title: "Bridges — AI Therapy App Builder",
+  description: "Build interactive therapy apps with AI. Designed for ABA therapists, speech therapists, and parents of autistic children.",
 };
 
 export default function RootLayout({
