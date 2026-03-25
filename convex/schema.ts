@@ -6,18 +6,23 @@ export default defineSchema({
     userId: v.optional(v.string()),
     title: v.string(),
     query: v.string(),
-    state: v.union(
-      v.literal("idle"),
-      v.literal("generating"),
-      v.literal("live"),
-      v.literal("failed")
-    ),
+    // New states: idle | generating | live | failed
+    // Legacy states from old pipeline also exist in data — using v.string() for compat
+    state: v.string(),
     stateMessage: v.optional(v.string()),
     error: v.optional(v.string()),
     blueprint: v.optional(v.any()),
     sandboxId: v.optional(v.string()),
     previewUrl: v.optional(v.string()),
     publishedUrl: v.optional(v.string()),
+    // Legacy fields from old pipeline — kept for backward compat with existing data
+    currentPhaseIndex: v.optional(v.number()),
+    phasesRemaining: v.optional(v.number()),
+    mvpGenerated: v.optional(v.boolean()),
+    templateName: v.optional(v.string()),
+    blueprintId: v.optional(v.any()),
+    failureReason: v.optional(v.string()),
+    lastGoodState: v.optional(v.string()),
   }).index("by_user", ["userId"]),
 
   messages: defineTable({
@@ -32,7 +37,11 @@ export default defineSchema({
     sessionId: v.id("sessions"),
     path: v.string(),
     contents: v.string(),
-    version: v.number(),
+    version: v.optional(v.number()),
+    // Legacy fields from old pipeline — kept for backward compat with existing data
+    phaseId: v.optional(v.any()),
+    purpose: v.optional(v.string()),
+    status: v.optional(v.string()),
   }).index("by_session", ["sessionId"])
     .index("by_session_path", ["sessionId", "path"]),
 

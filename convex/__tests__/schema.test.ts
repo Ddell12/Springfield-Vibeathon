@@ -61,22 +61,18 @@ describe("schema — streaming builder contract", () => {
   });
 
   it("no phases table — phases table removed in streaming builder", () => {
-    // @ts-expect-error — phases table removed in streaming builder
     expect(schema.tables).not.toHaveProperty("phases");
   });
 
   it("no agentContext table — agentContext table removed in streaming builder", () => {
-    // @ts-expect-error — agentContext table removed in streaming builder
     expect(schema.tables).not.toHaveProperty("agentContext");
   });
 
   it("no versions table — versions table removed in streaming builder", () => {
-    // @ts-expect-error — versions table removed in streaming builder
     expect(schema.tables).not.toHaveProperty("versions");
   });
 
   it("no blueprints table — blueprints table removed in streaming builder", () => {
-    // @ts-expect-error — blueprints table removed in streaming builder
     expect(schema.tables).not.toHaveProperty("blueprints");
   });
 

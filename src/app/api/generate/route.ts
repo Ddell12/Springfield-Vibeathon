@@ -18,14 +18,23 @@ const anthropic = new Anthropic({
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
-  const { query, sessionId } = await request.json();
+  const body = await request.json();
+  const query = body.query ?? body.prompt;
+  const providedSessionId = body.sessionId as Id<"sessions"> | undefined;
 
-  if (!query || !sessionId) {
-    return new Response(JSON.stringify({ error: "query and sessionId are required" }), {
+  if (!query) {
+    return new Response(JSON.stringify({ error: "prompt is required" }), {
       status: 400,
       headers: { "Content-Type": "application/json" },
     });
   }
+
+  // Create session if not provided
+  const sessionId: Id<"sessions"> = providedSessionId ??
+    await convex.mutation(api.sessions.create, {
+      title: query.slice(0, 60),
+      query,
+    });
 
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
@@ -134,7 +143,7 @@ export async function POST(request: Request) {
           send("status", { status: "live", previewUrl });
         }
 
-        send("done", { sessionId });
+        send("done", { sessionId, previewUrl: previewUrl ?? null, files: collectedFiles });
       } catch (error) {
         const message = error instanceof Error ? error.message : "Unknown error";
         console.error("[generate] Error:", message);
