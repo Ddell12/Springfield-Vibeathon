@@ -87,7 +87,7 @@ describe("MyToolsPage", () => {
 
     const openLink = screen.getByRole("link", { name: /open/i });
     expect(openLink).toBeInTheDocument();
-    expect(openLink).toHaveAttribute("href", `/builder?session=${mockSession._id}`);
+    expect(openLink).toHaveAttribute("href", `/builder?sessionId=${mockSession._id}`);
   });
 
   test("renders session query as description", () => {
