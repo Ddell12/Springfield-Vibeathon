@@ -7,8 +7,10 @@ import { cn } from "@/core/utils";
 
 import { THERAPY_SEED_PROMPTS } from "../../../../convex/templates/therapy_seeds";
 
+const PRIMARY_GRADIENT = "from-primary to-primary-container";
+
 const TEMPLATE_STYLES = [
-  { gradient: "from-[#00595c] to-[#0d7377]", Icon: MessageSquare },
+  { gradient: PRIMARY_GRADIENT, Icon: MessageSquare },
   { gradient: "from-[#2e7d32] to-[#66bb6a]", Icon: Sun },
   { gradient: "from-[#f59e0b] to-[#fbbf24]", Icon: Star },
   { gradient: "from-[#5c6bc0] to-[#7986cb]", Icon: BookOpen },
@@ -31,7 +33,7 @@ export function TemplatesPage() {
       {/* 2x2 Template Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-16">
         {THERAPY_SEED_PROMPTS.map((template, i) => {
-          const style = TEMPLATE_STYLES[i];
+          const style = TEMPLATE_STYLES[i % TEMPLATE_STYLES.length];
           return (
             <Link
               key={template.id}
@@ -78,7 +80,10 @@ export function TemplatesPage() {
           </p>
           <Link
             href="/builder"
-            className="inline-flex items-center gap-2 bg-gradient-to-r from-[#00595c] to-[#0d7377] text-white font-bold px-6 py-3 rounded-xl hover:opacity-90 transition-opacity"
+            className={cn(
+              "inline-flex items-center gap-2 bg-gradient-to-r text-white font-bold px-6 py-3 rounded-xl hover:opacity-90 transition-opacity",
+              PRIMARY_GRADIENT,
+            )}
           >
             Build a Custom App
           </Link>

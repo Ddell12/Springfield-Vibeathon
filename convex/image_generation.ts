@@ -63,7 +63,7 @@ export const generateTherapyImage = action({
     });
 
     const part = response.candidates?.[0]?.content?.parts?.find(
-      (p: { inlineData?: { data: string; mimeType: string } }) => p.inlineData
+      (p) => p.inlineData,
     );
     if (!part?.inlineData?.data) {
       throw new Error("No image generated");
