@@ -51,9 +51,9 @@ describe("sseEncode — Server-Sent Events encoding", () => {
   });
 
   it("status event with 'live' status encodes correctly", () => {
-    const encoded = sseEncode("status", { status: "live", previewUrl: "https://abc.e2b.app" });
+    // previewUrl is no longer sent in SSE — WebContainer manages the preview URL client-side
+    const encoded = sseEncode("status", { status: "live" });
     expect(encoded).toContain('"status":"live"');
-    expect(encoded).toContain('"previewUrl":"https://abc.e2b.app"');
   });
 
   it("error event encodes the error message", () => {

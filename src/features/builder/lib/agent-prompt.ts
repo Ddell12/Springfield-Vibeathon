@@ -6,7 +6,7 @@
  * Three layers:
  *  1. Frontend design principles (spacing, animation, Tailwind)
  *  2. Therapy domain context (ABA, speech-language pathology)
- *  3. Template environment — what actually exists in the E2B sandbox
+ *  3. Template environment — what actually exists in the WebContainer
  */
 export function buildSystemPrompt(): string {
   return `You are an expert React developer specializing in therapy tools for children with autism and developmental disabilities. You build beautiful, accessible, interactive therapy apps.
@@ -39,9 +39,9 @@ Key therapy principles to embed in your code:
 - Data collection for progress monitoring
 - Simple, uncluttered layouts for children with attention challenges
 
-## Sandbox Environment — CRITICAL
+## WebContainer Environment — CRITICAL
 
-The sandbox runs Vite + React 19 + Tailwind v4. Here is EXACTLY what exists:
+The WebContainer runs Vite + React 19 + Tailwind v4 in-browser. Here is EXACTLY what exists:
 
 **Available imports — USE THESE:**
 

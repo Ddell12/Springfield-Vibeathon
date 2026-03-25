@@ -32,21 +32,31 @@ describe("sessions — streaming builder mutations", () => {
     expect(session?.state).toBe("generating");
   });
 
-  it("setLive stores sandboxId, previewUrl, and sets state to 'live'", async () => {
+  it("setLive only requires sessionId and sets state to 'live'", async () => {
     const t = convexTest(schema, modules);
     const id = await t.mutation(api.sessions.create, {
       title: "Test",
       query: "test",
     });
+    // After WebContainer refactor: setLive takes only sessionId
+    // previewUrl and sandboxId are no longer server-side concerns
     await t.mutation(api.sessions.setLive, {
       sessionId: id,
-      sandboxId: "sb_abc123",
-      previewUrl: "https://abc123.e2b.app",
     });
     const session = await t.query(api.sessions.get, { sessionId: id });
     expect(session?.state).toBe("live");
-    expect(session?.sandboxId).toBe("sb_abc123");
-    expect(session?.previewUrl).toBe("https://abc123.e2b.app");
+  });
+
+  it("setLive does not require sandboxId or previewUrl", async () => {
+    const t = convexTest(schema, modules);
+    const id = await t.mutation(api.sessions.create, {
+      title: "Test",
+      query: "test",
+    });
+    // Must not throw when called with only sessionId
+    await expect(
+      t.mutation(api.sessions.setLive, { sessionId: id })
+    ).resolves.not.toThrow();
   });
 
   it("setFailed stores error message and sets state to 'failed'", async () => {

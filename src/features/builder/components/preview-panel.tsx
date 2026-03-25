@@ -4,14 +4,13 @@ import { useState } from "react";
 
 import { Button } from "@/shared/components/ui/button";
 
-interface SessionState {
-  state: string;
-  previewUrl?: string;
-  error?: string;
-}
+import type { WebContainerStatus } from "../hooks/use-webcontainer";
 
 interface PreviewPanelProps {
-  session: SessionState | null;
+  previewUrl: string | null;
+  state: string;
+  wcStatus: WebContainerStatus;
+  error?: string;
 }
 
 const RESPONSIVE_SIZES = [
@@ -19,13 +18,13 @@ const RESPONSIVE_SIZES = [
   { label: "Desktop", width: "100%" as const },
 ];
 
-export function PreviewPanel({ session }: PreviewPanelProps) {
+export function PreviewPanel({ previewUrl, state, wcStatus, error }: PreviewPanelProps) {
   const [sizeIndex, setSizeIndex] = useState(1); // Default: desktop
   const currentSize = RESPONSIVE_SIZES[sizeIndex];
 
-  const isGenerating = session?.state === "generating";
-  const isFailed = session?.state === "failed";
-  const hasPreview = !!session?.previewUrl;
+  const isGenerating = state === "generating";
+  const isFailed = state === "failed" || wcStatus === "error";
+  const hasPreview = wcStatus === "ready" && !!previewUrl;
 
   return (
     <div className="flex h-full flex-col">
@@ -52,7 +51,7 @@ export function PreviewPanel({ session }: PreviewPanelProps) {
       <div className="flex flex-1 items-center justify-center overflow-hidden bg-muted/30 p-4">
         {hasPreview ? (
           <iframe
-            src={session!.previewUrl}
+            src={previewUrl!}
             className="h-full rounded-lg border bg-white shadow-sm"
             style={{
               width:
@@ -64,14 +63,18 @@ export function PreviewPanel({ session }: PreviewPanelProps) {
             title="App Preview"
             sandbox="allow-scripts allow-same-origin"
           />
-        ) : isGenerating ? (
+        ) : wcStatus === "booting" ? (
+          <div className="text-center text-sm text-muted-foreground">
+            <p>Booting preview environment...</p>
+          </div>
+        ) : wcStatus === "installing" || isGenerating ? (
           <div role="status" className="animate-pulse text-center text-sm text-muted-foreground">
-            <p>Generating your app...</p>
+            <p>Installing dependencies...</p>
           </div>
         ) : isFailed ? (
           <div className="text-center text-sm">
             <p className="text-destructive">
-              {session?.error ?? "Something went wrong. Please try again."}
+              {error ?? "Something went wrong. Please try again."}
             </p>
           </div>
         ) : (

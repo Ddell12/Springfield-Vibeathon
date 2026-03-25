@@ -37,11 +37,7 @@ describe("schema — streaming builder contract", () => {
       title: "Test",
       query: "test",
     });
-    await t.mutation(api.sessions.setLive, {
-      sessionId: id,
-      sandboxId: "sb_abc123",
-      previewUrl: "https://abc.e2b.app",
-    });
+    await t.mutation(api.sessions.setLive, { sessionId: id });
     const session = await t.query(api.sessions.get, { sessionId: id });
     expect(session?.state).toBe("live");
   });

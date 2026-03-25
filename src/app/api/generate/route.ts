@@ -50,16 +50,6 @@ export async function POST(request: Request) {
         });
         send("status", { status: "generating" });
 
-        // Create sandbox in parallel while LLM generates
-        const sandboxPromise = fetch(
-          new URL("/api/sandbox", request.url).toString(),
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ action: "create" }),
-          }
-        ).then((r) => r.json());
-
         const systemPrompt = buildSystemPrompt();
         let version = 1;
         const collectedFiles: { path: string; contents: string }[] = [];
@@ -118,32 +108,13 @@ export async function POST(request: Request) {
           }
         }
 
-        // Wait for sandbox, then write files
-        const sandboxResult = await sandboxPromise;
-        const { sandboxId, previewUrl } = sandboxResult;
+        // Update session to live — WebContainer handles preview URL client-side
+        await convex.mutation(api.sessions.setLive, {
+          sessionId: sessionId as Id<"sessions">,
+        });
 
-        if (sandboxId && collectedFiles.length > 0) {
-          await fetch(new URL("/api/sandbox", request.url).toString(), {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              action: "write_files",
-              sandboxId,
-              files: collectedFiles,
-            }),
-          });
-
-          // Update session to live
-          await convex.mutation(api.sessions.setLive, {
-            sessionId: sessionId as Id<"sessions">,
-            sandboxId,
-            previewUrl,
-          });
-
-          send("status", { status: "live", previewUrl });
-        }
-
-        send("done", { sessionId, previewUrl: previewUrl ?? null, files: collectedFiles });
+        send("status", { status: "live" });
+        send("done", { sessionId, files: collectedFiles });
       } catch (error) {
         const message = error instanceof Error ? error.message : "Unknown error";
         console.error("[generate] Error:", message);

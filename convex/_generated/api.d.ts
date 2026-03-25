@@ -12,7 +12,6 @@ import type * as ai from "../ai.js";
 import type * as aiActions from "../aiActions.js";
 import type * as app_state from "../app_state.js";
 import type * as apps from "../apps.js";
-import type * as e2b from "../e2b.js";
 import type * as generated_files from "../generated_files.js";
 import type * as http from "../http.js";
 import type * as init from "../init.js";
@@ -37,7 +36,6 @@ declare const fullApi: ApiFromModules<{
   aiActions: typeof aiActions;
   app_state: typeof app_state;
   apps: typeof apps;
-  e2b: typeof e2b;
   generated_files: typeof generated_files;
   http: typeof http;
   init: typeof init;

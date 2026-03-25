@@ -4,14 +4,12 @@ export type SSEEventType =
   | "status"
   | "token"
   | "file_complete"
-  | "sandbox_ready"
   | "done"
   | "error";
 
 export interface StatusEvent {
   status: "generating" | "live" | "failed";
   message?: string;
-  previewUrl?: string;
 }
 
 export interface TokenEvent {
@@ -22,11 +20,6 @@ export interface FileCompleteEvent {
   path: string;
   contents: string;
   version: number;
-}
-
-export interface SandboxReadyEvent {
-  sandboxId: string;
-  previewUrl: string;
 }
 
 export interface DoneEvent {
@@ -41,6 +34,5 @@ export type SSEEventData =
   | StatusEvent
   | TokenEvent
   | FileCompleteEvent
-  | SandboxReadyEvent
   | DoneEvent
   | ErrorEvent;
