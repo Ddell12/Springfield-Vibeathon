@@ -200,7 +200,7 @@ describe("projects versioning", () => {
     const project = await t.query(api.projects.get, { projectId });
     expect(project).not.toBeNull();
     expect(Array.isArray(project!.versions)).toBe(true);
-    expect(project!.versions.length).toBe(1);
+    expect(project!.versions!.length).toBe(1);
   });
 
   test("saveVersion caps versions at 10 (FIFO — oldest dropped)", async () => {
@@ -220,9 +220,9 @@ describe("projects versioning", () => {
     }
 
     const project = await t.query(api.projects.get, { projectId });
-    expect(project!.versions.length).toBe(10);
+    expect(project!.versions!.length).toBe(10);
     // Oldest (version 1) should have been dropped; newest (version 11) should be last
-    const lastVersion = project!.versions[project!.versions.length - 1];
+    const lastVersion = project!.versions![project!.versions!.length - 1] as { fragment: { title: string } };
     expect(lastVersion.fragment.title).toBe("Version 11");
   });
 
@@ -252,7 +252,7 @@ describe("projects versioning", () => {
     const previous = await t.query(api.projects.getLatestVersion, { projectId });
     expect(previous).not.toBeNull();
     // getLatestVersion returns the second-to-last (i.e., the previous working version)
-    expect(previous!.fragment.title).toBe("Second Version");
+    expect((previous!.fragment as { title: string }).title).toBe("Second Version");
   });
 
   test("getLatestVersion returns null when fewer than 2 versions exist", async () => {

@@ -217,6 +217,8 @@ Config → component mapper: `src/features/therapy-tools/components/tool-rendere
 - **`"use node";` is only for `action`/`internalAction`:** Never add `"use node";` to files defining `httpAction`, `query`, or `mutation`. HTTP actions run in the Convex V8 runtime, not Node.js. Adding it causes a 400 "InvalidModules" deploy error.
 - **Convex file names cannot contain hyphens:** Module paths only allow alphanumeric characters, underscores, or periods. Use `snake_case` for all files in `convex/` (e.g., `therapy_seeds.ts` not `therapy-seeds.ts`). Hyphens cause a 400 "InvalidConfig" error on `convex dev`.
 - **Convex V8 runtime does not support dynamic `import()`:** Never use `await import("nanoid")` or similar in queries/mutations. Use static top-level imports or inline implementations. Dynamic imports crash with `TypeError: dynamic module import unsupported`.
+- **Next.js route group collision:** `(app)/page.tsx` and `(marketing)/page.tsx` both resolve to `/`. Only one route group can own a given path. The marketing landing page owns `/`; do not add a `page.tsx` to `(app)/` root.
+- **React StrictMode double-fires effects:** In dev mode, `useEffect` runs twice before state updates commit. If guarding a side effect (API call, auto-submit) with `useState`, the guard fails on the second fire because the setter is async. Use `useRef` for synchronous guards in fire-once effects.
 
 ## Convex Backend
 

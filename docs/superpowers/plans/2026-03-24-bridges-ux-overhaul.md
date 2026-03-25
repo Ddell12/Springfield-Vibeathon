@@ -22,7 +22,6 @@
 |------|---------------|
 | `e2b-templates/vite-therapy/package.json` | Vite template package manifest |
 | `e2b-templates/vite-therapy/vite.config.ts` | Vite + React config |
-| `e2b-templates/vite-therapy/tailwind.config.ts` | Therapy theme (warm colors, large radii) |
 | `e2b-templates/vite-therapy/index.html` | Entry HTML with Google Fonts |
 | `e2b-templates/vite-therapy/src/main.tsx` | ReactDOM.createRoot (never touched by AI) |
 | `e2b-templates/vite-therapy/src/App.tsx` | Default placeholder (AI overwrites this) |
@@ -179,7 +178,18 @@ export const updatePublishUrl = mutation({
 });
 ```
 
-- [ ] **Step 4: Add toolState CRUD functions**
+- [ ] **Step 4: Update existing `update` mutation for new fields**
+
+In `convex/projects.ts`, find the existing `update` mutation and add `persistence: v.optional(v.string())` and `publishedUrl: v.optional(v.string())` to its `args`. In the handler, add:
+
+```typescript
+if (fields.persistence !== undefined) updates.persistence = fields.persistence;
+if (fields.publishedUrl !== undefined) updates.publishedUrl = fields.publishedUrl;
+```
+
+This ensures Tasks 10 and 18 can save persistence tier and published URL via the standard `updateProject` mutation without `as any` casts.
+
+- [ ] **Step 5: Add toolState CRUD functions**
 
 Create `convex/tool_state.ts`:
 
@@ -235,12 +245,12 @@ export const set = mutation({
 });
 ```
 
-- [ ] **Step 5: Deploy and verify**
+- [ ] **Step 6: Deploy and verify**
 
 Run: `npx convex dev --once && npm run build`
 Expected: Schema deploys, build passes.
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 7: Commit**
 
 ```bash
 git add convex/schema.ts convex/projects.ts convex/tool_state.ts
@@ -282,7 +292,7 @@ Create `e2b-templates/vite-therapy/package.json`:
   "dependencies": {
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "framer-motion": "^12.0.0"
+    "motion": "^12.0.0"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.4.0",
@@ -1326,8 +1336,11 @@ const handlePromptSubmit = (message: string) => {
   setShowPersistenceSheet(true);
 };
 
-const handlePersistenceSelect = (tier: PersistenceTier) => {
+const handlePersistenceSelect = async (tier: PersistenceTier) => {
   setPersistence(tier);
+  if (projectId) {
+    await updateProject({ projectId, persistence: tier });
+  }
   setShowPersistenceSheet(false);
   if (pendingMessage) {
     setInitialMessage(pendingMessage);
@@ -1509,11 +1522,11 @@ git commit -m "feat(ux): persist chat messages across page refreshes"
 
 - [ ] **Step 1: Create ResponsivePicker**
 
-(Same code as in the old plan — Phone/Tablet/Computer with MaterialIcon icons)
+See `docs/superpowers/plans/2026-03-24-non-technical-ux-polish.md`, Task 8 Steps 1-2 for the ResponsivePicker component code.
 
 - [ ] **Step 2: Update FragmentWeb with width prop**
 
-(Same code as old plan — cn() for device frame, width style)
+See `docs/superpowers/plans/2026-03-24-non-technical-ux-polish.md`, Task 8 Steps 3-4 for the FragmentWeb width prop changes.
 
 - [ ] **Step 3: Add breakpoint prop to Preview**
 
@@ -1772,6 +1785,14 @@ AlertDialog instead of browser confirm(), errors show retry button."
 **Files:**
 - Create: `src/app/api/publish/route.ts`
 
+- [ ] **Step 0: Configure Vercel Deploy credentials**
+
+Add to `.env.local`:
+```
+VERCEL_DEPLOY_TOKEN=<create at vercel.com/account/tokens with "Create Deployment" scope>
+VERCEL_TEAM_ID=<optional — from vercel.com/teams if deploying under a team>
+```
+
 - [ ] **Step 1: Create the publish route**
 
 Create `src/app/api/publish/route.ts`:
@@ -1884,6 +1905,8 @@ git commit -m "feat: add Vercel Deploy API route for publishing tools"
 
 ### Task 18: Publish Button + Flow in Header
 
+**Depends on:** Task 1 Step 4 (the `update` mutation must accept `publishedUrl`).
+
 **Files:**
 - Create: `src/features/builder-v2/components/publish-dialog.tsx`
 - Modify: `src/features/builder-v2/components/builder-header.tsx`
@@ -1900,6 +1923,7 @@ import { useState } from "react";
 import { motion } from "motion/react";
 
 import { cn } from "@/core/utils";
+import { Button } from "@/shared/components/ui/button";
 import { MaterialIcon } from "@/shared/components/material-icon";
 
 type PublishDialogProps = {
@@ -1949,9 +1973,9 @@ export function PublishDialog({ open, onClose, onPublish, publishedUrl: existing
             <p className="text-sm text-on-surface-variant text-center">
               This creates a permanent link anyone can use — no account needed.
             </p>
-            <button className="btn-primary w-full" onClick={handlePublish} type="button">
+            <Button className="w-full" onClick={handlePublish} type="button">
               {existingUrl ? "Update Published Version" : "Publish Now"}
-            </button>
+            </Button>
           </div>
         )}
 
@@ -1977,16 +2001,17 @@ export function PublishDialog({ open, onClose, onPublish, publishedUrl: existing
               className="w-full px-3 py-2 text-sm rounded-lg bg-surface-container border border-surface-container-high text-center"
             />
             <div className="flex gap-3 w-full">
-              <button
-                className="btn-secondary flex-1"
+              <Button
+                variant="outline"
+                className="flex-1"
                 onClick={() => navigator.clipboard.writeText(url)}
                 type="button"
               >
                 Copy Link
-              </button>
-              <a href={url} target="_blank" rel="noopener noreferrer" className="btn-primary flex-1 text-center no-underline">
-                Open
-              </a>
+              </Button>
+              <Button asChild className="flex-1">
+                <a href={url} target="_blank" rel="noopener noreferrer">Open</a>
+              </Button>
             </div>
             <button className="text-sm text-on-surface-variant hover:text-on-surface" onClick={onClose} type="button">
               Done
@@ -1998,9 +2023,9 @@ export function PublishDialog({ open, onClose, onPublish, publishedUrl: existing
           <div className="flex flex-col items-center gap-4">
             <MaterialIcon icon="error" size="lg" className="text-error" />
             <p className="text-sm text-error">{error}</p>
-            <button className="btn-primary w-full" onClick={handlePublish} type="button">
+            <Button className="w-full" onClick={handlePublish} type="button">
               Try Again
-            </button>
+            </Button>
           </div>
         )}
       </motion.div>
@@ -2042,7 +2067,7 @@ const handlePublish = async (): Promise<string | null> => {
     });
     if (!res.ok) return null;
     const { url } = await res.json();
-    await updateProject({ projectId, publishedUrl: url } as any);
+    await updateProject({ projectId, publishedUrl: url });
     return url;
   } catch {
     return null;
@@ -2050,7 +2075,7 @@ const handlePublish = async (): Promise<string | null> => {
 };
 ```
 
-Note: The `updateProject` mutation needs `publishedUrl` added to its args. Update `convex/projects.ts` update mutation to accept `publishedUrl: v.optional(v.string())`.
+Note: The `updateProject` mutation already accepts `publishedUrl` thanks to Task 1 Step 4.
 
 - [ ] **Step 4: Verify and commit**
 
@@ -2145,6 +2170,22 @@ If `E2B_VITE_THERAPY_TEMPLATE_ID` is set, use it. Otherwise fall back to templat
 git add .env.local src/features/builder-v2/lib/e2b.ts
 git commit -m "feat: register vite-therapy E2B template + integration verification"
 ```
+
+---
+
+## Verification Fixes Applied
+
+Fixes from `docs/superpowers/plans/2026-03-24-bridges-ux-overhaul-VERIFICATION.md` applied on 2026-03-24:
+
+| ID | Severity | Fix Applied |
+|----|----------|-------------|
+| A1 | CRITICAL | Task 18 Step 1: Replaced all `.btn-primary`/`.btn-secondary` CSS classes with shadcn `<Button>` and `<Button variant="outline">`. Added `Button` import. |
+| A2 | WARNING | Task 2 Step 2: Changed `"framer-motion": "^12.0.0"` to `"motion": "^12.0.0"` in template package.json. |
+| W1 | WARNING | Task 1: Added new Step 4 to update existing `update` mutation with `persistence` and `publishedUrl` args. Task 10 Step 2: `handlePersistenceSelect` now saves persistence to Convex. |
+| W2 | WARNING | Task 18 Step 3: Removed `as any` cast on `updateProject` call. Added dependency note on Task 1 Step 4. Updated note to reference Task 1 Step 4. |
+| D1 | WARNING | Task 17: Added Step 0 for `VERCEL_DEPLOY_TOKEN` and `VERCEL_TEAM_ID` env var setup. |
+| L1 | WARNING | File Structure table: Removed phantom `tailwind.config.ts` row (Tailwind v4 uses CSS-based config). |
+| L2 | SUGGESTION | Task 13 Steps 1-2: Replaced "old plan" references with specific file path and task/step numbers. |
 
 ---
 

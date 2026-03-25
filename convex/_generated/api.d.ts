@@ -23,6 +23,7 @@ import type * as templates_queries from "../templates/queries.js";
 import type * as templates_seed from "../templates/seed.js";
 import type * as templates_therapy_seeds from "../templates/therapy_seeds.js";
 import type * as therapy_templates from "../therapy_templates.js";
+import type * as tool_state from "../tool_state.js";
 import type * as tools from "../tools.js";
 
 import type {
@@ -47,6 +48,7 @@ declare const fullApi: ApiFromModules<{
   "templates/seed": typeof templates_seed;
   "templates/therapy_seeds": typeof templates_therapy_seeds;
   therapy_templates: typeof therapy_templates;
+  tool_state: typeof tool_state;
   tools: typeof tools;
 }>;
 

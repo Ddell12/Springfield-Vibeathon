@@ -3,6 +3,9 @@
 import Link from "next/link";
 
 import { MaterialIcon } from "@/shared/components/material-icon";
+import { ThemeToggle } from "@/shared/components/theme-toggle";
+
+import { ResponsivePicker } from "./responsive-picker";
 
 type BuilderV2HeaderProps = {
   projectName?: string;
@@ -27,6 +30,8 @@ export function BuilderV2Header({
   onPublish,
   canUndo,
   hasProject,
+  responsiveValue,
+  onResponsiveChange,
 }: BuilderV2HeaderProps) {
   return (
     <header className="h-14 bg-surface-container-lowest flex items-center justify-between px-6 z-10 shrink-0">
@@ -45,8 +50,16 @@ export function BuilderV2Header({
         )}
       </div>
 
+      {/* Center: Responsive picker */}
+      {hasProject && responsiveValue && onResponsiveChange && (
+        <div className="hidden md:flex">
+          <ResponsivePicker value={responsiveValue} onChange={onResponsiveChange} />
+        </div>
+      )}
+
       {/* Right: Actions */}
       <div className="flex items-center gap-3">
+        <ThemeToggle />
         {canUndo && (
           <button
             className="flex items-center gap-2 w-9 h-9 justify-center text-on-surface-variant rounded-full hover:bg-surface-container-high hover:text-primary transition-colors"

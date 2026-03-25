@@ -8,6 +8,8 @@ const mockWriteFile = vi.fn();
 const mockClose = vi.fn();
 const mockGetHost = vi.fn();
 
+const mockCommandsRun = vi.fn().mockResolvedValue({ exitCode: 0, stdout: "UP" });
+
 const mockSandboxInstance = {
   sandboxId: "sandbox-abc-123",
   files: {
@@ -15,7 +17,7 @@ const mockSandboxInstance = {
   },
   getHost: mockGetHost,
   close: mockClose,
-  commands: { run: vi.fn() },
+  commands: { run: mockCommandsRun },
 };
 
 vi.mock("@e2b/code-interpreter", () => ({
@@ -143,7 +145,7 @@ describe("createSandbox — vite-therapy template", () => {
     await createSandbox(viteFragment);
 
     expect(mockWriteFile).toHaveBeenCalledWith(
-      "src/App.tsx",
+      "/home/user/app/src/App.tsx",
       expect.any(String)
     );
   });

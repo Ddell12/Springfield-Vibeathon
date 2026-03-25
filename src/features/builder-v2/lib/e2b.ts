@@ -30,6 +30,36 @@ function sanitizeForVite(code: string): string {
   return sanitized;
 }
 
+/**
+ * Ensure Vite dev server is running in the sandbox.
+ * The template's CMD may already have started it — check first.
+ * After confirming it's running, wait briefly for HMR to process any recent file writes.
+ */
+async function ensureViteRunning(sandbox: InstanceType<typeof Sandbox>): Promise<void> {
+  // Check if Vite is already serving on port 5173
+  const check = await sandbox.commands.run(
+    `node -e "const http=require('http');const r=http.get('http://localhost:5173',()=>{console.log('UP');process.exit(0)});r.on('error',()=>{console.log('DOWN');process.exit(1)});r.end()"`,
+    { timeoutMs: 5_000 }
+  ).catch(() => ({ exitCode: 1, stdout: "DOWN" }));
+
+  if (check.exitCode !== 0) {
+    // Vite not running — start it in background and wait for it
+    await sandbox.commands.run(
+      "cd /home/user/app && npx vite --host 0.0.0.0 --port 5173",
+      { background: true }
+    );
+    // Poll until Vite is ready
+    await sandbox.commands.run(
+      `node -e "const http=require('http');let n=0;const c=()=>{n++;const r=http.get('http://localhost:5173',()=>process.exit(0));r.on('error',()=>{if(n<40)setTimeout(c,750);else process.exit(1)});r.end()};c()"`,
+      { timeoutMs: 45_000 }
+    );
+  }
+
+  // Wait for HMR to process the file write we just did.
+  // Vite's HMR typically takes <500ms, but give it a full second to be safe.
+  await sandbox.commands.run("sleep 2", { timeoutMs: 5_000 });
+}
+
 export async function createSandbox(fragment: FragmentResult): Promise<SandboxResult> {
   const template = fragment.template;
   const sandbox = await Sandbox.create(template, {
@@ -37,11 +67,21 @@ export async function createSandbox(fragment: FragmentResult): Promise<SandboxRe
   });
 
   const code = template === "vite-therapy" ? sanitizeForVite(fragment.code) : fragment.code;
-  await sandbox.files.write(fragment.file_path, code);
+  // E2B resolves paths relative to /home/user/, not WORKDIR.
+  // Vite template lives at /home/user/app/, so prepend for vite-therapy.
+  const filePath = template === "vite-therapy"
+    ? `/home/user/app/${fragment.file_path}`
+    : fragment.file_path;
+  await sandbox.files.write(filePath, code);
 
   if (fragment.has_additional_dependencies && fragment.additional_dependencies?.length) {
     const deps = fragment.additional_dependencies.join(" ");
     await sandbox.commands.run(`npm install ${deps}`, { timeoutMs: 60_000 });
+  }
+
+  // For vite-therapy: ensure Vite is running and has processed the file write
+  if (template === "vite-therapy") {
+    await ensureViteRunning(sandbox);
   }
 
   const port = fragment.port ?? 5173;
@@ -61,11 +101,19 @@ export async function executeFragment(
   const sandbox = await Sandbox.connect(sandboxId);
 
   const code = fragment.template === "vite-therapy" ? sanitizeForVite(fragment.code) : fragment.code;
-  await sandbox.files.write(fragment.file_path, code);
+  const filePath = fragment.template === "vite-therapy"
+    ? `/home/user/app/${fragment.file_path}`
+    : fragment.file_path;
+  await sandbox.files.write(filePath, code);
 
   if (fragment.has_additional_dependencies && fragment.additional_dependencies?.length) {
     const deps = fragment.additional_dependencies.join(" ");
     await sandbox.commands.run(`npm install ${deps}`, { timeoutMs: 60_000 });
+  }
+
+  // For reconnected sandboxes: Vite should already be running, just wait for HMR
+  if (fragment.template === "vite-therapy") {
+    await ensureViteRunning(sandbox);
   }
 
   const port = fragment.port ?? 5173;
