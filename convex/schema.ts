@@ -81,12 +81,26 @@ export default defineSchema({
     createdAt: v.number(),
   }).index("by_text_voice", ["text", "voiceId"]),
 
+  imageCache: defineTable({
+    promptHash: v.string(),
+    prompt: v.string(),
+    label: v.string(),
+    category: v.string(),
+    storageId: v.id("_storage"),
+    imageUrl: v.string(),
+    model: v.string(),
+    createdAt: v.number(),
+  }).index("by_promptHash", ["promptHash"])
+    .index("by_label_category", ["label", "category"]),
+
   therapyTemplates: defineTable({
     name: v.string(),
     description: v.string(),
     category: v.string(),
     starterPrompt: v.string(),
     sortOrder: v.number(),
+    thumbnailStorageId: v.optional(v.id("_storage")),
+    thumbnailUrl: v.optional(v.string()),
   })
     .index("by_category", ["category"])
     .index("by_sortOrder", ["sortOrder"]),
