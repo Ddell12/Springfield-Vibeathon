@@ -26,7 +26,7 @@ export const list = query({
       .query("messages")
       .withIndex("by_session_timestamp", (q) => q.eq("sessionId", args.sessionId))
       .order("asc")
-      .take(500);
+      .take(500); // Chat history cap — paginate if sessions exceed this
   },
 });
 

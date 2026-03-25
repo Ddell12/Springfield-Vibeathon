@@ -4,11 +4,6 @@ import { useTheme } from "next-themes";
 
 import { cn } from "@/core/utils";
 
-const _THEMES = [
-  { value: "light", label: "Light" },
-  { value: "dark", label: "Dark" },
-  { value: "system", label: "System" },
-] as const;
 
 export function AppearanceSection() {
   const { theme, setTheme } = useTheme();

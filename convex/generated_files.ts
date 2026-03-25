@@ -49,13 +49,7 @@ export const upsertAutoVersion = mutation({
       )
       .first();
 
-    // Find max version across all files in this session (atomic within transaction)
-    const allFiles = await ctx.db
-      .query("files")
-      .withIndex("by_session", (q) => q.eq("sessionId", args.sessionId))
-      .take(100);
-    const maxVersion = allFiles.reduce((max, f) => Math.max(max, f.version ?? 0), 0);
-    const nextVersion = maxVersion + 1;
+    const nextVersion = (existing?.version ?? 0) + 1;
 
     if (existing) {
       await ctx.db.patch(existing._id, { contents: args.contents, version: nextVersion });

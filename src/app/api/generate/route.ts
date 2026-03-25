@@ -411,7 +411,10 @@ export async function POST(request: Request): Promise<Response> {
         }
 
         // Persist files in batches of 10 — prevents rate limit overload
-        const settled = await settleInBatches(mutationThunks, 10);
+        // Run file persistence in parallel for typical sessions; batch only for large generations
+        const settled = mutationThunks.length <= 20
+          ? await Promise.allSettled(mutationThunks.map((fn) => fn()))
+          : await settleInBatches(mutationThunks, 10);
         const failures = settled.filter((r) => r.status === "rejected");
         if (failures.length > 0) {
           console.error(`[generate] ${failures.length} file persistence failure(s)`);
