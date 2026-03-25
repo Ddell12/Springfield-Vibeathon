@@ -3,6 +3,7 @@ import { httpRouter } from "convex/server";
 import { internal } from "./_generated/api";
 import { httpAction } from "./_generated/server";
 
+// Hardcoded: Convex httpAction runs in V8 runtime — no process.env access. Update on domain change.
 const ALLOWED_ORIGINS = new Set([
   "http://localhost:3000",
   "http://localhost:3001",
