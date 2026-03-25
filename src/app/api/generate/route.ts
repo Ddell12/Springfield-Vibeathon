@@ -8,9 +8,14 @@ import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 import { sseEncode } from "./sse";
 
-const convex = new ConvexHttpClient(
-  process.env.NEXT_PUBLIC_CONVEX_URL ?? "https://placeholder.convex.cloud"
-);
+if (!process.env.NEXT_PUBLIC_CONVEX_URL) {
+  throw new Error("NEXT_PUBLIC_CONVEX_URL is required for /api/generate");
+}
+if (!process.env.ANTHROPIC_API_KEY) {
+  throw new Error("ANTHROPIC_API_KEY is required for /api/generate");
+}
+
+const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL);
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -18,29 +23,136 @@ const anthropic = new Anthropic({
 
 export const runtime = "nodejs";
 
-export async function POST(request: Request) {
+// ---------------------------------------------------------------------------
+// Tool definitions
+// ---------------------------------------------------------------------------
+
+const TOOLS: Anthropic.Tool[] = [
+  {
+    name: "write_file",
+    description:
+      "Write or overwrite a file in the therapy app project. Use for src/App.tsx, additional components, styles, or utility files.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        path: {
+          type: "string",
+          description: "File path relative to project root (e.g. src/App.tsx)",
+        },
+        contents: {
+          type: "string",
+          description: "Complete file contents — never truncate or use placeholders",
+        },
+      },
+      required: ["path", "contents"],
+    },
+  },
+  {
+    name: "generate_image",
+    description:
+      "Generate a therapy-friendly illustration. Returns a CDN URL. Use for picture cards, schedule icons, emotion faces, and any visual content.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        label: {
+          type: "string",
+          description: "What to illustrate (e.g., 'happy face', 'brush teeth')",
+        },
+        category: {
+          type: "string",
+          enum: ["emotions", "daily-activities", "animals", "food", "objects", "people", "places"],
+          description: "Image category for style",
+        },
+      },
+      required: ["label", "category"],
+    },
+  },
+  {
+    name: "generate_speech",
+    description:
+      "Generate text-to-speech audio. Returns a CDN URL to an MP3. Use for communication board labels, story narration, schedule steps.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        text: {
+          type: "string",
+          description: "Text to speak",
+        },
+        voice: {
+          type: "string",
+          enum: ["warm-female", "calm-male", "child-friendly"],
+          description: "Voice style",
+        },
+      },
+      required: ["text"],
+    },
+  },
+  {
+    name: "enable_speech_input",
+    description:
+      "Enable microphone input for this app. The useSTT() hook will become active.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        purpose: {
+          type: "string",
+          description: "What speech input is for",
+        },
+      },
+      required: ["purpose"],
+    },
+  },
+];
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function jsonErrorResponse(message: string, status: number): Response {
+  return new Response(JSON.stringify({ error: message }), {
+    status,
+    headers: { "Content-Type": "application/json" },
+  });
+}
+
+/** Run a Convex action and return a tool_result (success or error). */
+async function runToolAction(
+  toolUseId: string,
+  fn: () => Promise<unknown>,
+): Promise<Anthropic.ToolResultBlockParam> {
+  try {
+    const result = await fn();
+    return { type: "tool_result", tool_use_id: toolUseId, content: JSON.stringify(result) };
+  } catch (err) {
+    return {
+      type: "tool_result",
+      tool_use_id: toolUseId,
+      content: `Error: ${(err as Error).message}`,
+      is_error: true,
+    };
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Route handler
+// ---------------------------------------------------------------------------
+
+export async function POST(request: Request): Promise<Response> {
   let body: unknown;
   try {
     body = await request.json();
   } catch {
-    return new Response(JSON.stringify({ error: "Invalid JSON" }), {
-      status: 400,
-      headers: { "Content-Type": "application/json" },
-    });
+    return jsonErrorResponse("Invalid JSON", 400);
   }
 
   const parsed = GenerateInputSchema.safeParse(body);
   if (!parsed.success) {
-    return new Response(
-      JSON.stringify({ error: parsed.error.issues[0]?.message ?? "Invalid request" }),
-      { status: 400, headers: { "Content-Type": "application/json" } }
-    );
+    return jsonErrorResponse(parsed.error.issues[0]?.message ?? "Invalid request", 400);
   }
 
   const query = parsed.data.query ?? parsed.data.prompt!;
   const providedSessionId = parsed.data.sessionId as Id<"sessions"> | undefined;
 
-  // Create session if not provided
   const sessionId: Id<"sessions"> =
     providedSessionId ??
     (await convex.mutation(api.sessions.create, {
@@ -56,10 +168,8 @@ export async function POST(request: Request) {
       };
 
       try {
-        // Emit sessionId immediately so the client can start loading messages
         send("session", { sessionId });
 
-        // Only persist user message for NEW sessions (not retries on existing ones)
         if (!providedSessionId) {
           await convex.mutation(api.messages.create, {
             sessionId,
@@ -69,112 +179,148 @@ export async function POST(request: Request) {
           });
         }
 
-        // Mark session as generating
         await convex.mutation(api.sessions.startGeneration, { sessionId });
         send("status", { status: "generating" });
-        send("activity", {
-          type: "thinking",
-          message: "Understanding your request...",
-        });
+        send("activity", { type: "thinking", message: "Understanding your request..." });
 
         const systemPrompt = buildSystemPrompt();
         let version = 1;
         if (providedSessionId) {
           const existingFiles = await convex.query(api.generated_files.list, { sessionId });
           if (existingFiles.length > 0) {
-            version = Math.max(...existingFiles.map(f => f.version ?? 0)) + 1;
+            version = Math.max(...existingFiles.map((f) => f.version ?? 0)) + 1;
           }
         }
+
         const collectedFiles: { path: string; contents: string }[] = [];
         let assistantText = "";
-
-        // Stream from Claude with tool_use for write_file
-        const llmStream = anthropic.messages.stream({
-          model: "claude-sonnet-4-6",
-          max_tokens: 16384,
-          system: systemPrompt,
-          tools: [
-            {
-              name: "write_file",
-              description:
-                "Write or overwrite a file in the therapy app project. Use for src/App.tsx, additional components, styles, or utility files.",
-              input_schema: {
-                type: "object" as const,
-                properties: {
-                  path: {
-                    type: "string",
-                    description:
-                      "File path relative to project root (e.g. src/App.tsx, src/components/MyWidget.tsx)",
-                  },
-                  contents: {
-                    type: "string",
-                    description: "Complete file contents — never truncate or use placeholders",
-                  },
-                },
-                required: ["path", "contents"],
-              },
-            },
-          ],
-          messages: [{ role: "user", content: query }],
-        });
-
-        // Stream text tokens for real-time display
-        llmStream.on("text", (text) => {
-          assistantText += text;
-          send("token", { token: text });
-        });
-
-        // Detect tool use start for progress indication
-        llmStream.on("contentBlock", (block) => {
-          if (block.type === "tool_use" && block.name === "write_file") {
-            // Tool use block started — we'll get the full input when it completes
-            send("activity", {
-              type: "writing_file",
-              message: "Writing code...",
-            });
-          }
-        });
-
-        // Wait for stream to finish
-        const finalMessage = await llmStream.finalMessage();
-
-        // Extract tool_use blocks and emit file events
         const mutationPromises: Promise<unknown>[] = [];
-        for (const block of finalMessage.content) {
-          if (block.type === "tool_use" && block.name === "write_file") {
+
+        let messages: Anthropic.MessageParam[] = [{ role: "user", content: query }];
+        const MAX_TOOL_TURNS = 10;
+        let turnCount = 0;
+        let continueLoop = true;
+
+        while (continueLoop && turnCount < MAX_TOOL_TURNS) {
+          turnCount++;
+          const llmStream = anthropic.messages.stream({
+            model: "claude-sonnet-4-6",
+            max_tokens: 16384,
+            system: systemPrompt,
+            tools: TOOLS,
+            messages,
+          });
+
+          llmStream.on("text", (text) => {
+            assistantText += text;
+            send("token", { token: text });
+          });
+
+          const finalMessage = await llmStream.finalMessage();
+          const toolResults: Anthropic.ToolResultBlockParam[] = [];
+
+          for (const block of finalMessage.content) {
+            if (block.type !== "tool_use") continue;
+
             const input = block.input as Record<string, unknown>;
-            const path = typeof input.path === "string" ? input.path : "";
-            const contents =
-              typeof input.contents === "string" ? input.contents : "";
 
-            if (!path || !contents) continue;
+            switch (block.name) {
+              case "write_file": {
+                const path = typeof input.path === "string" ? input.path : "";
+                const contents = typeof input.contents === "string" ? input.contents : "";
+                if (path && contents) {
+                  collectedFiles.push({ path, contents });
+                  send("file_complete", { path, contents, version });
+                  send("activity", { type: "file_written", message: `Wrote ${path}`, path });
+                  mutationPromises.push(
+                    convex.mutation(api.generated_files.upsert, {
+                      sessionId,
+                      path,
+                      contents,
+                      version,
+                    }),
+                  );
+                  version++;
+                  toolResults.push({
+                    type: "tool_result",
+                    tool_use_id: block.id,
+                    content: "File written successfully",
+                  });
+                } else {
+                  toolResults.push({
+                    type: "tool_result",
+                    tool_use_id: block.id,
+                    content: "Error: write_file requires non-empty path and contents",
+                    is_error: true,
+                  });
+                }
+                break;
+              }
 
-            collectedFiles.push({ path, contents });
-            send("file_complete", { path, contents, version });
-            send("activity", {
-              type: "file_written",
-              message: `Wrote ${path}`,
-              path,
-            });
+              case "generate_image": {
+                send("activity", { type: "thinking", message: `Generating image: ${input.label}...` });
+                const result = await runToolAction(block.id, () =>
+                  convex.action(api.image_generation.generateTherapyImage, {
+                    label: input.label as string,
+                    category: input.category as string,
+                  }),
+                );
+                if (!result.is_error) {
+                  send("image_generated", { label: input.label, imageUrl: JSON.parse(result.content as string).imageUrl });
+                }
+                toolResults.push(result);
+                break;
+              }
 
-            mutationPromises.push(
-              convex.mutation(api.generated_files.upsert, {
-                sessionId,
-                path,
-                contents,
-                version,
-              })
-            );
-            version++;
+              case "generate_speech": {
+                send("activity", { type: "thinking", message: `Generating audio: "${input.text}"...` });
+                const result = await runToolAction(block.id, () =>
+                  convex.action(api.aiActions.generateSpeech, {
+                    text: input.text as string,
+                    voice: (input.voice as string) ?? "warm-female",
+                  }),
+                );
+                if (!result.is_error) {
+                  send("speech_generated", { text: input.text, audioUrl: JSON.parse(result.content as string).audioUrl });
+                }
+                toolResults.push(result);
+                break;
+              }
+
+              case "enable_speech_input": {
+                send("stt_enabled", { purpose: input.purpose });
+                toolResults.push({
+                  type: "tool_result",
+                  tool_use_id: block.id,
+                  content: JSON.stringify({ enabled: true }),
+                });
+                break;
+              }
+            }
+          }
+
+          if (finalMessage.stop_reason === "tool_use" && toolResults.length > 0) {
+            messages = [
+              ...messages,
+              { role: "assistant", content: finalMessage.content },
+              { role: "user", content: toolResults },
+            ];
+          } else {
+            continueLoop = false;
           }
         }
 
-        // Persist all files in parallel
-        if (mutationPromises.length > 0) {
-          await Promise.all(mutationPromises);
+        if (turnCount >= MAX_TOOL_TURNS) {
+          send("activity", { type: "complete", message: "Generation complete (reached max steps)" });
         }
 
-        // Persist assistant message, system summary, and setLive in parallel
+        // Persist files — use allSettled so one failure doesn't kill the whole generation
+        const settled = await Promise.allSettled(mutationPromises);
+        const failures = settled.filter((r) => r.status === "rejected");
+        if (failures.length > 0) {
+          console.error(`[generate] ${failures.length} file persistence failure(s)`);
+        }
+
         const postLlmPromises: Promise<unknown>[] = [];
 
         if (assistantText.trim()) {
@@ -184,7 +330,7 @@ export async function POST(request: Request) {
               role: "assistant",
               content: assistantText.trim(),
               timestamp: Date.now(),
-            })
+            }),
           );
         }
 
@@ -196,7 +342,7 @@ export async function POST(request: Request) {
               role: "system",
               content: `Built ${collectedFiles.length} file${collectedFiles.length > 1 ? "s" : ""}: ${fileList}`,
               timestamp: Date.now(),
-            })
+            }),
           );
         }
 
@@ -207,11 +353,7 @@ export async function POST(request: Request) {
         send("status", { status: "live" });
         send("done", { sessionId, files: collectedFiles });
       } catch (error) {
-        // Log full detail server-side only
         console.error("[generate] Error:", error instanceof Error ? error.stack : error);
-
-        // Send generic message to client — never expose internals
-        const clientMessage = "Generation failed — please try again";
 
         try {
           await convex.mutation(api.sessions.setFailed, {
@@ -222,7 +364,7 @@ export async function POST(request: Request) {
           console.error("[generate] Failed to persist error state:", persistError);
         }
 
-        send("error", { message: clientMessage });
+        send("error", { message: "Generation failed — please try again" });
       } finally {
         controller.close();
       }

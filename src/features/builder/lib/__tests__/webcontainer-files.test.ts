@@ -65,10 +65,10 @@ describe("templateFiles — FileSystemTree structure", () => {
     expect(pkg.dependencies?.clsx).toBeDefined();
   });
 
-  it("package.json does NOT include motion (unused by template components)", () => {
+  it("package.json includes motion as a dependency (used by TokenSlot animation)", () => {
     const entry = templateFiles["package.json"] as { file: { contents: string } };
     const pkg = JSON.parse(entry.file.contents);
-    expect(pkg.dependencies?.motion).toBeUndefined();
+    expect(pkg.dependencies?.motion).toBeDefined();
   });
 
   it("package.json includes tailwind-merge as a dependency", () => {
@@ -105,11 +105,11 @@ describe("templateFiles — FileSystemTree structure", () => {
     expect(components.directory).toBeDefined();
   });
 
-  it("components directory has 9 component files", () => {
+  it("components directory has 17 component files (9 original + 8 therapy primitives)", () => {
     const src = templateFiles["src"] as { directory: Record<string, unknown> };
     const components = src.directory["components"] as { directory: Record<string, unknown> };
     const componentFiles = Object.keys(components.directory).filter((k) => k.endsWith(".tsx"));
-    expect(componentFiles).toHaveLength(9);
+    expect(componentFiles).toHaveLength(17);
   });
 
   it("components directory has an index.ts", () => {
@@ -143,10 +143,10 @@ describe("templateFiles — FileSystemTree structure", () => {
     expect(hooks.directory).toBeDefined();
   });
 
-  it("hooks directory has 5 hook files", () => {
+  it("hooks directory has 7 hook files (5 original + useTTS + useSTT)", () => {
     const src = templateFiles["src"] as { directory: Record<string, unknown> };
     const hooks = src.directory["hooks"] as { directory: Record<string, unknown> };
-    expect(Object.keys(hooks.directory)).toHaveLength(5);
+    expect(Object.keys(hooks.directory)).toHaveLength(7);
   });
 
   it("hooks directory includes useLocalStorage.ts", () => {

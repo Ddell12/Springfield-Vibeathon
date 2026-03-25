@@ -70,3 +70,14 @@ export const list = query({
       .take(50);
   },
 });
+
+// Used by publishApp action and potential publish UI checks
+export const getBySession = query({
+  args: { sessionId: v.id("sessions") },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("apps")
+      .withIndex("by_session", (q) => q.eq("sessionId", args.sessionId))
+      .first();
+  },
+});

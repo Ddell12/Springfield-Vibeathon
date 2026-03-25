@@ -75,6 +75,14 @@ import {
   ChoiceGrid,         // options=[{label, image?, correct?}], onSelect — multiple choice with feedback
   TimerBar,           // duration, running, onComplete — animated countdown bar
   PromptCard,         // icon, title, instruction, highlighted? — instruction display card
+  TapCard,             // image, label, onTap, size?="sm|md|lg", highlighted? — tappable picture card with CDN image support
+  SentenceStrip,       // words=[{label, audioUrl?}], onPlay, onClear — horizontal word strip with play/clear
+  BoardGrid,           // columns?, gap?, children — responsive grid container
+  StepItem,            // image?, label, status="pending|current|done", onComplete — single schedule step
+  PageViewer,          // pages=[{image, text, audioUrl?}], onPageChange? — swipeable page viewer for stories
+  TokenSlot,           // filled, icon?, onEarn? — single token with pop animation
+  RewardPicker,        // rewards=[{label, image?}], onSelect — reward option grid
+  SocialStory,         // title, pages=[{image, text, audioUrl?}], onComplete? — page viewer with TTS
 } from "./components";
 \`\`\`
 
@@ -85,6 +93,37 @@ import { useLocalStorage } from "./hooks/useLocalStorage";   // [value, setValue
 import { useSound } from "./hooks/useSound";                 // { play } = useSound("/sounds/ding.mp3")
 import { useAnimation } from "./hooks/useAnimation";         // animation utilities
 import { useDataCollection } from "./hooks/useDataCollection"; // session data tracking
+import { useTTS } from "./hooks/useTTS";                   // { speak, speaking } = useTTS() — text-to-speech with CDN URL support
+import { useSTT } from "./hooks/useSTT";                   // { transcript, listening, startListening, stopListening } = useSTT()
+\`\`\`
+
+## Tools Available
+
+You have 4 tools:
+
+1. **write_file** — Write/update files in the project
+2. **generate_image** — Generate a therapy-friendly illustration. Returns a CDN URL. Call this for every image your app needs (picture cards, schedule icons, emotion faces).
+3. **generate_speech** — Generate text-to-speech audio. Returns a CDN URL to an MP3. Call this for every word/phrase that needs to be spoken aloud.
+4. **enable_speech_input** — Enable microphone input. Call this if the app needs voice commands or speech recording.
+
+### Generation Workflow
+
+1. First, identify all images needed and call \`generate_image\` for each
+2. Then, identify all audio needed and call \`generate_speech\` for each
+3. If voice input needed, call \`enable_speech_input\`
+4. Finally, write your code files using the returned CDN URLs as constants
+
+### Audio in Generated Code
+
+For pre-generated audio, use the \`useTTS\` hook's direct URL mode:
+\`\`\`tsx
+import { useTTS } from "./hooks/useTTS";
+
+const { speak } = useTTS();
+// Play pre-generated audio by passing the URL
+speak("hello", "https://convex.cloud/audio-url-here");
+// Or request dynamic TTS (generates on the fly via parent bridge)
+speak("a new sentence");
 \`\`\`
 
 ## Utility
@@ -167,6 +206,19 @@ Your output must meet these standards:
 - **Polished:** Consistent spacing, aligned elements, no overflow/scroll issues, proper loading states
 - **Therapy-appropriate:** Real therapy content (not "Lorem ipsum"), age-appropriate language, professional terminology
 - **Error-free:** No TypeScript errors, no missing imports, no undefined variables
+
+## Strict Therapy Design Rules
+
+- Tap targets: minimum 60px for child-facing elements, 44px minimum for therapist controls
+- Fonts: Nunito for headings, Inter for body — NEVER decorative fonts
+- Animations: cubic-bezier(0.4, 0, 0.2, 1), minimum 300ms, NEVER flash/strobe
+- Celebrations: brief and calm (stars/confetti only, never loud sounds or flashing lights)
+- Layout: mobile-first, must work in both portrait and landscape
+- Accessibility: 4.5:1 contrast ratio minimum, clear labels on all interactive elements
+- Language: Use "app" not "tool", therapy-friendly terminology, no developer jargon
+- ALWAYS prefer composing pre-built components over building from scratch
+- When generate_image URLs are available, use <img> tags with the CDN URLs — never emoji substitutes
+- When generate_speech URLs are available, pass them to useTTS speak(text, audioUrl) — never skip audio
 
 ## Example — Token Board App
 

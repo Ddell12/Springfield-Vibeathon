@@ -6,11 +6,14 @@
  * "convex/**\/*.test.ts" to the `include` array in vitest.config.ts for these
  * tests to run.
  *
- * External API actions (generateSpeech, generateImage) call ElevenLabs and
- * Google Imagen. Since convex-test runs in a mock runtime that cannot intercept
- * module-level imports of those SDKs, those actions are tested structurally via
- * comment placeholders below. The pure DB helpers (getTtsCache, saveTtsCache)
- * are fully testable.
+ * External API actions (generateSpeech) call ElevenLabs. Since convex-test
+ * runs in a mock runtime that cannot intercept module-level imports of those
+ * SDKs, those actions are tested structurally via comment placeholders below.
+ * The pure DB helpers (getTtsCache, saveTtsCache) are fully testable.
+ *
+ * NOTE: generateImage was removed from convex/aiActions.ts. Image generation
+ * is now handled by generateTherapyImage in convex/image_generation.ts with
+ * Nano Banana Pro (gemini-3-pro-image-preview) and prompt-hash caching.
  */
 
 import { convexTest } from "convex-test";
@@ -85,17 +88,4 @@ describe("TTS cache helpers", () => {
  * Args: { text: string; voiceId: string }
  * Returns: { audioUrl: string }
  *
- * generateImage action (convex/ai.ts)
- * ─────────────────────────────────────
- * Contract:
- *
- * 1. Calls Google Imagen (via @google/genai) with the prompt:
- *    "Simple, clear illustration of [label], flat design, bold outlines,
- *     white background, child-friendly"
- * 2. Caches the result in Convex file storage keyed by prompt hash.
- * 3. Returns { imageUrl: string }.
- * 4. On cache hit — returns immediately without re-generating.
- *
- * Args: { label: string; category: string }
- * Returns: { imageUrl: string }
  */
