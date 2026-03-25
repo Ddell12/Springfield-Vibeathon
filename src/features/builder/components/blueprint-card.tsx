@@ -1,14 +1,11 @@
 "use client";
 
-import { EditIcon, Lightbulb,RocketIcon, Sparkles } from "lucide-react";
+import { Lightbulb, Sparkles } from "lucide-react";
 
 import { cn } from "@/core/utils";
-import { Button } from "@/shared/components/ui/button";
 
 interface BlueprintCardProps {
   blueprint: Record<string, unknown>;
-  onApprove?: () => void;
-  onEdit?: () => void;
 }
 
 function BlueprintField({ label, value }: { label: string; value: string }) {
@@ -22,7 +19,7 @@ function BlueprintField({ label, value }: { label: string; value: string }) {
   );
 }
 
-export function BlueprintCard({ blueprint, onApprove, onEdit }: BlueprintCardProps) {
+export function BlueprintCard({ blueprint }: BlueprintCardProps) {
   const title = typeof blueprint.title === "string" ? blueprint.title : undefined;
   const therapyGoal = typeof blueprint.therapyGoal === "string" ? blueprint.therapyGoal : undefined;
   const targetSkill = typeof blueprint.targetSkill === "string" ? blueprint.targetSkill : undefined;
@@ -33,9 +30,7 @@ export function BlueprintCard({ blueprint, onApprove, onEdit }: BlueprintCardPro
   const therapistNote = typeof blueprint.therapistNote === "string" ? blueprint.therapistNote : undefined;
 
   return (
-    <div className="flex flex-col gap-3">
-      {/* Blueprint Card */}
-      <div
+    <div
         className={cn(
           "bg-surface-container-lowest rounded-xl overflow-hidden",
           "shadow-[0_20px_40px_rgba(19,29,30,0.06)]",
@@ -93,40 +88,6 @@ export function BlueprintCard({ blueprint, onApprove, onEdit }: BlueprintCardPro
             </p>
           </div>
         )}
-      </div>
-
-      {/* Action Buttons */}
-      <div className="flex flex-col gap-3">
-        {onApprove && (
-          <Button
-            onClick={onApprove}
-            className={cn(
-              "w-full py-4 h-auto",
-              "bg-gradient-to-br from-primary to-primary-container text-on-primary",
-              "rounded-xl font-headline font-bold text-sm",
-              "hover:opacity-90 transition-opacity",
-              "shadow-lg shadow-primary/20"
-            )}
-          >
-            Approve & Build
-            <RocketIcon className="size-[18px]" />
-          </Button>
-        )}
-        {onEdit && (
-          <Button
-            variant="ghost"
-            onClick={onEdit}
-            className={cn(
-              "w-full py-3 h-auto",
-              "text-primary hover:bg-surface-container-high/50",
-              "rounded-xl font-headline font-bold text-sm"
-            )}
-          >
-            Edit Blueprint
-            <EditIcon className="size-[18px]" />
-          </Button>
-        )}
-      </div>
     </div>
   );
 }
