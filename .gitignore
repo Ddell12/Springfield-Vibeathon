@@ -45,3 +45,4 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 e2b-templates/vite-therapy/node_modules/
+docs/design/Lovable web Jan 2026/
