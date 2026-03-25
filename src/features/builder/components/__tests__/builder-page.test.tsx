@@ -15,6 +15,7 @@ vi.mock("next/navigation", () => ({
 vi.mock("convex/react", () => ({
   useQuery: vi.fn().mockReturnValue(null),
   useMutation: vi.fn().mockReturnValue(vi.fn()),
+  useAction: vi.fn().mockReturnValue(vi.fn().mockResolvedValue({ audioUrl: "https://test.example.com/audio.mp3" })),
 }));
 
 // Mock the streaming hook

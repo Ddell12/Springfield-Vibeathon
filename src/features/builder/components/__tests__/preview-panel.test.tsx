@@ -1,6 +1,18 @@
 // src/features/builder/components/__tests__/preview-panel.test.tsx
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+// Mock Convex hooks — usePostMessageBridge calls useAction
+vi.mock("convex/react", () => ({
+  useQuery: vi.fn().mockReturnValue(null),
+  useMutation: vi.fn().mockReturnValue(vi.fn()),
+  useAction: vi.fn().mockReturnValue(vi.fn().mockResolvedValue({ audioUrl: "https://test.example.com/audio.mp3" })),
+}));
+
+// Mock the PostMessage bridge hook so it doesn't need a ConvexProvider
+vi.mock("../hooks/use-postmessage-bridge", () => ({
+  usePostMessageBridge: vi.fn(),
+}));
 
 import { PreviewPanel } from "../preview-panel";
 
