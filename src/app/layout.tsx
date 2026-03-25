@@ -9,6 +9,17 @@ import { Toaster } from "@/shared/components/ui/sonner";
 export const metadata: Metadata = {
   title: "Bridges — AI Therapy App Builder",
   description: "Build interactive therapy apps with AI. Designed for ABA therapists, speech therapists, and parents of autistic children.",
+  openGraph: {
+    title: "Bridges — AI Therapy App Builder",
+    description: "Build interactive therapy apps with AI. Designed for ABA therapists, speech therapists, and parents of autistic children.",
+    type: "website",
+    siteName: "Bridges",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Bridges — AI Therapy App Builder",
+    description: "Build interactive therapy apps with AI.",
+  },
 };
 
 export default function RootLayout({

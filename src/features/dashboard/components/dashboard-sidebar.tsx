@@ -1,6 +1,5 @@
 "use client";
 
-import { Settings } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 
@@ -50,19 +49,8 @@ export function DashboardSidebar() {
         })}
       </nav>
 
-      {/* Bottom: Settings + Avatar */}
+      {/* Bottom: Avatar */}
       <div className="mt-auto flex flex-col items-center gap-6">
-        <Link
-          href="/settings"
-          className={cn(
-            "rounded-xl p-3 transition-all duration-300 active:scale-90",
-            pathname === "/settings"
-              ? "bg-primary text-white shadow-lg shadow-primary/20"
-              : "text-on-surface-variant hover:bg-surface-container-high"
-          )}
-        >
-          <Settings size={22} />
-        </Link>
         <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-tertiary-fixed text-xs font-bold text-on-surface">
           D
         </div>

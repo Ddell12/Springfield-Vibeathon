@@ -1,5 +1,3 @@
-import Link from "next/link";
-
 export function LandingFooter() {
   return (
     <footer className="bg-surface py-12 border-t border-outline-variant/10">
@@ -13,24 +11,15 @@ export function LandingFooter() {
           </span>
         </div>
         <div className="flex gap-8">
-          <Link
-            href="#"
-            className="text-xs text-on-surface-variant hover:text-primary transition-colors"
-          >
+          <span className="text-xs text-on-surface-variant">
             Privacy Policy
-          </Link>
-          <Link
-            href="#"
-            className="text-xs text-on-surface-variant hover:text-primary transition-colors"
-          >
+          </span>
+          <span className="text-xs text-on-surface-variant">
             Terms of Service
-          </Link>
-          <Link
-            href="#"
-            className="text-xs text-on-surface-variant hover:text-primary transition-colors"
-          >
+          </span>
+          <span className="text-xs text-on-surface-variant">
             Accessibility
-          </Link>
+          </span>
         </div>
       </div>
     </footer>
