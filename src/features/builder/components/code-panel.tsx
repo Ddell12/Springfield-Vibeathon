@@ -141,24 +141,6 @@ export function CodePanel({ files, status }: CodePanelProps) {
         )}
       </div>
 
-      {/* Bottom status bar */}
-      <footer className="flex h-6 items-center justify-between bg-surface-container-high px-3 text-[11px] font-medium text-on-surface-variant">
-        <div className="flex items-center gap-4">
-          <span className="flex items-center gap-1">
-            TypeScript React
-          </span>
-          {isGenerating && (
-            <span className="flex items-center gap-1 text-primary">
-              Writing...
-            </span>
-          )}
-        </div>
-        <div className="flex items-center gap-4">
-          <span>UTF-8</span>
-          <span>Ln 1, Col 1</span>
-          <span>Spaces: 2</span>
-        </div>
-      </footer>
     </div>
   );
 }
