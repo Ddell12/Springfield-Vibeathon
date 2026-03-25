@@ -3,6 +3,7 @@ import { act,renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useStreaming } from "../use-streaming";
+import type { TherapyBlueprint } from "../../lib/schemas";
 
 // Mock fetch for SSE stream tests
 const mockFetch = vi.fn();
@@ -210,5 +211,59 @@ describe("useStreaming — streaming hook contract", () => {
     // Should not throw when called without options
     expect(() => renderHook(() => useStreaming())).not.toThrow();
     expect(() => renderHook(() => useStreaming({}))).not.toThrow();
+  });
+
+  it("resumeSession is a function", () => {
+    const { result } = renderHook(() => useStreaming());
+    expect(typeof result.current.resumeSession).toBe("function");
+  });
+
+  it("resumeSession sets sessionId, status to live, and files", () => {
+    const { result } = renderHook(() => useStreaming());
+
+    act(() => {
+      result.current.resumeSession({
+        sessionId: "session_abc",
+        files: [{ path: "src/App.tsx", contents: "export default () => <div />" }],
+      });
+    });
+
+    expect(result.current.sessionId).toBe("session_abc");
+    expect(result.current.status).toBe("live");
+    expect(result.current.files).toEqual([
+      { path: "src/App.tsx", contents: "export default () => <div />" },
+    ]);
+  });
+
+  it("resumeSession sets blueprint when provided", () => {
+    const { result } = renderHook(() => useStreaming());
+
+    const mockBlueprint = {
+      title: "Morning Routine",
+      description: "A visual schedule",
+    } as unknown as TherapyBlueprint;
+
+    act(() => {
+      result.current.resumeSession({
+        sessionId: "session_abc",
+        files: [],
+        blueprint: mockBlueprint,
+      });
+    });
+
+    expect(result.current.blueprint).toEqual(mockBlueprint);
+  });
+
+  it("resumeSession does not trigger a network request", () => {
+    const { result } = renderHook(() => useStreaming());
+
+    act(() => {
+      result.current.resumeSession({
+        sessionId: "session_abc",
+        files: [],
+      });
+    });
+
+    expect(mockFetch).not.toHaveBeenCalled();
   });
 });

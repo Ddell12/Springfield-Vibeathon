@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { TherapyBlueprintSchema, type TherapyBlueprint } from "@/features/builder/lib/schemas";
+import { type TherapyBlueprint,TherapyBlueprintSchema } from "@/features/builder/lib/schemas";
 
 export type StreamingStatus = "idle" | "generating" | "live" | "failed";
 
@@ -20,11 +20,19 @@ export interface Activity {
   timestamp: number;
 }
 
+export interface ResumeSessionArgs {
+  sessionId: string;
+  files: StreamingFile[];
+  blueprint?: TherapyBlueprint | null;
+}
+
 export interface UseStreamingReturn {
   status: StreamingStatus;
   files: StreamingFile[];
   generate: (prompt: string) => Promise<void>;
+  resumeSession: (args: ResumeSessionArgs) => void;
   blueprint: TherapyBlueprint | null;
+  appName: string | null;
   error: string | null;
   sessionId: string | null;
   streamingText: string;
@@ -65,6 +73,7 @@ export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn 
   const [status, setStatus] = useState<StreamingStatus>("idle");
   const [files, setFiles] = useState<StreamingFile[]>([]);
   const [blueprint, setBlueprint] = useState<TherapyBlueprint | null>(null);
+  const [appName, setAppName] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [streamingText, setStreamingText] = useState("");
@@ -72,13 +81,18 @@ export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn 
 
   const abortRef = useRef<AbortController | null>(null);
   const onFileCompleteRef = useRef(options?.onFileComplete);
-  onFileCompleteRef.current = options?.onFileComplete;
-
   const activityCounterRef = useRef(0);
   const tokenBufferRef = useRef("");
-  const rafIdRef = useRef<number>();
+  const rafIdRef = useRef<number | undefined>(undefined);
   const sessionIdRef = useRef(sessionId);
-  sessionIdRef.current = sessionId;
+
+  useEffect(() => {
+    onFileCompleteRef.current = options?.onFileComplete;
+  }, [options?.onFileComplete]);
+
+  useEffect(() => {
+    sessionIdRef.current = sessionId;
+  }, [sessionId]);
 
   const addActivity = useCallback(
     (type: Activity["type"], message: string, path?: string) => {
@@ -136,10 +150,16 @@ export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn 
             }
             return [...prev, newFile];
           });
-          // Fire-and-forget — errors handled by the WebContainer hook
-          onFileCompleteRef.current?.(path, contents);
+          // Write to WebContainer — log errors but don't fail the stream
+          onFileCompleteRef.current?.(path, contents)?.catch((err: unknown) => {
+            console.error(`[streaming] Failed to write ${path}:`, err);
+          });
           break;
         }
+
+        case "app_name":
+          if (d.name) setAppName(d.name as string);
+          break;
 
         case "blueprint": {
           const parsed = TherapyBlueprintSchema.safeParse(d.data);
@@ -199,6 +219,7 @@ export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn 
       tokenBufferRef.current = "";
       setActivities([]);
       setFiles([]);
+      setAppName(null);
 
       try {
         const response = await fetch("/api/generate", {
@@ -212,7 +233,14 @@ export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn 
         });
 
         if (!response.ok) {
-          setError(`Request failed: ${response.status}`);
+          let detail = `Request failed: ${response.status}`;
+          try {
+            const errBody = await response.json();
+            if (errBody.error) detail = errBody.error;
+          } catch {
+            // response may not be JSON
+          }
+          setError(detail);
           setStatus("failed");
           return;
         }
@@ -262,6 +290,22 @@ export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn 
     [handleEvent]
   );
 
+  const resumeSession = useCallback(
+    (args: ResumeSessionArgs) => {
+      setSessionId(args.sessionId);
+      sessionIdRef.current = args.sessionId;
+      setFiles(args.files);
+      setStatus("live");
+      setError(null);
+      setStreamingText("");
+      setActivities([]);
+      if (args.blueprint !== undefined) {
+        setBlueprint(args.blueprint ?? null);
+      }
+    },
+    []
+  );
+
   // Cleanup on unmount: cancel pending rAF and abort in-flight request
   useEffect(() => {
     return () => {
@@ -278,7 +322,9 @@ export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn 
     status,
     files,
     generate,
+    resumeSession,
     blueprint,
+    appName,
     error,
     sessionId,
     streamingText,
