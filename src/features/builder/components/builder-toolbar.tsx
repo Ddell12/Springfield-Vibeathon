@@ -4,8 +4,8 @@ import {
   ArrowLeft,
   Globe,
   Monitor,
-  Smartphone,
   Share2,
+  Smartphone,
 } from "lucide-react";
 import Link from "next/link";
 

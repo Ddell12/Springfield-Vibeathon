@@ -4,8 +4,8 @@ import { Sparkles } from "lucide-react";
 
 import { cn } from "@/core/utils";
 
-import type { DeviceSize } from "./builder-toolbar";
 import type { WebContainerStatus } from "../hooks/use-webcontainer";
+import type { DeviceSize } from "./builder-toolbar";
 
 interface PreviewPanelProps {
   previewUrl: string | null;

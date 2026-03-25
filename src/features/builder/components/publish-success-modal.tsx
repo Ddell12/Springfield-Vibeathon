@@ -28,8 +28,12 @@ export function PublishSuccessModal({
   onBackToBuilder,
 }: PublishSuccessModalProps) {
   async function handleCopyUrl() {
-    await navigator.clipboard.writeText(publishedUrl);
-    toast("Link copied!");
+    try {
+      await navigator.clipboard.writeText(publishedUrl);
+      toast.success("Link copied!");
+    } catch {
+      toast.error("Failed to copy — try selecting and copying manually");
+    }
   }
 
   return (
@@ -120,11 +124,15 @@ export function PublishSuccessModal({
           <button
             type="button"
             onClick={async () => {
-              if (navigator.share) {
-                await navigator.share({ url: publishedUrl, title: projectName });
-              } else {
-                await navigator.clipboard.writeText(publishedUrl);
-                toast("Link copied!");
+              try {
+                if (navigator.share) {
+                  await navigator.share({ url: publishedUrl, title: projectName });
+                } else {
+                  await navigator.clipboard.writeText(publishedUrl);
+                  toast.success("Link copied!");
+                }
+              } catch {
+                // User cancelled share, or clipboard access denied — no-op
               }
             }}
             className="flex flex-col items-center gap-3 py-2 group"

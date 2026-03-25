@@ -1,6 +1,6 @@
 "use client";
 
-import { EditIcon, RocketIcon, Sparkles, Lightbulb } from "lucide-react";
+import { EditIcon, Lightbulb,RocketIcon, Sparkles } from "lucide-react";
 
 import { cn } from "@/core/utils";
 import { Button } from "@/shared/components/ui/button";

@@ -2,6 +2,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { ConvexHttpClient } from "convex/browser";
 
 import { buildSystemPrompt } from "@/features/builder/lib/agent-prompt";
+import { GenerateInputSchema } from "@/features/builder/lib/schemas/generate";
 
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
@@ -18,23 +19,34 @@ const anthropic = new Anthropic({
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
-  const body = await request.json();
-  const query = body.query ?? body.prompt;
-  const providedSessionId = body.sessionId as Id<"sessions"> | undefined;
-
-  if (!query) {
-    return new Response(JSON.stringify({ error: "prompt is required" }), {
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return new Response(JSON.stringify({ error: "Invalid JSON" }), {
       status: 400,
       headers: { "Content-Type": "application/json" },
     });
   }
 
+  const parsed = GenerateInputSchema.safeParse(body);
+  if (!parsed.success) {
+    return new Response(
+      JSON.stringify({ error: parsed.error.issues[0]?.message ?? "Invalid request" }),
+      { status: 400, headers: { "Content-Type": "application/json" } }
+    );
+  }
+
+  const query = parsed.data.query ?? parsed.data.prompt!;
+  const providedSessionId = parsed.data.sessionId as Id<"sessions"> | undefined;
+
   // Create session if not provided
-  const sessionId: Id<"sessions"> = providedSessionId ??
-    await convex.mutation(api.sessions.create, {
+  const sessionId: Id<"sessions"> =
+    providedSessionId ??
+    (await convex.mutation(api.sessions.create, {
       title: query.slice(0, 60),
       query,
-    });
+    }));
 
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
@@ -44,35 +56,56 @@ export async function POST(request: Request) {
       };
 
       try {
+        // Emit sessionId immediately so the client can start loading messages
+        send("session", { sessionId });
+
+        // Only persist user message for NEW sessions (not retries on existing ones)
+        if (!providedSessionId) {
+          await convex.mutation(api.messages.create, {
+            sessionId,
+            role: "user",
+            content: query,
+            timestamp: Date.now(),
+          });
+        }
+
         // Mark session as generating
-        await convex.mutation(api.sessions.startGeneration, {
-          sessionId: sessionId as Id<"sessions">,
-        });
+        await convex.mutation(api.sessions.startGeneration, { sessionId });
         send("status", { status: "generating" });
+        send("activity", {
+          type: "thinking",
+          message: "Understanding your request...",
+        });
 
         const systemPrompt = buildSystemPrompt();
-        let version = 1;
+        const existingFiles = await convex.query(api.generated_files.list, { sessionId });
+        let version = existingFiles.length > 0
+          ? Math.max(...existingFiles.map(f => f.version ?? 0)) + 1
+          : 1;
         const collectedFiles: { path: string; contents: string }[] = [];
+        let assistantText = "";
 
         // Stream from Claude with tool_use for write_file
         const llmStream = anthropic.messages.stream({
           model: "claude-sonnet-4-6",
-          max_tokens: 8192,
+          max_tokens: 16384,
           system: systemPrompt,
           tools: [
             {
               name: "write_file",
-              description: "Write a file to the therapy app. Always write src/App.tsx.",
+              description:
+                "Write or overwrite a file in the therapy app project. Use for src/App.tsx, additional components, styles, or utility files.",
               input_schema: {
                 type: "object" as const,
                 properties: {
                   path: {
                     type: "string",
-                    description: "File path relative to project root (e.g. src/App.tsx)",
+                    description:
+                      "File path relative to project root (e.g. src/App.tsx, src/components/MyWidget.tsx)",
                   },
                   contents: {
                     type: "string",
-                    description: "Complete file contents",
+                    description: "Complete file contents — never truncate or use placeholders",
                   },
                 },
                 required: ["path", "contents"],
@@ -82,28 +115,50 @@ export async function POST(request: Request) {
           messages: [{ role: "user", content: query }],
         });
 
-        // Emit tokens as they arrive
+        // Stream text tokens for real-time display
         llmStream.on("text", (text) => {
+          assistantText += text;
           send("token", { token: text });
+        });
+
+        // Detect tool use start for progress indication
+        llmStream.on("contentBlock", (block) => {
+          if (block.type === "tool_use" && block.name === "write_file") {
+            // Tool use block started — we'll get the full input when it completes
+            send("activity", {
+              type: "writing_file",
+              message: "Writing code...",
+            });
+          }
         });
 
         // Wait for stream to finish
         const finalMessage = await llmStream.finalMessage();
 
-        // Extract tool_use blocks
+        // Extract tool_use blocks and emit file events
         const mutationPromises: Promise<unknown>[] = [];
         for (const block of finalMessage.content) {
           if (block.type === "tool_use" && block.name === "write_file") {
-            const input = block.input as { path: string; contents: string };
-            collectedFiles.push(input);
-            send("file_complete", { path: input.path, contents: input.contents, version });
+            const input = block.input as Record<string, unknown>;
+            const path = typeof input.path === "string" ? input.path : "";
+            const contents =
+              typeof input.contents === "string" ? input.contents : "";
 
-            // Collect mutation promise (don't await individually)
+            if (!path || !contents) continue;
+
+            collectedFiles.push({ path, contents });
+            send("file_complete", { path, contents, version });
+            send("activity", {
+              type: "file_written",
+              message: `Wrote ${path}`,
+              path,
+            });
+
             mutationPromises.push(
               convex.mutation(api.generated_files.upsert, {
-                sessionId: sessionId as Id<"sessions">,
-                path: input.path,
-                contents: input.contents,
+                sessionId,
+                path,
+                contents,
                 version,
               })
             );
@@ -112,25 +167,54 @@ export async function POST(request: Request) {
         }
 
         // Persist all files in parallel
-        await Promise.all(mutationPromises);
+        if (mutationPromises.length > 0) {
+          await Promise.all(mutationPromises);
+        }
 
-        // Update session to live — WebContainer handles preview URL client-side
-        await convex.mutation(api.sessions.setLive, {
-          sessionId: sessionId as Id<"sessions">,
-        });
+        // Persist assistant message (text portion)
+        if (assistantText.trim()) {
+          await convex.mutation(api.messages.create, {
+            sessionId,
+            role: "assistant",
+            content: assistantText.trim(),
+            timestamp: Date.now(),
+          });
+        }
 
+        // Also persist a system message summarizing what was built
+        if (collectedFiles.length > 0) {
+          const fileList = collectedFiles.map((f) => f.path).join(", ");
+          await convex.mutation(api.messages.create, {
+            sessionId,
+            role: "system",
+            content: `Built ${collectedFiles.length} file${collectedFiles.length > 1 ? "s" : ""}: ${fileList}`,
+            timestamp: Date.now(),
+          });
+        }
+
+        // Update session to live
+        await convex.mutation(api.sessions.setLive, { sessionId });
+
+        send("activity", { type: "complete", message: "App is ready!" });
         send("status", { status: "live" });
         send("done", { sessionId, files: collectedFiles });
       } catch (error) {
-        const message = error instanceof Error ? error.message : "Unknown error";
-        console.error("[generate] Error:", message);
+        // Log full detail server-side only
+        console.error("[generate] Error:", error instanceof Error ? error.stack : error);
 
-        await convex.mutation(api.sessions.setFailed, {
-          sessionId: sessionId as Id<"sessions">,
-          error: message,
-        });
+        // Send generic message to client — never expose internals
+        const clientMessage = "Generation failed — please try again";
 
-        send("error", { message });
+        try {
+          await convex.mutation(api.sessions.setFailed, {
+            sessionId,
+            error: error instanceof Error ? error.message : "Unknown error",
+          });
+        } catch (persistError) {
+          console.error("[generate] Failed to persist error state:", persistError);
+        }
+
+        send("error", { message: clientMessage });
       } finally {
         controller.close();
       }

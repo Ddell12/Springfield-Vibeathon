@@ -4,6 +4,7 @@ import { ArrowLeft, Palette, Shield, User } from "lucide-react";
 import Link from "next/link";
 
 import { cn } from "@/core/utils";
+
 import type { SettingsSection } from "./settings-page";
 
 const SECTIONS: { id: SettingsSection; label: string; icon: typeof User }[] = [

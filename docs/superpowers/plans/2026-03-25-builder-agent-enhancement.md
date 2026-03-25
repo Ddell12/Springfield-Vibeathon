@@ -37,15 +37,7 @@ Add after `ttsCache` table (line 91) and before `therapyTemplates`:
     .index("by_label_category", ["label", "category"]),
 ```
 
-- [ ] **Step 2: Add `sttEnabled` field to `sessions` table**
-
-Add after `publishedUrl` field (line 17):
-
-```typescript
-    sttEnabled: v.optional(v.boolean()),
-```
-
-- [ ] **Step 3: Add thumbnail fields to `therapyTemplates` table**
+- [ ] **Step 2: Add thumbnail fields to `therapyTemplates` table**
 
 Update `therapyTemplates` table (line 93-102) to add:
 
@@ -54,16 +46,16 @@ Update `therapyTemplates` table (line 93-102) to add:
     thumbnailUrl: v.optional(v.string()),
 ```
 
-- [ ] **Step 4: Run `npx convex dev` to verify schema deploys**
+- [ ] **Step 3: Run `npx convex dev` to verify schema deploys**
 
 Run: `npx convex dev --once`
 Expected: Schema deploys without errors
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 4: Commit**
 
 ```bash
 git add convex/schema.ts
-git commit -m "feat: add imageCache table, sttEnabled flag, template thumbnails to schema"
+git commit -m "feat: add imageCache table and template thumbnails to schema"
 ```
 
 ---
@@ -132,8 +124,14 @@ git commit -m "feat: add imageCache queries and mutations"
 
 **Files:**
 - Create: `convex/image_generation.ts`
+- Modify: `convex/aiActions.ts` (delete old `generateImage` action, lines 72-124)
+- Modify: `convex/__tests__/ai.test.ts` (remove references to old `generateImage`)
 
-- [ ] **Step 1: Create `convex/image_generation.ts`**
+- [ ] **Step 1: Delete the old `generateImage` action from `convex/aiActions.ts`**
+
+Remove lines 72-124 (the existing `generateImage` action that uses `imagen-3.0-generate-002`). This is being replaced by the new `generateTherapyImage` in a dedicated file with caching and the correct API. Also update `convex/__tests__/ai.test.ts` to remove any test cases referencing the old `generateImage` action.
+
+- [ ] **Step 2: Create `convex/image_generation.ts`**
 
 ```typescript
 "use node";
@@ -164,6 +162,8 @@ function getPromptHash(prompt: string): string {
   return createHash("sha256").update(prompt.trim().toLowerCase()).digest("hex");
 }
 
+// Public action (not internalAction) because route.ts calls it via ConvexHttpClient
+// which can only invoke public functions via api.*
 export const generateTherapyImage = action({
   args: {
     label: v.string(),
@@ -179,26 +179,34 @@ export const generateTherapyImage = action({
       return { imageUrl: cached.imageUrl };
     }
 
-    // Generate via Nano Banana Pro
+    // Generate via Nano Banana Pro (gemini-3-pro-image-preview)
     const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
     if (!apiKey) {
       throw new Error("GOOGLE_GENERATIVE_AI_API_KEY not configured");
     }
 
     const genAI = new GoogleGenAI({ apiKey });
-    const response = await genAI.models.generateImages({
-      model: "imagen-3.0-generate-002",
-      prompt,
-      config: { numberOfImages: 1 },
+    const response = await genAI.models.generateContent({
+      model: "gemini-3-pro-image-preview",
+      contents: prompt,
+      config: {
+        responseModalities: ["IMAGE"],
+        imageConfig: {
+          aspectRatio: "1:1",
+          imageSize: "1K",
+        },
+      },
     });
 
-    const image = response.generatedImages?.[0];
-    if (!image?.image?.imageBytes) {
+    const part = response.candidates?.[0]?.content?.parts?.find(
+      (p: { inlineData?: { data: string; mimeType: string } }) => p.inlineData
+    );
+    if (!part?.inlineData?.data) {
       throw new Error("No image generated");
     }
 
-    const imageBuffer = Buffer.from(image.image.imageBytes, "base64");
-    const blob = new Blob([imageBuffer], { type: "image/png" });
+    const imageBuffer = Buffer.from(part.inlineData.data, "base64");
+    const blob = new Blob([imageBuffer], { type: part.inlineData.mimeType ?? "image/png" });
 
     // Store in Convex file storage
     const storageId = await ctx.storage.store(blob);
@@ -215,7 +223,7 @@ export const generateTherapyImage = action({
       category: args.category,
       storageId,
       imageUrl,
-      model: "imagen-3.0-generate-002",
+      model: "gemini-3-pro-image-preview",
       createdAt: Date.now(),
     });
 
@@ -224,15 +232,15 @@ export const generateTherapyImage = action({
 });
 ```
 
-- [ ] **Step 2: Run `npx convex dev --once` to verify**
+- [ ] **Step 3: Run `npx convex dev --once` to verify**
 
 Expected: Action registers without errors
 
-- [ ] **Step 3: Commit**
+- [ ] **Step 4: Commit**
 
 ```bash
-git add convex/image_generation.ts
-git commit -m "feat: add generateTherapyImage action with Nano Banana + cache"
+git add convex/image_generation.ts convex/aiActions.ts convex/__tests__/ai.test.ts
+git commit -m "feat: add generateTherapyImage action with Nano Banana Pro, remove old generateImage"
 ```
 
 ---
@@ -393,7 +401,7 @@ This is the largest task. We add real implementations for all 8 primitive compon
 
 - [ ] **Step 1: Add `motion` to WebContainer template's `package.json` dependencies**
 
-In `webcontainer-files.ts` line 17-22, add to the `dependencies` object:
+In `webcontainer-files.ts` line 16-22, add to the `dependencies` object:
 
 ```typescript
 "motion": "^12.0.0",
@@ -668,7 +676,8 @@ while (continueLoop) {
         }
 
       } else if (block.name === "enable_speech_input") {
-        await convex.mutation(api.sessions.setSttEnabled, { sessionId, enabled: true });
+        // No persistence needed — the iframe only sends STT messages when useSTT() is actively used.
+        // The PostMessage bridge listens unconditionally.
         send("stt_enabled", { purpose: input.purpose });
         toolResults.push({ type: "tool_result", tool_use_id: block.id, content: JSON.stringify({ enabled: true }) });
       }
@@ -689,27 +698,12 @@ while (continueLoop) {
 }
 ```
 
-- [ ] **Step 3: Add `setSttEnabled` mutation to sessions.ts**
+- [ ] **Step 3: Add `getBySession` query to `convex/apps.ts`**
 
-In `convex/sessions.ts`, add:
-
-```typescript
-export const setSttEnabled = mutation({
-  args: {
-    sessionId: v.id("sessions"),
-    enabled: v.boolean(),
-  },
-  handler: async (ctx, args) => {
-    await ctx.db.patch(args.sessionId, { sttEnabled: args.enabled });
-  },
-});
-```
-
-- [ ] **Step 4: Add `getBySession` query to `convex/apps.ts`**
-
-This query is needed by the publish action (Task 12):
+This query is needed by the publish action (Task 12). Exported as public `query` (not `internalQuery`) since the publish UI may also need to check if an app exists for the session.
 
 ```typescript
+// Public query — used by both publishApp action and potential publish UI checks
 export const getBySession = query({
   args: { sessionId: v.id("sessions") },
   handler: async (ctx, args) => {
@@ -721,7 +715,7 @@ export const getBySession = query({
 });
 ```
 
-- [ ] **Step 5: Smoke test — run builder with a simple prompt**
+- [ ] **Step 4: Smoke test — run builder with a simple prompt**
 
 Start dev server, open builder, submit "Build a simple communication board with 4 cards". Verify:
 - Agent calls `generate_image` multiple times
@@ -729,10 +723,10 @@ Start dev server, open builder, submit "Build a simple communication board with 
 - Agent then writes `App.tsx` with the returned URLs
 - No errors in console
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 5: Commit**
 
 ```bash
-git add src/app/api/generate/route.ts convex/sessions.ts convex/image_generation.ts convex/apps.ts
+git add src/app/api/generate/route.ts convex/apps.ts
 git commit -m "feat: multi-turn tool loop with generate_image, generate_speech, enable_speech_input"
 ```
 
@@ -945,6 +939,42 @@ git commit -m "feat: add PostMessage bridge for TTS/STT, update preview panel"
 
 ---
 
+### Task 8b: Wave 1 tests
+
+**Files:**
+- Create: `convex/__tests__/image_cache.test.ts`
+- Create: `convex/__tests__/image_generation.test.ts`
+- Modify: `convex/__tests__/ai.test.ts` (update for new `generateSpeech` signature + removal of old `generateImage`)
+
+- [ ] **Step 1: Create `convex/__tests__/image_cache.test.ts`**
+
+Test `getByHash`, `save`, and `count` functions using `convex-test` mock runtime. Verify cache hit/miss behavior and that `count` returns 0 for empty table and >0 after insert.
+
+- [ ] **Step 2: Create `convex/__tests__/image_generation.test.ts`**
+
+Test `generateTherapyImage` action: mock `@google/genai` to return a fake image, verify cache check, storage, and cache save are called correctly. Test cache hit path returns cached URL without calling the API.
+
+- [ ] **Step 3: Update `convex/__tests__/ai.test.ts`**
+
+- Remove test cases for the deleted `generateImage` action
+- Update `generateSpeech` tests to cover the new `voice` arg (friendly name mapping) alongside existing `voiceId` arg
+- Verify backward compatibility: `voiceId` still works, `voice` maps correctly
+
+- [ ] **Step 4: Run tests**
+
+```bash
+npx vitest run convex/__tests__/image_cache.test.ts convex/__tests__/image_generation.test.ts convex/__tests__/ai.test.ts
+```
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add convex/__tests__/image_cache.test.ts convex/__tests__/image_generation.test.ts convex/__tests__/ai.test.ts
+git commit -m "test: add Wave 1 tests for image cache, image generation, updated TTS"
+```
+
+---
+
 ## Wave 2: Content & Guardrails
 
 ### Task 9: Consolidate templates to 4 high-quality entries
@@ -992,7 +1022,7 @@ git commit -m "feat: redesign templates page with 2x2 grid and hover description
 ### Task 11: Create image pre-seeding script
 
 **Files:**
-- Create: `convex/seeds/image_seeds.ts`
+- Create: `convex/seeds/image_seeds.ts` (NOTE: `convex/seeds/` is a new directory — the file write implicitly creates it)
 
 - [ ] **Step 1: Create `convex/seeds/image_seeds.ts`**
 
@@ -1033,11 +1063,42 @@ export const seedImages = internalAction({
 });
 ```
 
-- [ ] **Step 2: Commit**
+- [ ] **Step 2: Run `npx convex dev --once` to verify**
+
+Expected: `seeds.image_seeds.seedImages` internalAction registers without errors
+
+- [ ] **Step 3: Commit**
 
 ```bash
 git add convex/seeds/image_seeds.ts
 git commit -m "feat: add image cache pre-seeding script"
+```
+
+---
+
+### Task 11b: Wave 2 tests
+
+**Files:**
+- Modify: `src/features/templates/components/__tests__/templates-page.test.tsx`
+
+- [ ] **Step 1: Update templates page tests**
+
+Update existing tests to reflect the new 2x2 grid layout with 4 templates. Remove assertions about category filter tabs. Add assertions for:
+- 4 template cards rendered
+- Hover overlay shows description
+- Click navigates to `/builder?prompt={encodedStarterPrompt}`
+
+- [ ] **Step 2: Run tests**
+
+```bash
+npx vitest run src/features/templates/components/__tests__/templates-page.test.tsx
+```
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add src/features/templates/components/__tests__/templates-page.test.tsx
+git commit -m "test: update templates page tests for 2x2 grid redesign"
 ```
 
 ---
@@ -1075,7 +1136,7 @@ export const publishApp = action({
     }
 
     // Fetch all generated files for this session
-    const files = await ctx.runQuery(api.generated_files.listBySession, {
+    const files = await ctx.runQuery(api.generated_files.list, {
       sessionId: args.sessionId,
     });
 
@@ -1174,30 +1235,14 @@ Create `src/features/builder/lib/template-files.ts` that exports a `getPublishab
 
 Also refactor `webcontainer-files.ts` to import from this shared file instead of duplicating the template content.
 
-- [ ] **Step 3: Ensure `generated_files.listBySession` query exists**
+Note: Uses existing `api.generated_files.list` query (already accepts `sessionId` arg). The `apps.getBySession` query was added in Task 6, Step 3.
 
-Check if `convex/generated_files.ts` has a `listBySession` query. If not, add one:
+- [ ] **Step 3: Run `npx convex dev --once` to verify**
 
-```typescript
-export const listBySession = query({
-  args: { sessionId: v.id("sessions") },
-  handler: async (ctx, args) => {
-    return await ctx.db
-      .query("files")
-      .withIndex("by_session", (q) => q.eq("sessionId", args.sessionId))
-      .collect();
-  },
-});
-```
-
-Note: The `apps.getBySession` query was already added in Task 6, Step 4.
-
-- [ ] **Step 4: Run `npx convex dev --once` to verify**
-
-- [ ] **Step 5: Commit**
+- [ ] **Step 4: Commit**
 
 ```bash
-git add convex/publish.ts convex/generated_files.ts src/features/builder/lib/template-files.ts
+git add convex/publish.ts src/features/builder/lib/template-files.ts
 git commit -m "feat: add publishApp action with Vercel Deploy API"
 ```
 
@@ -1255,6 +1300,35 @@ After publishing an app, navigate to `/tool/{shareSlug}` and confirm the iframe 
 
 ---
 
+### Task 14b: Wave 3 tests
+
+**Files:**
+- Create: `convex/__tests__/publish.test.ts`
+
+- [ ] **Step 1: Create `convex/__tests__/publish.test.ts`**
+
+Test `publishApp` action using `convex-test` mock runtime:
+- Mock `fetch` to simulate Vercel Deploy API response
+- Verify it fetches files via `api.generated_files.list`
+- Verify it calls Vercel API with correct file structure
+- Verify it updates the `apps` table with `publishedUrl`
+- Test error cases: missing env vars, no files, Vercel API error
+
+- [ ] **Step 2: Run tests**
+
+```bash
+npx vitest run convex/__tests__/publish.test.ts
+```
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add convex/__tests__/publish.test.ts
+git commit -m "test: add publish action tests"
+```
+
+---
+
 ### Task 15: Final integration test
 
 **Files:** None new — verification only
@@ -1285,3 +1359,19 @@ In the communication board preview, compose a sentence in the sentence strip and
 ```bash
 git commit -m "fix: integration test fixes for builder agent enhancement"
 ```
+
+---
+
+## Verification Fixes Applied
+
+| Issue ID | Fix Type | What Changed |
+| -------- | --------------- | ------------------------------------------------ |
+| P1 | Line reference | `line 17-22` → `line 16-22` in Task 5 Step 1 (webcontainer-files.ts deps) |
+| A1 | Missing step | Added Task 3 Step 1 to DELETE old `generateImage` from `aiActions.ts:72-124` + update `ai.test.ts`; updated commit to include both files |
+| A2 | API name fix | `api.generated_files.listBySession` → `api.generated_files.list` in Task 12; removed Task 12 Step 3 (duplicate function creation) |
+| A3 | API mismatch | Replaced `generateImages()` + `imagen-3.0-generate-002` with `generateContent()` + `gemini-3-pro-image-preview` in Task 3; updated model name in cache save; updated spec file |
+| W1 | Dead code removal | Removed `sttEnabled` field from schema (Task 1 Step 2), removed `setSttEnabled` mutation (Task 6 Step 3), removed `convex.mutation(api.sessions.setSttEnabled)` call from route.ts tool handler |
+| D1 | Missing directory note | Added note in Task 11 that `convex/seeds/` is a new directory; added `npx convex dev --once` verification step |
+| L1 | Missing tests | Added Task 8b (Wave 1 tests: image_cache, image_generation, ai.test.ts update), Task 11b (Wave 2 tests: templates-page), Task 14b (Wave 3 tests: publish) |
+| L2 | Comment added | Added comment on `generateTherapyImage` explaining why it's public `action` (ConvexHttpClient requires `api.*`) |
+| L3 | Comment added | Added comment on `getBySession` explaining dual-use potential as public `query` |

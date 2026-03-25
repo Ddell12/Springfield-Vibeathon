@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import { Copy, Share2, X } from "lucide-react";
+import { useState } from "react";
 import QRCode from "react-qr-code";
 import { toast } from "sonner";
 
@@ -36,12 +36,20 @@ export function ShareDialog({
   const activeUrl = activeTab === "published" && publishedUrl ? publishedUrl : previewUrl;
 
   async function handleCopy() {
-    await navigator.clipboard.writeText(activeUrl);
-    toast("Link copied!");
+    try {
+      await navigator.clipboard.writeText(activeUrl);
+      toast.success("Link copied!");
+    } catch {
+      toast.error("Failed to copy — try selecting and copying manually");
+    }
   }
 
   async function handleShare() {
-    await navigator.share({ title: toolTitle, url: activeUrl });
+    try {
+      await navigator.share({ title: toolTitle, url: activeUrl });
+    } catch {
+      // User cancelled or share not supported — no-op
+    }
   }
 
   return (

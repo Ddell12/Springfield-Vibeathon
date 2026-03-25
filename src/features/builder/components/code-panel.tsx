@@ -82,10 +82,14 @@ export function CodePanel({ files, status }: CodePanelProps) {
           <button
             className="rounded-md p-1.5 text-on-surface-variant transition-all hover:bg-white/50 active:scale-95"
             title="Copy Content"
-            onClick={() => {
+            onClick={async () => {
               if (selectedFile) {
-                navigator.clipboard.writeText(selectedFile.contents);
-                toast("Copied to clipboard");
+                try {
+                  await navigator.clipboard.writeText(selectedFile.contents);
+                  toast.success("Copied to clipboard");
+                } catch {
+                  toast.error("Failed to copy — try selecting and copying manually");
+                }
               }
             }}
           >

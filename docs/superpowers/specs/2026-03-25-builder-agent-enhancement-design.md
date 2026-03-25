@@ -155,7 +155,21 @@ This is the same pattern as `anthropic.beta.messages.toolRunner()` but implement
 
 The mapping layer lives in the `generateSpeech` Convex action — the agent passes friendly names, the action resolves to voice IDs. The existing action currently takes a raw `voiceId`; add a `voice` arg that maps to IDs, with `voiceId` as a fallback for backward compatibility.
 
-**Image generation model note:** "Nano Banana Pro" refers to Gemini's image generation via the `@google/genai` SDK (model: `gemini-2.0-flash-exp` or latest image-capable model). This replaces the existing `imagen-3.0-generate-002` REST call in `convex/aiActions.ts` with the newer SDK-based approach.
+**Image generation model note:** "Nano Banana Pro" refers to Gemini's image generation via the `@google/genai` SDK using `generateContent()` with `responseModalities: ["IMAGE"]` (model: `gemini-3-pro-image-preview`). This is NOT the same as `generateImages()` which uses the Imagen API. The correct call pattern is:
+
+```typescript
+const response = await genAI.models.generateContent({
+  model: "gemini-3-pro-image-preview",
+  contents: prompt,
+  config: {
+    responseModalities: ["IMAGE"],
+    imageConfig: { aspectRatio: "1:1", imageSize: "1K" },
+  },
+});
+// Image data is in response.candidates[0].content.parts[].inlineData
+```
+
+This replaces the existing `imagen-3.0-generate-002` REST call in `convex/aiActions.ts` with the newer SDK-based approach.
 
 #### `enable_speech_input`
 
