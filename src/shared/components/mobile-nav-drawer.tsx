@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus, Settings, X } from "lucide-react";
+import { Plus, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 
@@ -98,24 +98,6 @@ export function MobileNavDrawer({ open, onOpenChange }: MobileNavDrawerProps) {
               </Link>
             );
           })}
-
-          {/* Separator */}
-          <div className="h-px bg-outline-variant/15 my-2" />
-
-          {/* Settings */}
-          <Link
-            href="/settings"
-            onClick={handleNavClick}
-            className={cn(
-              "flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold min-h-[44px] transition-all active:opacity-80",
-              pathname === "/settings"
-                ? "bg-primary/10 text-primary font-bold"
-                : "text-on-surface-variant hover:bg-surface-container-low"
-            )}
-          >
-            <Settings size={22} />
-            <span className="font-headline">Settings</span>
-          </Link>
         </nav>
 
         {/* Bottom actions */}

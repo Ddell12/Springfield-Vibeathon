@@ -115,6 +115,28 @@ function jsonErrorResponse(message: string, status: number): Response {
   });
 }
 
+/**
+ * Validate that a file path from the LLM is safe to write.
+ * Allowlist: must start with src/ or be a recognised config file,
+ * contain only safe characters, and end with a supported extension.
+ */
+function isValidFilePath(path: string): boolean {
+  // Must start with src/ OR be an allowed root-level config file
+  const allowedRoots = /^(src\/|tailwind\.config\.(ts|js|cjs)$|vite\.config\.(ts|js)$|postcss\.config\.(ts|js|cjs)$)/;
+  if (!allowedRoots.test(path)) return false;
+
+  // Only allow alphanumeric, hyphens, underscores, dots, and forward slashes
+  if (!/^[a-zA-Z0-9\-_.\/]+$/.test(path)) return false;
+
+  // No path traversal sequences or malformed double slashes
+  if (path.includes("..") || path.includes("//")) return false;
+
+  // Must end with a supported extension
+  if (!/\.(tsx|ts|css|json|cjs|js)$/.test(path)) return false;
+
+  return true;
+}
+
 /** Run a Convex action and return a tool_result (success or error). */
 async function runToolAction(
   toolUseId: string,
@@ -138,6 +160,7 @@ async function runToolAction(
 // ---------------------------------------------------------------------------
 
 export async function POST(request: Request): Promise<Response> {
+  // TODO (Phase 6): Add per-IP rate limiting with @convex-dev/rate-limiter before streaming
   let body: unknown;
   try {
     body = await request.json();
@@ -228,6 +251,15 @@ export async function POST(request: Request): Promise<Response> {
               case "write_file": {
                 const path = typeof input.path === "string" ? input.path : "";
                 const contents = typeof input.contents === "string" ? input.contents : "";
+                if (!isValidFilePath(path)) {
+                  toolResults.push({
+                    type: "tool_result",
+                    tool_use_id: block.id,
+                    content: "Error: Invalid file path — must be within src/ and use a supported extension",
+                    is_error: true,
+                  });
+                  break;
+                }
                 if (path && contents) {
                   collectedFiles.push({ path, contents });
                   send("file_complete", { path, contents, version });

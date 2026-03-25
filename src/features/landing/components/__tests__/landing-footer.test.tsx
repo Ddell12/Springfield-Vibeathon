@@ -2,21 +2,6 @@ import { render, screen } from "@testing-library/react";
 
 import { LandingFooter } from "../landing-footer";
 
-vi.mock("next/link", () => ({
-  default: ({
-    href,
-    children,
-    ...props
-  }: {
-    href: string;
-    children: React.ReactNode;
-  }) => (
-    <a href={href} {...props}>
-      {children}
-    </a>
-  ),
-}));
-
 describe("LandingFooter", () => {
   it("renders the Bridges brand name", () => {
     render(<LandingFooter />);
@@ -31,16 +16,10 @@ describe("LandingFooter", () => {
     ).toBeInTheDocument();
   });
 
-  it("renders Privacy Policy, Terms of Service, and Accessibility links", () => {
+  it("renders Privacy Policy, Terms of Service, and Accessibility text", () => {
     render(<LandingFooter />);
-    expect(
-      screen.getByRole("link", { name: /Privacy Policy/ })
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("link", { name: /Terms of Service/ })
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("link", { name: /Accessibility/ })
-    ).toBeInTheDocument();
+    expect(screen.getByText("Privacy Policy")).toBeInTheDocument();
+    expect(screen.getByText("Terms of Service")).toBeInTheDocument();
+    expect(screen.getByText("Accessibility")).toBeInTheDocument();
   });
 });

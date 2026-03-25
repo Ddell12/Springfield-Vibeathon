@@ -94,22 +94,6 @@ describe("sessions — streaming builder mutations", () => {
     expect(session?.blueprint).toEqual(blueprint);
   });
 
-  it("setSandbox stores sandboxId and previewUrl", async () => {
-    const t = convexTest(schema, modules);
-    const id = await t.mutation(api.sessions.create, {
-      title: "Test",
-      query: "test",
-    });
-    await t.mutation(api.sessions.setSandbox, {
-      sessionId: id,
-      sandboxId: "sb_xyz789",
-      previewUrl: "https://xyz789.e2b.app",
-    });
-    const session = await t.query(api.sessions.get, { sessionId: id });
-    expect(session?.sandboxId).toBe("sb_xyz789");
-    expect(session?.previewUrl).toBe("https://xyz789.e2b.app");
-  });
-
   it("get returns full session object", async () => {
     const t = convexTest(schema, modules);
     const id = await t.mutation(api.sessions.create, {

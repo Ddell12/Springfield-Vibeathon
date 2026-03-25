@@ -87,7 +87,7 @@ This loads 110 therapy knowledge entries into the vector store and creates 6 sta
 ### Run Tests
 
 ```bash
-npm test              # Vitest unit tests (51 tests)
+npm test              # Vitest unit tests (252 tests, 37 test files)
 npx playwright test   # E2E tests
 ```
 
@@ -141,8 +141,8 @@ User describes tool → Claude interprets → generates ToolConfig JSON → Reac
 | Phase 1 | Done | AI chat + tool generation (Convex Agent, streaming, tool renderer) |
 | Phase 2 | Done | Therapy tool components (visual schedule, token board, communication board) |
 | Phase 3 | Done | RAG knowledge base (110 entries), templates (6), agent integration |
-| Phase 4 | Next | Sharing, persistence, My Tools page |
-| Phase 5 | — | Landing page polish |
+| Phase 4 | Done | Builder Agent Enhancement (streaming SSE pipeline, blueprint approval, phasic code gen) |
+| Phase 5 | Current | Landing page & final polish |
 | Phase 6 | — | Auth (Clerk) + production deploy |
 
 ## License

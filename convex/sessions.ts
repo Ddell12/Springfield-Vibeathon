@@ -72,21 +72,6 @@ export const setFailed = mutation({
   },
 });
 
-// deprecated: kept for backward compat with existing tests and data
-// WebContainer manages preview URL client-side now
-export const setSandbox = mutation({
-  args: {
-    sessionId: v.id("sessions"),
-    sandboxId: v.string(),
-    previewUrl: v.string(),
-  },
-  handler: async (ctx, args) => {
-    await ctx.db.patch(args.sessionId, {
-      sandboxId: args.sandboxId,
-      previewUrl: args.previewUrl,
-    });
-  },
-});
 
 export const setBlueprint = mutation({
   args: {
