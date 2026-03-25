@@ -22,8 +22,9 @@ Bridges is an AI-powered vibe-coding platform where ABA therapists, speech thera
 ### Current Status
 - **Phases 0–3 complete** (foundation, AI chat, tool components, RAG + templates)
 - **UX Overhaul complete** — Vite sandbox, therapy design system, persistence tiers, dark mode, responsive preview, undo, publish, confetti
+- **Builder Agent Enhancement complete** — Image gen, TTS/STT, 12 therapy components, multi-turn tool loop, 4 templates, Vercel publish
 - **Current Phase: Phase 5** — Landing Page & Final Polish
-- **432 tests passing** (Vitest, 57 test files), all Convex functions deployed, RAG seeded with 110 entries
+- **252 tests passing** (Vitest, 37 test files), all Convex functions deployed, RAG seeded with 110 entries
 - **E2B template registered:** `vite-therapy` (ID: `wsjspn0oy5ygip6y8rjr`)
 
 ### Start here
@@ -136,20 +137,29 @@ Zod schemas: `src/features/builder/lib/schemas/index.ts`
 - Use semantic tokens: `bg-background`, `text-foreground`, `border-border`
 
 ### AI / Pipeline
-- **Anthropic SDK:** `@anthropic-ai/sdk` for direct LLM calls in Convex actions
-- Pipeline uses `anthropic.beta.messages.toolRunner()` for automated tool loops
-- Tool definitions use `betaZodTool` from `@anthropic-ai/sdk/helpers/beta/zod`
-- Pipeline tools: `convex/pipeline_tools.ts` — search_knowledge, select_template, generate_image, generate_speech
-- System prompts: `convex/pipeline_prompts.ts` — BLUEPRINT, PHASE_GENERATION, PHASE_IMPLEMENTATION, VALIDATION
+- **Anthropic SDK:** `@anthropic-ai/sdk` for direct LLM calls in `route.ts` (Next.js API route)
+- **Multi-turn tool loop:** `src/app/api/generate/route.ts` streams from Claude with 4 tools (`write_file`, `generate_image`, `generate_speech`, `enable_speech_input`). When Claude calls tools, the handler executes them, sends results back, and Claude continues generating. Loop capped at `MAX_TOOL_TURNS = 10`.
+- **Agent prompt:** `src/features/builder/lib/agent-prompt.ts` — documents tools, 17 pre-built components, design rules, generation workflow
+- **PostMessage bridge:** `src/features/builder/hooks/use-postmessage-bridge.ts` — parent-side handler for runtime TTS/STT between iframe and Convex actions. Validates `event.source` to prevent cross-origin abuse.
 - RAG still via `@convex-dev/rag` component with Gemini embeddings
 - State machine in `convex/sessions.ts` — scheduler auto-chains non-blocking states
-- Blueprint approval is a blocking state (requires user action)
 
 ### Image Generation
-- Use **Nano Banana Pro** (`@google/genai` or `@fal-ai/client`) for therapy picture cards
-- Never use stock images — all picture cards are AI-generated on-demand
-- Cache generated images in Convex file storage by prompt hash
-- Prompt pattern: "Simple, clear illustration of [item], flat design, bold outlines, white background, child-friendly"
+- **Action:** `convex/image_generation.ts` — `generateTherapyImage` public action (called from `route.ts` via `ConvexHttpClient`)
+- Uses **Nano Banana Pro** via `@google/genai` SDK (`gemini-3-pro-image-preview` model, `generateContent()` not `generateImages()`)
+- Cached in `imageCache` table by SHA-256 prompt hash — cache hit skips API call
+- Category-aware prompts with Kawaii style modifiers per category (emotions, daily-activities, animals, food, objects, people, places)
+- Pre-seeding script: `convex/seeds/image_seeds.ts` — ~50 common therapy images, guarded by cache count check
+
+### TTS / STT
+- **TTS action:** `convex/aiActions.ts` — `generateSpeech` with friendly voice names (`warm-female`, `calm-male`, `child-friendly`) mapped to ElevenLabs voice IDs. Model: `eleven_flash_v2_5`. Cached in `ttsCache` table.
+- **STT action:** `convex/stt.ts` — `transcribeSpeech` using ElevenLabs `scribe_v2` model
+- **Runtime TTS/STT:** PostMessage bridge handles dynamic speech at runtime (e.g., sentence strip composing new sentences). Build-time audio uses pre-generated CDN URLs.
+
+### Publish Pipeline
+- **Action:** `convex/publish.ts` — `publishApp` collects generated files + template files, deploys to Vercel Deploy API
+- **Template files:** `src/features/builder/lib/template-files.ts` — flattens WebContainer template tree for Vercel format (single source of truth shared with `webcontainer-files.ts`)
+- **Env vars needed:** `VERCEL_TOKEN`, `VERCEL_PROJECT_ID`, optional `VERCEL_TEAM_ID` (in Convex env vars)
 
 ### Key Library Choices
 - **Drag & drop:** `@dnd-kit/react` (touch-safe, not pragmatic-drag-and-drop which has iPad issues)
@@ -240,6 +250,13 @@ Zod schemas: `src/features/builder/lib/schemas/index.ts`
 - **Operator precedence with `??`:** `a ?? 0 + b` means `a ?? (0 + b)`, not `(a ?? 0) + b`. Always use explicit parentheses.
 - **`convex-test` scheduler limitation:** `ctx.scheduler.runAfter()` in mutations causes "Write outside of transaction" unhandled rejections in convex-test. Tests still pass — this is a framework limitation.
 - **Cross-boundary imports in Convex:** `"use node"` actions can import from `src/` via relative paths because esbuild bundles them. Regular queries/mutations cannot.
+- **Multi-turn tool loop max turns:** The while loop in `route.ts` is capped at `MAX_TOOL_TURNS = 10`. If Claude keeps calling tools beyond this, the loop exits gracefully. Without this guard, a single request could trigger dozens of API calls.
+- **PostMessage bridge origin validation:** Always check `event.source === iframe.contentWindow` before processing messages. Without this, any page can trigger TTS/STT API calls (which cost money).
+- **iframe `sandbox` attribute:** Use `allow-scripts` only, NOT `allow-scripts allow-same-origin`. The combination neutralizes the sandbox entirely (iframe can remove its own sandbox attribute).
+- **write_file tool result must be inside the guard:** The `toolResults.push("File written successfully")` must be inside the `if (path && contents)` block. If outside, Claude thinks the file was written when it wasn't, causing downstream import errors.
+- **`Promise.allSettled` for file mutations:** Use `allSettled` not `all` for persisting generated files — one Convex mutation failure shouldn't kill the entire generation.
+- **Google GenAI `generateContent` vs `generateImages`:** For Nano Banana Pro image generation, use `genAI.models.generateContent()` with model `gemini-3-pro-image-preview`. Do NOT use `generateImages()` which is the Imagen API (different product).
+- **ElevenLabs error responses include useful JSON:** Always `await response.text()` before throwing on non-OK responses. The body contains quota/rate-limit details that are invisible if you only log the status code.
 
 ## Terminology
 

@@ -5,6 +5,52 @@
 
 ---
 
+## 2026-03-25 — Builder Agent Enhancement (PR #5)
+
+### Added
+- **Multi-turn tool loop** in `src/app/api/generate/route.ts` — Claude can now call `generate_image`, `generate_speech`, and `enable_speech_input` mid-generation, get CDN URLs back, then continue writing code with those URLs baked in. Capped at 10 turns.
+- **Image generation** via Google Nano Banana Pro (`convex/image_generation.ts`) — `generateTherapyImage` action with SHA-256 prompt hash caching in `imageCache` table. Category-aware Kawaii-style prompts.
+- **TTS upgrade** — `generateSpeech` in `convex/aiActions.ts` now supports friendly voice names (`warm-female`, `calm-male`, `child-friendly`) mapped to verified ElevenLabs voice IDs. Model upgraded to `eleven_flash_v2_5`.
+- **STT action** — `convex/stt.ts` with ElevenLabs `scribe_v2` model
+- **12 new therapy React components** in WebContainer template (`webcontainer-files.ts`): TapCard, SentenceStrip, BoardGrid, StepItem, PageViewer, TokenSlot, CelebrationOverlay, RewardPicker + CommunicationBoard, VisualSchedule, TokenBoard, SocialStory (composed)
+- **useTTS / useSTT hooks** — PostMessage bridge hooks for runtime audio in iframe
+- **PostMessage bridge** (`use-postmessage-bridge.ts`) — parent-side handler for TTS/STT between iframe and Convex, with origin validation and error feedback to iframe
+- **Vercel publish pipeline** — `convex/publish.ts` + `template-files.ts` — deploys generated apps to Vercel as standalone static sites
+- **4 curated templates** — Communication Board, Morning Routine, 5-Star Reward Board, Going to the Dentist (replaced 8 generic ones)
+- **Templates page redesign** — 2x2 grid with gradient thumbnails, hover descriptions, click-to-build
+- **Image pre-seeding script** — `convex/seeds/image_seeds.ts` (~50 common therapy images)
+- `apps.getBySession` query for publish flow
+
+### Changed
+- `route.ts` restructured from single-turn to multi-turn tool loop with 4 tools
+- Agent system prompt expanded with tool documentation, component library, strict therapy design rules
+- Preview panel iframe now has `allow="microphone"` and uses PostMessage bridge
+- `use-streaming.ts` handles new SSE events: `image_generated`, `speech_generated`, `stt_enabled`
+- Builder page publish button now calls real Vercel Deploy API (was showing fake URL)
+- Templates page imports seed data directly instead of querying Convex
+
+### Removed
+- Old `generateImage` action from `convex/aiActions.ts` (replaced by `image_generation.ts` with caching)
+- Category filter tabs from templates page (only 4 templates now)
+
+### Security Fixes (from code review)
+- Added `MAX_TOOL_TURNS = 10` to prevent infinite API loops
+- Added `event.source` validation on PostMessage bridge
+- Reverted iframe sandbox from `allow-scripts allow-same-origin` to `allow-scripts` only
+- Fixed `write_file` tool reporting success when input was empty
+- Added env var validation at module load for `NEXT_PUBLIC_CONVEX_URL` and `ANTHROPIC_API_KEY`
+- Used `Promise.allSettled` for file mutation persistence
+- Added error feedback messages (tts-error, stt-error) back to iframe
+- Included ElevenLabs response body in error messages
+
+### Decisions
+- Therapy images generated at **build time** by agent tools, not runtime. Runtime TTS uses PostMessage bridge for dynamic speech only.
+- `generateTherapyImage` is a public `action` (not `internalAction`) because `route.ts` calls it via `ConvexHttpClient` which requires `api.*`
+- `publishApp` is public action (auth gating deferred to Phase 6)
+- Existing WebContainer components kept alongside new ones (no breaking changes to generated code)
+
+---
+
 ## [Unreleased] — VibeSDK-Inspired Refactor (2026-03-24)
 
 ### Changed
