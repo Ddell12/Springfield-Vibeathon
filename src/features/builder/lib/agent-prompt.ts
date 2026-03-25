@@ -66,7 +66,7 @@ import { cn } from "./lib/utils"; // clsx + tailwind-merge
 \`\`\`
 
 **Component Props Reference:**
-- \`<TherapyCard variant="elevated|flat|interactive" asChild? onClick?>\` — Card wrapper with CVA variants
+- \`<TherapyCard variant="elevated|flat|interactive" onClick?>\` — Card wrapper with CVA variants
 - \`<TokenBoard goal={number} earned={number} onEarn={() => void} icon?={string}>\` — Star reward grid, celebration at goal
 - \`<VisualSchedule steps={[{label, icon?, done}]} onToggle={(i) => void}>\` — Step list with progress bar and NOW indicator
 - \`<CommunicationBoard items={[{label, image?, sound?}]} onSelect={(item) => void} columns?={3}>\` — AAC picture grid

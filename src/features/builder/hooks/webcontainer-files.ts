@@ -14,14 +14,11 @@ export const templateFiles: FileSystemTree = {
             preview: "vite preview",
           },
           dependencies: {
-            "@radix-ui/react-progress": "^1.1.8",
-            "@radix-ui/react-slot": "^1.2.4",
             "class-variance-authority": "^0.7.1",
             clsx: "^2.1.1",
-            "lucide-react": "^1.6.0",
-            motion: "^12.0.0",
-            react: "^19.0.0",
-            "react-dom": "^19.0.0",
+            "lucide-react": "^0.469.0",
+            react: "19.0.0",
+            "react-dom": "19.0.0",
             "tailwind-merge": "^3.5.0",
           },
           devDependencies: {
@@ -32,6 +29,10 @@ export const templateFiles: FileSystemTree = {
             tailwindcss: "^4.0.0",
             typescript: "^5.7.0",
             vite: "^6.0.0",
+          },
+          overrides: {
+            react: "19.0.0",
+            "react-dom": "19.0.0",
           },
         },
         null,
@@ -67,7 +68,24 @@ import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "vite";
 
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [react()],
+  resolve: {
+    dedupe: ["react", "react-dom"],
+  },
+  optimizeDeps: {
+    include: [
+      "react",
+      "react-dom",
+      "react/jsx-runtime",
+      "react/jsx-dev-runtime",
+      "react-dom/client",
+      "lucide-react",
+      "@radix-ui/react-slot",
+      "class-variance-authority",
+      "clsx",
+      "tailwind-merge",
+    ],
+  },
   server: {
     host: "0.0.0.0",
     port: 5173,
@@ -450,8 +468,7 @@ export { PromptCard } from "./PromptCard";
 
           "TherapyCard.tsx": {
             file: {
-              contents: `import { Slot } from "@radix-ui/react-slot";
-import { cva, type VariantProps } from "class-variance-authority";
+              contents: `import { cva, type VariantProps } from "class-variance-authority";
 import type { HTMLAttributes, ReactNode } from "react";
 
 import { cn } from "../lib/utils";
@@ -475,22 +492,19 @@ const cardVariants = cva(
 interface TherapyCardProps
   extends HTMLAttributes<HTMLDivElement>,
     VariantProps<typeof cardVariants> {
-  asChild?: boolean;
   children: ReactNode;
 }
 
 export function TherapyCard({
   variant,
-  asChild,
   className,
   children,
   ...props
 }: TherapyCardProps) {
-  const Comp = asChild ? Slot : "div";
   return (
-    <Comp className={cn(cardVariants({ variant }), className)} {...props}>
+    <div className={cn(cardVariants({ variant }), className)} {...props}>
       {children}
-    </Comp>
+    </div>
   );
 }
 `,
@@ -591,7 +605,6 @@ export function TokenBoard({
           "VisualSchedule.tsx": {
             file: {
               contents: `import { Check, Circle } from "lucide-react";
-import * as Progress from "@radix-ui/react-progress";
 
 import { cn } from "../lib/utils";
 
@@ -620,15 +633,18 @@ export function VisualSchedule({ steps, onToggle }: VisualScheduleProps) {
         </span>
       </div>
 
-      <Progress.Root
+      <div
         className="h-2.5 overflow-hidden rounded-full bg-[var(--color-border)]"
-        value={pct}
+        role="progressbar"
+        aria-valuenow={pct}
+        aria-valuemin={0}
+        aria-valuemax={100}
       >
-        <Progress.Indicator
-          className="h-full rounded-full bg-[var(--color-success)] transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]"
-          style={{ transform: \`translateX(-\${100 - pct}%)\` }}
+        <div
+          className="h-full rounded-full bg-[var(--color-success)] transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]"
+          style={{ width: \`\${pct}%\` }}
         />
-      </Progress.Root>
+      </div>
 
       <div className="flex flex-col gap-2 mt-2">
         {steps.map((step, i) => (
@@ -1066,8 +1082,7 @@ export function ChoiceGrid({ options, onSelect }: ChoiceGridProps) {
 
           "TimerBar.tsx": {
             file: {
-              contents: `import * as Progress from "@radix-ui/react-progress";
-import { useEffect, useRef, useState } from "react";
+              contents: `import { useEffect, useRef, useState } from "react";
 
 import { cn } from "../lib/utils";
 
@@ -1124,18 +1139,21 @@ export function TimerBar({ duration, running, onComplete, className }: TimerBarP
 
   return (
     <div className={cn("flex flex-col gap-2", className)}>
-      <Progress.Root
+      <div
         className="h-6 overflow-hidden rounded-full bg-[var(--color-border)]"
-        value={pct}
+        role="progressbar"
+        aria-valuenow={pct}
+        aria-valuemin={0}
+        aria-valuemax={100}
       >
-        <Progress.Indicator
+        <div
           className={cn(
-            "h-full rounded-full transition-transform duration-100 ease-linear",
+            "h-full rounded-full transition-all duration-100 ease-linear",
             barColor
           )}
-          style={{ transform: \`translateX(-\${100 - pct}%)\` }}
+          style={{ width: \`\${pct}%\` }}
         />
-      </Progress.Root>
+      </div>
 
       <div className="flex justify-between text-sm">
         <span className="text-[var(--color-text-muted)]">

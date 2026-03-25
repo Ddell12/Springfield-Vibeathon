@@ -41,16 +41,16 @@ describe("templateFiles — FileSystemTree structure", () => {
     expect(pkg.dependencies?.["lucide-react"]).toBeDefined();
   });
 
-  it("package.json includes @radix-ui/react-progress as a dependency", () => {
+  it("package.json does NOT include @radix-ui/react-progress (removed: React 19 incompatible)", () => {
     const entry = templateFiles["package.json"] as { file: { contents: string } };
     const pkg = JSON.parse(entry.file.contents);
-    expect(pkg.dependencies?.["@radix-ui/react-progress"]).toBeDefined();
+    expect(pkg.dependencies?.["@radix-ui/react-progress"]).toBeUndefined();
   });
 
-  it("package.json includes @radix-ui/react-slot as a dependency", () => {
+  it("package.json does NOT include @radix-ui/react-slot (removed: React 19 peer dep conflict)", () => {
     const entry = templateFiles["package.json"] as { file: { contents: string } };
     const pkg = JSON.parse(entry.file.contents);
-    expect(pkg.dependencies?.["@radix-ui/react-slot"]).toBeDefined();
+    expect(pkg.dependencies?.["@radix-ui/react-slot"]).toBeUndefined();
   });
 
   it("package.json includes class-variance-authority as a dependency", () => {
@@ -65,10 +65,10 @@ describe("templateFiles — FileSystemTree structure", () => {
     expect(pkg.dependencies?.clsx).toBeDefined();
   });
 
-  it("package.json includes motion as a dependency", () => {
+  it("package.json does NOT include motion (unused by template components)", () => {
     const entry = templateFiles["package.json"] as { file: { contents: string } };
     const pkg = JSON.parse(entry.file.contents);
-    expect(pkg.dependencies?.motion).toBeDefined();
+    expect(pkg.dependencies?.motion).toBeUndefined();
   });
 
   it("package.json includes tailwind-merge as a dependency", () => {
