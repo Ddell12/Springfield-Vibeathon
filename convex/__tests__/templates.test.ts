@@ -3,9 +3,6 @@
  *
  * These tests run against convex-test's mock runtime and exercise both the
  * seedTemplates internalMutation and the listTemplates public query.
- *
- * NOTE: The vitest config must include "convex/**\/*.test.ts" in its `include`
- * array for these tests to run. See ai.test.ts for the same note.
  */
 
 import { convexTest } from "convex-test";
@@ -18,16 +15,13 @@ import schema from "../schema";
 const modules = import.meta.glob("../**/*.*s");
 
 describe("templates seed", () => {
-  test("seedTemplates inserts 6 tools with isTemplate=true", async () => {
+  test("seedTemplates inserts 6 templates", async () => {
     const t = convexTest(schema, modules);
 
     await t.mutation(internal.templates.seed.seedTemplates, {});
 
     const templates = await t.query(api.templates.queries.listTemplates, {});
     expect(templates).toHaveLength(6);
-    for (const tpl of templates) {
-      expect(tpl.isTemplate).toBe(true);
-    }
   });
 
   test("seedTemplates is idempotent — running twice does not create duplicates", async () => {
@@ -61,7 +55,7 @@ describe("listTemplates", () => {
     });
     expect(templates).toHaveLength(2);
     for (const tpl of templates) {
-      expect(tpl.toolType).toBe("communication-board");
+      expect(tpl.category).toBe("communication");
     }
   });
 
@@ -75,7 +69,7 @@ describe("listTemplates", () => {
     });
     expect(templates).toHaveLength(2);
     for (const tpl of templates) {
-      expect(tpl.toolType).toBe("token-board");
+      expect(tpl.category).toBe("rewards");
     }
   });
 
@@ -89,7 +83,7 @@ describe("listTemplates", () => {
     });
     expect(templates).toHaveLength(2);
     for (const tpl of templates) {
-      expect(tpl.toolType).toBe("visual-schedule");
+      expect(tpl.category).toBe("routines");
     }
   });
 
@@ -109,11 +103,12 @@ describe("listTemplates", () => {
     expect(templates.length).toBeGreaterThan(0);
 
     for (const tpl of templates) {
-      expect(tpl.isTemplate).toBe(true);
-      expect(tpl.templateCategory).toBeTruthy();
-      expect(typeof tpl.shareSlug).toBe("string");
-      expect(tpl.shareSlug.length).toBeGreaterThan(0);
-      expect(tpl.config).not.toBeNull();
+      expect(typeof tpl.name).toBe("string");
+      expect(tpl.name.length).toBeGreaterThan(0);
+      expect(typeof tpl.starterPrompt).toBe("string");
+      expect(tpl.starterPrompt.length).toBeGreaterThan(0);
+      expect(typeof tpl.category).toBe("string");
+      expect(typeof tpl.sortOrder).toBe("number");
     }
   });
 });

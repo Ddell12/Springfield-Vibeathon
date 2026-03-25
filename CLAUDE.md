@@ -8,8 +8,9 @@ Bridges is an AI-powered vibe-coding platform where ABA therapists, speech thera
 
 - **Frontend:** Next.js (App Router) + shadcn/ui + Tailwind v4
 - **Backend:** Convex (real-time, TypeScript, built-in vector search)
-- **AI Chat:** Convex Agent (`@convex-dev/agent`) for threads, streaming, tool calling, React hooks; Vercel AI SDK (`ai` + `@ai-sdk/anthropic`) as model provider
-- **LLM:** Claude Sonnet via `@ai-sdk/anthropic`
+- **AI Pipeline:** Custom phasic state machine in Convex internalActions + `@anthropic-ai/sdk` for LLM calls
+- **LLM:** Claude Sonnet via `@anthropic-ai/sdk` (direct Anthropic SDK, not Vercel AI SDK wrapper)
+- **Pipeline:** Convex scheduler chains pipeline steps. Frontend subscribes to Convex queries for real-time progress.
 - **Embeddings:** Google gemini-embedding-001 (768-dim) via `@ai-sdk/google` → Convex RAG vector search
 - **TTS:** ElevenLabs for communication boards
 - **Sandbox:** E2B Code Interpreter with custom `vite-therapy` template (Vite + React 19 + Tailwind v4 + therapy-ui.css design system)
@@ -74,7 +75,7 @@ Bridges is an AI-powered vibe-coding platform where ABA therapists, speech thera
 | `docs/prd.md` | Full PRD (monolithic reference) — use sharded files above instead when possible |
 | `docs/gtm.md` | Go-to-market — only for landing page copy (Phase 5) |
 
-### Architecture: VSA + Config-Based Tool Generation
+### Architecture: VSA + Phasic Code Generation Pipeline
 
 **This project uses Vertical Slice Architecture (VSA).** Read `docs/architecture/vsa-guide.md` for the full guide. Quick rules:
 
@@ -84,15 +85,20 @@ Bridges is an AI-powered vibe-coding platform where ABA therapists, speech thera
 - `src/app/` pages are **thin wrappers** (< 20 lines) that import from features.
 - `convex/schema.ts` is core (single file). `convex/{feature}.ts` files organize functions by domain.
 
-**Config-Based Tool Generation:** Bridges does NOT generate arbitrary code. The AI generates **JSON configurations** that pre-built React components render.
+**Phasic Code Generation Pipeline:** Bridges generates full React code (not JSON configs) through a deterministic state machine:
 
 ```
-User describes tool → Claude interprets → generates ToolConfig JSON → React component renders it
+User describes app → Blueprint (LLM) → User approves → Template selection → Phase loop:
+  Phase planning (LLM) → Code generation (LLM) → Deploy to E2B → Validate → Version snapshot
+→ Finalize → Complete
 ```
 
-Tool configs: `src/features/therapy-tools/types/tool-configs.ts`
-Tool components: `src/features/therapy-tools/components/`
-Config → component mapper: `src/features/therapy-tools/components/tool-renderer.tsx`
+Pipeline orchestration: `convex/pipeline.ts` (internalAction)
+Pipeline tools: `convex/pipeline_tools.ts` (betaZodTool definitions)
+Pipeline prompts: `convex/pipeline_prompts.ts`
+Session state machine: `convex/sessions.ts`
+E2B sandbox: `convex/e2b.ts`
+Zod schemas: `src/features/builder/lib/schemas/index.ts`
 
 ## Code Conventions
 
@@ -104,9 +110,12 @@ Config → component mapper: `src/features/therapy-tools/components/tool-rendere
 - Queries for reads, mutations for writes — actions are not transactional
 - Index naming: `by_fieldName`
 - **Component config at `convex/convex.config.ts`** — NOT at project root
-- **File organization:** domain-grouped — `convex/knowledge/`, `convex/templates/`, `convex/chat/`, `convex/agents/`
+- **File organization:** domain-grouped — `convex/knowledge/`, `convex/templates/`, `convex/pipeline.ts`, `convex/sessions.ts`, `convex/e2b.ts`
 - **Seed functions:** use `internalMutation` for DB seeds, `internalAction` for seeds needing external APIs (embeddings)
 - **`anyApi`** from `convex/server` for cross-file action references in agent tool `execute` functions
+- **Pipeline actions:** `convex/pipeline.ts` uses `"use node";` and `@anthropic-ai/sdk`. Each state handler is a separate async function dispatched by the `executeStep` switch.
+- **Session mutations:** `sessions.ts` has helper mutations (setTemplate, setSandbox, advancePhase, setMvpGenerated) for pipeline steps to update session fields.
+- **Cross-boundary imports:** `"use node"` actions can import from `src/` via relative paths (esbuild bundles them). Queries/mutations cannot.
 
 ### Next.js
 - App Router only (`src/app/`)
@@ -126,16 +135,15 @@ Config → component mapper: `src/features/therapy-tools/components/tool-rendere
 - Use sub-components (CardHeader, CardContent, etc.) — not raw divs
 - Use semantic tokens: `bg-background`, `text-foreground`, `border-border`
 
-### AI / Chat
-- Primary: **Convex Agent** (`@convex-dev/agent`) for threads, streaming, tool calling, React hooks
-- Fallback: Vercel AI SDK `useChat` if Convex Agent doesn't fit a specific pattern
-- Claude via `@ai-sdk/anthropic` provider
-- RAG via `@convex-dev/rag` component — stores in its own internal tables, NOT the `knowledgeBase` table in schema
-- System prompt and tools defined in `docs/ai/prompt-library.md`
-- Agent definition: `convex/agents/bridges.ts` — 4 tools: createTool, updateTool, searchKnowledge, generateImage
-- Agent tool `inputSchema` uses `zod/v3` (not `"zod"`) — required by `@convex-dev/agent`
-- RAG search wrapper: `convex/knowledge/search.ts` — `internalAction` that wraps `rag.search()` for agent tool access
-- Chat UI: `@assistant-ui/react` ExternalStoreRuntime wired to Convex Agent via `useUIMessages`
+### AI / Pipeline
+- **Anthropic SDK:** `@anthropic-ai/sdk` for direct LLM calls in Convex actions
+- Pipeline uses `anthropic.beta.messages.toolRunner()` for automated tool loops
+- Tool definitions use `betaZodTool` from `@anthropic-ai/sdk/helpers/beta/zod`
+- Pipeline tools: `convex/pipeline_tools.ts` — search_knowledge, select_template, generate_image, generate_speech
+- System prompts: `convex/pipeline_prompts.ts` — BLUEPRINT, PHASE_GENERATION, PHASE_IMPLEMENTATION, VALIDATION
+- RAG still via `@convex-dev/rag` component with Gemini embeddings
+- State machine in `convex/sessions.ts` — scheduler auto-chains non-blocking states
+- Blueprint approval is a blocking state (requires user action)
 
 ### Image Generation
 - Use **Nano Banana Pro** (`@google/genai` or `@fal-ai/client`) for therapy picture cards
@@ -174,7 +182,6 @@ Config → component mapper: `src/features/therapy-tools/components/tool-rendere
 ## What NOT to Do
 
 - Don't add auth until Phase 6 — it blocks E2E testing
-- Don't generate arbitrary code — use config-based tool generation
 - Don't expose developer jargon in the UI (no "component", "API", "deploy", "database")
 - Don't use `style={{}}` when Tailwind has an equivalent
 - Don't skip tasks in the roadmap — they're ordered for dependency resolution
@@ -228,6 +235,19 @@ Config → component mapper: `src/features/therapy-tools/components/tool-rendere
 - **E2B `commands.run` with long-running processes:** `commands.run` blocks until the command exits. For dev servers that run forever, use `{ background: true }` which returns a `CommandHandle` immediately. Without this, the sandbox API times out.
 - **`userEvent.setup()` overrides clipboard mock:** In Vitest, `userEvent.setup()` replaces `navigator.clipboard` (set via `Object.defineProperty`) with its own internal stub. For clipboard tests, use `fireEvent.click` instead of `userEvent.click`.
 - **React purity violations in render:** `Math.random()` in JSX render and `Date.now()` in `useRef()` initializer trigger `react-hooks/purity` lint errors. Move random values into a generator function called once, and set ref values inside `useEffect`.
+- **`ConvexHttpClient` casing:** The class is `ConvexHttpClient` (lowercase "ttp"), NOT `ConvexHTTPClient`. The `convex/browser` export uses this casing.
+- **`betaZodTool` import path:** Must be `@anthropic-ai/sdk/helpers/beta/zod`, NOT `@anthropic-ai/sdk/resources/beta/messages`.
+- **Operator precedence with `??`:** `a ?? 0 + b` means `a ?? (0 + b)`, not `(a ?? 0) + b`. Always use explicit parentheses.
+- **`convex-test` scheduler limitation:** `ctx.scheduler.runAfter()` in mutations causes "Write outside of transaction" unhandled rejections in convex-test. Tests still pass — this is a framework limitation.
+- **Cross-boundary imports in Convex:** `"use node"` actions can import from `src/` via relative paths because esbuild bundles them. Regular queries/mutations cannot.
+
+## Terminology
+
+- **app** replaces **tool** everywhere (UI, code, database, URLs)
+- **session** replaces **project** — represents a build session with state machine
+- **blueprint** — structured therapy-specific PRD generated by LLM, approved by user
+- **phase** — one deployable milestone in the build process
+- **pipeline** — the state machine that orchestrates the build: blueprinting → template → phases → deploy → validate → complete
 
 ## E2B Sandbox (vite-therapy template)
 

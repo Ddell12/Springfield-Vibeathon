@@ -1,5 +1,4 @@
 import { render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import type { Id } from "convex/_generated/dataModel";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 
@@ -27,30 +26,6 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn() }),
 }));
 
-// Mock ShareDialog to avoid rendering its internals
-vi.mock("@/features/sharing/components/share-dialog", () => ({
-  ShareDialog: () => null,
-}));
-
-// Mock AlertDialog so we can control confirm/cancel interactions
-vi.mock("@/shared/components/ui/alert-dialog", () => ({
-  AlertDialog: ({ children, open }: { children: React.ReactNode; open?: boolean }) =>
-    open ? <div data-testid="alert-dialog">{children}</div> : null,
-  AlertDialogContent: ({ children }: { children: React.ReactNode }) => (
-    <div data-testid="alert-dialog-content">{children}</div>
-  ),
-  AlertDialogHeader: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-  AlertDialogFooter: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-  AlertDialogTitle: ({ children }: { children: React.ReactNode }) => <h2>{children}</h2>,
-  AlertDialogDescription: ({ children }: { children: React.ReactNode }) => <p>{children}</p>,
-  AlertDialogAction: ({ children, onClick }: { children: React.ReactNode; onClick?: () => void }) => (
-    <button data-testid="alert-confirm" onClick={onClick}>{children}</button>
-  ),
-  AlertDialogCancel: ({ children, onClick }: { children: React.ReactNode; onClick?: () => void }) => (
-    <button data-testid="alert-cancel" onClick={onClick}>{children}</button>
-  ),
-}));
-
 // Mock material-icon to avoid font-loading issues
 vi.mock("@/shared/components/material-icon", () => ({
   MaterialIcon: ({ icon }: { icon: string }) => (
@@ -60,14 +35,15 @@ vi.mock("@/shared/components/material-icon", () => ({
 
 import * as convexReact from "convex/react";
 
-const mockProject = {
-  _id: "project1" as Id<"projects">,
+const mockSession = {
+  _id: "session1" as Id<"sessions">,
   _creationTime: Date.now(),
   title: "My Schedule",
-  description: "A visual schedule",
-  shareSlug: "abc1234567",
-  createdAt: Date.now(),
-  updatedAt: Date.now(),
+  query: "Build a visual schedule",
+  state: "complete" as const,
+  currentPhaseIndex: 3,
+  phasesRemaining: 0,
+  mvpGenerated: true,
 };
 
 describe("MyToolsPage", () => {
@@ -81,7 +57,6 @@ describe("MyToolsPage", () => {
 
     render(<MyToolsPage />);
 
-    // Loading state: skeleton elements or spinner present
     expect(screen.queryByText("My Schedule")).not.toBeInTheDocument();
     const loadingEl =
       screen.queryByRole("status") ||
@@ -95,77 +70,47 @@ describe("MyToolsPage", () => {
 
     render(<MyToolsPage />);
 
-    // Empty state should contain some CTA text
     expect(
       screen.getByText(/no tools yet|create your first|get started/i),
     ).toBeInTheDocument();
   });
 
-  test("renders project cards from the projects table", () => {
-    vi.mocked(convexReact.useQuery).mockReturnValue([mockProject]);
+  test("renders session cards from the sessions table", () => {
+    vi.mocked(convexReact.useQuery).mockReturnValue([mockSession]);
 
     render(<MyToolsPage />);
 
     expect(screen.getByText("My Schedule")).toBeInTheDocument();
   });
 
-  test("delete button opens AlertDialog for confirmation", async () => {
-    const mockRemove = vi.fn();
-    vi.mocked(convexReact.useQuery).mockReturnValue([mockProject]);
-    vi.mocked(convexReact.useMutation).mockReturnValue(mockRemove);
+  test("renders an Open link for each session card", () => {
+    vi.mocked(convexReact.useQuery).mockReturnValue([mockSession]);
 
-    const user = userEvent.setup();
     render(<MyToolsPage />);
 
-    const deleteButton = screen.getByRole("button", { name: /delete/i });
-    await user.click(deleteButton);
-
-    // AlertDialog should now be open
-    expect(screen.getByTestId("alert-dialog")).toBeInTheDocument();
-    // Remove was NOT called yet — waiting for confirmation
-    expect(mockRemove).not.toHaveBeenCalled();
+    const openLink = screen.getByRole("link", { name: /open/i });
+    expect(openLink).toBeInTheDocument();
+    expect(openLink).toHaveAttribute("href", `/builder?session=${mockSession._id}`);
   });
 
-  test("cancel in AlertDialog does not call remove mutation", async () => {
-    const mockRemove = vi.fn();
-    vi.mocked(convexReact.useQuery).mockReturnValue([mockProject]);
-    vi.mocked(convexReact.useMutation).mockReturnValue(mockRemove);
+  test("renders session query as description", () => {
+    vi.mocked(convexReact.useQuery).mockReturnValue([mockSession]);
 
-    const user = userEvent.setup();
     render(<MyToolsPage />);
 
-    await user.click(screen.getByRole("button", { name: /delete/i }));
-    await user.click(screen.getByTestId("alert-cancel"));
-
-    expect(mockRemove).not.toHaveBeenCalled();
+    expect(screen.getByText("Build a visual schedule")).toBeInTheDocument();
   });
 
-  test("confirm in AlertDialog calls removeProject with projectId", async () => {
-    const mockRemove = vi.fn();
-    vi.mocked(convexReact.useQuery).mockReturnValue([mockProject]);
-    vi.mocked(convexReact.useMutation).mockReturnValue(mockRemove);
+  test("renders multiple session cards", () => {
+    const sessions = [
+      mockSession,
+      { ...mockSession, _id: "session2" as Id<"sessions">, title: "Token Board" },
+    ];
+    vi.mocked(convexReact.useQuery).mockReturnValue(sessions);
 
-    const user = userEvent.setup();
     render(<MyToolsPage />);
 
-    await user.click(screen.getByRole("button", { name: /delete/i }));
-    await user.click(screen.getByTestId("alert-confirm"));
-
-    expect(mockRemove).toHaveBeenCalledWith({ projectId: mockProject._id });
-  });
-
-  test("tool cards have share buttons that open the share dialog", async () => {
-    vi.mocked(convexReact.useQuery).mockReturnValue([mockProject]);
-
-    const user = userEvent.setup();
-    render(<MyToolsPage />);
-
-    const shareButton = screen.getByRole("button", { name: /share/i });
-    expect(shareButton).toBeInTheDocument();
-
-    // Clicking share button should not crash and should trigger share dialog
-    await user.click(shareButton);
-    // After clicking, the dialog state should have changed (ShareDialog rendered)
-    // Since ShareDialog is mocked to null, we just verify no error was thrown
+    expect(screen.getByText("My Schedule")).toBeInTheDocument();
+    expect(screen.getByText("Token Board")).toBeInTheDocument();
   });
 });

@@ -2,138 +2,58 @@ import { internalMutation } from "../_generated/server";
 
 const TEMPLATES = [
   {
-    title: "Feelings Board",
+    name: "Feelings Board",
     description:
       "Helps children identify and express complex emotions using visual cues and relatable icons.",
-    toolType: "communication-board" as const,
-    templateCategory: "communication",
-    config: {
-      type: "communication-board",
-      title: "Feelings Board",
-      sentenceStarter: "I feel",
-      enableTTS: true,
-      voiceId: "21m00Tcm4TlvDq8ikWAM",
-      columns: 4,
-      cards: [
-        { id: "card-1", label: "happy", icon: "smile", category: "emotion" },
-        { id: "card-2", label: "sad", icon: "frown", category: "emotion" },
-        { id: "card-3", label: "angry", icon: "angry", category: "emotion" },
-        { id: "card-4", label: "scared", icon: "alert-circle", category: "emotion" },
-        { id: "card-5", label: "excited", icon: "zap", category: "emotion" },
-        { id: "card-6", label: "tired", icon: "moon", category: "emotion" },
-        { id: "card-7", label: "calm", icon: "cloud", category: "emotion" },
-        { id: "card-8", label: "worried", icon: "help-circle", category: "emotion" },
-      ],
-    },
+    category: "communication",
+    starterPrompt:
+      "Build a feelings board communication app. Show 8 emotion cards (happy, sad, angry, scared, excited, tired, calm, worried) with icons. When tapped, speak the emotion aloud using text-to-speech. Include a sentence builder that says 'I feel [emotion]'.",
+    sortOrder: 1,
   },
   {
-    title: "Basic Needs Board",
+    name: "Basic Needs Board",
     description:
       "A simplified interface for non-verbal communication of immediate requirements like food, water, and rest.",
-    toolType: "communication-board" as const,
-    templateCategory: "communication",
-    config: {
-      type: "communication-board",
-      title: "Basic Needs Board",
-      sentenceStarter: "I want",
-      enableTTS: true,
-      voiceId: "21m00Tcm4TlvDq8ikWAM",
-      columns: 3,
-      cards: [
-        { id: "card-1", label: "water", icon: "droplets", category: "needs" },
-        { id: "card-2", label: "food", icon: "apple", category: "needs" },
-        { id: "card-3", label: "bathroom", icon: "bath", category: "needs" },
-        { id: "card-4", label: "break", icon: "pause-circle", category: "needs" },
-        { id: "card-5", label: "help", icon: "hand-helping", category: "needs" },
-        { id: "card-6", label: "sleep", icon: "bed", category: "needs" },
-      ],
-    },
+    category: "communication",
+    starterPrompt:
+      "Create a basic needs communication board for a non-verbal child. Show 6 need cards: water, food, bathroom, break, help, sleep. Each card has an icon and label. When tapped, speak 'I want [need]' aloud.",
+    sortOrder: 2,
   },
   {
-    title: "5-Star Reward Chart",
+    name: "5-Star Reward Chart",
     description:
       "Encourages positive behavior reinforcement through incremental goals and visual achievement milestones.",
-    toolType: "token-board" as const,
-    templateCategory: "rewards",
-    config: {
-      type: "token-board",
-      title: "5-Star Reward Chart",
-      totalTokens: 5,
-      earnedTokens: 0,
-      tokenIcon: "star",
-      celebrationAnimation: "confetti",
-      reinforcers: [
-        { id: "r-1", label: "Screen time", icon: "tv" },
-        { id: "r-2", label: "Favorite snack", icon: "cookie" },
-        { id: "r-3", label: "Choose a game", icon: "gamepad" },
-      ],
-    },
+    category: "rewards",
+    starterPrompt:
+      "Build a token board with 5 star tokens. When all tokens are earned, show a confetti celebration and let the child choose a reward from: screen time, favorite snack, or choose a game.",
+    sortOrder: 3,
   },
   {
-    title: "Sticker Collection",
+    name: "Sticker Collection",
     description:
       "A gamified approach to task completion where children earn stickers toward a reward.",
-    toolType: "token-board" as const,
-    templateCategory: "rewards",
-    config: {
-      type: "token-board",
-      title: "Sticker Collection",
-      totalTokens: 10,
-      earnedTokens: 0,
-      tokenIcon: "sticker",
-      celebrationAnimation: "stars",
-      reinforcers: [
-        { id: "r-1", label: "Pick a sticker", icon: "star" },
-        { id: "r-2", label: "Extra playtime", icon: "play" },
-        { id: "r-3", label: "Special activity", icon: "heart" },
-      ],
-    },
+    category: "rewards",
+    starterPrompt:
+      "Create a sticker collection token board with 10 sticker slots. Animate each sticker being placed when tapped. When all 10 are collected, celebrate with stars and let the child pick a reward: pick a sticker, extra playtime, or special activity.",
+    sortOrder: 4,
   },
   {
-    title: "Morning Routine",
+    name: "Morning Routine",
     description:
       "Step-by-step visual schedule to reduce morning anxiety and build independence in start-of-day tasks.",
-    toolType: "visual-schedule" as const,
-    templateCategory: "routines",
-    config: {
-      type: "visual-schedule",
-      title: "Morning Routine",
-      orientation: "vertical",
-      showCheckmarks: true,
-      theme: "light",
-      steps: [
-        { id: "step-1", label: "Wake up", icon: "sun", completed: false },
-        { id: "step-2", label: "Use bathroom", icon: "droplets", completed: false },
-        { id: "step-3", label: "Brush teeth", icon: "toothbrush", completed: false },
-        { id: "step-4", label: "Get dressed", icon: "shirt", completed: false },
-        { id: "step-5", label: "Eat breakfast", icon: "utensils", completed: false },
-        { id: "step-6", label: "Pack backpack", icon: "briefcase", completed: false },
-        { id: "step-7", label: "Go to school", icon: "bus", completed: false },
-      ],
-    },
+    category: "routines",
+    starterPrompt:
+      "Create a visual morning routine for a child with autism. Steps: wake up, use bathroom, brush teeth, get dressed, eat breakfast, pack backpack, go to school. Each step has a fun icon and can be tapped to mark as done. Show progress at the top.",
+    sortOrder: 5,
   },
   {
-    title: "Bedtime Routine",
+    name: "Bedtime Routine",
     description:
       "A calming visual guide for wind-down activities, helping transition into a restful night's sleep.",
-    toolType: "visual-schedule" as const,
-    templateCategory: "routines",
-    config: {
-      type: "visual-schedule",
-      title: "Bedtime Routine",
-      orientation: "vertical",
-      showCheckmarks: true,
-      theme: "dark",
-      steps: [
-        { id: "step-1", label: "Put on pajamas", icon: "shirt", completed: false },
-        { id: "step-2", label: "Brush teeth", icon: "toothbrush", completed: false },
-        { id: "step-3", label: "Wash face", icon: "droplets", completed: false },
-        { id: "step-4", label: "Read a book", icon: "book", completed: false },
-        { id: "step-5", label: "Lights off", icon: "moon", completed: false },
-        { id: "step-6", label: "Deep breaths", icon: "wind", completed: false },
-        { id: "step-7", label: "Go to sleep", icon: "bed", completed: false },
-      ],
-    },
+    category: "routines",
+    starterPrompt:
+      "Build a calming bedtime routine app. Steps: put on pajamas, brush teeth, wash face, read a book, lights off, deep breaths, go to sleep. Use a dark theme with soothing colors. Each step can be tapped to complete.",
+    sortOrder: 6,
   },
 ];
 
@@ -141,36 +61,23 @@ export const seedTemplates = internalMutation({
   args: {},
   handler: async (ctx): Promise<void> => {
     for (const template of TEMPLATES) {
-      // Check if a template with this title already exists (idempotency).
-      // Query all templates in the category via index, then check title in JS.
+      // Idempotency: check if template with this name already exists
       const categoryTemplates = await ctx.db
-        .query("tools")
-        .withIndex("by_template", (q) =>
-          q.eq("isTemplate", true).eq("templateCategory", template.templateCategory),
-        )
+        .query("therapyTemplates")
+        .withIndex("by_category", (q) => q.eq("category", template.category))
         .collect();
 
-      const existing = categoryTemplates.find((t) => t.title === template.title);
+      const existing = categoryTemplates.find((t) => t.name === template.name);
       if (existing) {
         continue;
       }
 
-      const now = Date.now();
-      const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
-      let shareSlug = "";
-      for (let i = 0; i < 10; i++) {
-        shareSlug += chars[Math.floor(Math.random() * chars.length)];
-      }
-      await ctx.db.insert("tools", {
-        title: template.title,
+      await ctx.db.insert("therapyTemplates", {
+        name: template.name,
         description: template.description,
-        toolType: template.toolType,
-        templateCategory: template.templateCategory,
-        config: template.config,
-        isTemplate: true,
-        shareSlug,
-        createdAt: now,
-        updatedAt: now,
+        category: template.category,
+        starterPrompt: template.starterPrompt,
+        sortOrder: template.sortOrder,
       });
     }
   },
