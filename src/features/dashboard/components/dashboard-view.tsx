@@ -70,7 +70,7 @@ export function DashboardView() {
   }
 
   return (
-    <main className="flex h-screen flex-1 flex-col overflow-y-auto bg-background">
+    <main className="flex h-full flex-col overflow-y-auto bg-background">
       {/* Mobile top bar */}
       <header className="sticky top-0 z-30 flex h-16 w-full items-center justify-between bg-background/70 px-4 backdrop-blur-xl md:hidden">
         <div className="flex items-center gap-3">

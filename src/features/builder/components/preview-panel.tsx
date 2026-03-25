@@ -2,6 +2,9 @@
 
 import { Sparkles } from "lucide-react";
 
+import { cn } from "@/core/utils";
+
+import type { DeviceSize } from "./builder-toolbar";
 import type { WebContainerStatus } from "../hooks/use-webcontainer";
 
 interface PreviewPanelProps {
@@ -9,9 +12,10 @@ interface PreviewPanelProps {
   state: string;
   wcStatus: WebContainerStatus;
   error?: string;
+  deviceSize?: DeviceSize;
 }
 
-export function PreviewPanel({ previewUrl, state, wcStatus, error }: PreviewPanelProps) {
+export function PreviewPanel({ previewUrl, state, wcStatus, error, deviceSize = "desktop" }: PreviewPanelProps) {
   const isGenerating = state === "generating";
   const isFailed = state === "failed" || wcStatus === "error";
   const hasPreview = wcStatus === "ready" && !!previewUrl;
@@ -20,7 +24,10 @@ export function PreviewPanel({ previewUrl, state, wcStatus, error }: PreviewPane
     <div className="flex h-full flex-col">
       <div className="flex flex-1 items-center justify-center overflow-hidden bg-surface-container-low/30 p-4">
         {hasPreview ? (
-          <div className="h-full w-full overflow-hidden rounded-2xl">
+          <div className={cn(
+            "h-full overflow-hidden rounded-2xl shadow-lg transition-all duration-300",
+            deviceSize === "mobile" ? "w-[375px]" : "w-full"
+          )}>
             <iframe
               src={previewUrl!}
               className="h-full w-full bg-white"

@@ -106,6 +106,7 @@ export function BuilderPage() {
                   state={status}
                   wcStatus={wcStatus}
                   error={error ?? wcError ?? undefined}
+                  deviceSize={deviceSize}
                 />
               </div>
             </ResizablePanel>
