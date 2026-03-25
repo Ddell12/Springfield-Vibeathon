@@ -6,8 +6,9 @@
  * (components, hooks, CSS, config) alongside generated files.
  */
 
-import { templateFiles } from "../hooks/webcontainer-files";
 import type { FileSystemTree } from "@webcontainer/api";
+
+import { templateFiles } from "../hooks/webcontainer-files";
 
 interface FlatFile {
   file: string;
@@ -28,7 +29,7 @@ function flattenTree(tree: FileSystemTree, prefix = ""): FlatFile[] {
       // Skip placeholder App.tsx — the generated version replaces it
       if (path === "src/App.tsx") continue;
 
-      const contents = entry.file.contents;
+      const contents = "contents" in entry.file ? entry.file.contents : undefined;
       if (typeof contents === "string") {
         result.push({ file: path, data: contents });
       }

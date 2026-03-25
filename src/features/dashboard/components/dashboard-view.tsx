@@ -1,17 +1,17 @@
 "use client";
 
 import { useQuery } from "convex/react";
-import { Bell, HelpCircle, Menu, Plus, Sparkles } from "lucide-react";
+import { Bell, HelpCircle, Menu, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 
-import { api } from "../../../../convex/_generated/api";
 import { EmptyState } from "@/shared/components/empty-state";
 import { MobileNavDrawer } from "@/shared/components/mobile-nav-drawer";
 import { Button } from "@/shared/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/components/ui/tabs";
 
+import { api } from "../../../../convex/_generated/api";
 import { MainPromptInput } from "./main-prompt-input";
 import { ProjectCard } from "./project-card";
 import { TemplatesTab } from "./templates-tab";
@@ -176,7 +176,7 @@ export function DashboardView() {
                 <div className="flex flex-col items-center justify-center pb-4 opacity-40">
                   <Sparkles size={32} className="mb-2" />
                 </div>
-                <p className="text-on-surface-variant">No apps yet — describe what you'd like to build!</p>
+                <p className="text-on-surface-variant">No apps yet — describe what you&apos;d like to build!</p>
                 <Link href="/builder">
                   <Button>Create Your First App</Button>
                 </Link>
@@ -219,14 +219,6 @@ export function DashboardView() {
         </Tabs>
       </section>
 
-      {/* Floating Action Button */}
-      <Link
-        href="/builder"
-        className="group fixed bottom-10 right-10 z-50 flex h-16 items-center gap-3 rounded-full bg-gradient-to-br from-primary to-primary-container px-8 font-headline font-bold text-white shadow-2xl transition-transform hover:scale-105 active:scale-95"
-      >
-        <Plus size={22} fill="currentColor" />
-        <span>New Session</span>
-      </Link>
     </main>
   );
 }

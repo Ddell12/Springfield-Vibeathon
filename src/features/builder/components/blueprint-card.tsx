@@ -3,6 +3,7 @@
 import { Sparkles } from "lucide-react";
 
 import { cn } from "@/core/utils";
+
 import type { TherapyBlueprint } from "../lib/schemas";
 
 interface BlueprintCardProps {

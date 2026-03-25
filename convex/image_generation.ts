@@ -1,11 +1,11 @@
 "use node";
 
-import { createHash } from "crypto";
 import { GoogleGenAI } from "@google/genai";
 import { v } from "convex/values";
+import { createHash } from "crypto";
 
-import { action } from "./_generated/server";
 import { internal } from "./_generated/api";
+import { action } from "./_generated/server";
 
 const CATEGORY_MODIFIERS: Record<string, string> = {
   emotions: "facial expression, round cartoon face",

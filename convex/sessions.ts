@@ -1,3 +1,4 @@
+// TODO (Phase 6): Add ctx.auth.getUserIdentity() checks to create, list, get, startGeneration, setLive, setFailed
 import { v } from "convex/values";
 
 import { mutation, query } from "./_generated/server";
@@ -72,6 +73,18 @@ export const setFailed = mutation({
   },
 });
 
+
+export const updateTitle = mutation({
+  args: {
+    sessionId: v.id("sessions"),
+    title: v.string(),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.sessionId, {
+      title: args.title,
+    });
+  },
+});
 
 export const setBlueprint = mutation({
   args: {

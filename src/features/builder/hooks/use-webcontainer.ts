@@ -46,11 +46,28 @@ export function useWebContainer(): UseWebContainerReturn {
         // Install dependencies
         setStatus("installing");
         const installProcess = await wc.spawn("npm", ["install"]);
-        const exitCode = await installProcess.exit;
+
+        // Capture output for error diagnostics
+        let installOutput = "";
+        installProcess.output.pipeTo(
+          new WritableStream({
+            write(chunk) {
+              installOutput += chunk;
+            },
+          })
+        ).catch(() => {/* stream may close early */});
+
+        const exitCode = await Promise.race([
+          installProcess.exit,
+          new Promise<number>((_, reject) =>
+            setTimeout(() => reject(new Error("npm install timed out after 60s")), 60_000)
+          ),
+        ]);
 
         if (exitCode !== 0) {
           setStatus("error");
-          setError("npm install failed");
+          const lastLines = installOutput.trim().split("\n").slice(-5).join("\n");
+          setError(`npm install failed:\n${lastLines || "Unknown error"}`);
           return;
         }
 

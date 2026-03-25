@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 
 import { cn } from "@/core/utils";
-import { NAV_ITEMS, isNavActive } from "@/shared/lib/navigation";
+import { isNavActive,NAV_ITEMS } from "@/shared/lib/navigation";
 
 export function DashboardSidebar() {
   const pathname = usePathname();

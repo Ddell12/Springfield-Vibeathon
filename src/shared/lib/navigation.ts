@@ -1,4 +1,4 @@
-import { Home, Sparkles, LayoutGrid, FolderOpen } from "lucide-react";
+import { FolderOpen,Home, LayoutGrid, Sparkles } from "lucide-react";
 
 export const NAV_ITEMS = [
   { icon: Home, label: "Home", href: "/dashboard" },

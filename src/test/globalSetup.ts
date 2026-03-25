@@ -6,7 +6,7 @@
  * Note: This file intentionally uses require() because it registers CommonJS
  * extension handlers — there is no ESM equivalent for require.extensions.
  */
-export default function () {
+export default function globalSetup() {
   if (typeof require !== "undefined" && require.extensions && !require.extensions[".ts"]) {
     const { transformSync } = require("esbuild");
     const fs = require("fs");

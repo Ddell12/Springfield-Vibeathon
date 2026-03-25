@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { type TherapyBlueprint,TherapyBlueprintSchema } from "@/features/builder/lib/schemas";
+import { type SSEEvent, parseSSEEvent } from "@/features/builder/lib/sse-events";
 
 export type StreamingStatus = "idle" | "generating" | "live" | "failed";
 
@@ -106,21 +107,19 @@ export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn 
   );
 
   const handleEvent = useCallback(
-    (event: string, d: Record<string, unknown>) => {
-      switch (event) {
+    (sseEvent: SSEEvent) => {
+      switch (sseEvent.event) {
         case "session":
-          if (d.sessionId) setSessionId(d.sessionId as string);
+          setSessionId(sseEvent.sessionId);
           break;
 
-        case "status": {
-          const newStatus = d.status as string;
-          if (newStatus === "live") setStatus("live");
-          else if (newStatus === "generating") setStatus("generating");
+        case "status":
+          if (sseEvent.status === "live") setStatus("live");
+          else if (sseEvent.status === "generating") setStatus("generating");
           break;
-        }
 
         case "token":
-          tokenBufferRef.current += d.token as string;
+          tokenBufferRef.current += sseEvent.token;
           if (!rafIdRef.current) {
             rafIdRef.current = requestAnimationFrame(() => {
               setStreamingText(tokenBufferRef.current);
@@ -130,16 +129,11 @@ export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn 
           break;
 
         case "activity":
-          addActivity(
-            d.type as Activity["type"],
-            d.message as string,
-            d.path as string | undefined
-          );
+          addActivity(sseEvent.type, sseEvent.message, sseEvent.path);
           break;
 
         case "file_complete": {
-          const path = d.path as string;
-          const contents = d.contents as string;
+          const { path, contents } = sseEvent;
           setFiles((prev) => {
             const idx = prev.findIndex((f) => f.path === path);
             const newFile: StreamingFile = { path, contents };
@@ -158,21 +152,21 @@ export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn 
         }
 
         case "app_name":
-          if (d.name) setAppName(d.name as string);
+          setAppName(sseEvent.name);
           break;
 
         case "blueprint": {
-          const parsed = TherapyBlueprintSchema.safeParse(d.data);
+          const parsed = TherapyBlueprintSchema.safeParse(sseEvent.data);
           if (parsed.success) setBlueprint(parsed.data);
           break;
         }
 
         case "image_generated":
-          addActivity("file_written", `Generated image: ${d.label as string}`);
+          addActivity("file_written", `Generated image: ${sseEvent.label}`);
           break;
 
         case "speech_generated":
-          addActivity("file_written", `Generated audio: "${d.text as string}"`);
+          addActivity("file_written", `Generated audio: "${sseEvent.text}"`);
           break;
 
         case "stt_enabled":
@@ -187,11 +181,11 @@ export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn 
           }
           setStreamingText(tokenBufferRef.current);
           setStatus("live");
-          if (d.sessionId) setSessionId(d.sessionId as string);
+          if (sseEvent.sessionId) setSessionId(sseEvent.sessionId);
           break;
 
         case "error":
-          setError(d.message as string);
+          setError(sseEvent.message);
           setStatus("failed");
           break;
       }
@@ -270,7 +264,8 @@ export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn 
 
           const events = parseSSEEvents(toProcess);
           for (const { event, data } of events) {
-            handleEvent(event, data as Record<string, unknown>);
+            const typed = parseSSEEvent(event, data);
+            if (typed) handleEvent(typed);
           }
         }
 
@@ -278,12 +273,13 @@ export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn 
         if (buffer.trim()) {
           const events = parseSSEEvents(buffer);
           for (const { event, data } of events) {
-            handleEvent(event, data as Record<string, unknown>);
+            const typed = parseSSEEvent(event, data);
+            if (typed) handleEvent(typed);
           }
         }
       } catch (err) {
-        if ((err as Error).name === "AbortError") return;
-        setError((err as Error).message ?? "Unknown error");
+        if (err instanceof Error && err.name === "AbortError") return;
+        setError(err instanceof Error ? err.message : "Unknown error");
         setStatus("failed");
       }
     },

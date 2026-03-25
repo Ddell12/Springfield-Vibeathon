@@ -1,3 +1,4 @@
+// TODO (Phase 6): Add ctx.auth.getUserIdentity() checks to create, update; filter list/getBySession by userId
 import { v } from "convex/values";
 
 import { mutation, query } from "./_generated/server";

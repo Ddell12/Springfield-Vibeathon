@@ -9,7 +9,10 @@ import { api } from "../../../../convex/_generated/api";
 function blobToBase64(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onloadend = () => resolve((reader.result as string).split(",")[1]);
+    reader.onloadend = () => {
+      const result = typeof reader.result === "string" ? reader.result : "";
+      resolve(result.split(",")[1]);
+    };
     reader.onerror = reject;
     reader.readAsDataURL(blob);
   });
@@ -29,7 +32,7 @@ export function usePostMessageBridge(iframeRef: React.RefObject<HTMLIFrameElemen
       // Only process messages from our iframe — ignore cross-origin noise
       if (event.source !== iframe.contentWindow) return;
 
-      const messageType = event.data?.type as string | undefined;
+      const messageType = typeof event.data?.type === "string" ? event.data.type : undefined;
 
       switch (messageType) {
         case "tts-request": {
@@ -45,7 +48,7 @@ export function usePostMessageBridge(iframeRef: React.RefObject<HTMLIFrameElemen
           } catch (err) {
             console.error("[PostMessage Bridge] TTS error:", err);
             iframe.contentWindow.postMessage(
-              { type: "tts-error", text: event.data.text, error: (err as Error).message },
+              { type: "tts-error", text: event.data.text, error: err instanceof Error ? err.message : "Unknown error" },
               "*",
             );
           }
@@ -71,7 +74,7 @@ export function usePostMessageBridge(iframeRef: React.RefObject<HTMLIFrameElemen
               } catch (err) {
                 console.error("[PostMessage Bridge] STT error:", err);
                 iframe.contentWindow?.postMessage(
-                  { type: "stt-error", error: (err as Error).message },
+                  { type: "stt-error", error: err instanceof Error ? err.message : "Unknown error" },
                   "*",
                 );
               }

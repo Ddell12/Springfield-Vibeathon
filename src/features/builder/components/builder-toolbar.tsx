@@ -3,6 +3,7 @@
 import {
   ArrowLeft,
   Globe,
+  Loader2,
   Monitor,
   Share2,
   Smartphone,
@@ -11,7 +12,9 @@ import Link from "next/link";
 
 import { cn } from "@/core/utils";
 import { Button } from "@/shared/components/ui/button";
+
 import type { StreamingStatus } from "../hooks/use-streaming";
+import type { WebContainerStatus } from "../hooks/use-webcontainer";
 
 export type DeviceSize = "mobile" | "desktop";
 export type ViewMode = "preview" | "code";
@@ -22,7 +25,12 @@ interface BuilderToolbarProps {
   deviceSize: DeviceSize;
   onDeviceSizeChange: (size: DeviceSize) => void;
   status: StreamingStatus;
+  wcStatus: WebContainerStatus;
+  isPublishing: boolean;
   projectName: string;
+  isEditingName?: boolean;
+  onNameEditStart?: () => void;
+  onNameEditEnd?: (name: string) => void;
   onShare?: () => void;
   onPublish?: () => void;
 }
@@ -38,11 +46,17 @@ export function BuilderToolbar({
   deviceSize,
   onDeviceSizeChange,
   status,
+  wcStatus,
+  isPublishing,
   projectName,
+  isEditingName,
+  onNameEditStart,
+  onNameEditEnd,
   onShare,
   onPublish,
 }: BuilderToolbarProps) {
   const isGenerating = status === "generating";
+  const canPublish = wcStatus === "ready" && !isGenerating && !isPublishing;
 
   return (
     <header className="flex h-12 flex-shrink-0 items-center justify-between bg-surface-container-lowest px-3 shadow-sm">
@@ -57,9 +71,26 @@ export function BuilderToolbar({
           <ArrowLeft className="h-4 w-4" />
         </Link>
 
-        <span className="truncate text-[13px] font-semibold tracking-tight text-primary">
-          {projectName}
-        </span>
+        {isEditingName ? (
+          <input
+            autoFocus
+            defaultValue={projectName}
+            className="w-[160px] truncate border-b border-primary/50 bg-transparent text-[13px] font-semibold tracking-tight text-primary outline-none"
+            onBlur={(e) => onNameEditEnd?.(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") onNameEditEnd?.((e.target as HTMLInputElement).value);
+              if (e.key === "Escape") onNameEditEnd?.(projectName);
+            }}
+          />
+        ) : (
+          <button
+            onClick={onNameEditStart}
+            className="truncate text-[13px] font-semibold tracking-tight text-primary transition-all hover:underline hover:underline-offset-2"
+            title="Click to rename"
+          >
+            {projectName}
+          </button>
+        )}
 
         {/* Status indicator pill */}
         {isGenerating && (
@@ -147,10 +178,11 @@ export function BuilderToolbar({
         </Button>
         <Button
           size="sm"
-          className="h-8 rounded-lg bg-primary-container px-4 text-[13px] font-semibold text-white shadow-sm transition-all hover:bg-primary active:scale-95"
+          className="h-8 rounded-lg bg-primary-container px-4 text-[13px] font-semibold text-white shadow-sm transition-all hover:bg-primary active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
           onClick={onPublish}
+          disabled={!canPublish}
         >
-          Publish
+          {isPublishing ? <Loader2 className="h-4 w-4 animate-spin" /> : "Publish"}
         </Button>
       </div>
     </header>

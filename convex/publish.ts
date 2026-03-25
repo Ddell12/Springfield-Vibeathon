@@ -2,11 +2,10 @@
 
 import { v } from "convex/values";
 
-import { action } from "./_generated/server";
-import { api } from "./_generated/api";
-
 // NOTE: "use node" actions can import from src/ via relative paths (esbuild bundles them)
 import { getPublishableTemplateFiles } from "../src/features/builder/lib/template-files";
+import { api } from "./_generated/api";
+import { action } from "./_generated/server";
 
 export const publishApp = action({
   args: {

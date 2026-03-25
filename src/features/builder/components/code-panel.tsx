@@ -1,6 +1,6 @@
 "use client";
 
-import { Copy, Download, X } from "lucide-react";
+import { Copy, Download, Loader2, X } from "lucide-react";
 import { useState } from "react";
 
 import { copyToClipboard } from "@/core/clipboard";
@@ -34,7 +34,8 @@ export function CodePanel({ files, status }: CodePanelProps) {
   if (files.length === 0 && isGenerating) {
     return (
       <div className="flex h-full items-center justify-center bg-surface-container text-on-surface-variant">
-        <div className="animate-pulse text-center">
+        <div className="flex flex-col items-center gap-3 text-center">
+          <Loader2 className="h-6 w-6 animate-spin text-primary" />
           <p className="text-sm">Generating your files...</p>
         </div>
       </div>

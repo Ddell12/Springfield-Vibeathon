@@ -37,6 +37,7 @@ export default defineSchema({
   apps: defineTable({
     title: v.string(),
     description: v.string(),
+    userId: v.optional(v.string()), // Phase 6: will be required + auth-checked
     sessionId: v.optional(v.id("sessions")),
     shareSlug: v.string(),
     previewUrl: v.optional(v.string()),

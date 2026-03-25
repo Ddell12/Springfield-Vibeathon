@@ -29,6 +29,22 @@ export const runtime = "nodejs";
 
 const TOOLS: Anthropic.Tool[] = [
   {
+    name: "set_app_name",
+    description:
+      "Set a short, friendly name for this therapy app. Call this FIRST, before writing any files. The name appears in the toolbar and share links. Keep it under 40 characters, therapy-appropriate, no developer jargon.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        name: {
+          type: "string",
+          description:
+            "Short app name (e.g., 'Morning Star Board', 'Feelings Check-In', 'My Daily Schedule')",
+        },
+      },
+      required: ["name"],
+    },
+  },
+  {
     name: "write_file",
     description:
       "Write or overwrite a file in the therapy app project. Use for src/App.tsx, additional components, styles, or utility files.",
@@ -108,6 +124,19 @@ const TOOLS: Anthropic.Tool[] = [
 // Helpers
 // ---------------------------------------------------------------------------
 
+async function settleInBatches<T>(
+  thunks: (() => Promise<T>)[],
+  batchSize: number,
+): Promise<PromiseSettledResult<T>[]> {
+  const results: PromiseSettledResult<T>[] = [];
+  for (let i = 0; i < thunks.length; i += batchSize) {
+    const batch = thunks.slice(i, i + batchSize);
+    const settled = await Promise.allSettled(batch.map((fn) => fn()));
+    results.push(...settled);
+  }
+  return results;
+}
+
 function jsonErrorResponse(message: string, status: number): Response {
   return new Response(JSON.stringify({ error: message }), {
     status,
@@ -149,7 +178,7 @@ async function runToolAction(
     return {
       type: "tool_result",
       tool_use_id: toolUseId,
-      content: `Error: ${(err as Error).message}`,
+      content: `Error: ${err instanceof Error ? err.message : String(err)}`,
       is_error: true,
     };
   }
@@ -207,17 +236,10 @@ export async function POST(request: Request): Promise<Response> {
         send("activity", { type: "thinking", message: "Understanding your request..." });
 
         const systemPrompt = buildSystemPrompt();
-        let version = 1;
-        if (providedSessionId) {
-          const existingFiles = await convex.query(api.generated_files.list, { sessionId });
-          if (existingFiles.length > 0) {
-            version = Math.max(...existingFiles.map((f) => f.version ?? 0)) + 1;
-          }
-        }
 
         const collectedFiles: { path: string; contents: string }[] = [];
         let assistantText = "";
-        const mutationPromises: Promise<unknown>[] = [];
+        const mutationThunks: (() => Promise<unknown>)[] = [];
 
         let messages: Anthropic.MessageParam[] = [{ role: "user", content: query }];
         const MAX_TOOL_TURNS = 10;
@@ -248,6 +270,21 @@ export async function POST(request: Request): Promise<Response> {
             const input = block.input as Record<string, unknown>;
 
             switch (block.name) {
+              case "set_app_name": {
+                const name = typeof input.name === "string" ? input.name.slice(0, 60) : "";
+                if (name) {
+                  await convex.mutation(api.sessions.updateTitle, { sessionId, title: name });
+                  send("app_name", { name });
+                }
+                toolResults.push({
+                  type: "tool_result",
+                  tool_use_id: block.id,
+                  content: name ? `App name set to "${name}"` : "Error: name is required",
+                  is_error: !name,
+                });
+                break;
+              }
+
               case "write_file": {
                 const path = typeof input.path === "string" ? input.path : "";
                 const contents = typeof input.contents === "string" ? input.contents : "";
@@ -262,17 +299,15 @@ export async function POST(request: Request): Promise<Response> {
                 }
                 if (path && contents) {
                   collectedFiles.push({ path, contents });
-                  send("file_complete", { path, contents, version });
+                  send("file_complete", { path, contents });
                   send("activity", { type: "file_written", message: `Wrote ${path}`, path });
-                  mutationPromises.push(
-                    convex.mutation(api.generated_files.upsert, {
+                  mutationThunks.push(() =>
+                    convex.mutation(api.generated_files.upsertAutoVersion, {
                       sessionId,
                       path,
                       contents,
-                      version,
                     }),
                   );
-                  version++;
                   toolResults.push({
                     type: "tool_result",
                     tool_use_id: block.id,
@@ -290,37 +325,66 @@ export async function POST(request: Request): Promise<Response> {
               }
 
               case "generate_image": {
-                send("activity", { type: "thinking", message: `Generating image: ${input.label}...` });
+                const label = typeof input.label === "string" ? input.label : "";
+                const category = typeof input.category === "string" ? input.category : "objects";
+                if (!label) {
+                  toolResults.push({
+                    type: "tool_result",
+                    tool_use_id: block.id,
+                    content: "Error: generate_image requires a non-empty label",
+                    is_error: true,
+                  });
+                  break;
+                }
+                send("activity", { type: "thinking", message: `Generating image: ${label}...` });
                 const result = await runToolAction(block.id, () =>
                   convex.action(api.image_generation.generateTherapyImage, {
-                    label: input.label as string,
-                    category: input.category as string,
+                    label,
+                    category,
                   }),
                 );
                 if (!result.is_error) {
-                  send("image_generated", { label: input.label, imageUrl: JSON.parse(result.content as string).imageUrl });
+                  const parsed = typeof result.content === "string" ? JSON.parse(result.content) : null;
+                  if (parsed?.imageUrl) {
+                    send("image_generated", { label, imageUrl: parsed.imageUrl });
+                  }
                 }
                 toolResults.push(result);
                 break;
               }
 
               case "generate_speech": {
-                send("activity", { type: "thinking", message: `Generating audio: "${input.text}"...` });
+                const text = typeof input.text === "string" ? input.text : "";
+                const voice = typeof input.voice === "string" ? input.voice : "warm-female";
+                if (!text) {
+                  toolResults.push({
+                    type: "tool_result",
+                    tool_use_id: block.id,
+                    content: "Error: generate_speech requires non-empty text",
+                    is_error: true,
+                  });
+                  break;
+                }
+                send("activity", { type: "thinking", message: `Generating audio: "${text}"...` });
                 const result = await runToolAction(block.id, () =>
                   convex.action(api.aiActions.generateSpeech, {
-                    text: input.text as string,
-                    voice: (input.voice as string) ?? "warm-female",
+                    text,
+                    voice,
                   }),
                 );
                 if (!result.is_error) {
-                  send("speech_generated", { text: input.text, audioUrl: JSON.parse(result.content as string).audioUrl });
+                  const parsed = typeof result.content === "string" ? JSON.parse(result.content) : null;
+                  if (parsed?.audioUrl) {
+                    send("speech_generated", { text, audioUrl: parsed.audioUrl });
+                  }
                 }
                 toolResults.push(result);
                 break;
               }
 
               case "enable_speech_input": {
-                send("stt_enabled", { purpose: input.purpose });
+                const purpose = typeof input.purpose === "string" ? input.purpose : "";
+                send("stt_enabled", { purpose });
                 toolResults.push({
                   type: "tool_result",
                   tool_use_id: block.id,
@@ -346,8 +410,8 @@ export async function POST(request: Request): Promise<Response> {
           send("activity", { type: "complete", message: "Generation complete (reached max steps)" });
         }
 
-        // Persist files — use allSettled so one failure doesn't kill the whole generation
-        const settled = await Promise.allSettled(mutationPromises);
+        // Persist files in batches of 10 — prevents rate limit overload
+        const settled = await settleInBatches(mutationThunks, 10);
         const failures = settled.filter((r) => r.status === "rejected");
         if (failures.length > 0) {
           console.error(`[generate] ${failures.length} file persistence failure(s)`);

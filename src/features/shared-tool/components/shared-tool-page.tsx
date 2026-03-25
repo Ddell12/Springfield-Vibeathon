@@ -10,7 +10,7 @@ import { api } from "../../../../convex/_generated/api";
 
 export function SharedToolPage() {
   const params = useParams();
-  const slug = params?.toolId as string;
+  const slug = typeof params?.toolId === "string" ? params.toolId : "";
   const app = useQuery(api.apps.getByShareSlug, slug ? { shareSlug: slug } : "skip");
 
   if (app === undefined) {
@@ -66,7 +66,7 @@ export function SharedToolPage() {
               src={previewUrl}
               title={app.title}
               className="w-full h-[70vh] rounded-xl border border-outline-variant/20 shadow-lg"
-              sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+              sandbox="allow-scripts allow-forms allow-popups"
             />
           </div>
         ) : (

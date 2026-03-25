@@ -26,7 +26,7 @@ export const list = query({
       .query("messages")
       .withIndex("by_session_timestamp", (q) => q.eq("sessionId", args.sessionId))
       .order("asc")
-      .collect();
+      .take(500);
   },
 });
 

@@ -5,7 +5,6 @@ import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 
 import { cn } from "@/core/utils";
-import { NAV_ITEMS, isNavActive } from "@/shared/lib/navigation";
 import { Button } from "@/shared/components/ui/button";
 import {
   Sheet,
@@ -13,6 +12,7 @@ import {
   SheetDescription,
   SheetTitle,
 } from "@/shared/components/ui/sheet";
+import { isNavActive,NAV_ITEMS } from "@/shared/lib/navigation";
 
 interface MobileNavDrawerProps {
   readonly open: boolean;

@@ -53,6 +53,6 @@ export const getAll = query({
     return await ctx.db
       .query("appState")
       .withIndex("by_app_key", (q) => q.eq("appId", args.appId))
-      .collect();
+      .take(100);
   },
 });
