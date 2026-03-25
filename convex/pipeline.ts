@@ -1,18 +1,19 @@
 // convex/pipeline.ts — Pipeline dispatcher + blueprint generation step
 "use node";
 import Anthropic from "@anthropic-ai/sdk";
-import { internalAction } from "./_generated/server";
-import { internal, api } from "./_generated/api";
 import { v } from "convex/values";
-import { createPipelineTools } from "./pipeline_tools";
-import { BLUEPRINT_SYSTEM_PROMPT, PHASE_GENERATION_PROMPT, PHASE_IMPLEMENTATION_PROMPT, VALIDATION_PROMPT } from "./pipeline_prompts";
-import { createAndDeploySandbox, updateSandboxFiles, getRuntimeErrors } from "./e2b";
+
 // NOTE: Importing from src/ into convex/ via relative path. Convex "use node" actions
 // are bundled with esbuild which resolves this. If deployment fails, copy the schema
 // into convex/ instead.
-import { TherapyBlueprintSchema, PhaseConceptSchema, PhaseImplementationSchema } from "../src/features/builder/lib/schemas/index";
-import type { ActionCtx } from "./_generated/server";
+import { PhaseConceptSchema, PhaseImplementationSchema,TherapyBlueprintSchema } from "../src/features/builder/lib/schemas/index";
+import { api,internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
+import type { ActionCtx } from "./_generated/server";
+import { internalAction } from "./_generated/server";
+import { connectOrRecreate, createAndDeploySandbox, getRuntimeErrors } from "./e2b";
+import { BLUEPRINT_SYSTEM_PROMPT, PHASE_GENERATION_PROMPT, PHASE_IMPLEMENTATION_PROMPT, VALIDATION_PROMPT } from "./pipeline_prompts";
+import { createPipelineTools } from "./pipeline_tools";
 
 const anthropic = new Anthropic(); // Uses ANTHROPIC_API_KEY env var
 
@@ -424,10 +425,15 @@ async function deployToSandbox(
   let previewUrl: string;
 
   if (session.sandboxId) {
-    // Existing sandbox — update files
-    await updateSandboxFiles(session.sandboxId, filePayload, commands);
-    sandboxId = session.sandboxId;
-    previewUrl = session.previewUrl ?? "";
+    // Existing sandbox — reconnect or recreate if expired
+    const result = await connectOrRecreate(
+      session.sandboxId,
+      session.templateName ?? "vite-therapy",
+      filePayload,
+      commands,
+    );
+    sandboxId = result.sandboxId;
+    previewUrl = result.previewUrl;
   } else {
     // First deploy — create new sandbox
     const result = await createAndDeploySandbox(
