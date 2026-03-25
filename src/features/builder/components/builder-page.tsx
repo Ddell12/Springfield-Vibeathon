@@ -62,8 +62,8 @@ export function BuilderPage() {
     }
   }, [sessionId, sessionIdFromUrl, router]);
 
-  // Derive a project name from blueprint or default
-  const projectName = typeof blueprint?.name === "string" ? blueprint.name : "Untitled App";
+  // Derive an app name from blueprint or default
+  const appName = typeof blueprint?.name === "string" ? blueprint.name : "Untitled App";
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
@@ -73,7 +73,7 @@ export function BuilderPage() {
         deviceSize={deviceSize}
         onDeviceSizeChange={setDeviceSize}
         status={status}
-        projectName={projectName}
+        projectName={appName}
         onShare={() => setShareDialogOpen(true)}
         onPublish={() => setPublishModalOpen(true)}
       />
@@ -108,7 +108,7 @@ export function BuilderPage() {
           )}
 
           {viewMode === "preview" && (
-            <ResizablePanel defaultSize={viewMode === "preview" ? 70 : 35} minSize={20}>
+            <ResizablePanel defaultSize={70} minSize={20}>
               <div className="h-full overflow-hidden rounded-2xl bg-surface-container-lowest">
                 <PreviewPanel
                   previewUrl={previewUrl}
@@ -127,14 +127,14 @@ export function BuilderPage() {
         open={shareDialogOpen}
         onOpenChange={setShareDialogOpen}
         shareSlug={sessionId ?? "preview"}
-        toolTitle={projectName}
+        appTitle={appName}
       />
 
       <PublishSuccessModal
         open={publishModalOpen}
         onOpenChange={setPublishModalOpen}
-        projectName={projectName}
-        publishedUrl={`https://bridges.app/tool/${sessionId ?? "preview"}`}
+        projectName={appName}
+        publishedUrl={`${window.location.origin}/tool/${sessionId ?? "preview"}`}
         onBackToBuilder={() => setPublishModalOpen(false)}
       />
     </div>

@@ -18,7 +18,7 @@ type ShareDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   shareSlug: string;
-  toolTitle: string;
+  appTitle: string;
   publishedUrl?: string;
 };
 
@@ -26,7 +26,7 @@ export function ShareDialog({
   open,
   onOpenChange,
   shareSlug,
-  toolTitle,
+  appTitle,
   publishedUrl,
 }: ShareDialogProps) {
   const [activeTab, setActiveTab] = useState<"preview" | "published">("preview");
@@ -46,7 +46,7 @@ export function ShareDialog({
 
   async function handleShare() {
     try {
-      await navigator.share({ title: toolTitle, url: activeUrl });
+      await navigator.share({ title: appTitle, url: activeUrl });
     } catch {
       // User cancelled or share not supported — no-op
     }
@@ -58,7 +58,7 @@ export function ShareDialog({
         {/* Header */}
         <DialogHeader className="flex flex-row items-center justify-between">
           <DialogTitle className="font-headline font-semibold text-lg text-on-surface">
-            Share &apos;{toolTitle}&apos;
+            Share &apos;{appTitle}&apos;
           </DialogTitle>
           <button
             type="button"

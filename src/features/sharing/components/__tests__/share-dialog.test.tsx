@@ -37,7 +37,7 @@ const defaultProps = {
   open: true,
   onOpenChange: vi.fn(),
   shareSlug: "abc1234567",
-  toolTitle: "Morning Routine",
+  appTitle: "Morning Routine",
 };
 
 describe("ShareDialog", () => {
