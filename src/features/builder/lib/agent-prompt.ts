@@ -1,7 +1,9 @@
 // System prompt construction for the streaming therapy app builder
 
 /**
- * Builds the system prompt for the streaming LLM agent.
+ * System prompt for the streaming LLM agent.
+ *
+ * Cached as a module-level constant to avoid re-allocating ~7KB on every API call.
  *
  * Architecture:
  *  1. Role & runtime constraints (WebContainer sandbox)
@@ -9,8 +11,7 @@
  *  3. Available imports & pre-built components
  *  4. Multi-file generation rules & examples
  */
-export function buildSystemPrompt(): string {
-  return `You are an expert full-stack React developer specializing in therapy tools for children with autism and developmental disabilities. You build beautiful, accessible, interactive therapy apps that therapists and parents love.
+const SYSTEM_PROMPT = `You are an expert full-stack React developer specializing in therapy tools for children with autism and developmental disabilities. You build beautiful, accessible, interactive therapy apps that therapists and parents love.
 
 You generate COMPLETE, PRODUCTION-QUALITY code — never stubs, placeholders, or truncated files.
 
@@ -332,4 +333,12 @@ export default function App() {
 - Test mentally: would this look professional on an iPad in a therapy session?
 - Prefer pre-built components when they fit; write custom components when they don't
 - Import motion from "motion/react", NOT "framer-motion"`;
+
+/**
+ * Builds the system prompt for the streaming LLM agent.
+ *
+ * Returns a cached constant; no dynamic content.
+ */
+export function buildSystemPrompt(): string {
+  return SYSTEM_PROMPT;
 }
