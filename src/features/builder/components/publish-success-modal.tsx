@@ -3,6 +3,7 @@
 import { Check, Copy, ExternalLink, Link, QrCode, Share2 } from "lucide-react";
 import { toast } from "sonner";
 
+import { copyToClipboard } from "@/core/clipboard";
 import { cn } from "@/core/utils";
 import { Button } from "@/shared/components/ui/button";
 import {
@@ -28,12 +29,7 @@ export function PublishSuccessModal({
   onBackToBuilder,
 }: PublishSuccessModalProps) {
   async function handleCopyUrl() {
-    try {
-      await navigator.clipboard.writeText(publishedUrl);
-      toast.success("Link copied!");
-    } catch {
-      toast.error("Failed to copy — try selecting and copying manually");
-    }
+    await copyToClipboard(publishedUrl, "Link copied!");
   }
 
   return (
@@ -128,8 +124,7 @@ export function PublishSuccessModal({
                 if (navigator.share) {
                   await navigator.share({ url: publishedUrl, title: projectName });
                 } else {
-                  await navigator.clipboard.writeText(publishedUrl);
-                  toast.success("Link copied!");
+                  await copyToClipboard(publishedUrl, "Link copied!");
                 }
               } catch {
                 // User cancelled share, or clipboard access denied — no-op

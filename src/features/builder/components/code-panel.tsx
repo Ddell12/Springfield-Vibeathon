@@ -2,8 +2,8 @@
 
 import { Copy, Download, X } from "lucide-react";
 import { useState } from "react";
-import { toast } from "sonner";
 
+import { copyToClipboard } from "@/core/clipboard";
 import { cn } from "@/core/utils";
 import { ScrollArea } from "@/shared/components/ui/scroll-area";
 
@@ -84,12 +84,7 @@ export function CodePanel({ files, status }: CodePanelProps) {
             title="Copy Content"
             onClick={async () => {
               if (selectedFile) {
-                try {
-                  await navigator.clipboard.writeText(selectedFile.contents);
-                  toast.success("Copied to clipboard");
-                } catch {
-                  toast.error("Failed to copy — try selecting and copying manually");
-                }
+                await copyToClipboard(selectedFile.contents, "Copied to clipboard");
               }
             }}
           >

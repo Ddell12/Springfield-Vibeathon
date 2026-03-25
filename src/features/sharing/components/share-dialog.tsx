@@ -3,8 +3,8 @@
 import { Copy, Share2, X } from "lucide-react";
 import { useState } from "react";
 import QRCode from "react-qr-code";
-import { toast } from "sonner";
 
+import { copyToClipboard } from "@/core/clipboard";
 import { cn } from "@/core/utils";
 import { Button } from "@/shared/components/ui/button";
 import {
@@ -36,12 +36,7 @@ export function ShareDialog({
   const activeUrl = activeTab === "published" && publishedUrl ? publishedUrl : previewUrl;
 
   async function handleCopy() {
-    try {
-      await navigator.clipboard.writeText(activeUrl);
-      toast.success("Link copied!");
-    } catch {
-      toast.error("Failed to copy — try selecting and copying manually");
-    }
+    await copyToClipboard(activeUrl, "Link copied!");
   }
 
   async function handleShare() {
