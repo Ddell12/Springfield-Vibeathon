@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Bridges Core Builder - Morning Routine Board</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "outline": "#6f7979",
+              "inverse-primary": "#8ed2d5",
+              "on-tertiary-fixed": "#002021",
+              "on-surface-variant": "#3f4949",
+              "on-primary-fixed-variant": "#004f52",
+              "secondary-fixed": "#c7e9ea",
+              "error-container": "#ffdad6",
+              "surface-container": "#ededf3",
+              "surface-bright": "#f9f9ff",
+              "secondary-fixed-dim": "#accdce",
+              "tertiary": "#004042",
+              "on-background": "#191c20",
+              "on-tertiary-fixed-variant": "#004f52",
+              "tertiary-fixed": "#9df0f4",
+              "on-secondary-fixed": "#002021",
+              "outline-variant": "#bec8c8",
+              "secondary": "#456465",
+              "tertiary-container": "#00595c",
+              "on-primary-fixed": "#002021",
+              "tertiary-fixed-dim": "#81d4d8",
+              "on-tertiary-container": "#7dcfd3",
+              "surface-tint": "#1d686b",
+              "surface-dim": "#d9dadf",
+              "on-tertiary": "#ffffff",
+              "on-secondary": "#ffffff",
+              "on-primary": "#ffffff",
+              "inverse-on-surface": "#f0f0f6",
+              "error": "#ba1a1a",
+              "primary-fixed": "#aaeef1",
+              "on-error-container": "#93000a",
+              "background": "#f9f9ff",
+              "surface-container-low": "#f3f3f9",
+              "surface": "#f9f9ff",
+              "on-secondary-fixed-variant": "#2d4c4d",
+              "secondary-container": "#c7e9ea",
+              "surface-container-highest": "#e2e2e8",
+              "on-surface": "#191c20",
+              "on-secondary-container": "#4b6a6b",
+              "surface-container-lowest": "#ffffff",
+              "primary-fixed-dim": "#8ed2d5",
+              "on-error": "#ffffff",
+              "surface-container-high": "#e7e8ee",
+              "surface-variant": "#e2e2e8",
+              "primary": "#004042",
+              "inverse-surface": "#2e3035",
+              "on-primary-container": "#89cdd0",
+              "primary-container": "#00595c"
+            },
+            fontFamily: {
+              "headline": ["Inter"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            font-size: 18px;
+        }
+        @keyframes pulse-teal {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.4); opacity: 0.4; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .animate-pulse-teal {
+            animation: pulse-teal 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        .ghost-border-bottom {
+            border-bottom: 1px solid rgba(190, 200, 200, 0.3);
+        }
+    </style>
+</head>
+<body class="bg-surface font-body text-on-surface antialiased">
+<!-- TopAppBar Shared Component Implementation -->
+<header class="h-[48px] w-full fixed top-0 z-50 bg-white dark:bg-slate-900/95 backdrop-blur-md flex items-center justify-between px-3 ghost-border-bottom shadow-sm dark:shadow-none">
+<!-- Left Section: Brand & Status -->
+<div class="flex items-center gap-3">
+<button class="w-[28px] h-[28px] flex items-center justify-center rounded bg-gradient-to-br from-primary-container to-primary text-white transition-transform active:scale-90">
+<span class="material-symbols-outlined !text-[16px]">arrow_back</span>
+</button>
+<div class="flex items-center gap-1 cursor-pointer group">
+<span class="font-inter text-[13px] font-semibold tracking-tight text-primary dark:text-[#00898d]">Morning Routine Board</span>
+<span class="material-symbols-outlined !text-[14px] text-outline group-hover:text-primary transition-colors">keyboard_arrow_down</span>
+</div>
+<div class="hidden sm:flex items-center gap-2 px-2 py-1 rounded-full bg-surface-container-low">
+<div class="relative flex items-center justify-center w-2 h-2">
+<div class="absolute w-1.5 h-1.5 rounded-full bg-primary-container animate-pulse-teal"></div>
+<div class="w-1.5 h-1.5 rounded-full bg-primary-container"></div>
+</div>
+<span class="text-[12px] font-medium text-on-surface-variant/70 font-label">Loading Live Preview...</span>
+</div>
+</div>
+<!-- Center Section: View Controls & URL -->
+<div class="absolute left-1/2 -translate-x-1/2 hidden lg:flex items-center gap-3">
+<!-- Segmented Control -->
+<div class="flex items-center p-1 bg-surface-container-high rounded-lg">
+<button class="text-[#00595C] dark:text-teal-400 bg-white dark:bg-slate-800 shadow-sm rounded-md px-3 py-1 font-inter text-[13px] font-semibold transition-all duration-200">Preview</button>
+<button class="text-slate-500 dark:text-slate-400 px-3 py-1 hover:text-[#00595C] transition-colors font-inter text-[13px] font-semibold">Code</button>
+</div>
+<div class="h-4 w-[1px] bg-outline-variant/30"></div>
+<!-- Device Icons -->
+<div class="flex items-center gap-1">
+<button class="p-1.5 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md transition-all active:scale-95">
+<span class="material-symbols-outlined">smartphone</span>
+</button>
+<button class="p-1.5 text-primary bg-surface-container-high rounded-md transition-all active:scale-95">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">tablet</span>
+</button>
+<button class="p-1.5 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md transition-all active:scale-95">
+<span class="material-symbols-outlined">monitor</span>
+</button>
+</div>
+<div class="h-4 w-[1px] bg-outline-variant/30"></div>
+<!-- URL Bar -->
+<div class="flex items-center gap-2 px-3 py-1 bg-surface-container-low rounded-full min-w-[120px]">
+<span class="material-symbols-outlined !text-[14px] text-outline">language</span>
+<span class="text-[12px] text-outline font-medium">/</span>
+</div>
+</div>
+<!-- Right Section: Actions -->
+<div class="flex items-center gap-2">
+<button class="flex items-center gap-1.5 px-3 py-1.5 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md transition-all duration-200 active:scale-95">
+<span class="material-symbols-outlined !text-[18px]">share</span>
+<span class="text-[12px] font-semibold font-label">Share</span>
+</button>
+<button class="h-[32px] px-4 flex items-center justify-center bg-primary-container hover:bg-primary text-white font-semibold text-[13px] rounded-lg shadow-sm transition-all active:scale-95">
+                Publish
+            </button>
+</div>
+</header>
+<!-- Main Content Canvas (Focused Journey - No Sidebar/BottomNav) -->
+<main class="pt-[48px] min-h-screen w-full flex flex-col items-center justify-center p-8 bg-surface-container">
+<!-- Hero Preview Card -->
+<div class="w-full max-w-5xl bg-surface-container-lowest rounded-xl shadow-box-shadow: 0 12px 40px rgba(25, 28, 32, 0.06); overflow-hidden">
+<div class="grid grid-cols-1 md:grid-cols-12 min-h-[600px]">
+<!-- Mockup Content Area -->
+<div class="md:col-span-8 p-8 border-r border-outline-variant/10">
+<div class="flex items-center justify-between mb-8">
+<div>
+<h1 class="text-Headline-SM font-bold text-on-surface tracking-tight">Morning Routine Board</h1>
+<p class="text-Body-MD text-on-surface-variant mt-1">Design System &amp; Core Architecture</p>
+</div>
+<div class="flex -space-x-2">
+<img alt="Team member" class="w-8 h-8 rounded-full border-2 border-white object-cover" data-alt="portrait of a professional woman in a bright office setting with soft natural light" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAEynfroHiqSDZLwhYPNc-nKAHOdtFTalQxkQ5uaEwNjtgbgVbvWcP50xixu0bKlW4vQYE-xhXTum2orGSKRWdrWtElm1rKg4qu8FDE7ouuf2GVB1JnRvIpl_Utxslsf-UpaBC8i-3lrGKwyP-sITbAhhSBRKCMyX9--izmypzdve5Xq0VSfIZmEcvWFw5Grt3i2H_Wbz7yzBbkR3fB8uZ9x5lsaJV9IBqNgJHQm97G24-RKphqiEAkl5eWxWG8loqF4t2gqp2n6ag"/>
+<img alt="Team member" class="w-8 h-8 rounded-full border-2 border-white object-cover" data-alt="portrait of a young man smiling with warm studio lighting and neutral background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCLds9SBTdis5L8xfgKOh-hteO_1KEwAlx7NcvuOXwV2QDfcVKBaziK0D5NsbvwS3OtBdFMdOidToYzKPUpamVxLjn_GfzSLVEkkuK30YvCvaVjbQkb2imyXdiLnGTbJuuCM1b1RJJMd5YGtE_vd02frVA8W-lowmAPZstEvMdrOU_IlPlBr-ikqkmr9GAcG9Kh7v61hJ9mPjs5DU5wUejUofSXanweOOg8bKBQO3wIHK54xiJghMA_GuBRQ3dUVnWDgI-HAqjQz-4"/>
+<div class="w-8 h-8 rounded-full border-2 border-white bg-secondary-container flex items-center justify-center text-[10px] font-bold text-on-secondary-container">+4</div>
+</div>
+</div>
+<!-- Bento Grid Preview -->
+<div class="grid grid-cols-2 gap-4 h-[400px]">
+<div class="bg-surface-container-low rounded-lg p-6 relative overflow-hidden group">
+<div class="absolute inset-0 bg-gradient-to-br from-primary-container/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+<span class="material-symbols-outlined text-primary mb-3">clinical_notes</span>
+<h3 class="font-semibold text-on-surface">Precision Modules</h3>
+<p class="text-xs text-on-surface-variant mt-2 leading-relaxed">Configurable high-density building blocks for therapeutic workflows.</p>
+</div>
+<div class="bg-surface-container-high rounded-lg p-6 flex flex-col justify-between">
+<div>
+<span class="material-symbols-outlined text-primary mb-3">auto_awesome</span>
+<h3 class="font-semibold text-on-surface">Smart Context</h3>
+</div>
+<div class="mt-4 h-2 w-full bg-white/50 rounded-full overflow-hidden">
+<div class="h-full w-2/3 bg-primary-container rounded-full"></div>
+</div>
+</div>
+<div class="col-span-2 bg-gradient-to-r from-primary to-tertiary p-8 rounded-lg text-white flex items-center justify-between">
+<div class="max-w-md">
+<h2 class="text-xl font-bold mb-2">The Digital Sanctuary</h2>
+<p class="text-sm opacity-80">Experience the human laboratory. A precision instrument for builders who care about the soul of their software.</p>
+</div>
+<div class="hidden sm:block">
+<span class="material-symbols-outlined !text-[48px] opacity-20">biotech</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Properties Sidebar Mockup -->
+<div class="md:col-span-4 bg-surface-container-high/50 p-6 flex flex-col gap-6">
+<div>
+<h4 class="text-[11px] font-bold uppercase tracking-wider text-outline mb-4">Canvas Styles</h4>
+<div class="space-y-3">
+<div class="flex items-center justify-between bg-surface-container-lowest p-3 rounded-lg">
+<span class="text-[12px] font-medium">Background Color</span>
+<div class="w-6 h-6 rounded bg-surface border border-outline-variant/20"></div>
+</div>
+<div class="flex items-center justify-between bg-surface-container-lowest p-3 rounded-lg">
+<span class="text-[12px] font-medium">Border Radius</span>
+<span class="text-[12px] text-primary font-bold">8px</span>
+</div>
+</div>
+</div>
+<div>
+<h4 class="text-[11px] font-bold uppercase tracking-wider text-outline mb-4">Interactions</h4>
+<div class="space-y-2">
+<div class="flex items-center gap-3 p-2 rounded hover:bg-surface-container-lowest transition-colors cursor-pointer">
+<div class="p-1.5 rounded bg-secondary-container">
+<span class="material-symbols-outlined !text-[16px] text-on-secondary-container">touch_app</span>
+</div>
+<span class="text-[12px] font-medium">On Click Navigation</span>
+</div>
+<div class="flex items-center gap-3 p-2 rounded hover:bg-surface-container-lowest transition-colors cursor-pointer">
+<div class="p-1.5 rounded bg-primary-fixed">
+<span class="material-symbols-outlined !text-[16px] text-on-primary-fixed-variant">data_object</span>
+</div>
+<span class="text-[12px] font-medium">Update Global State</span>
+</div>
+</div>
+</div>
+<div class="mt-auto">
+<div class="p-4 rounded-xl bg-primary-container text-on-primary-container text-center">
+<p class="text-[11px] font-semibold mb-2">READY TO DEPLOY</p>
+<button class="w-full bg-white text-primary font-bold py-2 rounded-lg text-xs shadow-sm active:scale-95 transition-transform">
+                                Sync to Production
+                            </button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Decorative Background Element -->
+<div class="fixed bottom-0 left-0 w-full h-[307px] bg-gradient-to-t from-surface-container-high/40 to-transparent -z-10"></div>
+</main>
+</body></html>

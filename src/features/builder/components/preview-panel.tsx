@@ -1,8 +1,6 @@
 "use client";
 
-import { useState } from "react";
-
-import { Button } from "@/shared/components/ui/button";
+import { Sparkles } from "lucide-react";
 
 import type { WebContainerStatus } from "../hooks/use-webcontainer";
 
@@ -13,63 +11,47 @@ interface PreviewPanelProps {
   error?: string;
 }
 
-const RESPONSIVE_SIZES = [
-  { label: "Mobile", width: 375 },
-  { label: "Desktop", width: "100%" as const },
-];
-
 export function PreviewPanel({ previewUrl, state, wcStatus, error }: PreviewPanelProps) {
-  const [sizeIndex, setSizeIndex] = useState(1); // Default: desktop
-  const currentSize = RESPONSIVE_SIZES[sizeIndex];
-
   const isGenerating = state === "generating";
   const isFailed = state === "failed" || wcStatus === "error";
   const hasPreview = wcStatus === "ready" && !!previewUrl;
 
   return (
     <div className="flex h-full flex-col">
-      {/* Toolbar */}
-      <div className="flex items-center justify-between border-b px-3 py-2">
-        <span className="text-xs font-medium text-muted-foreground">Preview</span>
-        <div className="flex gap-1">
-          {RESPONSIVE_SIZES.map((size, i) => (
-            <Button
-              key={size.label}
-              variant={sizeIndex === i ? "default" : "ghost"}
-              size="sm"
-              className="h-6 px-2 text-xs"
-              onClick={() => setSizeIndex(i)}
-              aria-label={size.label}
-            >
-              {size.label}
-            </Button>
-          ))}
-        </div>
-      </div>
-
-      {/* Preview area */}
-      <div className="flex flex-1 items-center justify-center overflow-hidden bg-muted/30 p-4">
+      <div className="flex flex-1 items-center justify-center overflow-hidden bg-surface-container-low/30 p-4">
         {hasPreview ? (
-          <iframe
-            src={previewUrl!}
-            className="h-full rounded-lg border bg-white shadow-sm"
-            style={{
-              width:
-                typeof currentSize.width === "number"
-                  ? `${currentSize.width}px`
-                  : "100%",
-              maxWidth: "100%",
-            }}
-            title="App Preview"
-            sandbox="allow-scripts allow-same-origin"
-          />
+          <div className="h-full w-full overflow-hidden rounded-2xl">
+            <iframe
+              src={previewUrl!}
+              className="h-full w-full bg-white"
+              title="App Preview"
+              sandbox="allow-scripts allow-same-origin"
+            />
+          </div>
         ) : wcStatus === "booting" ? (
-          <div className="text-center text-sm text-muted-foreground">
-            <p>Booting preview environment...</p>
+          <div className="flex flex-col items-center gap-3">
+            <div className="h-48 w-72 animate-pulse rounded-2xl bg-surface-container-low" />
+            <div className="h-4 w-40 animate-pulse rounded-full bg-surface-container-low" />
           </div>
         ) : wcStatus === "installing" || isGenerating ? (
-          <div role="status" className="animate-pulse text-center text-sm text-muted-foreground">
-            <p>Installing dependencies...</p>
+          <div role="status" className="flex flex-col items-center gap-3 text-center">
+            <svg
+              className="h-5 w-5 animate-spin text-primary"
+              viewBox="0 0 16 16"
+              fill="none"
+              aria-hidden="true"
+            >
+              <path
+                d="M8 1.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Z"
+                fill="currentColor"
+                opacity={0.2}
+              />
+              <path
+                d="M8 0a8 8 0 0 1 8 8h-1.5A6.5 6.5 0 0 0 8 1.5V0Z"
+                fill="currentColor"
+              />
+            </svg>
+            <p className="text-sm text-on-surface-variant">Setting up your preview...</p>
           </div>
         ) : isFailed ? (
           <div className="text-center text-sm">
@@ -78,8 +60,9 @@ export function PreviewPanel({ previewUrl, state, wcStatus, error }: PreviewPane
             </p>
           </div>
         ) : (
-          <div className="text-center text-sm text-muted-foreground">
-            <p>Your preview will appear here once your app is built.</p>
+          <div className="flex flex-col items-center gap-3 text-center">
+            <Sparkles className="h-8 w-8 text-outline-variant/40" />
+            <p className="text-sm text-on-surface-variant">Your app will appear here</p>
           </div>
         )}
       </div>

@@ -91,22 +91,28 @@ export async function POST(request: Request) {
         const finalMessage = await llmStream.finalMessage();
 
         // Extract tool_use blocks
+        const mutationPromises: Promise<unknown>[] = [];
         for (const block of finalMessage.content) {
           if (block.type === "tool_use" && block.name === "write_file") {
             const input = block.input as { path: string; contents: string };
             collectedFiles.push(input);
             send("file_complete", { path: input.path, contents: input.contents, version });
 
-            // Persist to Convex
-            await convex.mutation(api.generated_files.upsert, {
-              sessionId: sessionId as Id<"sessions">,
-              path: input.path,
-              contents: input.contents,
-              version,
-            });
+            // Collect mutation promise (don't await individually)
+            mutationPromises.push(
+              convex.mutation(api.generated_files.upsert, {
+                sessionId: sessionId as Id<"sessions">,
+                path: input.path,
+                contents: input.contents,
+                version,
+              })
+            );
             version++;
           }
         }
+
+        // Persist all files in parallel
+        await Promise.all(mutationPromises);
 
         // Update session to live — WebContainer handles preview URL client-side
         await convex.mutation(api.sessions.setLive, {

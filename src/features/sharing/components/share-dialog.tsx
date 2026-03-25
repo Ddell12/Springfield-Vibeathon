@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { Copy, Share2, X } from "lucide-react";
 import QRCode from "react-qr-code";
 import { toast } from "sonner";
 
-import { MaterialIcon } from "@/shared/components/material-icon";
+import { cn } from "@/core/utils";
 import { Button } from "@/shared/components/ui/button";
 import {
   Dialog,
@@ -12,7 +13,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/shared/components/ui/dialog";
-import { Input } from "@/shared/components/ui/input";
 
 type ShareDialogProps = {
   open: boolean;
@@ -46,66 +46,92 @@ export function ShareDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Share &quot;{toolTitle}&quot;</DialogTitle>
+      <DialogContent className="rounded-2xl p-6 gap-6 sm:max-w-[420px]" showCloseButton={false}>
+        {/* Header */}
+        <DialogHeader className="flex flex-row items-center justify-between">
+          <DialogTitle className="font-headline font-semibold text-lg text-on-surface">
+            Share &apos;{toolTitle}&apos;
+          </DialogTitle>
+          <button
+            type="button"
+            onClick={() => onOpenChange(false)}
+            className="p-1 hover:bg-surface-container transition-colors rounded-full text-on-surface-variant"
+            aria-label="Close"
+          >
+            <X className="size-5" />
+          </button>
         </DialogHeader>
 
-        <div className="flex flex-col gap-4 py-2">
-          {/* Tabs */}
-          <div className="flex gap-1 bg-surface-container-low rounded-lg p-1">
+        {/* Segmented Tab Toggle */}
+        <div className="bg-surface-container-low p-1 rounded-lg flex">
+          <button
+            type="button"
+            onClick={() => setActiveTab("preview")}
+            className={cn(
+              "flex-1 py-1.5 text-sm font-medium rounded-md transition-all",
+              activeTab === "preview"
+                ? "bg-surface-container-lowest text-primary shadow-sm font-semibold"
+                : "text-on-surface-variant hover:text-on-surface"
+            )}
+          >
+            Preview Link
+          </button>
+          {publishedUrl && (
             <button
               type="button"
-              onClick={() => setActiveTab("preview")}
-              className={
-                activeTab === "preview"
-                  ? "flex-1 py-1.5 rounded-md text-sm font-semibold bg-surface-container-lowest text-primary shadow-sm"
-                  : "flex-1 py-1.5 rounded-md text-sm font-medium text-on-surface-variant"
-              }
+              onClick={() => setActiveTab("published")}
+              className={cn(
+                "flex-1 py-1.5 text-sm font-medium rounded-md transition-all",
+                activeTab === "published"
+                  ? "bg-surface-container-lowest text-primary shadow-sm font-semibold"
+                  : "text-on-surface-variant hover:text-on-surface"
+              )}
             >
-              Preview Link
+              Published Link
             </button>
-            {publishedUrl && (
-              <button
-                type="button"
-                onClick={() => setActiveTab("published")}
-                className={
-                  activeTab === "published"
-                    ? "flex-1 py-1.5 rounded-md text-sm font-semibold bg-surface-container-lowest text-primary shadow-sm"
-                    : "flex-1 py-1.5 rounded-md text-sm font-medium text-on-surface-variant"
-                }
-              >
-                Published Link
-              </button>
-            )}
-          </div>
+          )}
+        </div>
 
-          {/* QR Code */}
-          <div className="flex justify-center">
-            <QRCode value={activeUrl} size={160} />
+        {/* QR Code */}
+        <div className="flex justify-center">
+          <div className="w-40 h-40 border border-surface-container-low rounded-xl p-2 flex items-center justify-center">
+            <QRCode value={activeUrl} size={140} />
           </div>
+        </div>
 
-          {/* URL input + copy */}
-          <div className="flex gap-2">
-            <Input value={activeUrl} readOnly className="flex-1 text-sm" />
-            <Button variant="outline" onClick={handleCopy} aria-label="Copy Link">
-              <MaterialIcon icon="content_copy" size="sm" />
-              Copy Link
+        {/* URL Input Row */}
+        <div className="flex gap-2">
+          <div className="flex-1 bg-surface-container-low px-4 py-2.5 rounded-lg flex items-center">
+            <span className="text-sm text-on-surface truncate">{activeUrl}</span>
+          </div>
+          <button
+            type="button"
+            onClick={handleCopy}
+            className="flex items-center gap-2 px-4 py-2.5 text-primary font-medium text-sm hover:bg-primary-fixed/20 transition-all rounded-lg"
+          >
+            <Copy className="size-4" />
+            Copy Link
+          </button>
+        </div>
+
+        {/* Footer Actions */}
+        <div className="flex items-center justify-end gap-3 pt-2">
+          <Button
+            variant="ghost"
+            onClick={() => onOpenChange(false)}
+            className="text-on-surface-variant hover:text-on-surface"
+          >
+            Close
+          </Button>
+          {"share" in navigator && typeof navigator.share === "function" && (
+            <Button
+              onClick={handleShare}
+              className="bg-gradient-to-br from-primary to-primary-container text-on-primary hover:opacity-90 shadow-sm"
+            >
+              <Share2 className="size-4" />
+              Share
             </Button>
-          </div>
-
-          {/* Footer actions */}
-          <div className="flex gap-2 justify-end">
-            <Button variant="ghost" onClick={() => onOpenChange(false)} aria-label="Close">
-              Close
-            </Button>
-            {"share" in navigator && typeof navigator.share === "function" && (
-              <Button onClick={handleShare} aria-label="Share">
-                <MaterialIcon icon="share" size="sm" />
-                Share
-              </Button>
-            )}
-          </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>

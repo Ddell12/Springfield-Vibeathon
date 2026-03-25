@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Settings | Bridges AI</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "primary-container": "#00595c",
+              "primary-fixed": "#aaeef1",
+              "surface-dim": "#d1dcdc",
+              "on-primary-fixed-variant": "#004f52",
+              "surface-container-lowest": "#ffffff",
+              "on-surface": "#131d1e",
+              "on-tertiary-fixed-variant": "#6c3a1b",
+              "inverse-surface": "#283233",
+              "tertiary": "#5a2c0f",
+              "on-primary": "#ffffff",
+              "surface": "#f0fcfb",
+              "tertiary-fixed-dim": "#ffb68e",
+              "secondary-fixed": "#e1e0ff",
+              "error": "#ba1a1a",
+              "secondary": "#4e52ba",
+              "surface-container": "#e5f0f0",
+              "on-secondary-fixed-variant": "#3539a1",
+              "on-tertiary-container": "#fab18a",
+              "surface-container-highest": "#dae5e5",
+              "surface-bright": "#f0fcfb",
+              "tertiary-container": "#764223",
+              "on-tertiary": "#ffffff",
+              "surface-container-high": "#dfeaea",
+              "on-primary-fixed": "#002021",
+              "surface-tint": "#1d686b",
+              "outline-variant": "#bec8c8",
+              "secondary-container": "#8f93ff",
+              "inverse-on-surface": "#e8f3f3",
+              "on-background": "#131d1e",
+              "error-container": "#ffdad6",
+              "on-error-container": "#93000a",
+              "on-secondary": "#ffffff",
+              "on-primary-container": "#89cdd0",
+              "primary-fixed-dim": "#8ed2d5",
+              "background": "#f0fcfb",
+              "primary": "#004042",
+              "tertiary-fixed": "#ffdbca",
+              "on-surface-variant": "#3f4949",
+              "surface-container-low": "#ebf6f6",
+              "on-secondary-fixed": "#04006d",
+              "surface-variant": "#dae5e5",
+              "secondary-fixed-dim": "#c0c1ff",
+              "inverse-primary": "#8ed2d5",
+              "on-secondary-container": "#22248f",
+              "outline": "#6f7979",
+              "on-error": "#ffffff",
+              "on-tertiary-fixed": "#331200"
+            },
+            fontFamily: {
+              "headline": ["Manrope", "sans-serif"],
+              "body": ["Inter", "sans-serif"],
+              "label": ["Inter", "sans-serif"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      }
+      .signature-gradient {
+        background: linear-gradient(135deg, #004042 0%, #00595c 100%);
+      }
+      .ghost-border {
+        outline: 1.5px solid rgba(190, 200, 200, 0.15);
+      }
+      body {
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body min-h-screen">
+<!-- TopNavBar: Execution of Shared Components JSON -->
+<header class="bg-[#f0fcfb] dark:bg-slate-950 flex justify-between items-center w-full px-8 h-16 docked full-width top-0 z-40 tonal-shift bg-[#ebf6f6] dark:bg-slate-900 fixed">
+<div class="flex items-center gap-4">
+<span class="text-2xl font-bold text-[#004042] dark:text-[#ebf6f6] tracking-tight font-manrope">Bridges</span>
+</div>
+<div class="flex items-center gap-6">
+<div class="flex gap-4">
+<span class="material-symbols-outlined text-[#3f4949] cursor-pointer hover:bg-[#dae5e5] p-2 rounded-full transition-colors" data-icon="notifications">notifications</span>
+<span class="material-symbols-outlined text-[#3f4949] cursor-pointer hover:bg-[#dae5e5] p-2 rounded-full transition-colors" data-icon="help">help</span>
+</div>
+<img alt="User profile avatar" class="w-8 h-8 rounded-full border-2 border-primary-container/10" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC7V-7fFa0RVM5RR7Bo4YWKeZP5K50FpN5jiE6MuZidhZCPm3gTycy23vf_BERvRcPehVsJuZjMlmnGjpmG_-BFpMh3AFaGmJZ5VsRq1cIVuyI4d7iVfEVWcbhJzGDDqSYSu1JdqzrLYud3JBr9Xb50sesrhnPd_jfB7QlPkwPckkkIcJEM03pZu2tKsHX0W6F6xWi8QVjw1nii81nQHVm_CaRRuuOKdPL6zJiDuZWyC-EJPbIo-5H_SgSHk_UFhBCjwg80Q-0AMfk"/>
+</div>
+</header>
+<div class="flex pt-16 min-h-screen">
+<!-- SideNavBar: Execution of Shared Components JSON & Design System -->
+<aside class="bg-[#ebf6f6] dark:bg-slate-900 flex flex-col pt-8 gap-y-1 w-64 h-[calc(100vh-64px)] overflow-y-auto fixed left-0 top-16 no-border space-y-2 px-4 z-30">
+<div class="mb-8 px-4">
+<h2 class="font-headline font-bold text-lg text-primary">Settings</h2>
+<p class="text-xs text-on-surface-variant font-medium">Manage your sanctuary</p>
+</div>
+<nav class="space-y-1">
+<!-- Profile (Active) -->
+<a class="bg-[#00595c] text-white rounded-lg flex items-center px-4 py-3 border-l-4 border-[#004042] shadow-sm font-manrope font-semibold text-sm tracking-wide" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="person">person</span>
+                    Profile
+                </a>
+<!-- Account (Inactive) -->
+<a class="text-[#3f4949] dark:text-[#bec8c8] flex items-center px-4 py-3 hover:bg-[#dae5e5] dark:hover:bg-slate-800 rounded-lg transition-all font-manrope font-semibold text-sm tracking-wide hover:translate-x-1 duration-200" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="settings">settings</span>
+                    Account
+                </a>
+<!-- Appearance (Inactive) -->
+<a class="text-[#3f4949] dark:text-[#bec8c8] flex items-center px-4 py-3 hover:bg-[#dae5e5] dark:hover:bg-slate-800 rounded-lg transition-all font-manrope font-semibold text-sm tracking-wide hover:translate-x-1 duration-200" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="palette">palette</span>
+                    Appearance
+                </a>
+</nav>
+</aside>
+<!-- Main Content Area: The Canvas -->
+<main class="flex-1 ml-64 bg-surface-container-lowest min-h-screen">
+<div class="max-w-[640px] mx-auto py-16 px-8">
+<!-- Section 1: Profile -->
+<section class="mb-20" id="profile">
+<h1 class="text-4xl font-headline font-bold text-primary mb-12 tracking-tight">Profile</h1>
+<div class="flex flex-col items-start gap-6 mb-12">
+<div class="relative group">
+<div class="w-20 h-20 rounded-full bg-orange-600 flex items-center justify-center text-white text-3xl font-bold font-headline shadow-inner">
+                                D
+                            </div>
+</div>
+<button class="ghost-border px-4 py-2 rounded text-sm font-medium text-primary hover:bg-surface-container-high transition-colors">
+                            Change avatar
+                        </button>
+</div>
+<div class="space-y-8">
+<div class="space-y-2">
+<label class="block text-sm font-semibold text-on-surface-variant ml-1">Display name</label>
+<input class="w-full h-12 px-4 bg-[#e2e8f8] border-none rounded-lg focus:ring-2 focus:ring-secondary/20 transition-all text-on-surface font-medium" type="text" value="Daniel Rivers"/>
+</div>
+<div class="space-y-2 opacity-60">
+<label class="block text-sm font-semibold text-on-surface-variant ml-1">Email</label>
+<input class="w-full h-12 px-4 bg-surface-container-high border-none rounded-lg text-on-surface-variant cursor-not-allowed font-medium" disabled="" type="email" value="daniel.rivers@bridges.ai"/>
+<p class="text-xs text-on-surface-variant italic">Email cannot be changed after verification.</p>
+</div>
+<div class="space-y-2">
+<label class="block text-sm font-semibold text-on-surface-variant ml-1">Role</label>
+<div class="relative">
+<select class="w-full h-12 px-4 pr-10 bg-[#e2e8f8] border-none rounded-lg focus:ring-2 focus:ring-secondary/20 appearance-none transition-all text-on-surface font-medium">
+<option>Parent</option>
+<option selected="">ABA Therapist</option>
+<option>Speech Therapist</option>
+<option>Teacher</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-3 text-on-surface-variant pointer-events-none" data-icon="expand_more">expand_more</span>
+</div>
+</div>
+<div class="pt-6 flex justify-end">
+<button class="signature-gradient text-white px-8 py-3 rounded-lg font-semibold text-sm hover:opacity-90 active:scale-95 transition-all">
+                                Save changes
+                            </button>
+</div>
+</div>
+</section>
+<!-- Section 2: Account (Preview/Contextual Card) -->
+<section class="mb-20 pt-12 border-t border-surface-container-high" id="account">
+<div class="flex items-center justify-between mb-8">
+<h2 class="text-2xl font-headline font-bold text-primary">Account</h2>
+<span class="text-xs font-bold uppercase tracking-widest text-on-surface-variant bg-surface-container-high px-2 py-1 rounded">Advanced</span>
+</div>
+<div class="bg-surface-container-low p-8 rounded-xl space-y-6">
+<div class="flex items-start gap-4">
+<div class="bg-error-container p-2 rounded-lg">
+<span class="material-symbols-outlined text-error" data-icon="warning">warning</span>
+</div>
+<div>
+<h3 class="font-headline font-bold text-on-surface mb-1">Danger Zone</h3>
+<p class="text-sm text-on-surface-variant">Deleting your account is permanent. All your therapy tool configurations and history will be wiped from the sanctuary.</p>
+</div>
+</div>
+<button class="w-full py-3 px-6 rounded-lg border-2 border-error/20 text-error font-bold text-sm hover:bg-error/5 transition-colors">
+                            Delete account
+                        </button>
+</div>
+</section>
+<!-- Section 3: Appearance (Preview/Contextual Card) -->
+<section class="mb-20 pt-12 border-t border-surface-container-high" id="appearance">
+<h2 class="text-2xl font-headline font-bold text-primary mb-8">Appearance</h2>
+<div class="grid grid-cols-3 gap-4">
+<!-- Light Theme Card -->
+<div class="cursor-pointer group">
+<div class="aspect-[4/3] rounded-lg bg-surface-container mb-3 flex items-center justify-center border-2 border-primary ring-offset-2 ring-2 ring-transparent transition-all">
+<div class="w-16 h-10 bg-white rounded-sm shadow-sm flex flex-col p-1 gap-1">
+<div class="h-1 w-full bg-surface-container rounded-full"></div>
+<div class="h-1 w-2/3 bg-surface-container rounded-full"></div>
+</div>
+</div>
+<span class="text-sm font-semibold text-primary block text-center">Light</span>
+</div>
+<!-- Dark Theme Card -->
+<div class="cursor-pointer group">
+<div class="aspect-[4/3] rounded-lg bg-inverse-surface mb-3 flex items-center justify-center hover:ring-2 hover:ring-outline-variant/30 transition-all">
+<div class="w-16 h-10 bg-slate-800 rounded-sm shadow-sm flex flex-col p-1 gap-1">
+<div class="h-1 w-full bg-slate-700 rounded-full"></div>
+<div class="h-1 w-2/3 bg-slate-700 rounded-full"></div>
+</div>
+</div>
+<span class="text-sm font-medium text-on-surface-variant block text-center">Dark</span>
+</div>
+<!-- System Theme Card -->
+<div class="cursor-pointer group">
+<div class="aspect-[4/3] rounded-lg bg-gradient-to-br from-surface-container to-inverse-surface mb-3 flex items-center justify-center hover:ring-2 hover:ring-outline-variant/30 transition-all overflow-hidden relative">
+<div class="w-16 h-10 bg-white/10 backdrop-blur-md rounded-sm shadow-sm flex flex-col p-1 gap-1 z-10">
+<div class="h-1 w-full bg-primary/20 rounded-full"></div>
+<div class="h-1 w-2/3 bg-primary/20 rounded-full"></div>
+</div>
+</div>
+<span class="text-sm font-medium text-on-surface-variant block text-center">System</span>
+</div>
+</div>
+</section>
+<!-- Footer Support -->
+<footer class="mt-24 text-center">
+<p class="text-sm text-on-surface-variant">Need specialized help building a tool?</p>
+<a class="text-secondary font-semibold hover:underline mt-1 inline-block" href="#">Visit the Bridge Support Hub</a>
+</footer>
+</div>
+</main>
+</div>
+</body></html>

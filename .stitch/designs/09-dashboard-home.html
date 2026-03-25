@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Bridges AI | Therapy Builder Dashboard</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Manrope:wght@600;700;800&amp;display=swap" rel="stylesheet"/>
+<!-- Icons -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "inverse-primary": "#8ed2d5",
+                        "primary": "#004042",
+                        "inverse-surface": "#2e3035",
+                        "surface-variant": "#e2e2e8",
+                        "tertiary-fixed": "#ffdbca",
+                        "on-tertiary": "#ffffff",
+                        "inverse-on-surface": "#f0f0f6",
+                        "surface-tint": "#1d686b",
+                        "on-surface-variant": "#3f4949",
+                        "on-primary-fixed": "#002021",
+                        "background": "#f9f9ff",
+                        "on-tertiary-container": "#ddbbab",
+                        "secondary": "#4e52ba",
+                        "on-tertiary-fixed-variant": "#594135",
+                        "on-error": "#ffffff",
+                        "on-secondary-container": "#22248f",
+                        "on-primary-fixed-variant": "#004f52",
+                        "on-error-container": "#93000a",
+                        "on-primary": "#ffffff",
+                        "tertiary": "#4a3428",
+                        "secondary-fixed-dim": "#c0c1ff",
+                        "on-tertiary-fixed": "#2a170d",
+                        "primary-fixed-dim": "#8ed2d5",
+                        "primary-fixed": "#aaeef1",
+                        "tertiary-container": "#634a3d",
+                        "surface-container": "#ededf3",
+                        "surface-bright": "#f9f9ff",
+                        "primary-container": "#00595c",
+                        "error-container": "#ffdad6",
+                        "surface-container-highest": "#e2e2e8",
+                        "surface-dim": "#d9dadf",
+                        "outline": "#6f7979",
+                        "on-primary-container": "#89cdd0",
+                        "surface-container-low": "#f3f3f9",
+                        "tertiary-fixed-dim": "#e2bfaf",
+                        "surface-container-lowest": "#ffffff",
+                        "on-secondary-fixed-variant": "#3539a1",
+                        "surface": "#f9f9ff",
+                        "outline-variant": "#bec8c8",
+                        "secondary-fixed": "#e1e0ff",
+                        "on-secondary-fixed": "#04006d",
+                        "secondary-container": "#8f93ff",
+                        "on-surface": "#191c20",
+                        "on-background": "#191c20",
+                        "surface-container-high": "#e7e8ee",
+                        "on-secondary": "#ffffff",
+                        "error": "#ba1a1a"
+                    },
+                    fontFamily: {
+                        "headline": ["Manrope", "sans-serif"],
+                        "body": ["Inter", "sans-serif"],
+                        "label": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "2xl": "1rem",
+                        "3xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .signature-gradient {
+            background: linear-gradient(135deg, #00595c 0%, #0d7377 100%);
+        }
+        .ambient-shadow {
+            box-shadow: 0px 12px 32px rgba(25, 28, 32, 0.06);
+        }
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .glass-header {
+            background-color: rgba(249, 249, 255, 0.7);
+            backdrop-filter: blur(20px);
+        }
+    </style>
+</head>
+<body class="bg-background font-body text-on-surface antialiased flex overflow-hidden">
+<!-- Shared SideNavBar (Rail) -->
+<aside class="fixed left-0 top-0 h-full z-40 bg-[#ededf3] dark:bg-slate-900 h-screen w-20 flex flex-col items-center py-6 no-border">
+<div class="mb-10">
+<span class="material-symbols-outlined text-primary-container text-3xl font-bold" style="font-variation-settings: 'FILL' 1;">link</span>
+</div>
+<nav class="flex flex-col gap-6 flex-1 items-center">
+<!-- Home (Active) -->
+<button class="bg-[#00595c] text-white rounded-xl p-3 shadow-lg shadow-[#00595c]/20 scale-95 active:scale-90 transition-all duration-300 group relative">
+<span class="material-symbols-outlined" data-icon="home" style="font-variation-settings: 'FILL' 1;">home</span>
+<span class="absolute left-16 bg-primary text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none font-label">Home</span>
+</button>
+<!-- Builder -->
+<button class="text-[#3f4949] dark:text-slate-400 p-3 hover:bg-[#e2e2e8] dark:hover:bg-slate-800 transition-all duration-300 rounded-xl scale-95 active:scale-90 group relative">
+<span class="material-symbols-outlined" data-icon="rebase_edit">rebase_edit</span>
+<span class="absolute left-16 bg-primary text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none font-label">Builder</span>
+</button>
+<!-- Templates -->
+<button class="text-[#3f4949] dark:text-slate-400 p-3 hover:bg-[#e2e2e8] dark:hover:bg-slate-800 transition-all duration-300 rounded-xl scale-95 active:scale-90 group relative">
+<span class="material-symbols-outlined" data-icon="dashboard_customize">dashboard_customize</span>
+<span class="absolute left-16 bg-primary text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none font-label">Templates</span>
+</button>
+<!-- My Tools -->
+<button class="text-[#3f4949] dark:text-slate-400 p-3 hover:bg-[#e2e2e8] dark:hover:bg-slate-800 transition-all duration-300 rounded-xl scale-95 active:scale-90 group relative">
+<span class="material-symbols-outlined" data-icon="Category">category</span>
+<span class="absolute left-16 bg-primary text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none font-label">My Tools</span>
+</button>
+</nav>
+<div class="mt-auto flex flex-col gap-6 items-center">
+<button class="text-[#3f4949] dark:text-slate-400 p-3 hover:bg-[#e2e2e8] dark:hover:bg-slate-800 transition-all duration-300 rounded-xl scale-95 active:scale-90">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+<div class="w-10 h-10 rounded-full overflow-hidden bg-tertiary-fixed flex items-center justify-center">
+<img alt="User profile" class="w-full h-full object-cover" data-alt="professional headshot of a female therapist with a warm, friendly expression in a brightly lit modern office" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCZ3mJUWig_GidY9qaeh4BcCpsq5paBlbnLCZ-XrS41k-LQC3lcA2qeW299jMxpnHhO9OIi1zvdemSRyweHftLEjjgPaVpI94ZFqze4LVq0Yo328I9HsjV8LZILO236yLqTfTd7RO0eT9q1pYRJmXa4Ue9LF6dt5aBjmfxXwYOZzNyVFloq2YYY4cleFBcvhBlwo3FiG-XVQz1OvON3xtQWVc1EDJn3kb6kEbfcRHnQENNHiP-OF1nzQs7Qt0LLP3-89YoOca00e40"/>
+</div>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="flex-1 ml-20 h-screen overflow-y-auto no-scrollbar">
+<!-- TopNavBar Shell -->
+<header class="sticky top-0 w-full flex justify-between items-center px-8 z-30 h-16 glass-header">
+<div class="flex items-center gap-3">
+<h1 class="font-headline font-extrabold text-[#00595c] text-xl tracking-tight">Bridges AI</h1>
+</div>
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-4 text-[#3f4949]">
+<span class="material-symbols-outlined hover:text-[#0d7377] cursor-pointer transition-colors" data-icon="notifications">notifications</span>
+<span class="material-symbols-outlined hover:text-[#0d7377] cursor-pointer transition-colors" data-icon="help_outline">help_outline</span>
+</div>
+<button class="signature-gradient text-white px-5 py-2 rounded-lg font-headline font-semibold text-sm opacity-80 active:opacity-100 transition-all shadow-sm">
+                    Create New
+                </button>
+</div>
+</header>
+<!-- Hero Section -->
+<section class="max-w-4xl mx-auto pt-16 pb-12 px-6 text-center">
+<h2 class="font-headline text-5xl font-bold text-on-surface mb-4 tracking-tight">What would you like to build?</h2>
+<p class="font-body text-lg text-on-surface-variant mb-10">Describe your idea, and Bridges will build it instantly.</p>
+<!-- Wide Input Bar -->
+<div class="relative max-w-2xl mx-auto mb-8 group">
+<div class="absolute inset-0 bg-primary-fixed opacity-10 blur-xl group-focus-within:opacity-20 transition-opacity"></div>
+<div class="relative flex items-center bg-surface-container-lowest rounded-3xl p-2 pl-6 ambient-shadow ring-1 ring-outline-variant/10 focus-within:ring-primary/40 transition-all">
+<input class="flex-1 bg-transparent border-none focus:ring-0 text-on-surface placeholder:text-outline py-3 font-body text-lg" placeholder="Describe a therapy tool..." type="text"/>
+<button class="signature-gradient h-12 w-12 rounded-2xl flex items-center justify-center text-white ml-2 transition-transform hover:scale-105 active:scale-95">
+<span class="material-symbols-outlined" data-icon="send" style="font-variation-settings: 'FILL' 1;">send</span>
+</button>
+</div>
+</div>
+<!-- Template Chips -->
+<div class="flex flex-wrap justify-center gap-3">
+<button class="bg-surface-container-low hover:bg-surface-container-high text-on-surface-variant px-5 py-2 rounded-full font-label text-sm transition-colors ring-1 ring-outline-variant/10">Token Board</button>
+<button class="bg-surface-container-low hover:bg-surface-container-high text-on-surface-variant px-5 py-2 rounded-full font-label text-sm transition-colors ring-1 ring-outline-variant/10">Visual Schedule</button>
+<button class="bg-surface-container-low hover:bg-surface-container-high text-on-surface-variant px-5 py-2 rounded-full font-label text-sm transition-colors ring-1 ring-outline-variant/10">Communication Board</button>
+<button class="bg-surface-container-low hover:bg-surface-container-high text-on-surface-variant px-5 py-2 rounded-full font-label text-sm transition-colors ring-1 ring-outline-variant/10">Social Story</button>
+</div>
+</section>
+<!-- Tab & Grid Container -->
+<section class="bg-surface-container-low mt-8 min-h-full rounded-t-[3rem] px-12 pt-12">
+<!-- Tabs Section -->
+<div class="flex items-center gap-10 mb-10 border-b border-outline-variant/10">
+<button class="pb-4 text-[#00595c] font-bold border-b-2 border-[#00595c] font-label text-sm relative">
+                    Recently viewed
+                </button>
+<button class="pb-4 text-[#3f4949] hover:text-[#0d7377] transition-colors font-label text-sm">
+                    My projects
+                </button>
+<button class="pb-4 text-[#3f4949] hover:text-[#0d7377] transition-colors font-label text-sm">
+                    Shared with me
+                </button>
+<button class="pb-4 text-[#3f4949] hover:text-[#0d7377] transition-colors font-label text-sm">
+                    Templates
+                </button>
+</div>
+<!-- Project Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 pb-20">
+<!-- Card 1 -->
+<div class="bg-surface-container-lowest p-5 rounded-2xl ambient-shadow group hover:-translate-y-2 transition-all duration-300 cursor-pointer">
+<div class="w-full h-48 rounded-xl mb-5 overflow-hidden bg-gradient-to-br from-surface-variant to-outline-variant/20 relative">
+<img alt="Morning Routine" class="w-full h-full object-cover mix-blend-overlay opacity-60" data-alt="minimalist graphic of a sun rising over stylized blue mountains with soft morning light and geometric shapes" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAh8CD5Z9j8nuUyt1OFlAS3oMd9-eLfj6xYo2ca47eeWvtaQZBjLhCvd_Rn0FM_kCTA5iItQOP8Du-T6Mpxq1QFgAA_Q0VFnLsBnDHvc7F83ORMzFBooL_YuXaUIwzqNfB9-LUmTJ2eT-UgUzOjpeI3SoEvv_v0s-LO_lU15RhuYT_m5KwNbBq_LCm_sAEgOzXJQ8DFk4wy_ElQIQwNkjPh9T53iNw2O1m05fS5ag19-0vBKkOeEiPpVqQ1eONT-n0H9XoyrjjLY9U"/>
+<div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-primary/10">
+<span class="bg-surface-container-lowest text-primary px-4 py-2 rounded-full font-bold text-xs shadow-md">Open Tool</span>
+</div>
+</div>
+<div class="flex justify-between items-start">
+<div>
+<h3 class="font-body font-semibold text-on-surface text-lg mb-1">Morning Routine Schedule</h3>
+<p class="text-xs text-on-surface-variant">Modified 2 hours ago</p>
+</div>
+<div class="w-8 h-8 rounded-full bg-tertiary-fixed ring-4 ring-surface-container-lowest overflow-hidden">
+<img alt="Avatar" class="w-full h-full object-cover" data-alt="close up headshot of a female doctor with glasses and a kind smile" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCI2UEk42UVocUG6GOn-FY3a9-tC1RD8gv2eLCrD_ZLqbR-tS4Z41nMmtqpu5KuucxWwuyLIfK8FR85o1eeIQbuMjxk_SPlESYLY89ZpP0eZp4uc6VKOu9vlLqs8LYpR07uRTS-qgnhUTuaL4xdFKS4iiF1WPPCcLjm_G64_nmqcgFN4hoj96m6pwisEw-aYqOFDgDtkZgFCdICiO4fKZGut6jHX0D65IOUSWfrr3n-YNqagce9pHH9LSmdEsEriMoLXtu4K7S5-5A"/>
+</div>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="bg-surface-container-lowest p-5 rounded-2xl ambient-shadow group hover:-translate-y-2 transition-all duration-300 cursor-pointer">
+<div class="w-full h-48 rounded-xl mb-5 overflow-hidden bg-gradient-to-br from-secondary/10 to-primary/10 relative">
+<img alt="Emotional Regulation" class="w-full h-full object-cover mix-blend-overlay opacity-60" data-alt="soothing abstract image of circular ripples on water with warm light reflecting off the surface" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAmExr2Igx5Owo_12pKzNRu7o6T3-9ouvTXkDPafzNWltKFHB6zdAcBQ8BZMill4RYDX1rjsDvFfyVGRbLds_feqYlt2TYq1INMA3P5a3T3ozSBYIZBc-jOVfwlcsOxFgx8T4L4AYpSxZJMlqTSNa5RQbtgxu4a-flY8xVHLfFadrXKvfyc12fObZeNeWdD36fieq4UPnB1tPIO05I5zoQV8Gxc7iMujvpL6tljuDU-DKTQhPX-8UfuguhHgwh-B2hT3p8DMBSPH5s"/>
+<div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-primary/10">
+<span class="bg-surface-container-lowest text-primary px-4 py-2 rounded-full font-bold text-xs shadow-md">Open Tool</span>
+</div>
+</div>
+<div class="flex justify-between items-start">
+<div>
+<h3 class="font-body font-semibold text-on-surface text-lg mb-1">Calm Down Choices</h3>
+<p class="text-xs text-on-surface-variant">Modified 5 hours ago</p>
+</div>
+<div class="w-8 h-8 rounded-full bg-tertiary-fixed ring-4 ring-surface-container-lowest overflow-hidden flex items-center justify-center text-[10px] font-bold text-on-tertiary-fixed">
+                            JD
+                        </div>
+</div>
+</div>
+<!-- Card 3 -->
+<div class="bg-surface-container-lowest p-5 rounded-2xl ambient-shadow group hover:-translate-y-2 transition-all duration-300 cursor-pointer">
+<div class="w-full h-48 rounded-xl mb-5 overflow-hidden bg-gradient-to-br from-tertiary-fixed to-on-tertiary-container/20 relative">
+<img alt="Social Story" class="w-full h-full object-cover mix-blend-overlay opacity-60" data-alt="open book with soft glowing light coming from pages in a cozy setting with warm atmosphere" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBUNraEP9eOgqmCvyJhV0ofqSSWcoFx-EKSrcgPFpfjOwZXk0HuKND6q6Cy6ELqYMCBC_y0m9m-uuCX1It0j_Vk-Z9M1BuAeWPGCJhvA7kQR-LNUhDyo7sPMxzQR3W56CDA0mauCb4_2WbR9Tv8UHWcqQOjyGQfwjHWZzZ550DHw6SG8vY0fA39iXOGj6y-aGjH8qvcFDiT7XFhPYq_1l0r6602a31Hf9HxXeZbtSwOvaQTdkedIHdn4dhhXzia6AqjmAF02Uc9q-Y"/>
+<div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-primary/10">
+<span class="bg-surface-container-lowest text-primary px-4 py-2 rounded-full font-bold text-xs shadow-md">Open Tool</span>
+</div>
+</div>
+<div class="flex justify-between items-start">
+<div>
+<h3 class="font-body font-semibold text-on-surface text-lg mb-1">Playground Safety Story</h3>
+<p class="text-xs text-on-surface-variant">Modified yesterday</p>
+</div>
+<div class="w-8 h-8 rounded-full bg-tertiary-fixed ring-4 ring-surface-container-lowest overflow-hidden">
+<img alt="Avatar" class="w-full h-full object-cover" data-alt="professional portrait of a male educator with a friendly smile wearing a light blue shirt" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAIajf4COwgU9lUZImyyfTC_FY8Dc3JPK1bTMU4QUEXzygXs8CslLoWCPtNghafyfNuPpzNtEjZLRaEkIbmt9JvqMAJH3t2rK8BS3fc_e7Vw0GtCF9OBdf2D6ckACXcMOSoMcaZPalXEFhD5cOGGLesL5AsTgpWdy5D0hPaXxFqEvCMz2nsE0ReWdYBr1qPUJmevx5NPjCmjenhTyxyozocIwtJzz2iXEue33FzeCAqqWezmdLnb0X0nvhJMAi-_aMihweT7BhAkOo"/>
+</div>
+</div>
+</div>
+</div>
+<!-- Empty State Hint -->
+<div class="flex flex-col items-center justify-center pb-20 opacity-40">
+<span class="material-symbols-outlined text-4xl mb-2" data-icon="auto_awesome">auto_awesome</span>
+<p class="font-label text-sm">Start by describing what you need — or pick a template above.</p>
+</div>
+</section>
+</main>
+<!-- Contextual FAB (Only on Home/Dashboard) -->
+<button class="fixed bottom-10 right-10 signature-gradient text-white h-16 px-8 rounded-full shadow-2xl flex items-center gap-3 transition-transform hover:scale-105 active:scale-95 group z-50">
+<span class="material-symbols-outlined" data-icon="add" style="font-variation-settings: 'FILL' 1;">add</span>
+<span class="font-headline font-bold">New Session</span>
+</button>
+</body></html>

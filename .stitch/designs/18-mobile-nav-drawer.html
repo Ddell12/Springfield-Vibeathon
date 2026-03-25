@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&amp;family=Inter:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "background": "#f8f9f9",
+              "primary-container": "#00595c",
+              "on-secondary-fixed-variant": "#334b4c",
+              "surface-dim": "#d9dada",
+              "tertiary-container": "#764223",
+              "tertiary": "#5a2c0f",
+              "surface": "#f8f9f9",
+              "surface-container-lowest": "#ffffff",
+              "surface-variant": "#e1e3e3",
+              "error": "#ba1a1a",
+              "on-secondary-container": "#50696a",
+              "surface-container-low": "#f3f4f4",
+              "on-secondary-fixed": "#051f20",
+              "on-surface": "#191c1c",
+              "secondary": "#4a6364",
+              "primary-fixed-dim": "#8ed2d5",
+              "on-secondary": "#ffffff",
+              "on-tertiary-fixed": "#331200",
+              "error-container": "#ffdad6",
+              "inverse-surface": "#2e3131",
+              "on-surface-variant": "#3f4949",
+              "on-primary-fixed-variant": "#004f52",
+              "primary-fixed": "#aaeef1",
+              "on-primary-fixed": "#002021",
+              "on-tertiary-fixed-variant": "#6c3a1b",
+              "inverse-primary": "#8ed2d5",
+              "surface-container-high": "#e7e8e8",
+              "on-background": "#191c1c",
+              "outline-variant": "#bec8c8",
+              "on-primary": "#ffffff",
+              "on-tertiary-container": "#fab18a",
+              "on-error": "#ffffff",
+              "secondary-fixed": "#cde8e8",
+              "on-primary-container": "#89cdd0",
+              "outline": "#6f7979",
+              "tertiary-fixed-dim": "#ffb68e",
+              "surface-container-highest": "#e1e3e3",
+              "inverse-on-surface": "#f0f1f1",
+              "on-tertiary": "#ffffff",
+              "secondary-container": "#cde8e8",
+              "surface-container": "#edeeee",
+              "surface-bright": "#f8f9f9",
+              "surface-tint": "#1d686b",
+              "primary": "#004042",
+              "tertiary-fixed": "#ffdbca",
+              "secondary-fixed-dim": "#b1cbcc",
+              "on-error-container": "#93000a"
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Manrope"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background font-body text-on-surface antialiased overflow-hidden">
+<!-- Mobile Dashboard (Background Layer) -->
+<div class="relative w-full h-screen flex flex-col">
+<!-- TopAppBar -->
+<header class="bg-white/85 backdrop-blur-xl fixed top-0 w-full z-40 flex items-center justify-between px-4 h-16 w-full">
+<div class="flex items-center gap-3">
+<button class="p-2 hover:bg-[#f3f4f4] transition-colors active:scale-95 duration-200">
+<span class="material-symbols-outlined text-[#00595C]">menu</span>
+</button>
+<h1 class="font-['Manrope'] font-bold tracking-tight text-lg text-[#00595C]">Bridges</h1>
+</div>
+<div class="flex items-center gap-2">
+<button class="p-2 hover:bg-[#f3f4f4] transition-colors rounded-full">
+<span class="material-symbols-outlined">search</span>
+</button>
+<div class="w-8 h-8 rounded-full bg-tertiary-container flex items-center justify-center text-on-tertiary text-xs font-bold">D</div>
+</div>
+</header>
+<!-- Main Content Area (Blurred/Pushed Back) -->
+<main class="mt-16 px-6 pt-8 flex-1 overflow-y-auto">
+<div class="mb-8">
+<h2 class="font-headline text-headline-sm font-semibold mb-2">Welcome back, Desha</h2>
+<p class="font-label text-label-md text-on-surface-variant uppercase tracking-wider">Dashboard Overview</p>
+</div>
+<!-- Recently Viewed Section -->
+<section class="mb-10">
+<div class="flex justify-between items-end mb-4">
+<h3 class="font-headline text-lg font-bold">Recently Viewed</h3>
+<span class="text-primary text-sm font-semibold">See all</span>
+</div>
+<div class="grid grid-cols-1 gap-4">
+<!-- Card 1 -->
+<div class="bg-surface-container-lowest rounded-xl p-5 flex items-center gap-4 group">
+<div class="w-14 h-14 rounded-xl bg-[#e3f2fd] flex items-center justify-center">
+<span class="material-symbols-outlined text-blue-600">light_mode</span>
+</div>
+<div class="flex-1">
+<h4 class="font-bold text-on-surface">Morning Routine</h4>
+<p class="text-on-surface-variant text-sm">Last edited 2h ago</p>
+</div>
+<span class="material-symbols-outlined text-outline-variant group-hover:text-primary transition-colors">chevron_right</span>
+</div>
+<!-- Card 2 -->
+<div class="bg-surface-container-lowest rounded-xl p-5 flex items-center gap-4 group">
+<div class="w-14 h-14 rounded-xl bg-[#fce4ec] flex items-center justify-center">
+<span class="material-symbols-outlined text-pink-600">mood</span>
+</div>
+<div class="flex-1">
+<h4 class="font-bold text-on-surface">Feelings Board</h4>
+<p class="text-on-surface-variant text-sm">Last edited Yesterday</p>
+</div>
+<span class="material-symbols-outlined text-outline-variant group-hover:text-primary transition-colors">chevron_right</span>
+</div>
+</div>
+</section>
+<!-- Quick Insight Bento-ish card -->
+<div class="bg-primary p-6 rounded-xl text-on-primary mb-6 relative overflow-hidden">
+<div class="relative z-10">
+<p class="font-label text-xs uppercase tracking-widest opacity-80 mb-1">Weekly Builder Progress</p>
+<h4 class="text-2xl font-bold mb-4 leading-tight">You've completed 4 new templates this week.</h4>
+<button class="bg-surface-container-lowest text-primary px-4 py-2 rounded-lg font-bold text-sm">Review Analytics</button>
+</div>
+<div class="absolute -right-4 -bottom-4 w-32 h-32 bg-primary-container rounded-full opacity-30 blur-2xl"></div>
+</div>
+</main>
+<!-- Scrim Overlay (CRITICAL) -->
+<div class="fixed inset-0 bg-black/50 backdrop-blur-[2px] z-50"></div>
+<!-- Navigation Drawer (CRITICAL) -->
+<aside class="fixed left-0 top-0 h-full w-[280px] bg-white rounded-r-2xl z-[60] shadow-2xl shadow-slate-900/10 flex flex-col p-6 overflow-hidden">
+<!-- Drawer Header -->
+<div class="flex flex-col mb-8">
+<div class="flex items-center justify-between mb-8">
+<span class="font-['Manrope'] font-bold text-[#00595C] text-2xl tracking-tighter">Bridges</span>
+<button class="p-2 hover:bg-[#f3f4f4] rounded-full transition-colors active:scale-95">
+<span class="material-symbols-outlined text-on-surface-variant">close</span>
+</button>
+</div>
+<!-- Profile Area -->
+<div class="flex items-center gap-4 p-2">
+<div class="w-12 h-12 rounded-full bg-[#FFB68E] flex items-center justify-center text-[#331200] font-bold text-lg">D</div>
+<div class="flex flex-col">
+<span class="font-['Manrope'] font-bold text-on-surface">Desha</span>
+<span class="font-label text-xs text-on-surface-variant">desha@email.com</span>
+</div>
+</div>
+</div>
+<!-- Navigation List -->
+<nav class="flex-1 space-y-2">
+<!-- Home (Active) -->
+<a class="flex items-center gap-3 bg-[#f3f4f4] text-[#00595C] rounded-xl px-4 py-3 font-bold group transition-all" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">home</span>
+<span class="font-['Manrope'] text-sm">Home</span>
+</a>
+<!-- Builder -->
+<a class="flex items-center gap-3 text-slate-600 hover:bg-[#f3f4f4] rounded-xl px-4 py-3 transition-all active:opacity-80" href="#">
+<span class="material-symbols-outlined">auto_awesome</span>
+<span class="font-['Manrope'] font-semibold text-sm">Builder</span>
+</a>
+<!-- Templates -->
+<a class="flex items-center gap-3 text-slate-600 hover:bg-[#f3f4f4] rounded-xl px-4 py-3 transition-all active:opacity-80" href="#">
+<span class="material-symbols-outlined">dashboard_customize</span>
+<span class="font-['Manrope'] font-semibold text-sm">Templates</span>
+</a>
+<!-- My Tools -->
+<a class="flex items-center gap-3 text-slate-600 hover:bg-[#f3f4f4] rounded-xl px-4 py-3 transition-all active:opacity-80" href="#">
+<span class="material-symbols-outlined">folder</span>
+<span class="font-['Manrope'] font-semibold text-sm">My Tools</span>
+</a>
+<!-- Separator -->
+<div class="h-px bg-on-surface-variant opacity-15 my-4"></div>
+<!-- Settings -->
+<a class="flex items-center gap-3 text-slate-600 hover:bg-[#f3f4f4] rounded-xl px-4 py-3 transition-all active:opacity-80" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-['Manrope'] font-semibold text-sm">Settings</span>
+</a>
+</nav>
+<!-- Bottom Actions & Footer -->
+<div class="mt-auto pt-6 flex flex-col gap-4">
+<button class="w-full h-14 bg-gradient-to-br from-primary to-primary-container text-on-primary rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-primary/20 active:scale-95 transition-transform">
+<span class="material-symbols-outlined">add</span>
+<span>New Project</span>
+</button>
+<div class="flex justify-center">
+<span class="font-label text-[10px] text-on-surface-variant/60 uppercase tracking-widest font-medium">Version 1.0</span>
+</div>
+</div>
+</aside>
+</div>
+</body></html>

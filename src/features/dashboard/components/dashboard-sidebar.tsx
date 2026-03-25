@@ -1,99 +1,98 @@
-import { 
-  BookOpen,
-  Compass, 
-  Gift,
-  Home, 
-  LayoutGrid, 
-  LayoutTemplate, 
-  Search, 
-  Star, 
-  Users, 
-  Zap} from "lucide-react";
+"use client";
+
+import {
+  FolderOpen,
+  Home,
+  LayoutGrid,
+  Settings,
+  Sparkles,
+} from "lucide-react";
 import Link from "next/link";
+import { usePathname, useSearchParams } from "next/navigation";
 
 import { cn } from "@/core/utils";
 
+const NAV_ITEMS = [
+  { icon: Home, label: "Home", href: "/dashboard" },
+  { icon: Sparkles, label: "Builder", href: "/builder" },
+  { icon: LayoutGrid, label: "Templates", href: "/dashboard?tab=templates" },
+  { icon: FolderOpen, label: "My Tools", href: "/dashboard?tab=my-projects" },
+];
+
+function isNavActive(href: string, pathname: string, tab: string | null): boolean {
+  if (href === "/dashboard") {
+    return pathname === "/dashboard" && (!tab || tab === "recent");
+  }
+  if (href === "/builder") {
+    return pathname.startsWith("/builder");
+  }
+  if (href.startsWith("/dashboard?tab=")) {
+    const hrefTab = new URL(href, "http://x").searchParams.get("tab");
+    return pathname === "/dashboard" && tab === hrefTab;
+  }
+  return pathname === href;
+}
+
 export function DashboardSidebar() {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const tab = searchParams.get("tab");
+
   return (
-    <aside className="w-[240px] flex-shrink-0 h-full bg-[#fdfdfd]/80 backdrop-blur-md border-r border-surface-container flex flex-col pt-4 pb-6 px-3">
-      {/* Logo Area */}
-      <div className="flex items-center gap-2 px-3 mb-8">
-        <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-primary to-secondary flex items-center justify-center text-white font-bold text-sm shadow-sm">
+    <aside className="fixed left-0 top-0 z-40 hidden h-screen w-20 md:flex flex-col items-center bg-surface-container py-6">
+      {/* Logo */}
+      <div className="mb-10">
+        <Link
+          href="/dashboard"
+          className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary-container text-lg font-bold text-white shadow-sm"
+        >
           B
-        </div>
-        <span className="font-extrabold text-foreground tracking-tight text-lg">Bridges</span>
+        </Link>
       </div>
 
       {/* Main Nav */}
-      <nav className="flex flex-col gap-0.5 mb-8">
-        <NavItem icon={<Home size={18} />} label="Home" active />
-        <NavItem icon={<Search size={18} />} label="Search" />
+      <nav className="flex flex-1 flex-col items-center gap-6">
+        {NAV_ITEMS.map((item) => {
+          const isActive = isNavActive(item.href, pathname, tab);
+          const Icon = item.icon;
+
+          return (
+            <Link
+              key={item.label}
+              href={item.href}
+              className={cn(
+                "group relative rounded-xl p-3 transition-all duration-300 active:scale-90",
+                isActive
+                  ? "bg-primary text-white shadow-lg shadow-primary/20"
+                  : "text-on-surface-variant hover:bg-surface-container-high"
+              )}
+            >
+              <Icon size={22} fill={isActive ? "currentColor" : "none"} />
+              <span className="pointer-events-none absolute left-16 rounded-lg bg-primary px-2 py-1 text-xs font-medium text-white opacity-0 transition-opacity group-hover:opacity-100">
+                {item.label}
+              </span>
+            </Link>
+          );
+        })}
       </nav>
 
-      {/* Projects */}
-      <div className="mb-8">
-        <h4 className="px-3 text-xs font-semibold text-muted mb-2 tracking-wider uppercase">Projects</h4>
-        <nav className="flex flex-col gap-0.5">
-          <NavItem icon={<LayoutGrid size={18} />} label="All projects" />
-          <NavItem icon={<Star size={18} />} label="Starred" />
-          <NavItem icon={<Users size={18} />} label="Shared with me" />
-        </nav>
-      </div>
-
-      {/* Resources */}
-      <div className="flex-1">
-        <h4 className="px-3 text-xs font-semibold text-muted mb-2 tracking-wider uppercase">Resources</h4>
-        <nav className="flex flex-col gap-0.5">
-          <NavItem icon={<Compass size={18} />} label="Discover" />
-          <NavItem icon={<LayoutTemplate size={18} />} label="Templates" />
-          <NavItem icon={<BookOpen size={18} />} label="Learn" />
-        </nav>
-      </div>
-
-      {/* Bottom Area */}
-      <div className="mt-auto flex flex-col gap-2">
-        <div className="p-3 bg-surface-container-low rounded-xl flex items-center justify-between cursor-pointer hover:bg-surface-container transition-colors group">
-          <div>
-            <p className="text-sm font-semibold text-foreground">Share Bridges</p>
-            <p className="text-xs text-muted">Get 10 credits each</p>
-          </div>
-          <Gift size={16} className="text-muted group-hover:text-primary transition-colors" />
-        </div>
-        
-        <div className="p-3 bg-surface-container-low rounded-xl flex items-center justify-between cursor-pointer hover:bg-surface-container border border-primary/10 transition-colors group">
-          <div>
-            <p className="text-sm font-semibold text-foreground">Upgrade to Pro</p>
-            <p className="text-xs text-muted">Unlock more benefits</p>
-          </div>
-          <div className="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-colors">
-            <Zap size={14} fill="currentColor" />
-          </div>
-        </div>
-
-        <div className="mt-2 flex items-center gap-3 px-2 py-2 cursor-pointer hover:bg-surface-container-low rounded-lg transition-colors">
-          <div className="w-6 h-6 rounded-full bg-orange-600 text-white flex items-center justify-center text-xs font-bold">
-            U
-          </div>
-          <span className="text-sm font-medium text-foreground">User Profile</span>
+      {/* Bottom: Settings + Avatar */}
+      <div className="mt-auto flex flex-col items-center gap-6">
+        <Link
+          href="/settings"
+          className={cn(
+            "rounded-xl p-3 transition-all duration-300 active:scale-90",
+            pathname === "/settings"
+              ? "bg-primary text-white shadow-lg shadow-primary/20"
+              : "text-on-surface-variant hover:bg-surface-container-high"
+          )}
+        >
+          <Settings size={22} />
+        </Link>
+        <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-tertiary-fixed text-xs font-bold text-on-surface">
+          D
         </div>
       </div>
     </aside>
-  );
-}
-
-function NavItem({ icon, label, active }: { icon: React.ReactNode; label: string; active?: boolean }) {
-  return (
-    <Link 
-      href="#"
-      className={cn(
-        "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-        active 
-          ? "bg-surface-container-high text-foreground" 
-          : "text-muted hover:text-foreground hover:bg-surface-container-low"
-      )}
-    >
-      {icon}
-      <span>{label}</span>
-    </Link>
   );
 }

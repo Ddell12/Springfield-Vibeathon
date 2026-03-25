@@ -61,6 +61,8 @@ export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn 
   const [sessionId, setSessionId] = useState<string | null>(null);
 
   const abortRef = useRef<AbortController | null>(null);
+  const onFileCompleteRef = useRef(options?.onFileComplete);
+  onFileCompleteRef.current = options?.onFileComplete;
 
   const generate = useCallback(async (prompt: string): Promise<void> => {
     // Cancel any in-flight request
@@ -136,8 +138,8 @@ export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn 
                 }
                 return [...prev, newFile];
               });
-              if (options?.onFileComplete) {
-                await options.onFileComplete(path, contents);
+              if (onFileCompleteRef.current) {
+                await onFileCompleteRef.current(path, contents);
               }
             } else if (event === "blueprint") {
               setBlueprint(d.data as Record<string, unknown>);
@@ -174,8 +176,8 @@ export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn 
                 }
                 return [...prev, newFile];
               });
-              if (options?.onFileComplete) {
-                await options.onFileComplete(path, contents);
+              if (onFileCompleteRef.current) {
+                await onFileCompleteRef.current(path, contents);
               }
             }
           }
@@ -185,7 +187,8 @@ export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn 
       setError((err as Error).message ?? "Unknown error");
       setStatus("failed");
     }
-  }, [options]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- onFileComplete accessed via ref
+  }, []);
 
   return { status, files, generate, blueprint, error, previewUrl, sessionId };
 }

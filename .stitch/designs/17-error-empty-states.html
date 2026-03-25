@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600&amp;family=Inter:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "outline": "#6f7979",
+              "primary-container": "#00595c",
+              "primary-fixed-dim": "#8ed2d5",
+              "surface-container": "#e4f0f0",
+              "primary": "#004042",
+              "primary-fixed": "#aaeef1",
+              "tertiary-fixed-dim": "#e2bfaf",
+              "secondary-fixed-dim": "#81d4d8",
+              "on-error-container": "#93000a",
+              "on-secondary": "#ffffff",
+              "on-tertiary-fixed": "#2a170d",
+              "surface-variant": "#d9e5e4",
+              "on-error": "#ffffff",
+              "secondary-fixed": "#9df0f4",
+              "on-primary-fixed-variant": "#004f52",
+              "tertiary": "#4a3428",
+              "outline-variant": "#bec8c8",
+              "on-tertiary-fixed-variant": "#594135",
+              "surface-tint": "#1d686b",
+              "inverse-primary": "#8ed2d5",
+              "surface-bright": "#f0fcfb",
+              "secondary-container": "#9df0f4",
+              "on-surface": "#131d1e",
+              "surface-container-low": "#eaf6f5",
+              "on-primary-fixed": "#002021",
+              "surface-container-high": "#dfeaea",
+              "background": "#f0fcfb",
+              "on-background": "#131d1e",
+              "on-tertiary-container": "#ddbbab",
+              "secondary": "#00696d",
+              "inverse-surface": "#283232",
+              "on-secondary-fixed-variant": "#004f52",
+              "on-surface-variant": "#3f4949",
+              "on-secondary-container": "#037074",
+              "surface": "#f0fcfb",
+              "error": "#ba1a1a",
+              "tertiary-fixed": "#ffdbca",
+              "surface-container-lowest": "#ffffff",
+              "tertiary-container": "#634a3d",
+              "on-secondary-fixed": "#002021",
+              "on-primary-container": "#89cdd0",
+              "surface-container-highest": "#d9e5e4",
+              "inverse-on-surface": "#e7f3f3",
+              "error-container": "#ffdad6",
+              "surface-dim": "#d1dcdc",
+              "on-primary": "#ffffff",
+              "on-tertiary": "#ffffff"
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      }
+      body {
+        background-color: #f0fcfb; /* Mapping background from config */
+      }
+    </style>
+</head>
+<body class="font-body text-on-surface bg-background">
+<!-- TopNavBar Implementation from JSON -->
+<nav class="fixed top-0 w-full z-50 bg-[#f0fcfb]/80 dark:bg-[#001f20]/80 backdrop-blur-xl">
+<div class="flex justify-between items-center px-8 py-4 max-w-7xl mx-auto">
+<div class="flex items-center gap-8">
+<span class="text-xl font-bold tracking-tight text-[#004042] dark:text-[#80e2e6] font-headline">Bridges</span>
+<div class="hidden md:flex items-center gap-6">
+<a class="text-[#004042] dark:text-[#80e2e6] font-semibold border-b-2 border-[#004042] dark:border-[#80e2e6] pb-1 transition-all" href="#">Projects</a>
+<a class="text-[#3f4949] dark:text-[#aebcbc] hover:text-[#004042] dark:hover:text-[#80e2e6] transition-colors duration-300" href="#">Shared</a>
+<a class="text-[#3f4949] dark:text-[#aebcbc] hover:text-[#004042] dark:hover:text-[#80e2e6] transition-colors duration-300" href="#">Tools</a>
+<a class="text-[#3f4949] dark:text-[#aebcbc] hover:text-[#004042] dark:hover:text-[#80e2e6] transition-colors duration-300" href="#">Settings</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 rounded-full hover:bg-[#f0fcfb] dark:hover:bg-[#002b2d] transition-colors duration-300">
+<span class="material-symbols-outlined text-[#3f4949] dark:text-[#aebcbc]">notifications</span>
+</button>
+<button class="p-2 rounded-full hover:bg-[#f0fcfb] dark:hover:bg-[#002b2d] transition-colors duration-300">
+<span class="material-symbols-outlined text-[#3f4949] dark:text-[#aebcbc]">help_outline</span>
+</button>
+<div class="w-8 h-8 rounded-full bg-surface-container-high overflow-hidden">
+<img alt="User profile" data-alt="professional portrait of a woman with a kind smile in a modern office with soft natural lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAxZyhDWfCXwnB1apx_tma8-DXaCg_h5cY34UTfbMYrh5cEJbOY2UD8KRQ-BB8Y9euIQpYEYtzGPhTT0dKaVVt4SC_WVVwDdgcQ6BkYNcsQo51qdujkBgYUP7YP66p-qMsPcA8rCbunAUMQ9TcsVLNer26-iUO8PV31w-QItk8T4Kzoz2yDLOmBgrTfiAl7Z6cSWPgI9k6DUjkFjGXmcrtCEf2NQoEAmWo63mz_9AXvAUjykdlFXWXICkw4pwTxXKuU4fqQ-_Qqk48"/>
+</div>
+</div>
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<main class="pt-24 pb-12 px-6 lg:px-12 max-w-7xl mx-auto min-h-screen">
+<div class="mb-12">
+<h1 class="font-headline text-4xl font-semibold text-primary tracking-tight">System Status</h1>
+<p class="text-on-surface-variant mt-2 text-lg">An overview of interface states and potential disruptions.</p>
+</div>
+<!-- 2x2 Bento Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+<!-- State 1: No Projects (top-left) -->
+<section class="bg-surface-container-low rounded-lg p-8 flex flex-col items-center text-center transition-all duration-300 hover:bg-surface-container">
+<div class="w-full aspect-video rounded-xl bg-surface-container-lowest mb-8 flex items-center justify-center relative overflow-hidden">
+<div class="absolute inset-0 opacity-10">
+<svg fill="none" height="100%" viewbox="0 0 400 200" width="100%" xmlns="http://www.w3.org/2000/svg">
+<rect fill="#004042" height="80" rx="40" width="80" x="50" y="40"></rect>
+<rect fill="#ffdbca" height="60" width="60" x="270" y="80"></rect>
+<path d="M200 150L240 70L280 150H200Z" fill="#00595c"></path>
+</svg>
+</div>
+<!-- Illustration Placeholder -->
+<div class="relative z-10 flex flex-col items-center">
+<span class="material-symbols-outlined text-6xl text-primary" style="font-variation-settings: 'FILL' 1;">category</span>
+<div class="mt-4 flex gap-2">
+<div class="w-3 h-3 rounded-full bg-tertiary-fixed"></div>
+<div class="w-3 h-3 rounded-full bg-primary-container"></div>
+<div class="w-3 h-3 rounded-full bg-tertiary-fixed"></div>
+</div>
+</div>
+</div>
+<h2 class="font-headline text-2xl text-on-surface mb-3">No tools yet</h2>
+<p class="text-on-surface-variant max-w-sm mb-8 leading-relaxed">Describe what your child needs, or browse templates to get started.</p>
+<div class="flex flex-wrap gap-4 justify-center">
+<button class="bg-gradient-to-r from-primary to-primary-container text-on-primary px-6 py-2.5 rounded-lg font-medium hover:opacity-90 transition-all active:scale-95">
+                        Start Building
+                    </button>
+<button class="text-primary px-6 py-2.5 rounded-lg font-medium hover:bg-surface-container-lowest transition-all">
+                        Browse Templates
+                    </button>
+</div>
+</section>
+<!-- State 2: No Shared Items (top-right) -->
+<section class="bg-surface-container-low rounded-lg p-8 flex flex-col items-center text-center transition-all duration-300 hover:bg-surface-container">
+<div class="w-full aspect-video rounded-xl bg-surface-container-lowest mb-8 flex items-center justify-center relative overflow-hidden">
+<div class="absolute inset-0 opacity-10">
+<svg fill="none" height="100%" viewbox="0 0 400 200" width="100%" xmlns="http://www.w3.org/2000/svg">
+<circle cx="180" cy="100" fill="#004042" r="50"></circle>
+<circle cx="220" cy="100" fill="#ffdbca" r="50"></circle>
+</svg>
+</div>
+<div class="relative z-10 flex flex-col items-center">
+<span class="material-symbols-outlined text-6xl text-primary">diversity_3</span>
+</div>
+</div>
+<h2 class="font-headline text-2xl text-on-surface mb-3">Nothing shared with you yet</h2>
+<p class="text-on-surface-variant max-w-sm mb-8 leading-relaxed">When someone shares a tool with you, it will appear here.</p>
+<div class="flex justify-center">
+<button class="text-primary px-6 py-2.5 rounded-lg font-medium hover:bg-surface-container-lowest transition-all">
+                        Explore Templates
+                    </button>
+</div>
+</section>
+<!-- State 3: Tool Not Found (bottom-left) -->
+<section class="bg-surface-container-low rounded-lg p-8 flex flex-col items-center text-center transition-all duration-300 hover:bg-surface-container">
+<div class="w-full aspect-video rounded-xl bg-surface-container-lowest mb-8 flex items-center justify-center relative overflow-hidden">
+<div class="absolute inset-0 opacity-10">
+<svg fill="none" height="100%" viewbox="0 0 400 200" width="100%" xmlns="http://www.w3.org/2000/svg">
+<path d="M150 50H250V150H150V50Z" stroke="#004042" stroke-dasharray="8 8" stroke-width="2"></path>
+</svg>
+</div>
+<div class="relative z-10 flex flex-col items-center">
+<span class="material-symbols-outlined text-6xl text-outline">extension_off</span>
+</div>
+</div>
+<h2 class="font-headline text-2xl text-on-surface mb-3">This tool isn't available</h2>
+<p class="text-on-surface-variant max-w-sm mb-8 leading-relaxed">It may have been removed or the link is incorrect.</p>
+<div class="flex flex-wrap gap-4 justify-center">
+<button class="bg-gradient-to-r from-primary to-primary-container text-on-primary px-6 py-2.5 rounded-lg font-medium hover:opacity-90 transition-all active:scale-95">
+                        Go to Builder
+                    </button>
+<a class="text-primary px-6 py-2.5 rounded-lg font-medium hover:bg-surface-container-lowest transition-all inline-flex items-center" href="#">
+                        Go Home
+                    </a>
+</div>
+</section>
+<!-- State 4: Something Went Wrong (bottom-right) -->
+<section class="bg-surface-container-low rounded-lg p-8 flex flex-col items-center text-center transition-all duration-300 hover:bg-surface-container">
+<div class="w-full aspect-video rounded-xl bg-surface-container-lowest mb-8 flex items-center justify-center relative overflow-hidden">
+<div class="absolute inset-0 opacity-5">
+<svg fill="none" height="100%" viewbox="0 0 400 200" width="100%" xmlns="http://www.w3.org/2000/svg">
+<path d="M100 150C120 100 180 180 200 100C220 20 280 120 300 50" stroke="#ba1a1a" stroke-linecap="round" stroke-width="4"></path>
+</svg>
+</div>
+<div class="relative z-10 flex flex-col items-center">
+<div class="w-16 h-16 rounded-full bg-error-container flex items-center justify-center mb-2">
+<span class="material-symbols-outlined text-4xl text-on-error-container">error</span>
+</div>
+</div>
+</div>
+<h2 class="font-headline text-2xl text-on-surface mb-3">Something went wrong</h2>
+<p class="text-on-surface-variant max-w-sm mb-8 leading-relaxed">We couldn't load this page. Try refreshing, or let us know if it keeps happening.</p>
+<div class="flex flex-wrap gap-4 justify-center">
+<button class="bg-error text-on-error px-6 py-2.5 rounded-lg font-medium hover:bg-opacity-90 transition-all active:scale-95">
+                        Try Again
+                    </button>
+<a class="text-error px-6 py-2.5 rounded-lg font-medium hover:bg-error-container/20 transition-all inline-flex items-center" href="#">
+                        Report Issue
+                    </a>
+</div>
+</section>
+</div>
+<!-- Footer / Editorial Note -->
+<footer class="mt-20 border-t border-outline-variant/20 pt-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+<div class="max-w-md">
+<p class="font-headline text-primary font-semibold text-lg">The Digital Sanctuary</p>
+<p class="text-on-surface-variant text-sm mt-1 leading-relaxed">Providing a breath of intentional air in a complex digital landscape. Every state is a beginning.</p>
+</div>
+<div class="flex gap-8 text-sm text-on-surface-variant">
+<a class="hover:text-primary transition-colors" href="#">Privacy Policy</a>
+<a class="hover:text-primary transition-colors" href="#">Support Center</a>
+<a class="hover:text-primary transition-colors" href="#">Accessibility</a>
+</div>
+</footer>
+</main>
+<!-- Visual Polish: Decorative Accents -->
+<div class="fixed -bottom-24 -left-24 w-96 h-96 bg-tertiary-fixed opacity-10 rounded-full blur-3xl -z-10"></div>
+<div class="fixed top-1/2 -right-24 w-64 h-64 bg-primary-fixed opacity-10 rounded-full blur-3xl -z-10"></div>
+</body></html>

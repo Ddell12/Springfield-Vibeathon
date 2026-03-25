@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Bridges AI - Chat Blueprint</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Manrope:wght@600;700;800&amp;display=swap" rel="stylesheet"/>
+<!-- Icons -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "surface-container-high": "#dfeaea",
+              "surface-container-lowest": "#ffffff",
+              "on-primary": "#ffffff",
+              "secondary-fixed": "#9df0f4",
+              "inverse-primary": "#8ed2d5",
+              "on-background": "#131d1e",
+              "surface-bright": "#f0fcfb",
+              "on-secondary-fixed-variant": "#004f52",
+              "surface-tint": "#1d686b",
+              "secondary": "#00696d",
+              "on-surface-variant": "#3f4949",
+              "surface-variant": "#dae5e5",
+              "inverse-on-surface": "#e8f3f3",
+              "outline": "#6f7979",
+              "outline-variant": "#bec8c8",
+              "tertiary-fixed": "#ffdbca",
+              "error": "#ba1a1a",
+              "inverse-surface": "#283233",
+              "on-tertiary-fixed": "#2a170d",
+              "secondary-container": "#9df0f4",
+              "tertiary-container": "#634a3d",
+              "tertiary": "#4a3428",
+              "surface-container-low": "#ebf6f6",
+              "primary-container": "#00595c",
+              "primary-fixed": "#aaeef1",
+              "on-tertiary": "#ffffff",
+              "error-container": "#ffdad6",
+              "on-primary-fixed-variant": "#004f52",
+              "tertiary-fixed-dim": "#e2bfaf",
+              "background": "#f0fcfb",
+              "primary": "#004042",
+              "on-error-container": "#93000a",
+              "on-primary-fixed": "#002021",
+              "on-primary-container": "#89cdd0",
+              "on-secondary-fixed": "#002021",
+              "on-secondary-container": "#037074",
+              "on-secondary": "#ffffff",
+              "surface-container-highest": "#dae5e5",
+              "primary-fixed-dim": "#8ed2d5",
+              "on-error": "#ffffff",
+              "surface": "#f0fcfb",
+              "surface-dim": "#d1dcdc",
+              "on-tertiary-container": "#ddbbab",
+              "on-tertiary-fixed-variant": "#594135",
+              "surface-container": "#e5f0f0",
+              "secondary-fixed-dim": "#81d4d8",
+              "on-surface": "#131d1e"
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      }
+      .ghost-border {
+        outline: 1px solid rgba(190, 200, 200, 0.15);
+      }
+      .primary-gradient {
+        background: linear-gradient(135deg, #004042 0%, #00595c 100%);
+      }
+    </style>
+</head>
+<body class="bg-surface font-body text-on-surface min-h-screen flex">
+<!-- SideNavBar (Shared Component) -->
+<aside class="fixed left-0 top-0 h-full z-40 py-8 bg-[#ebf6f6] dark:bg-slate-900 h-screen w-72 flex flex-col border-r-0">
+<div class="px-8 mb-10">
+<h1 class="text-xl font-extrabold text-[#00595C] dark:text-teal-500 font-manrope">Bridges</h1>
+<p class="text-xs text-slate-500 font-medium tracking-widest uppercase mt-1">AI Sanctuary</p>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center text-slate-500 dark:text-slate-400 px-8 py-3 hover:bg-white/50 dark:hover:bg-slate-800/50 transition-all" href="#">
+<span class="material-symbols-outlined mr-4" data-icon="dashboard">dashboard</span>
+<span class="font-manrope font-semibold text-sm">Dashboard</span>
+</a>
+<a class="flex items-center text-[#00595C] dark:text-teal-300 bg-white dark:bg-slate-800 rounded-l-full ml-4 pl-4 py-3 translate-x-1 duration-300" href="#">
+<span class="material-symbols-outlined mr-4" data-icon="forum" style="font-variation-settings: 'FILL' 1;">forum</span>
+<span class="font-manrope font-semibold text-sm">Active Chats</span>
+</a>
+<a class="flex items-center text-slate-500 dark:text-slate-400 px-8 py-3 hover:bg-white/50 dark:hover:bg-slate-800/50 transition-all" href="#">
+<span class="material-symbols-outlined mr-4" data-icon="architecture">architecture</span>
+<span class="font-manrope font-semibold text-sm">Blueprint Gallery</span>
+</a>
+<a class="flex items-center text-slate-500 dark:text-slate-400 px-8 py-3 hover:bg-white/50 dark:hover:bg-slate-800/50 transition-all" href="#">
+<span class="material-symbols-outlined mr-4" data-icon="group">group</span>
+<span class="font-manrope font-semibold text-sm">Team Hub</span>
+</a>
+<a class="flex items-center text-slate-500 dark:text-slate-400 px-8 py-3 hover:bg-white/50 dark:hover:bg-slate-800/50 transition-all" href="#">
+<span class="material-symbols-outlined mr-4" data-icon="inventory_2">inventory_2</span>
+<span class="font-manrope font-semibold text-sm">Archive</span>
+</a>
+</nav>
+<div class="px-8 mt-auto pt-6 border-t border-outline-variant/10">
+<button class="w-full py-3 px-4 primary-gradient text-on-primary rounded-xl font-manrope font-bold text-sm mb-6 shadow-lg shadow-primary/10">
+                New Consultation
+            </button>
+<a class="flex items-center text-slate-500 px-2 py-3 hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined mr-4" data-icon="help">help</span>
+<span class="font-manrope font-semibold text-sm">Help Center</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 ml-72 flex flex-col h-screen relative">
+<!-- TopNavBar (Shared Component) -->
+<header class="bg-[#f0fcfb] dark:bg-slate-950 flex justify-between items-center w-full px-16 py-4 mx-auto z-30">
+<div class="flex items-center gap-12">
+<span class="text-2xl font-black text-[#00595C] dark:text-teal-500 font-manrope">Bridges AI</span>
+<nav class="hidden md:flex gap-8">
+<a class="text-slate-600 dark:text-slate-400 font-medium font-manrope tracking-tight text-lg hover:text-[#00595C] transition-colors" href="#">Insights</a>
+<a class="text-slate-600 dark:text-slate-400 font-medium font-manrope tracking-tight text-lg hover:text-[#00595C] transition-colors" href="#">Library</a>
+<a class="text-[#00595C] dark:text-teal-300 border-b-2 border-[#00595C] pb-1 font-manrope tracking-tight font-bold text-lg" href="#">Blueprints</a>
+</nav>
+</div>
+<div class="flex items-center gap-6">
+<div class="relative hidden lg:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline" data-icon="search">search</span>
+<input class="bg-surface-container-low border-none rounded-full py-2 pl-10 pr-4 w-64 focus:ring-2 focus:ring-primary text-sm" placeholder="Search resources..." type="text"/>
+</div>
+<button class="text-slate-600 hover:text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="text-slate-600 hover:text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+<div class="w-10 h-10 rounded-full overflow-hidden border-2 border-primary/20">
+<img alt="User profile avatar" class="w-full h-full object-cover" data-alt="professional headshot of a smiling woman with a warm expression in a brightly lit modern office setting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCes6oB5GWLGcCjXv-RqAdQIFe0ZBrxYMdjf2J9DVHvdBHyGUPPliIfxYhnzEHU1SirEsn0qUDsEW2dFMwQt_sXw3YiCEe6hCThkF7I01jzbbIUgQN9wtbq-1Mgr5yqIHG8bIIXueHTHSp-o7ahDGdNiYronYwQt307XbTNmmz8kgvsaWSl2ZcAiSTkvJmcUnqnKrhlG_mRys8k8Y_kgmL4mxDt76pE7Vf6m9dMP0QAGIg3cDnVooeSQ0eBv9mMwhyJWi4KoXXm24w"/>
+</div>
+</div>
+</header>
+<!-- Chat Panel Container -->
+<div class="flex-1 overflow-hidden flex flex-col items-center justify-center p-8 bg-surface-container-low">
+<!-- Chat Message Stream (Width ~400px) -->
+<div class="w-full max-w-[420px] flex flex-col gap-6">
+<!-- AI Message Bubble -->
+<div class="flex gap-3 animate-fade-in">
+<div class="w-8 h-8 rounded-full primary-gradient flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[18px] text-white" data-icon="auto_awesome" style="font-variation-settings: 'FILL' 1;">auto_awesome</span>
+</div>
+<div class="bg-surface-container-lowest p-4 rounded-xl rounded-tl-none shadow-sm ghost-border">
+<p class="text-sm leading-relaxed text-on-surface">I've created a blueprint for your therapy tool. Review the details below:</p>
+</div>
+</div>
+<!-- The Blueprint Approval Card -->
+<div class="ml-11 bg-surface-container-lowest rounded-xl ghost-border overflow-hidden shadow-[0_20px_40px_rgba(19,29,30,0.06)]">
+<!-- Card Header -->
+<div class="bg-surface-container-low/50 px-5 py-3 flex items-center gap-2 border-b border-outline-variant/10">
+<span class="material-symbols-outlined text-primary text-[20px]" data-icon="sparkle" style="font-variation-settings: 'FILL' 1;">spark</span>
+<h3 class="font-headline font-semibold text-[13px] tracking-wide text-primary uppercase">App Blueprint</h3>
+</div>
+<!-- Content (Vertical Stack) -->
+<div class="p-6 space-y-5">
+<h2 class="font-headline font-bold text-xl text-primary leading-tight">Morning Routine Visual Schedule</h2>
+<div class="space-y-4">
+<!-- Field 1 -->
+<div>
+<label class="text-[10px] font-bold uppercase tracking-wider text-outline block mb-1">Therapy Goal</label>
+<p class="text-sm font-medium text-on-surface">Morning independence &amp; smooth transitions</p>
+</div>
+<!-- Field 2 -->
+<div>
+<label class="text-[10px] font-bold uppercase tracking-wider text-outline block mb-1">Target Skill</label>
+<p class="text-sm font-medium text-on-surface">Visual sequencing &amp; task completion</p>
+</div>
+<!-- Field Row -->
+<div class="grid grid-cols-2 gap-4">
+<div>
+<label class="text-[10px] font-bold uppercase tracking-wider text-outline block mb-1">Age Range</label>
+<p class="text-sm font-medium text-on-surface">4-8 years</p>
+</div>
+<div>
+<label class="text-[10px] font-bold uppercase tracking-wider text-outline block mb-1">Target User</label>
+<p class="text-sm font-medium text-on-surface">Parent &amp; Child</p>
+</div>
+</div>
+<!-- Field 3 -->
+<div>
+<label class="text-[10px] font-bold uppercase tracking-wider text-outline block mb-1">Interaction Model</label>
+<p class="text-sm font-medium text-on-surface">Drag-and-drop sequencing</p>
+</div>
+<!-- Description -->
+<div class="pt-2 border-t border-outline-variant/10">
+<p class="text-[13px] text-on-surface-variant leading-relaxed">
+                                    A step-by-step visual schedule for the morning tasks to build independence and reduce anxiety for a calm start to the day.
+                                </p>
+</div>
+</div>
+</div>
+<!-- Warm Highlight Bar -->
+<div class="bg-tertiary-fixed px-5 py-4 flex gap-3">
+<span class="material-symbols-outlined text-on-tertiary-fixed text-[18px] mt-0.5" data-icon="tips_and_updates">tips_and_updates</span>
+<p class="text-[12px] font-medium text-on-tertiary-fixed italic leading-snug">
+                            "This tool focuses on building independence through visual structure."
+                        </p>
+</div>
+</div>
+<!-- Action Buttons (Stacked below card) -->
+<div class="ml-11 flex flex-col gap-3">
+<button class="w-full py-4 px-6 primary-gradient text-on-primary rounded-xl font-headline font-bold text-sm flex items-center justify-center gap-2 hover:opacity-90 transition-opacity shadow-lg shadow-primary/20">
+                        Approve &amp; Build
+                        <span class="material-symbols-outlined text-[18px]" data-icon="rocket_launch">rocket_launch</span>
+</button>
+<button class="w-full py-3 px-6 bg-transparent text-primary hover:bg-surface-container-high/50 rounded-xl font-headline font-bold text-sm transition-colors flex items-center justify-center gap-2">
+                        Edit Blueprint
+                        <span class="material-symbols-outlined text-[18px]" data-icon="edit_note">edit_note</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Chat Input (Floating at bottom) -->
+<div class="w-full max-w-3xl mx-auto p-6 absolute bottom-0 left-1/2 -translate-x-1/2">
+<div class="bg-surface-container-lowest rounded-full ghost-border p-2 flex items-center shadow-xl shadow-on-surface/5 backdrop-blur-md bg-white/80">
+<button class="p-2 text-outline hover:text-primary transition-colors ml-2">
+<span class="material-symbols-outlined" data-icon="add_circle">add_circle</span>
+</button>
+<input class="flex-1 bg-transparent border-none focus:ring-0 text-sm px-4" placeholder="Ask Bridges to modify something..." type="text"/>
+<button class="p-2 w-10 h-10 primary-gradient text-on-primary rounded-full flex items-center justify-center shadow-md">
+<span class="material-symbols-outlined" data-icon="send">send</span>
+</button>
+</div>
+</div>
+</main>
+</body></html>

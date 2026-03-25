@@ -1,4 +1,4 @@
-"use client";
+import { DashboardSidebar } from "@/features/dashboard/components/dashboard-sidebar";
 
 export default function AppLayout({
   children,
@@ -7,7 +7,8 @@ export default function AppLayout({
 }) {
   return (
     <div className="flex h-screen overflow-hidden">
-      <main id="main-content" className="flex-1 overflow-hidden">
+      <DashboardSidebar />
+      <main id="main-content" className="flex-1 overflow-hidden md:ml-20">
         {children}
       </main>
     </div>

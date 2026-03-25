@@ -1,8 +1,10 @@
 "use client";
 
 import { useQuery } from "convex/react";
-import { useState } from "react";
+import { Sparkles } from "lucide-react";
+import { useRef, useState } from "react";
 
+import { cn } from "@/core/utils";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
 import { ScrollArea } from "@/shared/components/ui/scroll-area";
@@ -11,6 +13,15 @@ import { api } from "../../../../convex/_generated/api";
 import { Id } from "../../../../convex/_generated/dataModel";
 import type { StreamingStatus } from "../hooks/use-streaming";
 import { BlueprintCard } from "./blueprint-card";
+import { SuggestionChips } from "./suggestion-chips";
+import { ThinkingIndicator } from "./thinking-indicator";
+
+const THERAPY_SUGGESTIONS = [
+  "Token board with star rewards",
+  "Visual daily schedule",
+  "Communication picture board",
+  "Feelings check-in tool",
+];
 
 interface ChatPanelProps {
   sessionId: Id<"sessions"> | null;
@@ -28,10 +39,19 @@ export function ChatPanel({
   onGenerate,
 }: ChatPanelProps) {
   const [input, setInput] = useState("");
+  const generationStartRef = useRef<number | null>(null);
   const messages = useQuery(api.messages.list, sessionId ? { sessionId } : "skip");
 
   const isGenerating = status === "generating";
   const isLive = status === "live";
+  const isEmpty = !sessionId && status === "idle";
+
+  if (isGenerating && !generationStartRef.current) {
+    generationStartRef.current = Date.now();
+  }
+  if (!isGenerating) {
+    generationStartRef.current = null;
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,16 +60,30 @@ export function ChatPanel({
     setInput("");
   };
 
+  const handleSuggestionSelect = (suggestion: string) => {
+    onGenerate(suggestion);
+  };
+
   return (
     <div className="flex h-full flex-col">
-      {/* Messages */}
       <ScrollArea className="flex-1 p-4">
-        {!sessionId && status === "idle" && (
-          <div className="space-y-2 text-center">
-            <h2 className="text-lg font-semibold">What would you like to build?</h2>
-            <p className="text-sm text-muted-foreground">
-              Describe a therapy tool and I&apos;ll build it for you.
-            </p>
+        {isEmpty && (
+          <div className="flex h-full flex-col items-center justify-center gap-4 py-16">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10">
+              <Sparkles className="h-6 w-6 text-primary" />
+            </div>
+            <div className="text-center">
+              <h2 className="font-headline text-xl font-semibold">
+                What would you like to build?
+              </h2>
+              <p className="mt-1 text-sm text-on-surface-variant">
+                Describe a therapy tool and I&apos;ll build it for you.
+              </p>
+            </div>
+            <SuggestionChips
+              suggestions={THERAPY_SUGGESTIONS}
+              onSelect={handleSuggestionSelect}
+            />
           </div>
         )}
 
@@ -57,27 +91,27 @@ export function ChatPanel({
           (msg: { _id: string; role: string; content: string }) => (
             <div
               key={msg._id}
-              className={`mb-3 rounded-lg p-3 ${
+              className={cn(
+                "mb-3 rounded-2xl px-4 py-3",
                 msg.role === "user"
-                  ? "ml-8 bg-primary/10"
+                  ? "ml-8 bg-primary/5"
                   : msg.role === "system"
-                    ? "bg-muted text-sm italic"
-                    : "mr-8 bg-muted"
-              }`}
+                    ? "bg-surface-container-low text-sm italic"
+                    : "mr-8 bg-surface-container-low"
+              )}
             >
               <p className="whitespace-pre-wrap text-sm">{msg.content}</p>
             </div>
           )
         )}
 
-        {/* Blueprint info card — informational only, no approval buttons */}
         {blueprint && <BlueprintCard blueprint={blueprint} />}
 
-        {/* Status indicators */}
         {isGenerating && (
-          <div className="mt-2 animate-pulse text-sm text-muted-foreground">
-            Building your app...
-          </div>
+          <ThinkingIndicator
+            isThinking
+            startTime={generationStartRef.current ?? undefined}
+          />
         )}
 
         {isLive && (
@@ -87,14 +121,13 @@ export function ChatPanel({
         )}
 
         {error && (
-          <div className="mt-2 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
+          <div className="mt-2 rounded-2xl bg-destructive/10 p-3 text-sm text-destructive">
             {error}
           </div>
         )}
       </ScrollArea>
 
-      {/* Prompt input */}
-      <form onSubmit={handleSubmit} className="border-t p-4">
+      <form onSubmit={handleSubmit} className="bg-surface-container-low px-4 pt-3 pb-4">
         <div className="flex gap-2">
           <Input
             value={input}

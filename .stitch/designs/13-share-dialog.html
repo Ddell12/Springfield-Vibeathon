@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Bridges - Therapy Tool Builder</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&amp;family=Inter:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "on-secondary-fixed-variant": "#004f52",
+              "surface-tint": "#1d686b",
+              "surface-container": "#ededf3",
+              "secondary-fixed-dim": "#81d4d8",
+              "primary-container": "#00595c",
+              "tertiary-fixed-dim": "#ffb68e",
+              "surface-container-lowest": "#ffffff",
+              "on-tertiary-container": "#fab18a",
+              "on-secondary-container": "#037074",
+              "tertiary": "#5a2c0f",
+              "on-error-container": "#93000a",
+              "inverse-on-surface": "#f0f0f6",
+              "on-error": "#ffffff",
+              "primary-fixed": "#aaeef1",
+              "secondary": "#00696d",
+              "primary": "#004042",
+              "background": "#f9f9ff",
+              "on-secondary-fixed": "#002021",
+              "on-primary": "#ffffff",
+              "on-primary-fixed-variant": "#004f52",
+              "inverse-surface": "#2e3035",
+              "on-surface-variant": "#3f4949",
+              "on-tertiary-fixed-variant": "#6c3a1b",
+              "tertiary-fixed": "#ffdbca",
+              "on-surface": "#191c20",
+              "error": "#ba1a1a",
+              "on-tertiary": "#ffffff",
+              "secondary-container": "#9df0f4",
+              "on-primary-container": "#89cdd0",
+              "surface-container-highest": "#e2e2e8",
+              "on-tertiary-fixed": "#331200",
+              "surface-bright": "#f9f9ff",
+              "inverse-primary": "#8ed2d5",
+              "outline-variant": "#bec8c8",
+              "on-background": "#191c20",
+              "secondary-fixed": "#9df0f4",
+              "surface-container-low": "#f3f3f9",
+              "on-secondary": "#ffffff",
+              "tertiary-container": "#764223",
+              "error-container": "#ffdad6",
+              "outline": "#6f7979",
+              "surface-container-high": "#e7e8ee",
+              "primary-fixed-dim": "#8ed2d5",
+              "surface": "#f9f9ff",
+              "surface-dim": "#d9dadf",
+              "on-primary-fixed": "#002021",
+              "surface-variant": "#e2e2e8"
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-scrim {
+            backdrop-filter: blur(8px);
+            background-color: rgba(25, 28, 32, 0.4);
+        }
+        .qr-placeholder {
+            background: repeating-conic-gradient(#f0f3ff 0% 25%, #ffffff 0% 50%) 50% / 20px 20px;
+        }
+    </style>
+</head>
+<body class="bg-surface font-body text-on-surface min-h-screen overflow-hidden">
+<!-- Background: Builder Interface (Blurred) -->
+<div class="flex h-screen w-full blur-sm">
+<!-- SideNavBar Shared Component (Visual Representation) -->
+<aside class="flex flex-col h-screen p-4 gap-2 bg-[#f3f3f9] w-64">
+<div class="flex items-center gap-3 px-2 py-4">
+<div class="w-10 h-10 rounded-lg bg-primary-container flex items-center justify-center text-white">
+<span class="material-symbols-outlined">construction</span>
+</div>
+<div>
+<h2 class="font-headline font-semibold text-on-surface text-sm leading-tight">Morning Routine Board</h2>
+<p class="text-xs text-on-surface-variant">Therapy Tool Builder</p>
+</div>
+</div>
+<nav class="flex-1 mt-4 space-y-1">
+<div class="bg-white text-[#00595C] font-medium rounded-lg px-4 py-2.5 flex items-center gap-3">
+<span class="material-symbols-outlined">construction</span>
+<span class="text-sm">Builder</span>
+</div>
+<div class="text-[#191c20] hover:bg-white transition-all px-4 py-2.5 rounded-lg flex items-center gap-3">
+<span class="material-symbols-outlined">auto_awesome_motion</span>
+<span class="text-sm">Templates</span>
+</div>
+<div class="text-[#191c20] hover:bg-white transition-all px-4 py-2.5 rounded-lg flex items-center gap-3">
+<span class="material-symbols-outlined">library_books</span>
+<span class="text-sm">Library</span>
+</div>
+</nav>
+</aside>
+<!-- Main Content Canvas -->
+<main class="flex flex-1 bg-surface">
+<!-- Left: Chat Panel -->
+<section class="w-1/3 border-r border-outline-variant/10 p-8 flex flex-col">
+<div class="mt-auto bg-surface-container-lowest p-6 rounded-xl shadow-sm max-w-sm">
+<p class="text-on-surface leading-relaxed">Here's your Morning Routine Board! Would you like to adjust anything?</p>
+<div class="mt-4 flex gap-2">
+<button class="px-4 py-2 bg-secondary-container text-on-secondary-container rounded-full text-xs font-medium">Add steps</button>
+<button class="px-4 py-2 bg-secondary-container text-on-secondary-container rounded-full text-xs font-medium">Change icons</button>
+</div>
+</div>
+</section>
+<!-- Right: Preview Area -->
+<section class="flex-1 p-12 bg-surface-container-low flex flex-col items-center justify-center">
+<div class="w-full max-w-2xl bg-white rounded-2xl p-8 shadow-sm">
+<h1 class="font-headline font-bold text-3xl mb-8 text-primary">Daily Morning Routine</h1>
+<div class="grid grid-cols-1 gap-4">
+<div class="flex items-center gap-6 p-6 bg-surface-container-low rounded-xl">
+<span class="material-symbols-outlined text-3xl text-primary" data-icon="sunny">sunny</span>
+<div class="flex-1">
+<h3 class="font-headline font-semibold text-lg">Wake Up</h3>
+<p class="text-sm text-on-surface-variant">Rise and shine at 7:00 AM</p>
+</div>
+<span class="material-symbols-outlined text-outline">radio_button_unchecked</span>
+</div>
+<div class="flex items-center gap-6 p-6 bg-surface-container-low rounded-xl">
+<span class="material-symbols-outlined text-3xl text-primary" data-icon="clean_hands">clean_hands</span>
+<div class="flex-1">
+<h3 class="font-headline font-semibold text-lg">Brush Teeth</h3>
+<p class="text-sm text-on-surface-variant">2 minutes of brushing</p>
+</div>
+<span class="material-symbols-outlined text-outline">radio_button_unchecked</span>
+</div>
+<div class="flex items-center gap-6 p-6 bg-surface-container-low rounded-xl">
+<span class="material-symbols-outlined text-3xl text-primary" data-icon="checkroom">checkroom</span>
+<div class="flex-1">
+<h3 class="font-headline font-semibold text-lg">Get Dressed</h3>
+<p class="text-sm text-on-surface-variant">Pick out today's outfit</p>
+</div>
+<span class="material-symbols-outlined text-outline">radio_button_unchecked</span>
+</div>
+</div>
+</div>
+</section>
+</main>
+</div>
+<!-- Modal Scrim -->
+<div class="fixed inset-0 glass-scrim z-40 flex items-center justify-center">
+<!-- Modal Dialog -->
+<div class="w-[420px] bg-white rounded-[16px] shadow-[0_48px_48px_-12px_rgba(25,28,32,0.12)] z-50 p-6 flex flex-col gap-6">
+<!-- Header -->
+<div class="flex items-center justify-between">
+<h2 class="font-headline font-semibold text-[18px] text-on-surface">Share 'Morning Routine Board'</h2>
+<button class="p-1 hover:bg-surface-container transition-colors rounded-full text-on-surface-variant">
+<span class="material-symbols-outlined text-[20px]" data-icon="close">close</span>
+</button>
+</div>
+<!-- Tab Toggle (Segmented Control) -->
+<div class="bg-[#f0f3ff] p-1 rounded-lg flex">
+<button class="flex-1 py-1.5 text-sm font-medium rounded-[6px] transition-all bg-[#00595c] text-white">
+                    Preview Link
+                </button>
+<button class="flex-1 py-1.5 text-sm font-medium rounded-[6px] transition-all text-on-surface-variant hover:text-on-surface">
+                    Published Link
+                </button>
+</div>
+<!-- QR Code Section -->
+<div class="flex justify-center">
+<div class="w-40 h-40 border border-[#f0f3ff] rounded-xl p-2 flex items-center justify-center relative overflow-hidden">
+<!-- Stylized QR Code Graphic -->
+<div class="qr-placeholder w-full h-full opacity-20 absolute inset-0"></div>
+<div class="relative z-10 w-full h-full p-2 grid grid-cols-4 grid-rows-4 gap-1">
+<div class="bg-primary-container rounded-sm col-span-1 row-span-1"></div>
+<div class="bg-primary rounded-sm col-span-1 row-span-1"></div>
+<div class="bg-secondary rounded-sm col-span-1 row-span-1"></div>
+<div class="bg-primary-container rounded-sm col-span-1 row-span-1"></div>
+<div class="bg-primary rounded-sm col-span-2 row-span-1"></div>
+<div class="bg-secondary-container rounded-sm col-span-1 row-span-2"></div>
+<div class="bg-primary-container rounded-sm col-span-1 row-span-1"></div>
+<div class="bg-primary rounded-sm col-span-1 row-span-1"></div>
+<div class="bg-secondary rounded-sm col-span-1 row-span-1"></div>
+<div class="bg-primary-container rounded-sm col-span-2 row-span-2"></div>
+<div class="bg-secondary rounded-sm col-span-1 row-span-1"></div>
+</div>
+</div>
+</div>
+<!-- URL Input Row -->
+<div class="flex gap-2">
+<div class="flex-1 bg-surface-container-low px-4 py-2.5 rounded-lg border border-transparent focus-within:border-primary-fixed transition-all flex items-center">
+<span class="text-sm font-body text-on-surface truncate">bridges.app/tool/abc123</span>
+</div>
+<button class="flex items-center gap-2 px-4 py-2.5 text-primary font-medium text-sm hover:bg-primary-fixed/20 transition-all rounded-lg">
+<span class="material-symbols-outlined text-[18px]" data-icon="content_copy">content_copy</span>
+                    Copy Link
+                </button>
+</div>
+<!-- Action Row -->
+<div class="flex items-center justify-end gap-3 pt-2">
+<button class="px-5 py-2 text-sm font-medium text-on-surface-variant hover:text-on-surface transition-all">
+                    Close
+                </button>
+<button class="flex items-center gap-2 bg-[#00595c] hover:bg-primary transition-all text-white px-6 py-2 rounded-lg text-sm font-medium shadow-sm">
+<span class="material-symbols-outlined text-[18px]" data-icon="share">share</span>
+                    Share
+                </button>
+</div>
+</div>
+</div>
+</body></html>
