@@ -1,5 +1,5 @@
 // src/features/builder/components/__tests__/builder-page.test.tsx
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 // Mock Next.js navigation before imports
@@ -18,9 +18,9 @@ vi.mock("convex/react", () => ({
   useAction: vi.fn().mockReturnValue(vi.fn().mockResolvedValue({ audioUrl: "https://test.example.com/audio.mp3" })),
 }));
 
+// Mock the streaming hook
 const mockResumeSession = vi.fn();
 
-// Mock the streaming hook
 vi.mock("../../hooks/use-streaming", () => ({
   useStreaming: vi.fn().mockReturnValue({
     status: "idle",
@@ -93,22 +93,37 @@ describe("BuilderPage — three-panel layout", () => {
     expect(screen.getAllByText("Untitled App").length).toBeGreaterThan(0);
   });
 
-  it("calls resumeSession when sessionId is in URL and files are loaded", async () => {
+  it("calls resumeSession when sessionId is in URL and data is loaded", async () => {
     // Simulate ?sessionId=test_session_123
     mockGet.mockImplementation((key: string) => {
       if (key === "sessionId") return "test_session_123";
       return null;
     });
 
-    // Mock Convex useQuery to return session data on first call, files on second
+    // Mock useQuery to return session data and files
     const { useQuery } = await import("convex/react");
-    let useQueryCallCount = 0;
-    vi.mocked(useQuery).mockImplementation(() => {
-      useQueryCallCount++;
-      if (useQueryCallCount === 1) {
-        return { _id: "test_session_123", title: "Test App", state: "live", query: "test" };
+    vi.mocked(useQuery).mockImplementation((_queryFn: unknown, args: unknown) => {
+      if (args === "skip") return null;
+      // Distinguish by args shape — files query returns an array
+      const argsObj = args as Record<string, unknown>;
+      if (argsObj?.sessionId === "test_session_123") {
+        // Both queries get the same args — return based on call context
+        // First call is sessions.get, second is generated_files.list
+        return null; // Will be overridden below
       }
-      return [{ path: "src/App.tsx", contents: "<div>Hello</div>", _id: "f1" }];
+      return null;
+    });
+
+    // More specific mocking: sessions.get returns a session, generated_files.list returns files
+    let queryCallCount = 0;
+    vi.mocked(useQuery).mockImplementation((_queryFn: unknown, args: unknown) => {
+      if (args === "skip") return null;
+      queryCallCount++;
+      // sessions.get is called first, generated_files.list second
+      if (queryCallCount % 2 === 1) {
+        return { _id: "test_session_123", title: "Test App", state: "live", query: "test", blueprint: null };
+      }
+      return [{ path: "src/App.tsx", contents: "<div>Hello</div>", _id: "f1", sessionId: "test_session_123" }];
     });
 
     // Mock WebContainer as ready
@@ -120,7 +135,7 @@ describe("BuilderPage — three-panel layout", () => {
       writeFile: vi.fn().mockResolvedValue(undefined),
     });
 
-    // Ensure useStreaming still returns resumeSession for this test
+    // Re-mock useStreaming to provide resumeSession
     const { useStreaming } = await import("../../hooks/use-streaming");
     vi.mocked(useStreaming).mockReturnValue({
       status: "idle",
@@ -137,8 +152,16 @@ describe("BuilderPage — three-panel layout", () => {
 
     render(<BuilderPage />);
 
-    // resumeSession should have been called with the session data
-    // Note: exact timing depends on useEffect execution
+    await waitFor(() => {
+      expect(mockResumeSession).toHaveBeenCalledWith({
+        sessionId: "test_session_123",
+        files: [{ path: "src/App.tsx", contents: "<div>Hello</div>" }],
+        blueprint: null,
+      });
+    });
+
+    // Reset mocks
     mockGet.mockReturnValue(null);
+    vi.mocked(useQuery).mockReturnValue(null);
   });
 });
