@@ -25,7 +25,7 @@ export function CodePanel({ files, status }: CodePanelProps) {
 
   if (files.length === 0 && !isGenerating) {
     return (
-      <div className="flex h-full items-center justify-center bg-[#1b1e22] text-slate-400">
+      <div className="flex h-full items-center justify-center bg-surface-container text-on-surface-variant">
         <p className="text-sm">Start building to see code here.</p>
       </div>
     );
@@ -33,7 +33,7 @@ export function CodePanel({ files, status }: CodePanelProps) {
 
   if (files.length === 0 && isGenerating) {
     return (
-      <div className="flex h-full items-center justify-center bg-[#1b1e22] text-slate-400">
+      <div className="flex h-full items-center justify-center bg-surface-container text-on-surface-variant">
         <div className="animate-pulse text-center">
           <p className="text-sm">Generating your files...</p>
         </div>
@@ -110,11 +110,11 @@ export function CodePanel({ files, status }: CodePanelProps) {
       </header>
 
       {/* Code editor area */}
-      <div className="flex flex-1 overflow-hidden bg-[#1b1e22] font-mono text-sm leading-relaxed">
+      <div className="flex flex-1 overflow-hidden bg-surface-container font-mono text-sm leading-relaxed">
         {selectedFile ? (
           <>
             {/* Line number gutter */}
-            <div className="w-12 select-none bg-[#1b1e22] pt-4 pr-3 text-right text-slate-600">
+            <div className="w-12 select-none bg-surface-container pt-4 pr-3 text-right text-on-surface-variant">
               {Array.from({ length: lineCount }, (_, i) => (
                 <div key={i} className="leading-relaxed">
                   {i + 1}
@@ -124,13 +124,13 @@ export function CodePanel({ files, status }: CodePanelProps) {
 
             {/* Code canvas */}
             <ScrollArea className="flex-1">
-              <pre className="whitespace-pre overflow-auto px-4 pt-4 text-slate-300">
+              <pre className="whitespace-pre overflow-auto px-4 pt-4 text-on-surface">
                 {selectedFile.contents}
               </pre>
             </ScrollArea>
           </>
         ) : (
-          <div className="flex flex-1 items-center justify-center text-slate-400">
+          <div className="flex flex-1 items-center justify-center text-on-surface-variant">
             <p className="text-sm">Select a file to view its contents.</p>
           </div>
         )}

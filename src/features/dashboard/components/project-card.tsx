@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 
 import { cn } from "@/core/utils";
@@ -48,9 +49,11 @@ export function ProjectCard({ project, index = 0 }: { project: ProjectData; inde
         )}
       >
         {project.thumbnail ? (
-          <img
+          <Image
             src={project.thumbnail}
             alt={project.title}
+            width={400}
+            height={192}
             className="h-full w-full object-cover mix-blend-overlay opacity-60"
           />
         ) : (
