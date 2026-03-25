@@ -1,72 +1,48 @@
 /**
  * Therapy template seed data for Builder V2.
- * These are example prompts shown to users as inspiration in the builder interface.
+ * These are the 4 core therapy app templates shown in the builder.
  */
 
 export const THERAPY_SEED_PROMPTS = [
   {
-    id: "token-board-basic",
-    title: "Token Board",
+    id: "communication-board",
+    title: "Communication Board",
     prompt:
-      "Build a token board with 5 star tokens. When all tokens are earned, show a celebration and let the child choose a reward from: screen time, favorite snack, or choose a game.",
-    category: "rewards",
-    tags: ["ABA", "positive reinforcement", "behavior"],
-  },
-  {
-    id: "morning-routine",
-    title: "Morning Routine Tracker",
-    prompt:
-      "Create a visual morning routine for a child with autism. Steps: wake up, brush teeth, get dressed, eat breakfast, pack backpack. Each step has a fun icon and can be tapped to mark as done.",
-    category: "routines",
-    tags: ["visual schedule", "independence", "morning"],
-  },
-  {
-    id: "feelings-board",
-    title: "Feelings Communication Board",
-    prompt:
-      "Make a feelings board where a child can tap an emotion card to communicate how they feel. Include: happy, sad, angry, scared, excited, tired, calm, and worried. Each card says the word out loud when tapped.",
+      "Build a communication board for a nonverbal child. Include a 3x3 grid with core words (I want, help, more, stop, yes, no, eat, drink, play). Each card has a picture and label. Tapping a card speaks the word aloud and adds it to a sentence strip at the top. The sentence strip has a play button to speak the full sentence and a clear button.",
     category: "communication",
-    tags: ["AAC", "emotions", "non-verbal"],
+    tags: ["AAC", "non-verbal", "core words", "sentence strip"],
+    description:
+      "A picture-based AAC board with tap-to-speak cards and a sentence builder strip.",
   },
   {
-    id: "bedtime-routine",
-    title: "Bedtime Routine",
+    id: "visual-schedule",
+    title: "Morning Routine",
     prompt:
-      "Create a calming bedtime visual schedule with 6 steps: put on pajamas, brush teeth, wash face, read a book, deep breaths, lights off. Use a soothing dark blue theme.",
-    category: "routines",
-    tags: ["visual schedule", "sleep", "routine"],
+      "Build a morning routine visual schedule for a 5-year-old. Include 6 steps: wake up, use toilet, brush teeth, get dressed, eat breakfast, put on shoes. Each step has a picture, label, and a checkmark button. Completed steps show a green checkmark. A 'Now' arrow highlights the current step. When all steps are done, show a calm celebration.",
+    category: "schedule",
+    tags: ["visual schedule", "routine", "independence", "morning"],
+    description:
+      "A step-by-step morning routine with pictures, progress tracking, and celebration.",
   },
   {
-    id: "basic-needs-board",
-    title: "Basic Needs Board",
+    id: "token-board",
+    title: "5-Star Reward Board",
     prompt:
-      "Build a simple AAC board for a non-verbal child to request basic needs: water, food, bathroom, break, help, and sleep. Large buttons with icons and text that speak when tapped.",
-    category: "communication",
-    tags: ["AAC", "non-verbal", "basic needs"],
+      "Build a 5-star token board. The therapist taps to award a gold star when the child completes a task. Stars fill in left to right with a pop animation. Before starting, the child picks a reward from 3 options (screen time, snack, playground). When all 5 stars are earned, show the chosen reward with a celebration animation and a reset button.",
+    category: "reward",
+    tags: ["ABA", "positive reinforcement", "token economy", "behavior"],
+    description:
+      "A reward system where children earn stars toward a chosen prize.",
   },
   {
-    id: "social-story-app",
-    title: "Social Story Viewer",
+    id: "social-story",
+    title: "Going to the Dentist",
     prompt:
-      "Create a social story app for going to the doctor. Show 5 illustrated steps: arrive at clinic, check in at desk, wait in waiting room, meet the doctor, get a sticker for being brave. Simple text and colorful illustrations.",
-    category: "social-skills",
-    tags: ["social story", "anxiety", "medical"],
-  },
-  {
-    id: "countdown-timer",
-    title: "Visual Countdown Timer",
-    prompt:
-      "Build a visual countdown timer for transitions. When I set 5 minutes, show a shrinking colored bar so a child can see time passing. Add a gentle sound when time is up. Include presets for 1, 3, 5, and 10 minutes.",
-    category: "transitions",
-    tags: ["timer", "transitions", "anxiety"],
-  },
-  {
-    id: "choice-board",
-    title: "Free Time Choice Board",
-    prompt:
-      "Create a choice board with 6 free time activity options: read a book, draw a picture, play with LEGOs, watch a video, go outside, and quiet time. Tapping a card speaks the choice aloud and highlights it.",
-    category: "communication",
-    tags: ["choice making", "free time", "AAC"],
+      "Build a social story about going to the dentist for a young child with autism. Include 6 pages: 1) Today I am going to the dentist, 2) The waiting room has chairs and magazines, 3) The dentist will look at my teeth with a small mirror, 4) I might hear buzzing sounds -- that's okay, 5) I will try to sit still and the dentist will be gentle, 6) When it's done, I did a great job! Each page has a large illustration on top and 1-2 sentences below, with a read-aloud button.",
+    category: "social-story",
+    tags: ["social story", "anxiety", "dental", "preparation"],
+    description:
+      "A page-by-page social story with illustrations and read-aloud narration.",
   },
 ] as const;
 
