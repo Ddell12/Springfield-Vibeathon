@@ -74,14 +74,9 @@ export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn 
   const onFileCompleteRef = useRef(options?.onFileComplete);
   onFileCompleteRef.current = options?.onFileComplete;
 
-  // Step 1: per-instance activity counter (fixes cross-instance collisions & StrictMode double-fire)
   const activityCounterRef = useRef(0);
-
-  // Step 2: rAF token batching refs
   const tokenBufferRef = useRef("");
   const rafIdRef = useRef<number>();
-
-  // Step 4: sessionId ref to avoid stale closures in generate callback
   const sessionIdRef = useRef(sessionId);
   sessionIdRef.current = sessionId;
 
@@ -153,6 +148,12 @@ export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn 
         }
 
         case "done":
+          // Flush any buffered tokens before marking as live
+          if (rafIdRef.current) {
+            cancelAnimationFrame(rafIdRef.current);
+            rafIdRef.current = undefined;
+          }
+          setStreamingText(tokenBufferRef.current);
           setStatus("live");
           if (d.sessionId) setSessionId(d.sessionId as string);
           break;

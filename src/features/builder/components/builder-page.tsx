@@ -134,7 +134,7 @@ export function BuilderPage() {
         open={publishModalOpen}
         onOpenChange={setPublishModalOpen}
         projectName={appName}
-        publishedUrl={`${window.location.origin}/tool/${sessionId ?? "preview"}`}
+        publishedUrl={`${typeof window !== "undefined" ? window.location.origin : ""}/tool/${sessionId ?? "preview"}`}
         onBackToBuilder={() => setPublishModalOpen(false)}
       />
     </div>

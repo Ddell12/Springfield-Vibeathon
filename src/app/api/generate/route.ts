@@ -78,10 +78,13 @@ export async function POST(request: Request) {
         });
 
         const systemPrompt = buildSystemPrompt();
-        const existingFiles = await convex.query(api.generated_files.list, { sessionId });
-        let version = existingFiles.length > 0
-          ? Math.max(...existingFiles.map(f => f.version ?? 0)) + 1
-          : 1;
+        let version = 1;
+        if (providedSessionId) {
+          const existingFiles = await convex.query(api.generated_files.list, { sessionId });
+          if (existingFiles.length > 0) {
+            version = Math.max(...existingFiles.map(f => f.version ?? 0)) + 1;
+          }
+        }
         const collectedFiles: { path: string; contents: string }[] = [];
         let assistantText = "";
 

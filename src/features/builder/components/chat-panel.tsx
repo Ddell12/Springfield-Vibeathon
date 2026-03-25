@@ -31,8 +31,6 @@ const THERAPY_SUGGESTIONS = [
   "Feelings check-in tool with emoji faces and journaling",
 ];
 
-// --- Sub-components for chat message types ---
-
 function UserMessage({ content }: { content: string }) {
   return (
     <div className="flex justify-end">
@@ -43,11 +41,13 @@ function UserMessage({ content }: { content: string }) {
   );
 }
 
-function AssistantMessage({ content }: { content: string }) {
+function AssistantBubble({ content, isStreaming }: { content: string; isStreaming?: boolean }) {
+  if (isStreaming && !content) return null;
   return (
     <div className="flex justify-start">
       <div className="max-w-[85%] rounded-2xl rounded-bl-md bg-surface-container-low px-4 py-3">
         <p className="whitespace-pre-wrap text-sm text-foreground">{content}</p>
+        {isStreaming && <span className="mt-1 inline-block h-4 w-1 animate-pulse bg-primary/60" />}
       </div>
     </div>
   );
@@ -63,18 +63,6 @@ function SystemMessage({ content }: { content: string }) {
   );
 }
 
-function StreamingTextBubble({ text }: { text: string }) {
-  if (!text) return null;
-  return (
-    <div className="flex justify-start">
-      <div className="max-w-[85%] rounded-2xl rounded-bl-md bg-surface-container-low px-4 py-3">
-        <p className="whitespace-pre-wrap text-sm text-foreground">{text}</p>
-        <span className="mt-1 inline-block h-4 w-1 animate-pulse bg-primary/60" />
-      </div>
-    </div>
-  );
-}
-
 const ACTIVITY_ICONS: Record<Activity["type"], React.ReactNode> = {
   thinking: <Loader2 className="h-4 w-4 animate-spin text-primary" />,
   writing_file: <FileCode2 className="h-4 w-4 animate-pulse text-amber-500" />,
@@ -83,7 +71,6 @@ const ACTIVITY_ICONS: Record<Activity["type"], React.ReactNode> = {
 };
 
 function ActivityCard({ activity }: { activity: Activity }) {
-
   return (
     <div
       className={cn(
@@ -210,11 +197,9 @@ export function ChatPanel({
   const scrollEndRef = useRef<HTMLDivElement>(null);
   const lastScrollRef = useRef(0);
 
-  // Query persisted messages from Convex (skip if no session yet)
-  const typedSessionId = sessionId as Id<"sessions"> | null;
   const messages = useQuery(
     api.messages.list,
-    typedSessionId ? { sessionId: typedSessionId } : "skip"
+    sessionId ? { sessionId: sessionId as Id<"sessions"> } : "skip"
   );
 
   const isGenerating = status === "generating";
@@ -274,7 +259,7 @@ export function ChatPanel({
               if (msg.role === "system") {
                 return <SystemMessage key={msg._id} content={msg.content} />;
               }
-              return <AssistantMessage key={msg._id} content={msg.content} />;
+              return <AssistantBubble key={msg._id} content={msg.content} />;
             }
           )}
 
@@ -296,7 +281,7 @@ export function ChatPanel({
 
           {/* Streaming assistant text */}
           {isGenerating && streamingText && (
-            <StreamingTextBubble text={streamingText} />
+            <AssistantBubble content={streamingText} isStreaming />
           )}
 
           {/* Generating indicator when no streaming text yet */}
