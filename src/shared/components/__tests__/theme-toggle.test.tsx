@@ -7,6 +7,7 @@ import { ThemeToggle } from "../theme-toggle";
 // Mock next-themes
 const mockSetTheme = vi.fn();
 let mockTheme = "light";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 let mockMounted = true;
 
 vi.mock("next-themes", () => ({

@@ -1,7 +1,17 @@
 // convex/sessions.ts
 import { v } from "convex/values";
-import { mutation, query, internalMutation, internalQuery } from "./_generated/server";
+
 import { internal } from "./_generated/api";
+import { internalMutation, internalQuery,mutation, query } from "./_generated/server";
+
+const SESSION_STATE_VALIDATOR = v.union(
+  v.literal("idle"), v.literal("blueprinting"),
+  v.literal("template_selecting"), v.literal("phase_generating"),
+  v.literal("phase_implementing"), v.literal("deploying"),
+  v.literal("validating"), v.literal("finalizing"),
+  v.literal("reviewing"), v.literal("complete"),
+  v.literal("failed")
+);
 
 export const create = mutation({
   args: {
@@ -57,12 +67,12 @@ const AUTO_ADVANCE_STATES = [
 export const updateState = internalMutation({
   args: {
     sessionId: v.id("sessions"),
-    state: v.string(),
+    state: SESSION_STATE_VALIDATOR,
     stateMessage: v.string(),
   },
   handler: async (ctx, args) => {
     await ctx.db.patch(args.sessionId, {
-      state: args.state as any,
+      state: args.state,
       stateMessage: args.stateMessage,
     });
 

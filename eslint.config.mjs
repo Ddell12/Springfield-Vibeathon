@@ -26,6 +26,7 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // Exclude skill templates, other worktrees, and standalone sub-projects
     ".claude/**",
+    ".claire/**",
     ".agents/**",
     "e2b-templates/**",
     "convex/_generated/**",

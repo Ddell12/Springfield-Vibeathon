@@ -1,8 +1,9 @@
 // convex/__tests__/blueprints.test.ts
 import { convexTest } from "convex-test";
-import { expect, test, describe } from "vitest";
-import schema from "../schema";
+import { describe,expect, test } from "vitest";
+
 import { api, internal } from "../_generated/api";
+import schema from "../schema";
 
 const modules = import.meta.glob("../**/*.*s");
 
@@ -12,7 +13,7 @@ describe("blueprints", () => {
     const sessionId = await t.mutation(api.sessions.create, {
       title: "Test", query: "test",
     });
-    const blueprintId = await t.mutation(internal.blueprints.create, {
+    const _blueprintId = await t.mutation(internal.blueprints.create, {
       sessionId,
       blueprint: { title: "Test App", therapyGoal: "Turn-taking" },
       markdownPreview: "# Test App\nGoal: Turn-taking",

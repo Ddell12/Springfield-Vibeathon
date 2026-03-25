@@ -1,6 +1,8 @@
 "use client";
 
+import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
+
 import { Button } from "@/shared/components/ui/button";
 
 interface PreviewPanelProps {
@@ -19,6 +21,7 @@ const RESPONSIVE_SIZES = [
 
 export function PreviewPanel({ session }: PreviewPanelProps) {
   const [sizeIndex, setSizeIndex] = useState(2); // Default: desktop
+  const [iframeError, setIframeError] = useState(false);
   const currentSize = RESPONSIVE_SIZES[sizeIndex];
 
   const isDeploying = session?.state === "deploying";
@@ -46,32 +49,71 @@ export function PreviewPanel({ session }: PreviewPanelProps) {
 
       {/* Preview area */}
       <div className="flex flex-1 items-center justify-center overflow-hidden bg-muted/30 p-4">
-        {isDeploying ? (
-          <div className="animate-pulse text-sm text-muted-foreground">
-            Deploying to preview...
-          </div>
-        ) : hasPreview ? (
-          <iframe
-            src={session!.previewUrl}
-            className="h-full rounded-lg border bg-white shadow-sm"
-            style={{
-              width:
-                typeof currentSize.width === "number"
-                  ? `${currentSize.width}px`
-                  : "100%",
-              maxWidth: "100%",
-            }}
-            title="App Preview"
-            sandbox="allow-scripts allow-same-origin"
-          />
-        ) : (
-          <div className="text-center text-sm text-muted-foreground">
-            <p>Your app preview will appear here.</p>
-            {session?.stateMessage && (
-              <p className="mt-1 text-xs">{session.stateMessage}</p>
-            )}
-          </div>
-        )}
+        <AnimatePresence mode="wait">
+          {isDeploying ? (
+            <motion.div
+              key="deploying"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="animate-pulse text-sm text-muted-foreground"
+            >
+              Deploying to preview...
+            </motion.div>
+          ) : hasPreview ? (
+            <motion.div
+              key="preview"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="relative h-full"
+              style={{
+                width:
+                  typeof currentSize.width === "number"
+                    ? `${currentSize.width}px`
+                    : "100%",
+                maxWidth: "100%",
+              }}
+            >
+              <iframe
+                src={session!.previewUrl}
+                className="h-full w-full rounded-lg border bg-white shadow-sm"
+                title="App Preview"
+                sandbox="allow-scripts allow-same-origin"
+                onError={() => setIframeError(true)}
+                onLoad={() => setIframeError(false)}
+              />
+              {iframeError && (
+                <div className="absolute inset-0 flex items-center justify-center rounded-2xl bg-surface/80 backdrop-blur-sm">
+                  <div className="flex flex-col items-center gap-2">
+                    <span className="material-symbols-outlined text-2xl text-on-surface-variant">
+                      cloud_off
+                    </span>
+                    <p className="text-sm text-on-surface-variant">
+                      Preview connection lost. Rebuilding...
+                    </p>
+                  </div>
+                </div>
+              )}
+            </motion.div>
+          ) : (
+            <motion.div
+              key="empty"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="text-center text-sm text-muted-foreground"
+            >
+              <p>Your app preview will appear here.</p>
+              {session?.stateMessage && (
+                <p className="mt-1 text-xs">{session.stateMessage}</p>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );
