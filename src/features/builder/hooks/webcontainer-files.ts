@@ -17,6 +17,7 @@ export const templateFiles: FileSystemTree = {
             "class-variance-authority": "^0.7.1",
             clsx: "^2.1.1",
             "lucide-react": "^0.469.0",
+            motion: "^12.0.0",
             react: "19.0.0",
             "react-dom": "19.0.0",
             "tailwind-merge": "^3.5.0",
@@ -462,6 +463,14 @@ export { CelebrationOverlay } from "./CelebrationOverlay";
 export { ChoiceGrid } from "./ChoiceGrid";
 export { TimerBar } from "./TimerBar";
 export { PromptCard } from "./PromptCard";
+export { TapCard } from "./TapCard";
+export { SentenceStrip } from "./SentenceStrip";
+export { BoardGrid } from "./BoardGrid";
+export { StepItem } from "./StepItem";
+export { PageViewer } from "./PageViewer";
+export { TokenSlot } from "./TokenSlot";
+export { RewardPicker } from "./RewardPicker";
+export { SocialStory } from "./SocialStory";
 `,
             },
           },
@@ -1231,11 +1240,656 @@ export function PromptCard({
 `,
             },
           },
+          "TapCard.tsx": {
+            file: {
+              contents: `import { cn } from "../lib/utils";
+
+interface TapCardProps {
+  image: string;
+  label: string;
+  onTap: () => void;
+  size?: "sm" | "md" | "lg";
+  highlighted?: boolean;
+}
+
+const sizeClasses = {
+  sm: "min-h-[80px] min-w-[80px] p-2",
+  md: "min-h-[100px] min-w-[100px] p-3",
+  lg: "min-h-[120px] min-w-[120px] p-4",
+};
+
+const imgSizeClasses = {
+  sm: "w-10 h-10",
+  md: "w-14 h-14",
+  lg: "w-20 h-20",
+};
+
+export function TapCard({
+  image,
+  label,
+  onTap,
+  size = "md",
+  highlighted = false,
+}: TapCardProps) {
+  return (
+    <button
+      onClick={onTap}
+      aria-label={label}
+      className={cn(
+        "board-cell flex flex-col items-center justify-center gap-2 cursor-pointer select-none",
+        "transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)]",
+        "active:scale-90",
+        sizeClasses[size],
+        highlighted && "border-[var(--color-primary)]! shadow-[0_0_0_3px_rgba(0,89,92,0.2)]"
+      )}
+    >
+      {image.startsWith("http") || image.startsWith("/") ? (
+        <img
+          src={image}
+          alt={label}
+          className={cn("object-cover rounded-[var(--radius-sm)]", imgSizeClasses[size])}
+        />
+      ) : (
+        <span
+          className="text-4xl"
+          role="img"
+          aria-hidden="true"
+        >
+          {image}
+        </span>
+      )}
+      <span className="text-sm font-semibold text-center leading-tight text-[var(--color-text)]">
+        {label}
+      </span>
+    </button>
+  );
+}
+`,
+            },
+          },
+
+          "SentenceStrip.tsx": {
+            file: {
+              contents: `import { Volume2, X } from "lucide-react";
+
+import { cn } from "../lib/utils";
+import { useTTS } from "../hooks/useTTS";
+
+interface WordChip {
+  label: string;
+  audioUrl?: string;
+}
+
+interface SentenceStripProps {
+  words: WordChip[];
+  onPlay: () => void;
+  onClear: () => void;
+}
+
+export function SentenceStrip({ words, onPlay, onClear }: SentenceStripProps) {
+  const { speak, speaking } = useTTS();
+
+  const handlePlay = () => {
+    const sentence = words.map((w) => w.label).join(" ");
+    speak(sentence);
+    onPlay();
+  };
+
+  return (
+    <div
+      className={cn(
+        "flex items-center gap-2 p-3 rounded-[var(--radius-lg)]",
+        "bg-[var(--color-primary-bg)] min-h-[64px]"
+      )}
+      role="region"
+      aria-label="Sentence strip"
+    >
+      <div className="flex flex-1 flex-wrap gap-1.5 min-h-[40px] items-center">
+        {words.length === 0 ? (
+          <span className="text-sm text-[var(--color-text-muted)] italic px-1">
+            Tap words to build a sentence
+          </span>
+        ) : (
+          words.map((word, i) => (
+            <span
+              key={i}
+              className={cn(
+                "inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold",
+                "bg-[var(--color-primary)] text-white"
+              )}
+            >
+              {word.label}
+            </span>
+          ))
+        )}
+      </div>
+
+      <div className="flex items-center gap-1 flex-shrink-0">
+        <button
+          onClick={handlePlay}
+          disabled={words.length === 0 || speaking}
+          aria-label="Read sentence aloud"
+          className={cn(
+            "tap-target h-10 w-10 rounded-full transition-all duration-200",
+            "bg-[var(--color-primary)] text-white",
+            "hover:bg-[var(--color-primary-light)] disabled:opacity-40 disabled:cursor-not-allowed",
+            speaking && "animate-pulse"
+          )}
+        >
+          <Volume2 className="h-5 w-5" />
+        </button>
+
+        <button
+          onClick={onClear}
+          disabled={words.length === 0}
+          aria-label="Clear sentence"
+          className={cn(
+            "tap-target h-10 w-10 rounded-full transition-all duration-200",
+            "bg-[var(--color-border)] text-[var(--color-text-muted)]",
+            "hover:bg-red-100 hover:text-red-600 disabled:opacity-40 disabled:cursor-not-allowed"
+          )}
+        >
+          <X className="h-5 w-5" />
+        </button>
+      </div>
+    </div>
+  );
+}
+`,
+            },
+          },
+
+          "BoardGrid.tsx": {
+            file: {
+              contents: `import type { ReactNode } from "react";
+
+interface BoardGridProps {
+  columns?: number;
+  gap?: number;
+  children: ReactNode;
+}
+
+export function BoardGrid({ columns = 3, gap = 12, children }: BoardGridProps) {
+  return (
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: \`repeat(\${columns}, minmax(0, 1fr))\`,
+        gap: \`\${gap}px\`,
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+`,
+            },
+          },
+
+          "StepItem.tsx": {
+            file: {
+              contents: `import { Check } from "lucide-react";
+
+import { cn } from "../lib/utils";
+
+interface StepItemProps {
+  image?: string;
+  label: string;
+  status: "pending" | "current" | "done";
+  onComplete: () => void;
+}
+
+export function StepItem({ image, label, status, onComplete }: StepItemProps) {
+  return (
+    <button
+      onClick={status !== "done" ? onComplete : undefined}
+      disabled={status === "done"}
+      aria-label={\`\${status === "done" ? "Completed" : status === "current" ? "Current step" : "Upcoming"}: \${label}\`}
+      className={cn(
+        "schedule-step w-full text-left min-h-[60px]",
+        "transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]",
+        status === "done" && "completed",
+        status === "current" && "ring-2 ring-[var(--color-primary)] ring-offset-1"
+      )}
+    >
+      {image && (
+        <span
+          className={cn(
+            "flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full",
+            "bg-[var(--color-primary-bg)] text-xl"
+          )}
+          role="img"
+          aria-hidden="true"
+        >
+          {image}
+        </span>
+      )}
+
+      <span
+        className={cn(
+          "step-text flex-1 font-medium text-[var(--color-text)]",
+          status === "current" && "font-bold text-[var(--color-primary)]",
+          status === "done" && "text-[var(--color-text-muted)]"
+        )}
+      >
+        {label}
+      </span>
+
+      <span className="flex-shrink-0">
+        {status === "done" ? (
+          <Check className="h-5 w-5 text-[var(--color-success)]" />
+        ) : status === "current" ? (
+          <span className="text-xs rounded-full bg-[var(--color-primary-bg)] px-2 py-0.5 font-semibold text-[var(--color-primary)]">
+            NOW
+          </span>
+        ) : null}
+      </span>
+    </button>
+  );
+}
+`,
+            },
+          },
+
+          "PageViewer.tsx": {
+            file: {
+              contents: `import { ChevronLeft, ChevronRight, Volume2 } from "lucide-react";
+import { useState } from "react";
+
+import { cn } from "../lib/utils";
+import { useTTS } from "../hooks/useTTS";
+
+interface StoryPage {
+  image: string;
+  text: string;
+  audioUrl?: string;
+}
+
+interface PageViewerProps {
+  pages: StoryPage[];
+  onPageChange?: (index: number) => void;
+}
+
+export function PageViewer({ pages, onPageChange }: PageViewerProps) {
+  const [current, setCurrent] = useState(0);
+  const { speak, speaking } = useTTS();
+  const page = pages[current];
+
+  const goTo = (idx: number) => {
+    const clamped = Math.max(0, Math.min(pages.length - 1, idx));
+    setCurrent(clamped);
+    onPageChange?.(clamped);
+  };
+
+  const handleSpeak = () => {
+    if (page) speak(page.text, page.audioUrl);
+  };
+
+  if (!page) return null;
+
+  return (
+    <div className="flex flex-col gap-4">
+      {/* Image */}
+      <div
+        className={cn(
+          "w-full rounded-[var(--radius-xl)] overflow-hidden",
+          "bg-[var(--color-border)] flex items-center justify-center",
+          "min-h-[200px]"
+        )}
+      >
+        {page.image.startsWith("http") || page.image.startsWith("/") ? (
+          <img
+            src={page.image}
+            alt={page.text}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <span className="text-8xl" role="img" aria-label={page.text}>
+            {page.image}
+          </span>
+        )}
+      </div>
+
+      {/* Text + speak */}
+      <div className="flex items-start gap-3">
+        <p className="flex-1 text-lg font-medium text-[var(--color-text)] leading-relaxed">
+          {page.text}
+        </p>
+        <button
+          onClick={handleSpeak}
+          disabled={speaking}
+          aria-label="Read page aloud"
+          className={cn(
+            "flex-shrink-0 h-10 w-10 rounded-full flex items-center justify-center",
+            "bg-[var(--color-primary-bg)] text-[var(--color-primary)]",
+            "hover:bg-[var(--color-primary)] hover:text-white transition-colors duration-200",
+            "disabled:opacity-40",
+            speaking && "animate-pulse"
+          )}
+        >
+          <Volume2 className="h-5 w-5" />
+        </button>
+      </div>
+
+      {/* Navigation */}
+      <div className="flex items-center justify-between mt-2">
+        <button
+          onClick={() => goTo(current - 1)}
+          disabled={current === 0}
+          aria-label="Previous page"
+          className={cn(
+            "tap-target h-12 w-12 rounded-full flex items-center justify-center",
+            "bg-[var(--color-surface-raised)] shadow-[0_2px_8px_rgba(0,0,0,0.08)]",
+            "hover:bg-[var(--color-primary-bg)] transition-colors duration-200",
+            "disabled:opacity-30 disabled:cursor-not-allowed"
+          )}
+        >
+          <ChevronLeft className="h-6 w-6" />
+        </button>
+
+        {/* Page dots */}
+        <div className="flex gap-2" role="tablist" aria-label="Pages">
+          {pages.map((_, i) => (
+            <button
+              key={i}
+              role="tab"
+              aria-selected={i === current}
+              aria-label={\`Page \${i + 1}\`}
+              onClick={() => goTo(i)}
+              className={cn(
+                "h-2.5 rounded-full transition-all duration-300",
+                i === current
+                  ? "w-6 bg-[var(--color-primary)]"
+                  : "w-2.5 bg-[var(--color-border)] hover:bg-[var(--color-primary-light)]"
+              )}
+            />
+          ))}
+        </div>
+
+        <button
+          onClick={() => goTo(current + 1)}
+          disabled={current === pages.length - 1}
+          aria-label="Next page"
+          className={cn(
+            "tap-target h-12 w-12 rounded-full flex items-center justify-center",
+            "bg-[var(--color-surface-raised)] shadow-[0_2px_8px_rgba(0,0,0,0.08)]",
+            "hover:bg-[var(--color-primary-bg)] transition-colors duration-200",
+            "disabled:opacity-30 disabled:cursor-not-allowed"
+          )}
+        >
+          <ChevronRight className="h-6 w-6" />
+        </button>
+      </div>
+
+      <p className="text-center text-sm text-[var(--color-text-muted)]">
+        Page {current + 1} of {pages.length}
+      </p>
+    </div>
+  );
+}
+`,
+            },
+          },
+
+          "TokenSlot.tsx": {
+            file: {
+              contents: `import { motion } from "motion/react";
+
+import { cn } from "../lib/utils";
+
+interface TokenSlotProps {
+  filled: boolean;
+  icon?: string;
+  onEarn?: () => void;
+}
+
+export function TokenSlot({ filled, icon = "⭐", onEarn }: TokenSlotProps) {
+  return (
+    <motion.button
+      onClick={!filled && onEarn ? onEarn : undefined}
+      disabled={filled || !onEarn}
+      whileTap={!filled && onEarn ? { scale: 0.9 } : undefined}
+      aria-label={filled ? "Token earned" : "Earn token"}
+      className={cn(
+        "h-14 w-14 rounded-full flex items-center justify-center",
+        "transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]",
+        filled
+          ? "bg-[var(--color-celebration)] shadow-[0_0_16px_rgba(255,215,0,0.5)]"
+          : "bg-[var(--color-border)]",
+        !filled && onEarn && "cursor-pointer hover:ring-2 hover:ring-[var(--color-primary)] hover:ring-offset-2"
+      )}
+    >
+      <motion.span
+        key={filled ? "filled" : "empty"}
+        initial={filled ? { scale: 0 } : { scale: 1 }}
+        animate={{ scale: 1 }}
+        transition={
+          filled
+            ? { type: "spring", stiffness: 400, damping: 15 }
+            : { duration: 0 }
+        }
+        className="text-2xl"
+        role="img"
+        aria-hidden="true"
+      >
+        {filled ? icon : "○"}
+      </motion.span>
+    </motion.button>
+  );
+}
+`,
+            },
+          },
+
+          "RewardPicker.tsx": {
+            file: {
+              contents: `import { useState } from "react";
+
+import { cn } from "../lib/utils";
+
+interface Reward {
+  label: string;
+  image?: string;
+}
+
+interface RewardPickerProps {
+  rewards: Reward[];
+  onSelect: (reward: Reward) => void;
+}
+
+export function RewardPicker({ rewards, onSelect }: RewardPickerProps) {
+  const [selected, setSelected] = useState<number | null>(null);
+
+  const handleSelect = (reward: Reward, idx: number) => {
+    setSelected(idx);
+    onSelect(reward);
+  };
+
+  const cols = rewards.length <= 2 ? 2 : rewards.length <= 4 ? 2 : 3;
+
+  return (
+    <div
+      className="grid gap-3"
+      style={{ gridTemplateColumns: \`repeat(\${cols}, minmax(0, 1fr))\` }}
+      role="group"
+      aria-label="Choose your reward"
+    >
+      {rewards.map((reward, i) => (
+        <button
+          key={i}
+          onClick={() => handleSelect(reward, i)}
+          aria-label={reward.label}
+          aria-pressed={selected === i}
+          className={cn(
+            "board-cell min-h-[100px] flex flex-col items-center justify-center gap-2",
+            "transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)]",
+            selected === i
+              ? "border-[var(--color-primary)]! bg-[var(--color-primary-bg)] scale-105 shadow-[0_0_0_3px_rgba(0,89,92,0.15)]"
+              : "hover:border-[var(--color-primary-light)]"
+          )}
+        >
+          {reward.image ? (
+            reward.image.startsWith("http") || reward.image.startsWith("/") ? (
+              <img
+                src={reward.image}
+                alt={reward.label}
+                className="w-14 h-14 object-cover rounded-[var(--radius-sm)]"
+              />
+            ) : (
+              <span className="text-4xl" role="img" aria-hidden="true">
+                {reward.image}
+              </span>
+            )
+          ) : null}
+          <span className="text-sm font-semibold text-center leading-tight">
+            {reward.label}
+          </span>
+        </button>
+      ))}
+    </div>
+  );
+}
+`,
+            },
+          },
+
+          "SocialStory.tsx": {
+            file: {
+              contents: `import { PageViewer } from "./PageViewer";
+
+interface StoryPage {
+  image: string;
+  text: string;
+  audioUrl?: string;
+}
+
+interface SocialStoryProps {
+  title: string;
+  pages: StoryPage[];
+  onPageChange?: (index: number) => void;
+  onComplete?: () => void;
+}
+
+export function SocialStory({ title, pages, onPageChange, onComplete }: SocialStoryProps) {
+  const handlePageChange = (index: number) => {
+    onPageChange?.(index);
+    if (index === pages.length - 1) {
+      onComplete?.();
+    }
+  };
+
+  return (
+    <div className="flex flex-col gap-4">
+      <h2 className="tool-title text-xl">{title}</h2>
+      <PageViewer pages={pages} onPageChange={handlePageChange} />
+    </div>
+  );
+}
+`,
+            },
+          },
         },
       },
 
       hooks: {
         directory: {
+          "useTTS.ts": {
+            file: {
+              contents: `import { useCallback, useEffect, useRef, useState } from "react";
+
+type TTSCache = Map<string, string>;
+
+export function useTTS() {
+  const [speaking, setSpeaking] = useState(false);
+  const cache = useRef<TTSCache>(new Map());
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  const playAudio = useCallback((url: string) => {
+    setSpeaking(true);
+    if (!audioRef.current) audioRef.current = new Audio();
+    audioRef.current.src = url;
+    audioRef.current.onended = () => setSpeaking(false);
+    audioRef.current.onerror = () => setSpeaking(false);
+    audioRef.current.play().catch(() => setSpeaking(false));
+  }, []);
+
+  const speak = useCallback((text: string, audioUrl?: string) => {
+    if (audioUrl) {
+      cache.current.set(text, audioUrl);
+      playAudio(audioUrl);
+      return;
+    }
+    const cached = cache.current.get(text);
+    if (cached) {
+      playAudio(cached);
+      return;
+    }
+    if (window.parent !== window) {
+      window.parent.postMessage({ type: "tts-request", text }, "*");
+    }
+  }, [playAudio]);
+
+  useEffect(() => {
+    const handler = (event: MessageEvent) => {
+      if (event.data?.type === "tts-response") {
+        const { text, audioUrl } = event.data;
+        cache.current.set(text, audioUrl);
+        playAudio(audioUrl);
+      }
+    };
+    window.addEventListener("message", handler);
+    return () => window.removeEventListener("message", handler);
+  }, [playAudio]);
+
+  return { speak, speaking };
+}
+`,
+            },
+          },
+
+          "useSTT.ts": {
+            file: {
+              contents: `import { useCallback, useEffect, useState } from "react";
+
+export function useSTT() {
+  const [transcript, setTranscript] = useState("");
+  const [listening, setListening] = useState(false);
+
+  const startListening = useCallback(() => {
+    setListening(true);
+    setTranscript("");
+    if (window.parent !== window) {
+      window.parent.postMessage({ type: "stt-start" }, "*");
+    }
+  }, []);
+
+  const stopListening = useCallback(() => {
+    setListening(false);
+    if (window.parent !== window) {
+      window.parent.postMessage({ type: "stt-stop" }, "*");
+    }
+  }, []);
+
+  useEffect(() => {
+    const handler = (event: MessageEvent) => {
+      if (event.data?.type === "stt-result") {
+        setTranscript(event.data.transcript);
+        setListening(false);
+      }
+      if (event.data?.type === "stt-interim") {
+        setTranscript(event.data.transcript);
+      }
+    };
+    window.addEventListener("message", handler);
+    return () => window.removeEventListener("message", handler);
+  }, []);
+
+  return { transcript, listening, startListening, stopListening };
+}
+`,
+            },
+          },
+
           "useLocalStorage.ts": {
             file: {
               contents: `import { useState, useEffect, useCallback } from "react";
