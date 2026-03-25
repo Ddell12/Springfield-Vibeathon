@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { Id } from "../../../../convex/_generated/dataModel";
+import { Doc, Id } from "../../../../convex/_generated/dataModel";
 import { useSessionMessages, useBlueprint } from "../hooks/use-session";
 import { BlueprintCard } from "./blueprint-card";
 import { Button } from "@/shared/components/ui/button";
@@ -50,7 +50,7 @@ export function ChatPanel({ sessionId, session, onSubmit }: ChatPanelProps) {
           </div>
         )}
 
-        {messages?.map((msg) => (
+        {messages?.map((msg: Doc<"messages">) => (
           <div
             key={msg._id}
             className={`mb-3 rounded-lg p-3 ${

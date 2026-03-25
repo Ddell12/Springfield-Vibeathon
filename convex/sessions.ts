@@ -30,6 +30,17 @@ export const get = query({
   },
 });
 
+export const list = query({
+  args: {},
+  handler: async (ctx) => {
+    return await ctx.db
+      .query("sessions")
+      .withIndex("by_user")
+      .order("desc")
+      .take(50);
+  },
+});
+
 // Used by pipeline actions via ctx.runQuery
 export const getInternal = internalQuery({
   args: { sessionId: v.id("sessions") },

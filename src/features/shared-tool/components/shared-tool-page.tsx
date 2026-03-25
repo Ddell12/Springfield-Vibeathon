@@ -3,7 +3,6 @@
 import { useQuery } from "convex/react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
 
 import { MaterialIcon } from "@/shared/components/material-icon";
 
@@ -12,41 +11,9 @@ import { api } from "../../../../convex/_generated/api";
 export function SharedToolPage() {
   const params = useParams();
   const slug = params?.toolId as string;
-  const project = useQuery(api.projects.getBySlug, slug ? { slug } : "skip");
-  const [sandboxUrl, setSandboxUrl] = useState<string | null>(null);
-  const [sandboxError, setSandboxError] = useState<string | null>(null);
-  const [isBooting, setIsBooting] = useState(false);
-  const [retryCount, setRetryCount] = useState(0);
+  const app = useQuery(api.apps.getByShareSlug, slug ? { shareSlug: slug } : "skip");
 
-  useEffect(() => {
-    if (!project?._id || !project?.fragment) return;
-    let cancelled = false;
-
-    async function bootSandbox() {
-      setIsBooting(true);
-      setSandboxError(null);
-      try {
-        const res = await fetch("/api/sandbox", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ fragment: project!.fragment }),
-        });
-        if (!res.ok) throw new Error("Failed to start sandbox");
-        const { url } = await res.json();
-        if (!cancelled) setSandboxUrl(url);
-      } catch {
-        if (!cancelled) setSandboxError("Unable to load this tool right now. Please try again later.");
-      } finally {
-        if (!cancelled) setIsBooting(false);
-      }
-    }
-
-    bootSandbox();
-    return () => { cancelled = true; };
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally depend on specific fields, not the full project object
-  }, [project?._id, project?.fragment, retryCount]);
-
-  if (project === undefined) {
+  if (app === undefined) {
     return (
       <div className="bg-surface font-body text-on-surface min-h-screen flex flex-col items-center justify-center">
         <div data-testid="loading-skeleton" className="animate-pulse space-y-4 max-w-4xl w-full px-8">
@@ -57,7 +24,7 @@ export function SharedToolPage() {
     );
   }
 
-  if (project === null) {
+  if (app === null) {
     return (
       <div className="bg-surface font-body text-on-surface min-h-screen flex flex-col items-center justify-center gap-6 text-center px-4">
         <MaterialIcon icon="search_off" className="text-6xl text-primary/40" />
@@ -77,6 +44,8 @@ export function SharedToolPage() {
     );
   }
 
+  const previewUrl = app.publishedUrl ?? app.previewUrl;
+
   return (
     <div className="bg-surface font-body text-on-surface min-h-screen flex flex-col">
       <header className="flex justify-center items-center w-full px-6 py-4 bg-surface">
@@ -85,39 +54,28 @@ export function SharedToolPage() {
             Bridges
           </Link>
           <span className="hidden md:block text-on-surface-variant font-label text-sm">
-            {project.title}
+            {app.title}
           </span>
         </div>
       </header>
 
       <main className="flex-1 flex flex-col items-center px-4 py-6">
-        {isBooting ? (
-          <div className="flex-1 flex flex-col items-center justify-center gap-4 w-full max-w-5xl">
-            <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary/20 border-t-primary" />
-            <p className="text-on-surface-variant font-medium">Loading your therapy tool...</p>
-            <p className="text-on-surface-variant/60 text-sm">This usually takes 10-15 seconds</p>
-          </div>
-        ) : sandboxError ? (
-          <div className="flex-1 flex flex-col items-center justify-center gap-4 text-center">
-            <MaterialIcon icon="error_outline" className="text-5xl text-error/60" />
-            <p className="text-on-surface-variant">{sandboxError}</p>
-            <button
-              onClick={() => { setSandboxError(null); setRetryCount(c => c + 1); }}
-              className="text-primary font-semibold hover:underline"
-            >
-              Try Again
-            </button>
-          </div>
-        ) : sandboxUrl ? (
+        {previewUrl ? (
           <div className="w-full max-w-5xl flex-1">
             <iframe
-              src={sandboxUrl}
-              title={project.title}
+              src={previewUrl}
+              title={app.title}
               className="w-full h-[70vh] rounded-xl border border-outline-variant/20 shadow-lg"
               sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
             />
           </div>
-        ) : null}
+        ) : (
+          <div className="flex-1 flex flex-col items-center justify-center gap-4 text-center">
+            <MaterialIcon icon="construction" className="text-5xl text-primary/40" />
+            <p className="text-on-surface-variant text-lg">This tool is still being built.</p>
+            <p className="text-on-surface-variant/60 text-sm">Check back soon!</p>
+          </div>
+        )}
       </main>
 
       <div className="h-24" />

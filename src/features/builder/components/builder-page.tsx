@@ -29,7 +29,7 @@ export function BuilderPage() {
 
   return (
     <div className="flex h-[calc(100vh-64px)] flex-col">
-      <ResizablePanelGroup direction="horizontal" className="flex-1">
+      <ResizablePanelGroup orientation="horizontal" className="flex-1">
         {/* Chat Panel — left */}
         <ResizablePanel defaultSize={30} minSize={20}>
           <ChatPanel

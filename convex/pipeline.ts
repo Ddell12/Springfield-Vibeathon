@@ -69,10 +69,10 @@ async function generateBlueprint(
 
   // Restore conversation context from previous interactions (e.g., blueprint revision)
   const contextDoc = await ctx.runQuery(internal.agent_context.get, { sessionId });
-  const priorMessages: Anthropic.Beta.Messages.BetaMessageParam[] =
+  const priorMessages: Anthropic.MessageParam[] =
     contextDoc?.messages ?? [];
 
-  const messages: Anthropic.Beta.Messages.BetaMessageParam[] = [
+  const messages: Anthropic.MessageParam[] = [
     ...priorMessages,
     {
       role: "user" as const,
@@ -139,7 +139,7 @@ async function generateBlueprint(
   });
 
   // Save updated conversation context
-  const updatedMessages: Anthropic.Beta.Messages.BetaMessageParam[] = [
+  const updatedMessages: Anthropic.MessageParam[] = [
     ...messages,
     { role: "assistant" as const, content: textBlock.text },
   ];
@@ -224,7 +224,7 @@ async function generatePhase(
 
   // Get conversation context
   const contextDoc = await ctx.runQuery(internal.agent_context.get, { sessionId });
-  const priorMessages: Anthropic.Beta.Messages.BetaMessageParam[] = contextDoc?.messages ?? [];
+  const priorMessages: Anthropic.MessageParam[] = contextDoc?.messages ?? [];
 
   const userPrompt = `Plan phase ${session.currentPhaseIndex + 1} for this therapy app.
 
@@ -235,7 +235,7 @@ ${fileContext || "(no files yet — this is the first phase)"}
 
 Design the next phase as a deployable milestone.`;
 
-  const messages: Anthropic.Beta.Messages.BetaMessageParam[] = [
+  const messages: Anthropic.MessageParam[] = [
     ...priorMessages,
     { role: "user" as const, content: userPrompt },
   ];

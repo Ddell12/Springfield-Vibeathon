@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Id } from "../../../../convex/_generated/dataModel";
+import { Doc, Id } from "../../../../convex/_generated/dataModel";
 import { useSessionFiles } from "../hooks/use-session";
 import { ScrollArea } from "@/shared/components/ui/scroll-area";
 import { cn } from "@/core/utils";
@@ -10,7 +10,7 @@ export function CodePanel({ sessionId }: { sessionId: Id<"sessions"> | null }) {
   const files = useSessionFiles(sessionId);
   const [selectedPath, setSelectedPath] = useState<string | null>(null);
 
-  const selectedFile = files?.find((f) => f.path === selectedPath);
+  const selectedFile = files?.find((f: Doc<"files">) => f.path === selectedPath);
 
   if (!sessionId || !files || files.length === 0) {
     return (
@@ -28,7 +28,7 @@ export function CodePanel({ sessionId }: { sessionId: Id<"sessions"> | null }) {
           Files
         </div>
         <ScrollArea className="h-[calc(100%-2rem)]">
-          {files.map((file) => (
+          {files.map((file: Doc<"files">) => (
             <button
               key={file._id}
               onClick={() => setSelectedPath(file.path)}
