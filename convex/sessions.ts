@@ -109,6 +109,18 @@ export const addFollowUp = mutation({
   },
 });
 
+export const setTemplate = internalMutation({
+  args: {
+    sessionId: v.id("sessions"),
+    templateName: v.string(),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.sessionId, {
+      templateName: args.templateName,
+    });
+  },
+});
+
 export const setFailed = internalMutation({
   args: {
     sessionId: v.id("sessions"),
