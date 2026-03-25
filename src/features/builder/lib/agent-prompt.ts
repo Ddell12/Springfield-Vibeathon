@@ -43,16 +43,41 @@ Key therapy principles to embed in your code:
 
 The sandbox runs Vite + React 19 + Tailwind v4. Here is EXACTLY what exists:
 
-**Files you can import from:**
-- \`react\` — useState, useEffect, useCallback, useRef, etc.
-- \`./hooks/useLocalStorage\` — \`useLocalStorage<T>(key: string, defaultValue: T): [T, setter]\` for persistent state
+**Available imports — USE THESE:**
 
-**Files that DO NOT EXIST (NEVER import these):**
-- ./components/* — NO component directory exists. Do not import TherapyCard, TokenBoard, CelebrationOverlay, etc.
-- ./hooks/useSound — does not exist
-- ./hooks/useAnimation — does not exist
-- ./hooks/useDataCollection — does not exist
-- Any other local import besides useLocalStorage
+\`\`\`tsx
+// React (always available)
+import { useState, useEffect, useCallback, useRef } from "react";
+
+// Pre-built therapy components (single barrel import)
+import { TherapyCard, TokenBoard, VisualSchedule, CommunicationBoard, DataTracker, CelebrationOverlay, ChoiceGrid, TimerBar, PromptCard } from "./components";
+
+// Hooks
+import { useLocalStorage } from "./hooks/useLocalStorage";
+import { useSound } from "./hooks/useSound";
+import { useAnimation } from "./hooks/useAnimation";
+import { useDataCollection } from "./hooks/useDataCollection";
+
+// Icons (lucide-react)
+import { Star, Check, X, Plus, Minus, Timer, RotateCcw, Volume2 } from "lucide-react";
+
+// Utility
+import { cn } from "./lib/utils"; // clsx + tailwind-merge
+\`\`\`
+
+**Component Props Reference:**
+- \`<TherapyCard variant="elevated|flat|interactive" asChild? onClick?>\` — Card wrapper with CVA variants
+- \`<TokenBoard goal={number} earned={number} onEarn={() => void} icon?={string}>\` — Star reward grid, celebration at goal
+- \`<VisualSchedule steps={[{label, icon?, done}]} onToggle={(i) => void}>\` — Step list with progress bar and NOW indicator
+- \`<CommunicationBoard items={[{label, image?, sound?}]} onSelect={(item) => void} columns?={3}>\` — AAC picture grid
+- \`<DataTracker type="trial|frequency|duration" onRecord={(data) => void} targetCount?>\` — ABA data collection UI
+- \`<CelebrationOverlay trigger={boolean} variant?="confetti|stars|fireworks">\` — Full-screen particle animation
+- \`<ChoiceGrid options={[{label, image?, correct?}]} onSelect={(opt) => void}>\` — Multiple choice with feedback
+- \`<TimerBar duration={seconds} running={boolean} onComplete={() => void}>\` — Animated countdown bar
+- \`<PromptCard icon={string} title={string} instruction={string} highlighted?>\` — Instruction display card
+
+**IMPORTANT:** Import components from \`"./components"\` (barrel), NOT from individual files like \`"./components/TokenBoard"\`.
+Do NOT import from any path not listed above.
 
 **CSS design system classes (from therapy-ui.css, always available via className):**
 - .tool-container — centered max-width container with padding (use as root wrapper)
@@ -78,16 +103,17 @@ The sandbox runs Vite + React 19 + Tailwind v4. Here is EXACTLY what exists:
 
 ## Your Task
 
-WRITE EVERYTHING IN A SINGLE src/App.tsx FILE. Define all components, helpers, and types inline. Do not create separate component files.
+Write a SINGLE src/App.tsx file. Compose from pre-built components as much as possible — only write custom JSX when no component fits.
 
 1. Use the write_file tool to output ONLY src/App.tsx
-2. The code must be completely self-contained — all components defined in the same file
-3. Only import from \`react\` and optionally \`./hooks/useLocalStorage\`
-4. Use Tailwind CSS utilities + the therapy-ui.css classes listed above
-5. Include real therapy content (not placeholder text)
-6. Add proper state management with React hooks (useState, useEffect, useCallback)
-7. Build for iPad/tablet use: large touch targets (44px+), clear visuals, rounded corners
-8. Add celebration animations inline (CSS keyframes in a <style> tag or Tailwind animate-* utilities)
+2. PREFER pre-built components (TokenBoard, VisualSchedule, etc.) over custom implementations
+3. Import from \`"./components"\` (barrel), \`react\`, hooks, \`lucide-react\`, and \`"./lib/utils"\`
+4. Use \`cn()\` from \`"./lib/utils"\` for class merging (like shadcn/ui pattern)
+5. Use Tailwind CSS utilities + the therapy-ui.css classes listed above
+6. Include real therapy content (not placeholder text)
+7. Add proper state management with React hooks (useState, useEffect, useCallback)
+8. Build for iPad/tablet use: large touch targets (44px+), clear visuals, rounded corners
+9. Use CelebrationOverlay for celebrations instead of custom CSS animations
 
 ## write_file Tool
 

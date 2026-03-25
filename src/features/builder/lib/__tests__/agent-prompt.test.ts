@@ -29,11 +29,19 @@ describe("buildSystemPrompt — therapy-domain system prompt", () => {
     expect(prompt).toMatch(/44px|44 px|tap.target/i);
   });
 
-  it("warns against importing non-existent components", () => {
+  it("documents barrel import for pre-built components", () => {
     const prompt = buildSystemPrompt();
-    // Must explicitly tell LLM not to import from ./components/*
-    expect(prompt).toMatch(/DO NOT EXIST|NEVER import/i);
-    expect(prompt).toMatch(/components.*does not exist|NO component directory/i);
+    // Must tell LLM to use barrel import from ./components
+    expect(prompt).toMatch(/from "\.\/components"/);
+    expect(prompt).toMatch(/TokenBoard/);
+    expect(prompt).toMatch(/CelebrationOverlay/);
+    expect(prompt).toMatch(/VisualSchedule/);
+  });
+
+  it("documents component props for LLM usage", () => {
+    const prompt = buildSystemPrompt();
+    expect(prompt).toMatch(/goal.*number.*earned.*number.*onEarn/);
+    expect(prompt).toMatch(/steps.*label.*done/);
   });
 
   it("includes available CSS design system classes", () => {
