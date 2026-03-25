@@ -171,29 +171,34 @@ export async function POST(request: Request) {
           await Promise.all(mutationPromises);
         }
 
-        // Persist assistant message (text portion)
+        // Persist assistant message, system summary, and setLive in parallel
+        const postLlmPromises: Promise<unknown>[] = [];
+
         if (assistantText.trim()) {
-          await convex.mutation(api.messages.create, {
-            sessionId,
-            role: "assistant",
-            content: assistantText.trim(),
-            timestamp: Date.now(),
-          });
+          postLlmPromises.push(
+            convex.mutation(api.messages.create, {
+              sessionId,
+              role: "assistant",
+              content: assistantText.trim(),
+              timestamp: Date.now(),
+            })
+          );
         }
 
-        // Also persist a system message summarizing what was built
         if (collectedFiles.length > 0) {
           const fileList = collectedFiles.map((f) => f.path).join(", ");
-          await convex.mutation(api.messages.create, {
-            sessionId,
-            role: "system",
-            content: `Built ${collectedFiles.length} file${collectedFiles.length > 1 ? "s" : ""}: ${fileList}`,
-            timestamp: Date.now(),
-          });
+          postLlmPromises.push(
+            convex.mutation(api.messages.create, {
+              sessionId,
+              role: "system",
+              content: `Built ${collectedFiles.length} file${collectedFiles.length > 1 ? "s" : ""}: ${fileList}`,
+              timestamp: Date.now(),
+            })
+          );
         }
 
-        // Update session to live
-        await convex.mutation(api.sessions.setLive, { sessionId });
+        postLlmPromises.push(convex.mutation(api.sessions.setLive, { sessionId }));
+        await Promise.all(postLlmPromises);
 
         send("activity", { type: "complete", message: "App is ready!" });
         send("status", { status: "live" });

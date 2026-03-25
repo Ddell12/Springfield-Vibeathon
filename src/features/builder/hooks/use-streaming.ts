@@ -95,7 +95,7 @@ export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn 
   );
 
   const handleEvent = useCallback(
-    async (event: string, d: Record<string, unknown>) => {
+    (event: string, d: Record<string, unknown>) => {
       switch (event) {
         case "session":
           if (d.sessionId) setSessionId(d.sessionId as string);
@@ -139,9 +139,8 @@ export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn 
             }
             return [...prev, newFile];
           });
-          if (onFileCompleteRef.current) {
-            await onFileCompleteRef.current(path, contents);
-          }
+          // Fire-and-forget — errors handled by the WebContainer hook
+          onFileCompleteRef.current?.(path, contents);
           break;
         }
 
@@ -226,7 +225,7 @@ export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn 
 
           const events = parseSSEEvents(toProcess);
           for (const { event, data } of events) {
-            await handleEvent(event, data as Record<string, unknown>);
+            handleEvent(event, data as Record<string, unknown>);
           }
         }
 
@@ -234,7 +233,7 @@ export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn 
         if (buffer.trim()) {
           const events = parseSSEEvents(buffer);
           for (const { event, data } of events) {
-            await handleEvent(event, data as Record<string, unknown>);
+            handleEvent(event, data as Record<string, unknown>);
           }
         }
       } catch (err) {
