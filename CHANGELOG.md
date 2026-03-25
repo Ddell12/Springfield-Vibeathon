@@ -169,6 +169,62 @@ Key libraries chosen: dnd-kit (touch DnD), motion (animations), use-sound (iOS a
 
 ---
 
+## 2026-03-24 — UX Overhaul: Vite Sandbox + Therapy Design System
+
+### What Changed
+- **Complete UX overhaul** — 58 files changed (+2,634/-278), 432 tests passing (57 test files)
+- **Vite sandbox template** — Custom `vite-therapy` E2B template replaces Next.js sandbox. Pre-installed therapy-ui.css (272 lines of design system classes), useLocalStorage/useConvexData hooks, Nunito+Inter fonts
+- **Stripped developer UI** — Removed 9 stub buttons (5 header, 4 chat input), code view panel, all developer jargon ("Writing component code" → "Creating your tool", "App Preview" → "Tool Preview")
+- **Persistence tiers** — Bottom sheet before first build: "This session" / "Save on this device" (default) / "Save to cloud"
+- **Undo/version history** — Saves up to 10 versions (FIFO). Single undo restores previous tool with toast confirmation
+- **Message persistence** — Chat messages saved to Convex, restored on page refresh
+- **Dark mode** — Material 3 dark palette, theme toggle in header
+- **Responsive preview** — Phone (375px) / Tablet (768px) / Computer picker in header center
+- **Confetti celebration** — CSS confetti burst on first tool generation
+- **Live iteration** — "Updating your tool..." pill overlay during edits (no loading carousel)
+- **Publish to Vercel** — `/api/publish` route: sandbox → `vite build` → Vercel Deploy API → permanent URL
+- **Share dialog upgrade** — Tabs for "Preview Link" (sandbox) and "Published Link" (Vercel URL)
+- **AlertDialog for destructive actions** — Replace browser `confirm()` with shadcn AlertDialog for delete + new project
+- **Download toast** — "Tool saved to your files!" confirmation
+- **Error retry** — Error messages include "Try again" button
+
+### New Components
+- `persistence-sheet.tsx` — Persistence tier selection (shadcn Sheet)
+- `confetti.tsx` — CSS confetti burst animation
+- `publish-dialog.tsx` — Publish flow with progress states
+- `responsive-picker.tsx` — Device breakpoint picker
+- `theme-toggle.tsx` — Dark mode toggle (next-themes)
+- `convex/tool_state.ts` — Cross-device state CRUD for cloud persistence
+
+### New Infrastructure
+- `e2b-templates/vite-therapy/` — Custom E2B sandbox template (registered ID: `wsjspn0oy5ygip6y8rjr`)
+- `src/app/api/publish/route.ts` — Vercel Deploy API server route
+- `src/features/builder-v2/lib/vercel.ts` — Vercel deploy helper
+
+### Decisions Made
+- **Vite over Next.js for sandbox** — 5-20ms HMR (vs 200-500ms), no "use client" hack, lighter template = faster boot (3-5s vs 10-15s), pre-installed design system for consistent output
+- **CSS confetti, not a library** — 30 particles with inline keyframes, 2KB total. No `canvas-confetti` dependency needed
+- **`sleep 2` after sandbox file write** — Vite HMR needs time to process new App.tsx. Without it, iframe shows template placeholder
+- **`background: true` for dev server** — E2B `commands.run` blocks until process exits. Dev servers run forever, so must use background mode
+- **Absolute paths in E2B** — `sandbox.files.write()` resolves relative to `/home/user/`, not Docker WORKDIR. Must write to `/home/user/app/src/App.tsx`
+- **TDD with 7-agent team** — Researcher → Architect → Test Writer (95 tests) → 2 Implementers (parallel) → Verifier → Lead Merge. All in isolated git worktree
+
+### Gotchas Discovered
+- E2B `files.write("src/App.tsx")` writes to `/home/user/src/App.tsx`, not `/home/user/app/src/App.tsx` (WORKDIR is not the base for file operations)
+- Vite 6+ `allowedHosts` security blocks `*.e2b.app` domains — must set `allowedHosts: true` in vite.config.ts
+- E2B Code Interpreter SDK: Docker CMD runs automatically in the sandbox (Vite starts before our code writes) — must wait for HMR after file write
+- `userEvent.setup()` overrides `navigator.clipboard` mock — use `fireEvent.click` for clipboard tests
+- `Math.random()` in JSX render triggers `react-hooks/purity` — move to a generator function
+- E2B template must be rebuilt (`e2b template build`) after any change to template files — changes don't propagate automatically
+
+### Infrastructure
+- E2B template: `vite-therapy` (ID: `wsjspn0oy5ygip6y8rjr`)
+- Vercel deploy token: stored in `.env.local` as `VERCEL_DEPLOY_TOKEN`
+- Published tools deploy under `bridges-tools` Vercel project
+- Convex schema: added `versions`, `publishedUrl`, `persistence` fields to projects table + new `toolState` table
+
+---
+
 <!--
 TEMPLATE for future entries:
 

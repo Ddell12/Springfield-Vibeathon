@@ -12,15 +12,18 @@ Bridges is an AI-powered vibe-coding platform where ABA therapists, speech thera
 - **LLM:** Claude Sonnet via `@ai-sdk/anthropic`
 - **Embeddings:** Google gemini-embedding-001 (768-dim) via `@ai-sdk/google` → Convex RAG vector search
 - **TTS:** ElevenLabs for communication boards
+- **Sandbox:** E2B Code Interpreter with custom `vite-therapy` template (Vite + React 19 + Tailwind v4 + therapy-ui.css design system)
 - **Auth:** Clerk (deferred to final phase)
-- **Deploy:** Vercel
+- **Deploy:** Vercel (app) + Vercel Deploy API (published tools via `/api/publish`)
 
 ## How to Work in This Repo
 
 ### Current Status
 - **Phases 0–3 complete** (foundation, AI chat, tool components, RAG + templates)
-- **Current Phase: Phase 4** — Sharing, Persistence & My Tools
-- **51 tests passing** (Vitest), all Convex functions deployed, RAG seeded with 110 entries
+- **UX Overhaul complete** — Vite sandbox, therapy design system, persistence tiers, dark mode, responsive preview, undo, publish, confetti
+- **Current Phase: Phase 5** — Landing Page & Final Polish
+- **432 tests passing** (Vitest, 57 test files), all Convex functions deployed, RAG seeded with 110 entries
+- **E2B template registered:** `vite-therapy` (ID: `wsjspn0oy5ygip6y8rjr`)
 
 ### Start here
 1. Read `docs/product-roadmap.md` — find the current phase (first unchecked task)
@@ -199,7 +202,7 @@ Config → component mapper: `src/features/therapy-tools/components/tool-rendere
 - Task-specific implementation details (those go in the code or roadmap)
 - Information already in the sharded docs (don't duplicate)
 
-## Gotchas Discovered (Phase 0–3)
+## Gotchas Discovered (Phase 0–3 + UX Overhaul)
 
 - **Tailwind v4 CSS import order:** `@import url()` for external fonts MUST precede `@import "tailwindcss"` — Tailwind expands into CSS rules, and CSS spec forbids `@import` after rules.
 - **Convex + Next.js prerender:** `ConvexReactClient` throws "not an absolute URL" during SSR/prerender when `NEXT_PUBLIC_CONVEX_URL` isn't set. Fix: defer client creation to `useEffect` (see `src/core/providers.tsx`).
@@ -219,6 +222,23 @@ Config → component mapper: `src/features/therapy-tools/components/tool-rendere
 - **Convex V8 runtime does not support dynamic `import()`:** Never use `await import("nanoid")` or similar in queries/mutations. Use static top-level imports or inline implementations. Dynamic imports crash with `TypeError: dynamic module import unsupported`.
 - **Next.js route group collision:** `(app)/page.tsx` and `(marketing)/page.tsx` both resolve to `/`. Only one route group can own a given path. The marketing landing page owns `/`; do not add a `page.tsx` to `(app)/` root.
 - **React StrictMode double-fires effects:** In dev mode, `useEffect` runs twice before state updates commit. If guarding a side effect (API call, auto-submit) with `useState`, the guard fails on the second fire because the setter is async. Use `useRef` for synchronous guards in fire-once effects.
+- **E2B `sandbox.files.write()` path resolution:** Paths are relative to `/home/user/`, NOT the Docker `WORKDIR`. The `vite-therapy` template lives at `/home/user/app/`, so writing `src/App.tsx` goes to the wrong place. Must use absolute path: `/home/user/app/src/App.tsx`. See `e2b.ts` for the path prepend logic.
+- **E2B sandbox Vite HMR timing:** The template's Docker CMD starts Vite automatically. After `files.write()`, Vite's HMR needs ~2s to hot-reload the new code. Without waiting, the iframe shows the template's default placeholder. The `ensureViteRunning()` helper in `e2b.ts` handles this with a `sleep 2`.
+- **Vite 6+ `allowedHosts`:** E2B proxies sandbox traffic through dynamic `*.e2b.app` subdomains. Vite 6's host security check blocks these by default. Fix: `server.allowedHosts: true` in `e2b-templates/vite-therapy/vite.config.ts`.
+- **E2B `commands.run` with long-running processes:** `commands.run` blocks until the command exits. For dev servers that run forever, use `{ background: true }` which returns a `CommandHandle` immediately. Without this, the sandbox API times out.
+- **`userEvent.setup()` overrides clipboard mock:** In Vitest, `userEvent.setup()` replaces `navigator.clipboard` (set via `Object.defineProperty`) with its own internal stub. For clipboard tests, use `fireEvent.click` instead of `userEvent.click`.
+- **React purity violations in render:** `Math.random()` in JSX render and `Date.now()` in `useRef()` initializer trigger `react-hooks/purity` lint errors. Move random values into a generator function called once, and set ref values inside `useEffect`.
+
+## E2B Sandbox (vite-therapy template)
+
+The `vite-therapy` E2B template provides a pre-configured Vite + React sandbox with a therapy-focused design system.
+
+- **Template source:** `e2b-templates/vite-therapy/` (registered with E2B, ID: `wsjspn0oy5ygip6y8rjr`)
+- **AI writes only `src/App.tsx`** — everything else (main.tsx, therapy-ui.css, hooks) is pre-built
+- **Design system CSS classes:** `.card-interactive`, `.tap-target`, `.token-star`, `.schedule-step`, `.board-cell`, `.celebration-burst`, `.btn-primary`, `.btn-secondary`, `.tool-container`, `.tool-grid`, `.tool-title`, `.tool-instruction`
+- **Persistence hooks:** `useLocalStorage` (device), `useConvexData` (cloud placeholder)
+- **Fonts:** Nunito (headings) + Inter (body) — loaded via Google Fonts in `index.html`
+- **To rebuild template after changes:** `cd e2b-templates/vite-therapy && e2b template build --name vite-therapy`
 
 ## Convex Backend
 
