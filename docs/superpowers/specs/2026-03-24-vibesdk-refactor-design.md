@@ -317,9 +317,11 @@ blueprints: defineTable({
 
 The Anthropic SDK provides:
 - `client.messages.create()` with `tools` parameter for tool definitions
-- Structured tool_use responses that we handle in a custom agent loop
-- `client.messages.stream()` for streaming responses
-- Full control over the agentic loop (we implement the state machine, not the SDK)
+- `client.beta.messages.toolRunner()` — **automates the tool loop** (recommended over manual loop). Define tools with `betaZodTool()`, pass to `toolRunner`, call `runUntilDone()`. The SDK handles calling the model, executing tools, feeding results back, and repeating until done.
+- `max_iterations` parameter on `toolRunner` to prevent infinite loops
+- `ToolError` class for reporting tool failures back to the model
+- `client.messages.stream()` for streaming responses (future enhancement)
+- We implement the state machine; the SDK automates tool execution within each step
 
 ### Pipeline Lives in Convex Actions (Not API Routes)
 

@@ -647,9 +647,85 @@ git commit -m "feat: add Zod schemas for TherapyBlueprint, PhaseConcept, PhaseIm
 - Create: `convex/pipeline_tools.ts`
 - Create: `convex/pipeline_prompts.ts`
 
-- [ ] **Step 1: Create tool definitions**
+- [ ] **Step 1: Create tool definitions using `betaZodTool` helper**
 
-Create `convex/pipeline_tools.ts` with Anthropic Messages API tool definitions: `searchKnowledgeTool`, `selectTemplateTool`. Also create `executeToolCall()` function that dispatches tool calls to the correct Convex action. Reference spec Section 5 for exact schemas.
+Create `convex/pipeline_tools.ts` using the Anthropic SDK's `betaZodTool()` helper for Zod-based tool definitions. This integrates with `toolRunner()` to automate the tool execution loop.
+
+**Important SDK pattern:** Instead of manually checking `stop_reason === 'tool_use'` and looping, use `anthropic.beta.messages.toolRunner()` which handles the entire tool loop automatically:
+
+```typescript
+// convex/pipeline_tools.ts
+"use node";
+import { betaZodTool } from "@anthropic-ai/sdk/resources/beta/messages";
+import { z } from "zod";
+import { ActionCtx } from "./_generated/server";
+import { internal } from "./_generated/api";
+
+// Tool definitions using betaZodTool (integrates with toolRunner)
+export function createPipelineTools(ctx: ActionCtx) {
+  return {
+    search_knowledge: betaZodTool({
+      name: "search_knowledge",
+      description: "Search the therapy knowledge base for ABA, speech therapy, and developmental milestone information",
+      inputSchema: z.object({
+        query: z.string().describe("Search query"),
+        category: z.enum(["aba-terminology", "speech-therapy", "tool-patterns", "developmental-milestones", "iep-goals"]).optional(),
+      }),
+      run: async (input) => {
+        const result = await ctx.runAction(internal.knowledge.searchInternal, input);
+        return result;
+      },
+    }),
+
+    select_template: betaZodTool({
+      name: "select_template",
+      description: "Select the best therapy E2B template based on interaction model",
+      inputSchema: z.object({
+        interactionModel: z.string(),
+        reinforcementType: z.string().optional(),
+      }),
+      run: async (input) => {
+        // Rule-based: map interaction model → template
+        const templateMap: Record<string, string> = {
+          tap: "therapy-communication",
+          drag: "therapy-schedule",
+          sequence: "therapy-schedule",
+          match: "therapy-academic",
+          timer: "therapy-behavior",
+          "free-form": "vite-therapy",
+        };
+        return templateMap[input.interactionModel] ?? "vite-therapy";
+      },
+    }),
+
+    generate_image: betaZodTool({
+      name: "generate_image",
+      description: "Generate a therapy-appropriate illustration for picture cards",
+      inputSchema: z.object({
+        label: z.string(),
+        category: z.string().optional(),
+      }),
+      run: async (input) => {
+        return await ctx.runAction(internal.aiActions.generateImageInternal, input);
+      },
+    }),
+
+    generate_speech: betaZodTool({
+      name: "generate_speech",
+      description: "Generate TTS audio for communication board labels",
+      inputSchema: z.object({
+        text: z.string(),
+        voiceId: z.string().optional(),
+      }),
+      run: async (input) => {
+        return await ctx.runAction(internal.aiActions.generateSpeechInternal, input);
+      },
+    }),
+  };
+}
+```
+
+Create `convex/pipeline_tools.ts` with these definitions. Also add `searchKnowledgeTool` and `selectTemplateTool` as raw Anthropic.Tool objects (JSON Schema format) for steps that don't use `toolRunner`.
 
 - [ ] **Step 2: Create system prompts**
 
@@ -768,13 +844,65 @@ Add `ANTHROPIC_API_KEY` to Convex env vars: `npx convex env set ANTHROPIC_API_KE
 
 Test the executeStep dispatcher routes to the correct handler based on session state. Use a mock Anthropic client for unit tests.
 
-- [ ] **Step 3: Implement pipeline.ts — dispatcher + generateBlueprint**
+- [ ] **Step 3: Implement pipeline.ts — dispatcher + generateBlueprint using toolRunner**
 
 Create `convex/pipeline.ts` with `"use node";` directive. Implement:
 1. `executeStep` internalAction — reads session state, dispatches to handler, catches errors → setFailed
-2. `generateBlueprint` handler — calls Anthropic Messages API with BLUEPRINT_SYSTEM_PROMPT, parses response as TherapyBlueprintSchema, writes to blueprints table, sets state to "blueprinting"
+2. `generateBlueprint` handler — uses `anthropic.beta.messages.toolRunner()` to automate the tool loop:
 
-Reference spec Section 5 for the exact code pattern.
+```typescript
+// convex/pipeline.ts
+"use node";
+import Anthropic from "@anthropic-ai/sdk";
+import { internalAction } from "./_generated/server";
+import { internal } from "./_generated/api";
+import { v } from "convex/values";
+import { createPipelineTools } from "./pipeline_tools";
+import { BLUEPRINT_SYSTEM_PROMPT } from "./pipeline_prompts";
+
+const anthropic = new Anthropic(); // Uses ANTHROPIC_API_KEY env var
+
+export const executeStep = internalAction({
+  args: { sessionId: v.id("sessions") },
+  handler: async (ctx, { sessionId }) => {
+    const session = await ctx.runQuery(internal.sessions.getInternal, { sessionId });
+    if (!session) return;
+    try {
+      switch (session.state) {
+        case "blueprinting": await generateBlueprint(ctx, sessionId, session); break;
+        // ... other states
+      }
+    } catch (error) {
+      await ctx.runMutation(internal.sessions.setFailed, {
+        sessionId,
+        reason: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
+  },
+});
+
+async function generateBlueprint(ctx, sessionId, session) {
+  const tools = createPipelineTools(ctx);
+
+  // toolRunner automates: call model → execute tools → send results → repeat
+  const runner = anthropic.beta.messages.toolRunner({
+    model: "claude-sonnet-4-5-20250929",  // Verify latest model ID at implementation
+    max_tokens: 4096,
+    system: BLUEPRINT_SYSTEM_PROMPT,
+    messages: [{ role: "user", content: `Build a therapy app: ${session.query}` }],
+    tools: [tools.search_knowledge],
+    max_iterations: 5,  // Safety: prevent infinite loops
+  });
+
+  const finalMessage = await runner.runUntilDone();
+  // Parse the final text response as TherapyBlueprintSchema
+  // Write to blueprints table, set state to "blueprinting" (awaiting approval)
+}
+```
+
+**Key SDK pattern:** `toolRunner` handles the entire tool loop — define tools with `betaZodTool`, pass to `toolRunner`, call `runUntilDone()`. No manual `stop_reason` checking needed. Use `max_iterations` to prevent runaway loops.
+
+Reference spec Section 5 for the full code pattern. Also reference the [Anthropic SDK helpers documentation](https://github.com/anthropics/anthropic-sdk-typescript/blob/main/helpers.md) for `toolRunner` details.
 
 - [ ] **Step 4: Test end-to-end with a real LLM call**
 
@@ -861,10 +989,23 @@ export async function createAndDeploySandbox(
   // Wait for Vite HMR
   await new Promise(r => setTimeout(r, 2000));
 
+  // Note: verify getHost vs getUrl at implementation time — API may vary by version
+  const previewUrl = sandbox.getHost?.(5173) ?? sandbox.getUrl?.(5173) ?? "";
+
   return {
     sandboxId: sandbox.sandboxId,
-    previewUrl: `https://${sandbox.getHost(5173)}`,
+    previewUrl: `https://${previewUrl}`,
   };
+}
+
+// Cleanup — call when session is abandoned or completed
+export async function killSandbox(sandboxId: string): Promise<void> {
+  try {
+    const sandbox = await Sandbox.connect(sandboxId, { apiKey: process.env.E2B_API_KEY });
+    await sandbox.kill();
+  } catch {
+    // Sandbox may have already timed out — ignore
+  }
 }
 
 export async function getRuntimeErrors(sandboxId: string): Promise<string[]> {
