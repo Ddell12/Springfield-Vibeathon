@@ -1,50 +1,137 @@
 // convex/__tests__/sessions.test.ts
 import { convexTest } from "convex-test";
-import { expect, test, describe } from "vitest";
+import { describe, expect, it } from "vitest";
+
+import { api } from "../_generated/api";
 import schema from "../schema";
-import { api, internal } from "../_generated/api";
 
-const modules = import.meta.glob("../**/*.*s");
+const modules = import.meta.glob("../**/*.*s"); // REQUIRED for convex-test
 
-describe("sessions", () => {
-  test("create session with idle state", async () => {
+describe("sessions — streaming builder mutations", () => {
+  it("create returns session in idle state with query stored", async () => {
     const t = convexTest(schema, modules);
     const id = await t.mutation(api.sessions.create, {
-      title: "Test App",
-      query: "Build a token board",
+      title: "Token Board App",
+      query: "Build a token board for rewarding good behavior",
     });
     const session = await t.query(api.sessions.get, { sessionId: id });
+    expect(session).not.toBeNull();
     expect(session?.state).toBe("idle");
-    expect(session?.phasesRemaining).toBe(8);
-    expect(session?.mvpGenerated).toBe(false);
+    expect(session?.query).toBe("Build a token board for rewarding good behavior");
+    expect(session?.title).toBe("Token Board App");
   });
 
-  test("updateState transitions and auto-schedules", async () => {
+  it("startGeneration transitions state to 'generating'", async () => {
     const t = convexTest(schema, modules);
     const id = await t.mutation(api.sessions.create, {
-      title: "Test", query: "test",
+      title: "Test",
+      query: "test",
     });
-    await t.mutation(internal.sessions.updateState, {
-      sessionId: id, state: "phase_generating", stateMessage: "Planning phase 1",
+    await t.mutation(api.sessions.startGeneration, { sessionId: id });
+    const session = await t.query(api.sessions.get, { sessionId: id });
+    expect(session?.state).toBe("generating");
+  });
+
+  it("setLive stores sandboxId, previewUrl, and sets state to 'live'", async () => {
+    const t = convexTest(schema, modules);
+    const id = await t.mutation(api.sessions.create, {
+      title: "Test",
+      query: "test",
+    });
+    await t.mutation(api.sessions.setLive, {
+      sessionId: id,
+      sandboxId: "sb_abc123",
+      previewUrl: "https://abc123.e2b.app",
     });
     const session = await t.query(api.sessions.get, { sessionId: id });
-    expect(session?.state).toBe("phase_generating");
+    expect(session?.state).toBe("live");
+    expect(session?.sandboxId).toBe("sb_abc123");
+    expect(session?.previewUrl).toBe("https://abc123.e2b.app");
   });
 
-  test("setFailed captures reason and last good state", async () => {
+  it("setFailed stores error message and sets state to 'failed'", async () => {
     const t = convexTest(schema, modules);
     const id = await t.mutation(api.sessions.create, {
-      title: "Test", query: "test",
+      title: "Test",
+      query: "test",
     });
-    await t.mutation(internal.sessions.updateState, {
-      sessionId: id, state: "phase_implementing", stateMessage: "Generating files",
-    });
-    await t.mutation(internal.sessions.setFailed, {
-      sessionId: id, reason: "LLM timeout",
+    await t.mutation(api.sessions.setFailed, {
+      sessionId: id,
+      error: "Claude API returned 529",
     });
     const session = await t.query(api.sessions.get, { sessionId: id });
     expect(session?.state).toBe("failed");
-    expect(session?.failureReason).toBe("LLM timeout");
-    expect(session?.lastGoodState).toBe("phase_implementing");
+    expect(session?.error).toBe("Claude API returned 529");
+  });
+
+  it("setBlueprint stores blueprint data on session", async () => {
+    const t = convexTest(schema, modules);
+    const id = await t.mutation(api.sessions.create, {
+      title: "Test",
+      query: "test",
+    });
+    const blueprint = {
+      title: "Token Reward Board",
+      therapyGoal: "Positive reinforcement for turn-taking",
+      targetUser: "ABA therapy, ages 4-8",
+      components: ["TokenBoard", "CelebrationOverlay"],
+    };
+    await t.mutation(api.sessions.setBlueprint, {
+      sessionId: id,
+      blueprint,
+    });
+    const session = await t.query(api.sessions.get, { sessionId: id });
+    expect(session?.blueprint).toEqual(blueprint);
+  });
+
+  it("setSandbox stores sandboxId and previewUrl", async () => {
+    const t = convexTest(schema, modules);
+    const id = await t.mutation(api.sessions.create, {
+      title: "Test",
+      query: "test",
+    });
+    await t.mutation(api.sessions.setSandbox, {
+      sessionId: id,
+      sandboxId: "sb_xyz789",
+      previewUrl: "https://xyz789.e2b.app",
+    });
+    const session = await t.query(api.sessions.get, { sessionId: id });
+    expect(session?.sandboxId).toBe("sb_xyz789");
+    expect(session?.previewUrl).toBe("https://xyz789.e2b.app");
+  });
+
+  it("get returns full session object", async () => {
+    const t = convexTest(schema, modules);
+    const id = await t.mutation(api.sessions.create, {
+      title: "Communication Board",
+      query: "A picture communication board",
+    });
+    const session = await t.query(api.sessions.get, { sessionId: id });
+    expect(session?._id).toBe(id);
+    expect(session?.title).toBe("Communication Board");
+    expect(session?.query).toBe("A picture communication board");
+  });
+
+  it("list returns sessions ordered descending", async () => {
+    const t = convexTest(schema, modules);
+    await t.mutation(api.sessions.create, { title: "First", query: "first" });
+    await t.mutation(api.sessions.create, { title: "Second", query: "second" });
+    await t.mutation(api.sessions.create, { title: "Third", query: "third" });
+    const sessions = await t.query(api.sessions.list, {});
+    expect(sessions.length).toBeGreaterThanOrEqual(3);
+    // Most recently created should be first
+    expect(sessions[0].title).toBe("Third");
+  });
+
+  it("state transitions are idempotent — re-setting same state is safe", async () => {
+    const t = convexTest(schema, modules);
+    const id = await t.mutation(api.sessions.create, {
+      title: "Test",
+      query: "test",
+    });
+    await t.mutation(api.sessions.startGeneration, { sessionId: id });
+    await t.mutation(api.sessions.startGeneration, { sessionId: id });
+    const session = await t.query(api.sessions.get, { sessionId: id });
+    expect(session?.state).toBe("generating");
   });
 });

@@ -1,27 +1,30 @@
 "use client";
 
 import { useState } from "react";
+
 import { Button } from "@/shared/components/ui/button";
 
+interface SessionState {
+  state: string;
+  previewUrl?: string;
+  error?: string;
+}
+
 interface PreviewPanelProps {
-  session: {
-    previewUrl?: string;
-    state: string;
-    stateMessage?: string;
-  } | null | undefined;
+  session: SessionState | null;
 }
 
 const RESPONSIVE_SIZES = [
   { label: "Mobile", width: 375 },
-  { label: "Tablet", width: 768 },
   { label: "Desktop", width: "100%" as const },
 ];
 
 export function PreviewPanel({ session }: PreviewPanelProps) {
-  const [sizeIndex, setSizeIndex] = useState(2); // Default: desktop
+  const [sizeIndex, setSizeIndex] = useState(1); // Default: desktop
   const currentSize = RESPONSIVE_SIZES[sizeIndex];
 
-  const isDeploying = session?.state === "deploying";
+  const isGenerating = session?.state === "generating";
+  const isFailed = session?.state === "failed";
   const hasPreview = !!session?.previewUrl;
 
   return (
@@ -37,6 +40,7 @@ export function PreviewPanel({ session }: PreviewPanelProps) {
               size="sm"
               className="h-6 px-2 text-xs"
               onClick={() => setSizeIndex(i)}
+              aria-label={size.label}
             >
               {size.label}
             </Button>
@@ -46,11 +50,7 @@ export function PreviewPanel({ session }: PreviewPanelProps) {
 
       {/* Preview area */}
       <div className="flex flex-1 items-center justify-center overflow-hidden bg-muted/30 p-4">
-        {isDeploying ? (
-          <div className="animate-pulse text-sm text-muted-foreground">
-            Deploying to preview...
-          </div>
-        ) : hasPreview ? (
+        {hasPreview ? (
           <iframe
             src={session!.previewUrl}
             className="h-full rounded-lg border bg-white shadow-sm"
@@ -64,12 +64,19 @@ export function PreviewPanel({ session }: PreviewPanelProps) {
             title="App Preview"
             sandbox="allow-scripts allow-same-origin"
           />
+        ) : isGenerating ? (
+          <div role="status" className="animate-pulse text-center text-sm text-muted-foreground">
+            <p>Generating your app...</p>
+          </div>
+        ) : isFailed ? (
+          <div className="text-center text-sm">
+            <p className="text-destructive">
+              {session?.error ?? "Something went wrong. Please try again."}
+            </p>
+          </div>
         ) : (
           <div className="text-center text-sm text-muted-foreground">
-            <p>Your app preview will appear here.</p>
-            {session?.stateMessage && (
-              <p className="mt-1 text-xs">{session.stateMessage}</p>
-            )}
+            <p>Your preview will appear here once your app is built.</p>
           </div>
         )}
       </div>

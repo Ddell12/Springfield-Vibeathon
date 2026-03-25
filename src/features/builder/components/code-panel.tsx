@@ -1,48 +1,76 @@
 "use client";
 
 import { useState } from "react";
-import { Doc, Id } from "../../../../convex/_generated/dataModel";
-import { useSessionFiles } from "../hooks/use-session";
-import { ScrollArea } from "@/shared/components/ui/scroll-area";
-import { cn } from "@/core/utils";
 
-export function CodePanel({ sessionId }: { sessionId: Id<"sessions"> | null }) {
-  const files = useSessionFiles(sessionId);
+import { cn } from "@/core/utils";
+import { ScrollArea } from "@/shared/components/ui/scroll-area";
+
+import type { StreamingFile, StreamingStatus } from "../hooks/use-streaming";
+
+interface CodePanelProps {
+  files: StreamingFile[];
+  status: StreamingStatus;
+}
+
+export function CodePanel({ files, status }: CodePanelProps) {
   const [selectedPath, setSelectedPath] = useState<string | null>(null);
 
-  const selectedFile = files?.find((f: Doc<"files">) => f.path === selectedPath);
+  // Resolve selected file: fall back to first file when selectedPath not yet set
+  const selectedFile =
+    files.find((f) => f.path === selectedPath) ?? files[0] ?? null;
 
-  if (!sessionId || !files || files.length === 0) {
+  const isGenerating = status === "generating";
+
+  if (files.length === 0 && !isGenerating) {
     return (
       <div className="flex h-full items-center justify-center text-muted-foreground">
-        <p className="text-sm">Files will appear here as your app is built.</p>
+        <p className="text-sm">Start building to see code will appear here.</p>
+      </div>
+    );
+  }
+
+  if (files.length === 0 && isGenerating) {
+    return (
+      <div className="flex h-full items-center justify-center text-muted-foreground">
+        <div className="animate-pulse text-center">
+          <p className="text-sm">Generating your files...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="flex h-full">
-      {/* File explorer sidebar */}
-      <div className="w-48 shrink-0 border-r">
-        <div className="p-2 text-xs font-medium uppercase text-muted-foreground">
-          Files
+    <div className="flex h-full flex-col">
+      {/* Header showing generating state */}
+      {isGenerating && (
+        <div className="flex items-center border-b px-3 py-2">
+          <span className="animate-pulse text-xs text-muted-foreground">
+            Writing...
+          </span>
         </div>
-        <ScrollArea className="h-[calc(100%-2rem)]">
-          {files.map((file: Doc<"files">) => (
+      )}
+
+      {/* File tabs */}
+      <div className="flex gap-0 overflow-x-auto border-b">
+        {files.map((file) => {
+          const filename = file.path.split("/").pop() ?? file.path;
+          return (
             <button
-              key={file._id}
+              key={file.path}
               onClick={() => setSelectedPath(file.path)}
               className={cn(
-                "block w-full truncate px-3 py-1.5 text-left text-xs",
+                "shrink-0 border-r px-3 py-1.5 text-xs",
                 "hover:bg-muted",
-                selectedPath === file.path && "bg-muted font-medium"
+                selectedPath === file.path
+                  ? "bg-muted font-medium"
+                  : "text-muted-foreground"
               )}
               title={file.path}
             >
-              {file.path.split("/").pop()}
+              {filename}
             </button>
-          ))}
-        </ScrollArea>
+          );
+        })}
       </div>
 
       {/* File contents */}

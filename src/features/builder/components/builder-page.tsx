@@ -1,30 +1,38 @@
 "use client";
 
-import { useState } from "react";
-import { useMutation } from "convex/react";
+import { useRouter,useSearchParams } from "next/navigation";
+import { useEffect } from "react";
 
-import { api } from "../../../../convex/_generated/api";
-import { Id } from "../../../../convex/_generated/dataModel";
 import {
-  ResizablePanelGroup,
-  ResizablePanel,
   ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
 } from "@/shared/components/ui/resizable";
+
+import { useStreaming } from "../hooks/use-streaming";
 import { ChatPanel } from "./chat-panel";
 import { CodePanel } from "./code-panel";
 import { PreviewPanel } from "./preview-panel";
-import { PhaseTimeline } from "./phase-timeline";
-import { useSession, useSessionPhases } from "../hooks/use-session";
 
 export function BuilderPage() {
-  const [sessionId, setSessionId] = useState<Id<"sessions"> | null>(null);
-  const session = useSession(sessionId);
-  const phases = useSessionPhases(sessionId);
-  const startBuild = useMutation(api.sessions.startBuild);
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const sessionIdFromUrl = searchParams.get("sessionId");
 
-  const handleSubmit = async (prompt: string) => {
-    const id = await startBuild({ title: "New App", query: prompt });
-    setSessionId(id);
+  const { status, files, generate, blueprint, error, previewUrl, sessionId } =
+    useStreaming();
+
+  // Update URL when sessionId is set from streaming
+  useEffect(() => {
+    if (sessionId && !sessionIdFromUrl) {
+      router.replace(`?sessionId=${sessionId}`);
+    }
+  }, [sessionId, sessionIdFromUrl, router]);
+
+  const session = {
+    state: status,
+    previewUrl: previewUrl ?? undefined,
+    error: error ?? undefined,
   };
 
   return (
@@ -33,9 +41,11 @@ export function BuilderPage() {
         {/* Chat Panel — left */}
         <ResizablePanel defaultSize={30} minSize={20}>
           <ChatPanel
-            sessionId={sessionId}
-            session={session}
-            onSubmit={handleSubmit}
+            sessionId={null}
+            status={status}
+            blueprint={blueprint}
+            error={error}
+            onGenerate={generate}
           />
         </ResizablePanel>
 
@@ -43,7 +53,7 @@ export function BuilderPage() {
 
         {/* Code Panel — middle */}
         <ResizablePanel defaultSize={35} minSize={20}>
-          <CodePanel sessionId={sessionId} />
+          <CodePanel files={files} status={status} />
         </ResizablePanel>
 
         <ResizableHandle withHandle />
@@ -53,14 +63,6 @@ export function BuilderPage() {
           <PreviewPanel session={session} />
         </ResizablePanel>
       </ResizablePanelGroup>
-
-      {/* Phase Timeline — bottom */}
-      {phases && phases.length > 0 && (
-        <PhaseTimeline
-          phases={phases}
-          currentIndex={session?.currentPhaseIndex ?? 0}
-        />
-      )}
     </div>
   );
 }
