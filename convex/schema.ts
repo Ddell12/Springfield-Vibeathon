@@ -11,12 +11,10 @@ export default defineSchema({
     state: v.string(),
     stateMessage: v.optional(v.string()),
     error: v.optional(v.string()),
-    // Blueprint produced by the LLM from the user's initial description.
-    // Stored as v.any() because TherapyBlueprintSchema (src/features/builder/lib/schemas)
-    // is a Zod schema — we validate in application code, not at the DB layer.
+    // Validated at app layer via TherapyBlueprintSchema (Zod) — v.any() is intentional for schema flexibility
     blueprint: v.optional(v.any()),
-    sandboxId: v.optional(v.string()), // deprecated: kept for backward compat with setSandbox mutation + tests
-    previewUrl: v.optional(v.string()), // deprecated: kept for backward compat
+    sandboxId: v.optional(v.string()), // DEPRECATED — remove in next migration
+    previewUrl: v.optional(v.string()), // DEPRECATED — remove in next migration
     publishedUrl: v.optional(v.string()),
   }).index("by_user", ["userId"]),
 
@@ -53,7 +51,7 @@ export default defineSchema({
   appState: defineTable({
     appId: v.string(),
     key: v.string(),
-    value: v.any(),
+    value: v.any(), // Generic KV store — value shape varies by key, validated in application code
     updatedAt: v.number(),
   }).index("by_app_key", ["appId", "key"]),
 
