@@ -68,7 +68,7 @@ Stream ends                  Preview live (~4-8s)
 | Generation model | Single-shot + single-shot iterations | Eliminates 8x phase overhead; each interaction is atomic |
 | Sandbox readiness | Create on submit, overlapped with LLM | Zero pre-warming cost; V2 template timing naturally overlaps |
 | Design quality | Frontend-design skill + pre-built component library | Belt and suspenders — prompt demands beauty, template provides it |
-| Agent framework | Claude Agent SDK with frontend-design skill | Structured skill loading, tool validation, conversation memory |
+| Agent framework | `@anthropic-ai/sdk` with structured system prompt loading the frontend-design skill content as agent context. Not a separate SDK — uses the existing Anthropic TypeScript SDK's streaming + tool_use APIs with a well-organized multi-layer system prompt | Structured skill loading, tool validation, conversation memory |
 
 ---
 
@@ -249,7 +249,7 @@ New template registered with E2B. Existing sandboxes unaffected.
 - Add: `sandboxId` and `previewUrl` as top-level fields
 - Simplify `state` to: `idle | generating | live | failed`
 
-`generated_files`:
+`files` (module: `convex/generated_files.ts`):
 - Remove: `phaseId` foreign key
 - Files belong to session directly
 - Add: `version: number` for tracking iterations
@@ -259,12 +259,14 @@ New template registered with E2B. Existing sandboxes unaffected.
 
 **Removed tables:**
 - `phases` — no multi-phase pipeline
-- `agent_context` — conversation managed by API route
-- `versions` — replaced by `generated_files.version`
+- `agentContext` — conversation managed by API route, not persisted per-step
+- `versions` — replaced by `files.version`
+- `blueprints` — blueprint data moves to `session.blueprint` field (inline on sessions table)
 
 **Unchanged tables:**
-- `knowledge` + vector index (RAG for optional enhancement)
-- `templates` (template metadata)
+- `knowledgeBase` + vector index (RAG for optional enhancement)
+- `therapyTemplates` (template metadata)
+- `apps`, `appState`, `ttsCache` (unrelated to pipeline refactor)
 
 ### State Transitions (4 states, down from 11)
 
@@ -279,7 +281,7 @@ idle --> generating --> live --> generating (iteration) --> live --> ...
 |--------|----------|
 | Stream starts | `session.state = "generating"` |
 | Blueprint JSON arrives | Save to `session.blueprint` |
-| File completes | `generated_files.upsert(sessionId, path, contents, version)` |
+| File completes | `files.upsert(sessionId, path, contents, version)` via `convex/generated_files.ts` |
 | Stream ends | `session.state = "live"` |
 | Error | `session.state = "failed"`, `session.error = message` |
 
@@ -367,4 +369,4 @@ File written to sandbox
 | LLM calls per initial build | 8-16 | 1 |
 | Pipeline states | 11 | 4 |
 | `pipeline.ts` line count | 842 | 0 (deleted) |
-| Schema tables | ~10 | ~6 |
+| Schema tables | ~13 | ~9 (remove 4: phases, agentContext, versions, blueprints) |
