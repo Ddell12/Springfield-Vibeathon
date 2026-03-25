@@ -1,8 +1,8 @@
 import { v } from "convex/values";
 
-import { internalMutation,mutation, query } from "./_generated/server";
+import { mutation, query } from "./_generated/server";
 
-export const create = internalMutation({
+export const create = mutation({
   args: {
     sessionId: v.id("sessions"),
     role: v.union(v.literal("user"), v.literal("assistant"), v.literal("system")),

@@ -1,6 +1,10 @@
-import { http, HttpResponse } from "msw";
+import { http, HttpResponse, passthrough } from "msw";
 
 export const handlers = [
+  // Local API routes — pass through to allow vi.stubGlobal("fetch") to intercept in tests
+  http.post("/api/generate", () => passthrough()),
+  http.post("/api/sandbox", () => passthrough()),
+
   // Claude API mock
   http.post("https://api.anthropic.com/v1/messages", () => {
     return HttpResponse.json({

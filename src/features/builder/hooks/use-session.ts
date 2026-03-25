@@ -13,14 +13,6 @@ export function useSessionMessages(sessionId: Id<"sessions"> | null) {
   return useQuery(api.messages.list, sessionId ? { sessionId } : "skip");
 }
 
-export function useSessionPhases(sessionId: Id<"sessions"> | null) {
-  return useQuery(api.phases.list, sessionId ? { sessionId } : "skip");
-}
-
 export function useSessionFiles(sessionId: Id<"sessions"> | null) {
   return useQuery(api.generated_files.list, sessionId ? { sessionId } : "skip");
-}
-
-export function useBlueprint(sessionId: Id<"sessions"> | null) {
-  return useQuery(api.blueprints.getBySession, sessionId ? { sessionId } : "skip");
 }

@@ -1,17 +1,6 @@
-// convex/sessions.ts
 import { v } from "convex/values";
 
-import { internal } from "./_generated/api";
-import { internalMutation, internalQuery,mutation, query } from "./_generated/server";
-
-const SESSION_STATE_VALIDATOR = v.union(
-  v.literal("idle"), v.literal("blueprinting"),
-  v.literal("template_selecting"), v.literal("phase_generating"),
-  v.literal("phase_implementing"), v.literal("deploying"),
-  v.literal("validating"), v.literal("finalizing"),
-  v.literal("reviewing"), v.literal("complete"),
-  v.literal("failed")
-);
+import { mutation, query } from "./_generated/server";
 
 export const create = mutation({
   args: {
@@ -20,16 +9,12 @@ export const create = mutation({
     userId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const sessionId = await ctx.db.insert("sessions", {
+    return await ctx.db.insert("sessions", {
       userId: args.userId,
       title: args.title,
       query: args.query,
       state: "idle",
-      currentPhaseIndex: 0,
-      phasesRemaining: 8,
-      mvpGenerated: false,
     });
-    return sessionId;
   },
 });
 
@@ -51,98 +36,58 @@ export const list = query({
   },
 });
 
-// Used by pipeline actions via ctx.runQuery
-export const getInternal = internalQuery({
+export const startGeneration = mutation({
   args: { sessionId: v.id("sessions") },
   handler: async (ctx, args) => {
-    return await ctx.db.get(args.sessionId);
+    await ctx.db.patch(args.sessionId, {
+      state: "generating",
+      stateMessage: "Generating your app...",
+    });
   },
 });
 
-const AUTO_ADVANCE_STATES = [
-  "template_selecting", "phase_generating", "phase_implementing",
-  "deploying", "validating", "finalizing", "reviewing",
-];
-
-export const updateState = internalMutation({
+export const setLive = mutation({
   args: {
     sessionId: v.id("sessions"),
-    state: SESSION_STATE_VALIDATOR,
-    stateMessage: v.string(),
+    sandboxId: v.string(),
+    previewUrl: v.string(),
   },
   handler: async (ctx, args) => {
     await ctx.db.patch(args.sessionId, {
-      state: args.state,
-      stateMessage: args.stateMessage,
+      state: "live",
+      stateMessage: "Live",
+      sandboxId: args.sandboxId,
+      previewUrl: args.previewUrl,
     });
-
-    if (AUTO_ADVANCE_STATES.includes(args.state)) {
-      await ctx.scheduler.runAfter(0, internal.pipeline.executeStep, {
-        sessionId: args.sessionId,
-      });
-    }
   },
 });
 
-// Public mutation — callable from ConvexHTTPClient in API routes
-export const startBuild = mutation({
-  args: { title: v.string(), query: v.string(), userId: v.optional(v.string()) },
-  handler: async (ctx, args) => {
-    const sessionId = await ctx.db.insert("sessions", {
-      userId: args.userId,
-      title: args.title,
-      query: args.query,
-      state: "idle",
-      currentPhaseIndex: 0,
-      phasesRemaining: 8,
-      mvpGenerated: false,
-    });
-    // Transition to blueprinting + schedule pipeline
-    await ctx.db.patch(sessionId, {
-      state: "blueprinting",
-      stateMessage: "Generating app blueprint...",
-    });
-    await ctx.scheduler.runAfter(0, internal.pipeline.executeStep, { sessionId });
-    return sessionId;
-  },
-});
-
-// Public mutation — adds follow-up message after completion, recharges counter
-export const addFollowUp = mutation({
-  args: { sessionId: v.id("sessions"), message: v.string() },
-  handler: async (ctx, args) => {
-    const session = await ctx.db.get(args.sessionId);
-    if (!session || session.state !== "complete") return;
-    // Add user message
-    await ctx.db.insert("messages", {
-      sessionId: args.sessionId,
-      role: "user",
-      content: args.message,
-      timestamp: Date.now(),
-    });
-    // Recharge phase counter to 3 and restart pipeline
-    await ctx.db.patch(args.sessionId, {
-      state: "phase_generating",
-      stateMessage: "Processing follow-up...",
-      phasesRemaining: 3,
-    });
-    await ctx.scheduler.runAfter(0, internal.pipeline.executeStep, { sessionId: args.sessionId });
-  },
-});
-
-export const setTemplate = internalMutation({
+export const setFailed = mutation({
   args: {
     sessionId: v.id("sessions"),
-    templateName: v.string(),
+    error: v.string(),
   },
   handler: async (ctx, args) => {
     await ctx.db.patch(args.sessionId, {
-      templateName: args.templateName,
+      state: "failed",
+      error: args.error,
     });
   },
 });
 
-export const setSandbox = internalMutation({
+export const setBlueprint = mutation({
+  args: {
+    sessionId: v.id("sessions"),
+    blueprint: v.any(),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.sessionId, {
+      blueprint: args.blueprint,
+    });
+  },
+});
+
+export const setSandbox = mutation({
   args: {
     sessionId: v.id("sessions"),
     sandboxId: v.string(),
@@ -152,43 +97,6 @@ export const setSandbox = internalMutation({
     await ctx.db.patch(args.sessionId, {
       sandboxId: args.sandboxId,
       previewUrl: args.previewUrl,
-    });
-  },
-});
-
-export const advancePhase = internalMutation({
-  args: {
-    sessionId: v.id("sessions"),
-    currentPhaseIndex: v.number(),
-    phasesRemaining: v.number(),
-  },
-  handler: async (ctx, args) => {
-    await ctx.db.patch(args.sessionId, {
-      currentPhaseIndex: args.currentPhaseIndex,
-      phasesRemaining: args.phasesRemaining,
-    });
-  },
-});
-
-export const setMvpGenerated = internalMutation({
-  args: { sessionId: v.id("sessions") },
-  handler: async (ctx, args) => {
-    await ctx.db.patch(args.sessionId, { mvpGenerated: true });
-  },
-});
-
-export const setFailed = internalMutation({
-  args: {
-    sessionId: v.id("sessions"),
-    reason: v.string(),
-  },
-  handler: async (ctx, args) => {
-    const session = await ctx.db.get(args.sessionId);
-    if (!session) return;
-    await ctx.db.patch(args.sessionId, {
-      state: "failed",
-      failureReason: args.reason,
-      lastGoodState: session.state,
     });
   },
 });

@@ -1,223 +1,127 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+// src/features/builder/components/__tests__/chat-panel.test.tsx
+import { render, screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
 
-import { ChatPanel } from "../chat-panel";
+// Module-level mock so vi.fn() references can be captured
+const mockUseQuery = vi.fn().mockReturnValue([]);
+const mockUseMutation = vi.fn().mockReturnValue(vi.fn());
 
 vi.mock("convex/react", () => ({
-  useQuery: vi.fn(),
-  useMutation: vi.fn(() => vi.fn()),
+  useQuery: mockUseQuery,
+  useMutation: mockUseMutation,
 }));
 
-vi.mock("motion/react", () => ({
-  motion: {
-    div: ({ children, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-      <div {...props}>{children}</div>
-    ),
-  },
-  AnimatePresence: ({ children }: { children: React.ReactNode }) => (
-    <>{children}</>
-  ),
+vi.mock("../../hooks/use-streaming", () => ({
+  useStreaming: vi.fn().mockReturnValue({
+    status: "idle",
+    files: [],
+    generate: vi.fn(),
+    blueprint: null,
+    error: null,
+    previewUrl: null,
+    sessionId: null,
+  }),
 }));
 
-vi.mock("react-markdown", () => ({
-  default: ({ children }: { children: string }) => (
-    <div data-testid="markdown">{children}</div>
-  ),
-}));
-
-vi.mock("remark-gfm", () => ({ default: () => {} }));
-
-// Mock the hooks
-vi.mock("../../hooks/use-session", () => ({
-  useSessionMessages: vi.fn(() => null),
-  useBlueprint: vi.fn(() => null),
-}));
-
-import { useBlueprint, useSessionMessages } from "../../hooks/use-session";
+import type { Id } from "../../../../../convex/_generated/dataModel";
+import { ChatPanel } from "../chat-panel";
 
 const defaultProps = {
-  sessionId: null,
-  session: null,
-  onSubmit: vi.fn(),
+  sessionId: null as Id<"sessions"> | null,
+  status: "idle" as const,
+  blueprint: null as Record<string, unknown> | null,
+  error: null as string | null,
+  onGenerate: vi.fn(),
 };
 
-describe("ChatPanel", () => {
-  beforeEach(() => {
-    vi.mocked(useSessionMessages).mockReturnValue(null);
-    vi.mocked(useBlueprint).mockReturnValue(null);
-    defaultProps.onSubmit.mockClear();
-  });
-
-  it("shows welcome header when no session", () => {
+describe("ChatPanel — streaming builder contract", () => {
+  it("renders without crashing", () => {
     render(<ChatPanel {...defaultProps} />);
-    expect(
-      screen.getByText("What does your child need?")
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(/Describe the therapy tool you're imagining/)
-    ).toBeInTheDocument();
   });
 
-  it("shows suggestion chips when no session", () => {
+  it("shows a text input for user prompt", () => {
     render(<ChatPanel {...defaultProps} />);
-    expect(screen.getByText("Morning routine schedule")).toBeInTheDocument();
-    expect(screen.getByText("Feelings communication board")).toBeInTheDocument();
-    expect(screen.getByText("Star reward chart")).toBeInTheDocument();
+    const input = screen.getByRole("textbox");
+    expect(input).toBeTruthy();
   });
 
-  it("clicking a suggestion chip calls onSubmit", () => {
-    render(<ChatPanel {...defaultProps} />);
-    fireEvent.click(screen.getByText("Star reward chart"));
-    expect(defaultProps.onSubmit).toHaveBeenCalledWith("Star reward chart");
+  it("shows messages when provided via useQuery", () => {
+    mockUseQuery.mockReturnValue([
+      { _id: "msg1", role: "user", content: "Build a token board", timestamp: 1 },
+      { _id: "msg2", role: "assistant", content: "I'm building your token board app!", timestamp: 2 },
+    ]);
+
+    render(<ChatPanel {...defaultProps} sessionId={"session_123" as Id<"sessions">} />);
+    expect(screen.getByText("Build a token board")).toBeTruthy();
+    expect(screen.getByText(/building your token board/i)).toBeTruthy();
+
+    // Reset for subsequent tests
+    mockUseQuery.mockReturnValue([]);
   });
 
-  it("shows prompt input when no session", () => {
-    render(<ChatPanel {...defaultProps} />);
-    expect(
-      screen.getByPlaceholderText("Describe what you need...")
-    ).toBeInTheDocument();
-  });
-
-  it("shows prompt input when session state is idle", () => {
-    render(<ChatPanel {...defaultProps} session={{ state: "idle" }} />);
-    expect(
-      screen.getByPlaceholderText("Describe what you need...")
-    ).toBeInTheDocument();
-  });
-
-  it("shows prompt input when session state is complete", () => {
-    render(<ChatPanel {...defaultProps} session={{ state: "complete" }} />);
-    expect(
-      screen.getByPlaceholderText("Ask to modify the board...")
-    ).toBeInTheDocument();
-  });
-
-  it("shows prompt input when session state is failed", () => {
-    render(<ChatPanel {...defaultProps} session={{ state: "failed" }} />);
-    expect(
-      screen.getByPlaceholderText("Describe what you need...")
-    ).toBeInTheDocument();
-  });
-
-  it("hides prompt input during active pipeline states", () => {
-    const activePipelineStates = [
-      "blueprinting",
-      "phase_generating",
-      "phase_implementing",
-      "deploying",
-      "validating",
-    ];
-    for (const state of activePipelineStates) {
-      const { unmount } = render(
-        <ChatPanel {...defaultProps} session={{ state }} />
-      );
-      expect(
-        screen.queryByPlaceholderText("Describe what you need...")
-      ).toBeNull();
-      unmount();
-    }
-  });
-
-  it("submit button is disabled when input is empty", () => {
-    render(<ChatPanel {...defaultProps} />);
-    const sendButton = screen.getByRole("button", { name: "send" });
-    expect(sendButton).toBeDisabled();
-  });
-
-  it("calls onSubmit when form is submitted with input", () => {
-    render(<ChatPanel {...defaultProps} />);
-    const input = screen.getByPlaceholderText("Describe what you need...");
-    fireEvent.change(input, { target: { value: "Morning routine schedule" } });
-    fireEvent.submit(input.closest("form")!);
-    expect(defaultProps.onSubmit).toHaveBeenCalledWith(
-      "Morning routine schedule"
-    );
-  });
-
-  it("clears input after submit", () => {
-    render(<ChatPanel {...defaultProps} />);
-    const input = screen.getByPlaceholderText(
-      "Describe what you need..."
-    ) as HTMLInputElement;
-    fireEvent.change(input, { target: { value: "Star reward chart" } });
-    fireEvent.submit(input.closest("form")!);
-    expect(input.value).toBe("");
-  });
-
-  it("renders messages when session has messages", () => {
-    const messages = [
-      {
-        _id: "m1",
-        role: "user",
-        content: "Build a morning schedule",
-        sessionId: "s1",
-      },
-      {
-        _id: "m2",
-        role: "assistant",
-        content: "Here is your blueprint",
-        sessionId: "s1",
-      },
-    ];
-    vi.mocked(useSessionMessages).mockReturnValue(
-      messages as ReturnType<typeof useSessionMessages>
-    );
-    render(
-      <ChatPanel {...defaultProps} session={{ state: "idle" }} sessionId={"s1" as ReturnType<typeof useSessionMessages>[0]["sessionId"]} />
-    );
-    expect(screen.getByText("Build a morning schedule")).toBeInTheDocument();
-    // Assistant message is rendered via ReactMarkdown mock
-    expect(screen.getByTestId("markdown")).toBeInTheDocument();
-  });
-
-  it("shows blueprint card when state is blueprinting and blueprint exists (unapproved)", () => {
-    const blueprint = {
-      blueprint: {
-        title: "Morning Routine",
-        therapyGoal: "Build independence",
-        targetSkill: "Self-care",
-        ageRange: "5-8",
-      },
-      markdownPreview: "...",
-      approved: false,
-    };
-    vi.mocked(useBlueprint).mockReturnValue(
-      blueprint as ReturnType<typeof useBlueprint>
-    );
+  it("shows blueprint info card when blueprint is provided", () => {
     render(
       <ChatPanel
         {...defaultProps}
-        session={{ state: "blueprinting" }}
-        sessionId={"s1" as ReturnType<typeof useSessionMessages>[0]["sessionId"]}
-      />
-    );
-    expect(screen.getByText("App Blueprint")).toBeInTheDocument();
-    expect(screen.getByText("Morning Routine")).toBeInTheDocument();
-  });
-
-  it("shows error state when session failed", () => {
-    render(
-      <ChatPanel
-        {...defaultProps}
-        session={{ state: "failed", failureReason: "E2B sandbox timed out" }}
-      />
-    );
-    expect(screen.getByText("Something went wrong")).toBeInTheDocument();
-    expect(screen.getByText("E2B sandbox timed out")).toBeInTheDocument();
-  });
-
-  it("shows working status message when pipeline is active", () => {
-    render(
-      <ChatPanel
-        {...defaultProps}
-        session={{
-          state: "phase_generating",
-          stateMessage: "Generating phase 1...",
-          currentPhaseIndex: 0,
-          totalPhasesPlanned: 3,
+        blueprint={{
+          title: "Token Reward Board",
+          therapyGoal: "Positive reinforcement",
+          targetUser: "ABA therapy, ages 4-8",
         }}
       />
     );
-    expect(screen.getByText("Generating phase 1...")).toBeInTheDocument();
-    expect(screen.getByText("Phase 1 of 3")).toBeInTheDocument();
+    expect(screen.getByText(/Token Reward Board/)).toBeTruthy();
+  });
+
+  it("blueprint info card does NOT show approval buttons", () => {
+    render(
+      <ChatPanel
+        {...defaultProps}
+        blueprint={{
+          title: "Token Reward Board",
+          therapyGoal: "Positive reinforcement",
+        }}
+      />
+    );
+    // Streaming builder starts generation immediately — no approval gate
+    expect(screen.queryByRole("button", { name: /approve/i })).toBeNull();
+    expect(screen.queryByRole("button", { name: /reject|deny/i })).toBeNull();
+  });
+
+  it("shows generating status indicator when status is 'generating'", () => {
+    render(<ChatPanel {...defaultProps} status="generating" />);
+    const indicator =
+      screen.queryByText(/generating|building|thinking/i) ??
+      document.querySelector(".animate-pulse, .animate-spin");
+    expect(indicator).toBeTruthy();
+  });
+
+  it("shows error message when error is set", () => {
+    render(
+      <ChatPanel
+        {...defaultProps}
+        status="failed"
+        error="Claude API unavailable"
+      />
+    );
+    expect(screen.getByText(/Claude API unavailable/i)).toBeTruthy();
+  });
+
+  it("input is disabled when status is 'generating'", () => {
+    render(<ChatPanel {...defaultProps} status="generating" />);
+    const input = screen.getByRole("textbox");
+    expect((input as HTMLInputElement | HTMLTextAreaElement).disabled).toBe(true);
+  });
+
+  it("input is enabled when status is 'idle'", () => {
+    render(<ChatPanel {...defaultProps} status="idle" />);
+    const input = screen.getByRole("textbox");
+    expect((input as HTMLInputElement | HTMLTextAreaElement).disabled).toBe(false);
+  });
+
+  it("shows 'live' or 'ready' indicator when status is 'live'", () => {
+    render(<ChatPanel {...defaultProps} status="live" />);
+    const indicator = screen.queryByText(/live|ready|done/i);
+    expect(indicator).toBeTruthy();
   });
 });

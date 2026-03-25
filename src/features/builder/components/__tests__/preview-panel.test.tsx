@@ -1,111 +1,104 @@
-import { fireEvent,render, screen } from "@testing-library/react";
+// src/features/builder/components/__tests__/preview-panel.test.tsx
+import { render, screen } from "@testing-library/react";
+import { describe, expect, it } from "vitest";
 
 import { PreviewPanel } from "../preview-panel";
 
-vi.mock("motion/react", () => ({
-  motion: {
-    div: ({ children, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-      <div {...props}>{children}</div>
-    ),
-  },
-  AnimatePresence: ({
-    children,
-  }: {
-    children: React.ReactNode;
-    mode?: string;
-  }) => <>{children}</>,
-}));
-
-describe("PreviewPanel", () => {
-  it("shows placeholder when session is null", () => {
+describe("PreviewPanel — streaming builder contract", () => {
+  it("renders without crashing with null session", () => {
     render(<PreviewPanel session={null} />);
-    expect(
-      screen.getByText("Your tool will appear here")
-    ).toBeInTheDocument();
   });
 
-  it("shows placeholder when session has no previewUrl", () => {
-    render(<PreviewPanel session={{ state: "idle" }} />);
-    expect(
-      screen.getByText("Your tool will appear here")
-    ).toBeInTheDocument();
-  });
-
-  it("shows stateMessage in placeholder when available", () => {
-    render(
-      <PreviewPanel
-        session={{ state: "generating", stateMessage: "Building phase 1..." }}
-      />
-    );
-    expect(screen.getByText("Building phase 1...")).toBeInTheDocument();
-  });
-
-  it("shows deploying spinner text when state is deploying", () => {
-    render(<PreviewPanel session={{ state: "deploying" }} />);
-    expect(screen.getByText("Deploying to preview...")).toBeInTheDocument();
-  });
-
-  it("does not render iframe when deploying", () => {
-    render(<PreviewPanel session={{ state: "deploying" }} />);
-    expect(screen.queryByTitle("App Preview")).toBeNull();
-  });
-
-  it("renders iframe when previewUrl exists", () => {
+  it("shows iframe when previewUrl is set", () => {
     render(
       <PreviewPanel
         session={{
-          state: "complete",
-          previewUrl: "https://sandbox.e2b.app/preview",
+          previewUrl: "https://abc123.e2b.app",
+          state: "live",
         }}
       />
     );
-    const iframe = screen.getByTitle("App Preview");
-    expect(iframe).toBeInTheDocument();
-    expect(iframe).toHaveAttribute(
-      "src",
-      "https://sandbox.e2b.app/preview"
+    const iframe = screen.getByTitle(/preview/i);
+    expect(iframe).toBeTruthy();
+    expect((iframe as HTMLIFrameElement).src).toContain("abc123.e2b.app");
+  });
+
+  it("shows generating spinner when state is 'generating'", () => {
+    render(
+      <PreviewPanel
+        session={{
+          previewUrl: undefined,
+          state: "generating",
+        }}
+      />
     );
+    // Should show a loading/generating indicator
+    const spinner =
+      screen.queryByRole("status") ??
+      screen.queryByText(/generating|building|creating/i) ??
+      document.querySelector(".animate-pulse, .animate-spin");
+    expect(spinner).toBeTruthy();
   });
 
-  it("renders all three device toggle buttons", () => {
-    render(<PreviewPanel session={null} />);
-    expect(screen.getByRole("button", { name: /Mobile/ })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Tablet/ })).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: /Desktop/ })
-    ).toBeInTheDocument();
+  it("shows empty state when no previewUrl and state is 'idle'", () => {
+    render(
+      <PreviewPanel
+        session={{
+          previewUrl: undefined,
+          state: "idle",
+        }}
+      />
+    );
+    // Should show placeholder text telling user preview will appear here
+    expect(screen.getByText(/preview will appear/i)).toBeTruthy();
   });
 
-  it("Desktop button is active by default (has bg-primary class)", () => {
+  it("shows empty state when session is null", () => {
     render(<PreviewPanel session={null} />);
-    // shadcn Button variant="default" compiles to bg-primary; "ghost" compiles to hover:bg-accent
-    const desktopBtn = screen.getByRole("button", { name: /Desktop/ });
-    expect(desktopBtn.className).toContain("bg-primary");
+    expect(screen.getByText(/preview will appear/i)).toBeTruthy();
   });
 
-  it("Mobile and Tablet buttons are inactive by default (no bg-primary)", () => {
-    render(<PreviewPanel session={null} />);
-    const mobileBtn = screen.getByRole("button", { name: /Mobile/ });
-    const tabletBtn = screen.getByRole("button", { name: /Tablet/ });
-    expect(mobileBtn.className).not.toContain("bg-primary");
-    expect(tabletBtn.className).not.toContain("bg-primary");
+  it("shows failed state message when state is 'failed'", () => {
+    render(
+      <PreviewPanel
+        session={{
+          previewUrl: undefined,
+          state: "failed",
+          error: "Something went wrong",
+        }}
+      />
+    );
+    // Should surface the error to the user
+    const errorIndicator =
+      screen.queryByText(/failed|error|something went wrong/i);
+    expect(errorIndicator).toBeTruthy();
   });
 
-  it("clicking Mobile button makes it active (bg-primary) and Desktop inactive", () => {
-    render(<PreviewPanel session={null} />);
-    const mobileBtn = screen.getByRole("button", { name: /Mobile/ });
-    const desktopBtn = screen.getByRole("button", { name: /Desktop/ });
-
-    fireEvent.click(mobileBtn);
-
-    expect(mobileBtn.className).toContain("bg-primary");
-    expect(desktopBtn.className).not.toContain("bg-primary");
+  it("does not show retry button — streaming restarts automatically", () => {
+    render(
+      <PreviewPanel
+        session={{
+          previewUrl: undefined,
+          state: "failed",
+        }}
+      />
+    );
+    // The streaming builder auto-retries, no manual retry button needed
+    const retryButton = screen.queryByRole("button", { name: /retry/i });
+    expect(retryButton).toBeNull();
   });
 
-  it("clicking Tablet button makes it active", () => {
-    render(<PreviewPanel session={null} />);
-    const tabletBtn = screen.getByRole("button", { name: /Tablet/ });
-    fireEvent.click(tabletBtn);
-    expect(tabletBtn.className).toContain("bg-primary");
+  it("renders responsive size toggle buttons", () => {
+    render(
+      <PreviewPanel
+        session={{
+          previewUrl: "https://abc.e2b.app",
+          state: "live",
+        }}
+      />
+    );
+    // Should have mobile/tablet/desktop toggle
+    expect(screen.getByRole("button", { name: /mobile/i })).toBeTruthy();
+    expect(screen.getByRole("button", { name: /desktop/i })).toBeTruthy();
   });
 });

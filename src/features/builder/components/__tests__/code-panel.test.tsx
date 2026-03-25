@@ -1,193 +1,104 @@
-import { fireEvent,render, screen } from "@testing-library/react";
+// src/features/builder/components/__tests__/code-panel.test.tsx
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { describe, expect, it, vi } from "vitest";
 
 import { CodePanel } from "../code-panel";
 
-vi.mock("convex/react", () => ({
-  useQuery: vi.fn(),
-  useMutation: vi.fn(() => vi.fn()),
-}));
+const sampleFiles = [
+  {
+    path: "src/App.tsx",
+    contents:
+      'import React from "react";\n\nexport default function App() {\n  return <div className="p-4">Token Board</div>;\n}',
+    version: 1,
+  },
+  {
+    path: "src/components/TokenBoard.tsx",
+    contents: "export function TokenBoard() { return <div>Tokens</div>; }",
+    version: 1,
+  },
+];
 
-vi.mock("prism-react-renderer", () => ({
-  Highlight: ({
-    children,
-    code,
-  }: {
-    children: (args: {
-      style: object;
-      tokens: { content: string; types: string[] }[][];
-      getLineProps: () => object;
-      getTokenProps: () => object;
-    }) => React.ReactNode;
-    code: string;
-  }) =>
-    children({
-      style: {},
-      tokens: [[{ content: code, types: ["plain"] }]],
-      getLineProps: () => ({}),
-      getTokenProps: () => ({}),
-    }),
-  themes: { nightOwl: {} },
-}));
+const defaultProps = {
+  files: [],
+  status: "idle" as const,
+};
 
-vi.mock("../../hooks/use-session", () => ({
-  useSessionFiles: vi.fn(() => null),
-}));
-
-import { useSessionFiles } from "../../hooks/use-session";
-
-describe("CodePanel", () => {
-  beforeEach(() => {
-    vi.mocked(useSessionFiles).mockReturnValue(null);
+describe("CodePanel — streaming builder contract", () => {
+  it("renders without crashing with empty files", () => {
+    render(<CodePanel {...defaultProps} />);
   });
 
-  it("shows empty state when sessionId is null", () => {
-    render(<CodePanel sessionId={null} />);
-    expect(
-      screen.getByText("Files will appear here as your app is built.")
-    ).toBeInTheDocument();
+  it("shows empty state when no files and status is idle", () => {
+    render(<CodePanel {...defaultProps} />);
+    // Should show placeholder telling user code will appear here
+    const emptyState = screen.queryByText(/code will appear|no files|start building/i);
+    expect(emptyState).toBeTruthy();
   });
 
-  it("shows empty state when files array is empty", () => {
-    vi.mocked(useSessionFiles).mockReturnValue(
-      [] as ReturnType<typeof useSessionFiles>
-    );
-    render(<CodePanel sessionId={"s1" as Parameters<typeof CodePanel>[0]["sessionId"]} />);
-    expect(
-      screen.getByText("Files will appear here as your app is built.")
-    ).toBeInTheDocument();
+  it("shows generating indicator when status is generating and no files yet", () => {
+    render(<CodePanel files={[]} status="generating" />);
+    const indicator =
+      screen.queryByText(/generating|building/i) ??
+      document.querySelector(".animate-pulse, .animate-spin");
+    expect(indicator).toBeTruthy();
   });
 
-  it("shows skeleton loading state when session is generating and no files", () => {
-    vi.mocked(useSessionFiles).mockReturnValue(
-      [] as ReturnType<typeof useSessionFiles>
-    );
-    render(
-      <CodePanel
-        sessionId={"s1" as Parameters<typeof CodePanel>[0]["sessionId"]}
-        session={{ state: "phase_generating" }}
-      />
-    );
-    // Skeletons render via shadcn Skeleton — check they exist
-    const skeletons = document.querySelectorAll("[class*='animate-pulse']");
-    expect(skeletons.length).toBeGreaterThan(0);
+  it("renders file tabs when files are provided", () => {
+    render(<CodePanel files={sampleFiles} status="live" />);
+    // Each file should have a tab with its filename
+    expect(screen.getByText("App.tsx")).toBeTruthy();
+    expect(screen.getByText("TokenBoard.tsx")).toBeTruthy();
   });
 
-  it("renders file list from query", () => {
-    const files = [
-      {
-        _id: "f1",
-        path: "src/App.tsx",
-        contents: "export default function App() {}",
-        sessionId: "s1",
-      },
-      {
-        _id: "f2",
-        path: "src/styles.css",
-        contents: "body { margin: 0; }",
-        sessionId: "s1",
-      },
-    ];
-    vi.mocked(useSessionFiles).mockReturnValue(
-      files as ReturnType<typeof useSessionFiles>
-    );
-    render(
-      <CodePanel sessionId={"s1" as Parameters<typeof CodePanel>[0]["sessionId"]} />
-    );
-    expect(screen.getByText("App.tsx")).toBeInTheDocument();
-    expect(screen.getByText("styles.css")).toBeInTheDocument();
+  it("displays the first file's contents by default", () => {
+    render(<CodePanel files={sampleFiles} status="live" />);
+    // The first file's content should be visible
+    expect(screen.getByText(/Token Board/)).toBeTruthy();
   });
 
-  it("clicking a file shows its path header", () => {
-    const files = [
-      {
-        _id: "f1",
-        path: "src/App.tsx",
-        contents: "export default function App() {}",
-        sessionId: "s1",
-      },
-    ];
-    vi.mocked(useSessionFiles).mockReturnValue(
-      files as ReturnType<typeof useSessionFiles>
-    );
-    render(
-      <CodePanel sessionId={"s1" as Parameters<typeof CodePanel>[0]["sessionId"]} />
-    );
-    // Before clicking: shows select a file message
-    expect(screen.getByText("Select a file to view its contents.")).toBeInTheDocument();
-
-    fireEvent.click(screen.getByText("App.tsx"));
-
-    // After clicking: path header appears (file path shown above the code)
-    expect(screen.getByText("src/App.tsx")).toBeInTheDocument();
-    // The Highlight component renders a <pre> block for the code
-    expect(document.querySelector("pre")).toBeInTheDocument();
+  it("switches to different file when tab is clicked", async () => {
+    render(<CodePanel files={sampleFiles} status="live" />);
+    const user = userEvent.setup();
+    // Click the second file tab
+    await user.click(screen.getByText("TokenBoard.tsx"));
+    // Now the second file's content should be visible
+    expect(screen.getByText(/Tokens/)).toBeTruthy();
   });
 
-  it("shows correct icon for .tsx files (code icon)", () => {
-    const files = [
-      {
-        _id: "f1",
-        path: "src/App.tsx",
-        contents: "",
-        sessionId: "s1",
-      },
-    ];
-    vi.mocked(useSessionFiles).mockReturnValue(
-      files as ReturnType<typeof useSessionFiles>
-    );
-    render(
-      <CodePanel sessionId={"s1" as Parameters<typeof CodePanel>[0]["sessionId"]} />
-    );
-    // material-symbols "code" icon spans should be rendered
-    const iconSpans = document
-      .querySelectorAll(".material-symbols-outlined");
-    const codeIcons = Array.from(iconSpans).filter(
-      (el) => el.textContent?.trim() === "code"
-    );
-    expect(codeIcons.length).toBeGreaterThan(0);
+  it("shows file count or summary", () => {
+    render(<CodePanel files={sampleFiles} status="live" />);
+    // Panel header or subtitle should indicate number of files
+    // e.g. "2 files" or "src/App.tsx"
+    const fileIndicator = screen.queryByText(/2 file|src\/App/i);
+    expect(fileIndicator).toBeTruthy();
   });
 
-  it("shows correct icon for .css files (palette icon)", () => {
-    const files = [
-      {
-        _id: "f1",
-        path: "src/styles.css",
-        contents: "",
-        sessionId: "s1",
-      },
-    ];
-    vi.mocked(useSessionFiles).mockReturnValue(
-      files as ReturnType<typeof useSessionFiles>
-    );
-    render(
-      <CodePanel sessionId={"s1" as Parameters<typeof CodePanel>[0]["sessionId"]} />
-    );
-    const iconSpans = document.querySelectorAll(".material-symbols-outlined");
-    const paletteIcons = Array.from(iconSpans).filter(
-      (el) => el.textContent?.trim() === "palette"
-    );
-    expect(paletteIcons.length).toBeGreaterThan(0);
+  it("shows a generating indicator while files are still streaming in", () => {
+    render(<CodePanel files={[sampleFiles[0]]} status="generating" />);
+    // Even with some files, should still show generating state
+    const indicator =
+      screen.queryByText(/generating|writing/i) ??
+      document.querySelector(".animate-pulse");
+    expect(indicator).toBeTruthy();
   });
 
-  it("shows correct icon for .json files (data_object icon)", () => {
-    const files = [
-      {
-        _id: "f1",
-        path: "config.json",
-        contents: "{}",
-        sessionId: "s1",
-      },
-    ];
-    vi.mocked(useSessionFiles).mockReturnValue(
-      files as ReturnType<typeof useSessionFiles>
-    );
-    render(
-      <CodePanel sessionId={"s1" as Parameters<typeof CodePanel>[0]["sessionId"]} />
-    );
-    const iconSpans = document.querySelectorAll(".material-symbols-outlined");
-    const dataObjectIcons = Array.from(iconSpans).filter(
-      (el) => el.textContent?.trim() === "data_object"
-    );
-    expect(dataObjectIcons.length).toBeGreaterThan(0);
+  it("renders file path in full in the content area or breadcrumb", () => {
+    render(<CodePanel files={sampleFiles} status="live" />);
+    // The active file's full path should be visible somewhere
+    const pathIndicator =
+      screen.queryByText("src/App.tsx") ??
+      screen.queryByText(/src\/App/);
+    expect(pathIndicator).toBeTruthy();
+  });
+
+  it("does not crash when files array is updated (streaming scenario)", () => {
+    const { rerender } = render(<CodePanel files={[]} status="generating" />);
+    // Simulate files arriving one by one
+    rerender(<CodePanel files={[sampleFiles[0]]} status="generating" />);
+    rerender(<CodePanel files={sampleFiles} status="generating" />);
+    rerender(<CodePanel files={sampleFiles} status="live" />);
+    // Should end up showing final state without errors
+    expect(screen.getByText("App.tsx")).toBeTruthy();
   });
 });
