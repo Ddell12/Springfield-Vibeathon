@@ -29,10 +29,18 @@ describe("buildSystemPrompt — therapy-domain system prompt", () => {
     expect(prompt).toMatch(/44px|44 px|tap.target/i);
   });
 
-  it("includes therapy template component references", () => {
+  it("warns against importing non-existent components", () => {
     const prompt = buildSystemPrompt();
-    // Must reference the design system components from vite-therapy template
-    expect(prompt).toMatch(/TherapyCard|TokenBoard|CelebrationOverlay/);
+    // Must explicitly tell LLM not to import from ./components/*
+    expect(prompt).toMatch(/DO NOT EXIST|NEVER import/i);
+    expect(prompt).toMatch(/components.*does not exist|NO component directory/i);
+  });
+
+  it("includes available CSS design system classes", () => {
+    const prompt = buildSystemPrompt();
+    expect(prompt).toMatch(/\.tool-container/);
+    expect(prompt).toMatch(/\.card-interactive/);
+    expect(prompt).toMatch(/\.btn-primary/);
   });
 
   it("includes write_file tool instruction", () => {
