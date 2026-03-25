@@ -50,14 +50,26 @@ export function BuilderPage() {
     onFileComplete: writeFile,
   });
 
+  const handleGenerate = (prompt: string) => {
+    lastPromptRef.current = prompt;
+    generate(prompt);
+  };
+
+  const handleRetry = () => {
+    if (lastPromptRef.current) {
+      generate(lastPromptRef.current);
+    }
+  };
+
   // Auto-submit prompt from URL query param (e.g., from template chips)
   const promptSubmitted = useRef(false);
+  const lastPromptRef = useRef<string>("");
   const promptFromUrl = searchParams.get("prompt");
 
   useEffect(() => {
     if (promptFromUrl && status === "idle" && !promptSubmitted.current) {
       promptSubmitted.current = true;
-      generate(decodeURIComponent(promptFromUrl));
+      handleGenerate(decodeURIComponent(promptFromUrl));
       router.replace("/builder");
     }
   }, [promptFromUrl, status, generate, router]);
@@ -113,7 +125,8 @@ export function BuilderPage() {
                 status={status}
                 blueprint={blueprint}
                 error={error}
-                onGenerate={generate}
+                onGenerate={handleGenerate}
+                onRetry={handleRetry}
                 streamingText={streamingText}
                 activities={activities}
               />

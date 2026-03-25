@@ -64,7 +64,7 @@ function SystemMessage({ content }: { content: string }) {
 }
 
 const ACTIVITY_ICONS: Record<Activity["type"], React.ReactNode> = {
-  thinking: <Loader2 className="h-4 w-4 animate-spin text-primary" />,
+  thinking: <Loader2 className="h-4 w-4 animate-spin text-primary" aria-label="Loading" />,
   writing_file: <FileCode2 className="h-4 w-4 animate-pulse text-amber-500" />,
   file_written: <FileCode2 className="h-4 w-4 text-green-600" />,
   complete: <CheckCircle2 className="h-4 w-4 text-green-600" />,
@@ -143,7 +143,7 @@ const ProgressSteps = memo(function ProgressSteps({ activities }: { activities: 
             {i < activeIdx ? (
               <CheckCircle2 className="h-3.5 w-3.5" />
             ) : i === activeIdx ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              <Loader2 className="h-3.5 w-3.5 animate-spin" aria-label="Loading" />
             ) : (
               i + 1
             )}
@@ -180,6 +180,7 @@ interface ChatPanelProps {
   blueprint: TherapyBlueprint | null;
   error: string | null;
   onGenerate: (prompt: string) => void;
+  onRetry?: () => void;
   streamingText: string;
   activities: Activity[];
 }
@@ -190,6 +191,7 @@ export function ChatPanel({
   blueprint,
   error,
   onGenerate,
+  onRetry,
   streamingText,
   activities,
 }: ChatPanelProps) {
@@ -287,7 +289,7 @@ export function ChatPanel({
           {/* Generating indicator when no streaming text yet */}
           {isGenerating && !streamingText && activities.length === 0 && (
             <div className="flex items-center gap-2 py-2">
-              <Loader2 className="h-4 w-4 animate-spin text-primary" />
+              <Loader2 className="h-4 w-4 animate-spin text-primary" aria-label="Loading" />
               <span className="text-sm text-on-surface-variant">
                 Starting generation...
               </span>
@@ -316,6 +318,16 @@ export function ChatPanel({
                 Something went wrong
               </p>
               <p className="mt-1 text-xs text-destructive/80">{error}</p>
+              {onRetry && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="mt-2 text-destructive hover:text-destructive"
+                  onClick={onRetry}
+                >
+                  Retry
+                </Button>
+              )}
             </div>
           )}
 
@@ -351,7 +363,7 @@ export function ChatPanel({
             className="shrink-0"
           >
             {isGenerating ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
+              <Loader2 className="h-4 w-4 animate-spin" aria-label="Loading" />
             ) : isLive ? (
               <Send className="h-4 w-4" />
             ) : (
