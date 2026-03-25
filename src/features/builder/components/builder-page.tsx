@@ -71,7 +71,7 @@ export function BuilderPage() {
         onPublish={() => setPublishModalOpen(true)}
       />
 
-      <div className="flex-1 bg-surface-container-low p-2">
+      <div className="min-h-0 flex-1 bg-surface-container-low p-2">
         <ResizablePanelGroup orientation="horizontal" className="h-full">
           <ResizablePanel defaultSize={30} minSize={20}>
             <div className="h-full overflow-hidden rounded-2xl bg-surface-container-lowest">

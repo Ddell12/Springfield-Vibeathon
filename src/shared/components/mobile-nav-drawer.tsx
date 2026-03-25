@@ -30,7 +30,7 @@ const NAV_ITEMS = [
   { icon: Home, label: "Home", href: "/dashboard" },
   { icon: Sparkles, label: "Builder", href: "/builder" },
   { icon: LayoutGrid, label: "Templates", href: "/dashboard?tab=templates" },
-  { icon: FolderOpen, label: "My Tools", href: "/dashboard?tab=my-projects" },
+  { icon: FolderOpen, label: "My Apps", href: "/dashboard?tab=my-projects" },
 ] as const;
 
 function isNavActive(href: string, pathname: string, tab: string | null): boolean {

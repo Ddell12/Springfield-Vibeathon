@@ -13,7 +13,7 @@ export function ProjectsGrid({
     return (
       <EmptyState
         variant="no-projects"
-        title="No tools yet"
+        title="No apps yet"
         description="Describe what your child needs, or browse templates to get started."
         primaryAction={{ label: "Start Building", href: "/builder" }}
         secondaryAction={{ label: "Browse Templates", href: "/dashboard?tab=templates" }}

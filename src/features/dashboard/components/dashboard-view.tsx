@@ -161,7 +161,7 @@ export function DashboardView() {
               value="my-projects"
               className="pb-4 font-body text-sm text-on-surface-variant hover:text-primary-container"
             >
-              My projects
+              My Apps
             </TabsTrigger>
             <TabsTrigger
               value="shared"
@@ -195,7 +195,7 @@ export function DashboardView() {
           <TabsContent value="my-projects">
             <EmptyState
               variant="no-projects"
-              title="No tools yet"
+              title="No apps yet"
               description="Describe what your child needs, or browse templates to get started."
               primaryAction={{ label: "Start Building", href: "/builder" }}
               secondaryAction={{ label: "Browse Templates", href: "/dashboard?tab=templates" }}
@@ -206,7 +206,7 @@ export function DashboardView() {
             <EmptyState
               variant="no-shared"
               title="Nothing shared with you yet"
-              description="When someone shares a tool with you, it will appear here."
+              description="When someone shares an app with you, it will appear here."
               secondaryAction={{ label: "Explore Templates", href: "/dashboard?tab=templates" }}
             />
           </TabsContent>

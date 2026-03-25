@@ -6,14 +6,13 @@ import {
   Monitor,
   Smartphone,
   Share2,
-  Tablet,
 } from "lucide-react";
 import Link from "next/link";
 
 import { cn } from "@/core/utils";
 import { Button } from "@/shared/components/ui/button";
 
-export type DeviceSize = "mobile" | "tablet" | "desktop";
+export type DeviceSize = "mobile" | "desktop";
 export type ViewMode = "preview" | "code";
 
 interface BuilderToolbarProps {
@@ -29,7 +28,6 @@ interface BuilderToolbarProps {
 
 const DEVICE_OPTIONS: { key: DeviceSize; icon: typeof Smartphone; label: string }[] = [
   { key: "mobile", icon: Smartphone, label: "Mobile" },
-  { key: "tablet", icon: Tablet, label: "Tablet" },
   { key: "desktop", icon: Monitor, label: "Desktop" },
 ];
 
