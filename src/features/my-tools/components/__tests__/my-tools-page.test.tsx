@@ -41,9 +41,6 @@ const mockSession = {
   title: "My Schedule",
   query: "Build a visual schedule",
   state: "complete" as const,
-  currentPhaseIndex: 3,
-  phasesRemaining: 0,
-  mvpGenerated: true,
 };
 
 describe("MyToolsPage", () => {
