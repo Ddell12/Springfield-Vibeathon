@@ -128,11 +128,11 @@ function isValidFilePath(path: string): boolean {
   // Only allow alphanumeric, hyphens, underscores, dots, and forward slashes
   if (!/^[a-zA-Z0-9\-_.\/]+$/.test(path)) return false;
 
-  // No path traversal sequences
-  if (path.includes("..")) return false;
+  // No path traversal sequences or malformed double slashes
+  if (path.includes("..") || path.includes("//")) return false;
 
   // Must end with a supported extension
-  if (!/\.(tsx|ts|css|json|js)$/.test(path)) return false;
+  if (!/\.(tsx|ts|css|json|cjs|js)$/.test(path)) return false;
 
   return true;
 }
@@ -251,7 +251,7 @@ export async function POST(request: Request): Promise<Response> {
               case "write_file": {
                 const path = typeof input.path === "string" ? input.path : "";
                 const contents = typeof input.contents === "string" ? input.contents : "";
-                if (path && !isValidFilePath(path)) {
+                if (!isValidFilePath(path)) {
                   toolResults.push({
                     type: "tool_result",
                     tool_use_id: block.id,
