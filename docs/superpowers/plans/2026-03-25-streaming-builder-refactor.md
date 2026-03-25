@@ -1014,25 +1014,47 @@ export async function POST(req: Request) {
           ],
         });
 
+        // Create sandbox in parallel with LLM call if not provided
+        let resolvedSandboxId = sandboxId;
+        let resolvedPreviewUrl = previewUrl;
+        const sandboxPromise = sandboxId
+          ? Promise.resolve({ sandboxId, previewUrl })
+          : fetch(new URL("/api/sandbox", req.url).origin + "/api/sandbox", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ action: "create" }),
+            }).then((r) => r.json() as Promise<{ sandboxId: string; previewUrl: string }>);
+
         const collectedFiles: { path: string; contents: string }[] = [];
         let version = 1;
+        let textAccumulator = "";
 
+        // Stream events — emit file_delta for live code display
         for await (const event of response) {
-          // Handle tool use completions
-          if (event.type === "content_block_stop") {
-            const block = (response as any).currentMessage?.content?.find(
-              (b: any) => b.type === "tool_use" && b.name === "write_file"
+          if (
+            event.type === "content_block_delta" &&
+            event.delta.type === "input_json_delta"
+          ) {
+            // Tool input streaming — emit file_delta for live typing effect
+            controller.enqueue(
+              encoder.encode(sseEncode("file_delta", { partial: event.delta.partial_json }))
             );
-            // Process completed tool calls in the finalMessage
           }
 
-          // Stream text deltas for blueprint extraction
-          if (event.type === "text" || event.type === "content_block_delta") {
-            // Text content may contain blueprint JSON — collect it
+          if (
+            event.type === "content_block_delta" &&
+            event.delta.type === "text_delta"
+          ) {
+            textAccumulator += event.delta.text;
           }
         }
 
-        // Process final message
+        // Ensure sandbox is ready before writing files
+        const sbx = await sandboxPromise;
+        resolvedSandboxId = sbx.sandboxId;
+        resolvedPreviewUrl = sbx.previewUrl;
+
+        // Process final message — write completed files to sandbox
         const finalMessage = await response.finalMessage();
 
         for (const block of finalMessage.content) {
@@ -1041,20 +1063,22 @@ export async function POST(req: Request) {
             const file = { path: input.filePath, contents: input.contents };
             collectedFiles.push(file);
 
-            // Write to sandbox if available
-            if (sandboxId) {
-              try {
-                const sbxRes = await fetch(`${process.env.NEXT_PUBLIC_APP_URL ?? ""}/api/sandbox`, {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ action: "write_files", sandboxId, files: [file] }),
-                });
-                if (!sbxRes.ok) {
-                  console.warn("Sandbox write failed:", await sbxRes.text());
-                }
-              } catch (e) {
-                console.warn("Sandbox write error:", e);
+            // Write to sandbox
+            try {
+              const sbxRes = await fetch(new URL("/api/sandbox", req.url).origin + "/api/sandbox", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  action: "write_files",
+                  sandboxId: resolvedSandboxId,
+                  files: [file],
+                }),
+              });
+              if (!sbxRes.ok) {
+                console.warn("Sandbox write failed:", await sbxRes.text());
               }
+            } catch (e) {
+              console.warn("Sandbox write error:", e);
             }
 
             // Persist to Convex
@@ -1093,13 +1117,17 @@ export async function POST(req: Request) {
         }
 
         // Mark session as live
-        if (sandboxId && previewUrl) {
-          await convex.mutation(api.sessions.setLive, { sessionId, sandboxId, previewUrl });
-        }
+        await convex.mutation(api.sessions.setLive, {
+          sessionId,
+          sandboxId: resolvedSandboxId,
+          previewUrl: resolvedPreviewUrl,
+        });
 
         controller.enqueue(encoder.encode(sseEncode("status", { status: "live" })));
         controller.enqueue(encoder.encode(sseEncode("done", {
-          files: collectedFiles, sandboxId, previewUrl,
+          files: collectedFiles,
+          sandboxId: resolvedSandboxId,
+          previewUrl: resolvedPreviewUrl,
         })));
         controller.close();
       } catch (error) {
@@ -1121,24 +1149,20 @@ export async function POST(req: Request) {
 }
 ```
 
-**Note:** This route needs a `messages.create` mutation. Check if `convex/messages.ts` exists and has a `create` mutation. If not, add one in this step:
+- [ ] **Step 5: Change messages.create from internalMutation to public mutation**
+
+The existing `convex/messages.ts` exports `create` as `internalMutation`. The generate route calls it via `ConvexHttpClient` which can only access public `mutation`s. Change line 5 of `convex/messages.ts` from `internalMutation` to `mutation`:
 
 ```typescript
-// Add to convex/messages.ts if missing
+// convex/messages.ts — change this:
+export const create = internalMutation({
+// to this:
 export const create = mutation({
-  args: {
-    sessionId: v.id("sessions"),
-    role: v.union(v.literal("user"), v.literal("assistant"), v.literal("system")),
-    content: v.string(),
-    timestamp: v.number(),
-  },
-  handler: async (ctx, args) => {
-    return await ctx.db.insert("messages", args);
-  },
-});
 ```
 
-- [ ] **Step 5: Commit**
+Also ensure the import at line 3 includes `mutation` (it already does: `import { internalMutation, mutation, query } from "./_generated/server"`).
+
+- [ ] **Step 6: Commit**
 
 ```bash
 git add src/app/api/generate/route.ts src/app/api/sandbox/route.ts src/app/api/__tests__/generate.test.ts
@@ -1448,13 +1472,13 @@ export function useSessionFiles(sessionId: Id<"sessions"> | null) {
 
 - [ ] **Step 2: Rewrite builder-page.tsx**
 
-Remove PhaseTimeline import/usage. Add useStreaming hook. Wire up the simultaneous sandbox-create + generate flow on submit.
+Remove PhaseTimeline import/usage. Add useStreaming hook. Sandbox creation is handled server-side by the generate route (it creates the sandbox in parallel with the LLM call if no sandboxId is provided). The client just sends the request and listens for SSE events.
 
 ```tsx
 "use client";
 import { useMutation } from "convex/react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useCallback, useRef, useState } from "react";
+import { Suspense, useCallback, useState } from "react";
 
 import {
   ResizableHandle,
@@ -1479,7 +1503,6 @@ function BuilderPageInner() {
   const persistedFiles = useSessionFiles(sessionId);
   const createSession = useMutation(api.sessions.create);
   const streaming = useStreaming();
-  const sandboxRef = useRef<{ id: string; url: string } | null>(null);
 
   const handleSubmit = useCallback(async (prompt: string) => {
     // Create session if new
@@ -1490,32 +1513,21 @@ function BuilderPageInner() {
       router.replace(`/builder?session=${sid}`);
     }
 
-    // Start sandbox creation + LLM generation simultaneously
-    const sandboxPromise = sandboxRef.current
-      ? Promise.resolve(sandboxRef.current)
-      : fetch("/api/sandbox", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "create" }),
-        }).then((r) => r.json());
-
     const currentFiles = persistedFiles?.map((f) => ({ path: f.path, contents: f.contents })) ?? [];
 
-    // Don't await sandbox — start generating immediately
-    sandboxPromise.then((sbx: { sandboxId: string; previewUrl: string }) => {
-      sandboxRef.current = { id: sbx.sandboxId, url: sbx.previewUrl };
-    });
-
+    // Generate route handles sandbox creation server-side if sandboxId is not provided
+    // On iterations, session.sandboxId is already set from the first generation
     streaming.generate({
       sessionId: sid,
       prompt,
       currentFiles,
-      sandboxId: sandboxRef.current?.id,
-      previewUrl: sandboxRef.current?.url,
+      sandboxId: session?.sandboxId ?? undefined,
+      previewUrl: session?.previewUrl ?? undefined,
     });
-  }, [sessionId, persistedFiles, createSession, router, streaming]);
+  }, [sessionId, session, persistedFiles, createSession, router, streaming]);
 
-  const previewUrl = session?.previewUrl ?? sandboxRef.current?.url ?? null;
+  // previewUrl comes from Convex (set by generate route's setLive mutation)
+  const previewUrl = session?.previewUrl ?? null;
 
   return (
     <div className="flex h-[calc(100vh-64px)] flex-col bg-surface">
