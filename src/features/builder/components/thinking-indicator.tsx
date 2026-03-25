@@ -17,12 +17,15 @@ export function ThinkingIndicator({ isThinking, startTime }: ThinkingIndicatorPr
       return;
     }
 
-    setElapsed(0);
+    // Reset and start counting from the beginning of this thinking session
     const interval = setInterval(() => {
       setElapsed(Math.floor((Date.now() - startTime) / 1000));
     }, 1000);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      setElapsed(0);
+    };
   }, [isThinking, startTime]);
 
   if (!isThinking && elapsed === 0) return null;

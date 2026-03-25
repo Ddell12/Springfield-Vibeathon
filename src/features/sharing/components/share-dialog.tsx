@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
 import { Copy, Share2, X } from "lucide-react";
+import { useState } from "react";
 import QRCode from "react-qr-code";
-import { toast } from "sonner";
 
+import { copyToClipboard } from "@/core/clipboard";
 import { cn } from "@/core/utils";
 import { Button } from "@/shared/components/ui/button";
 import {
@@ -18,7 +18,7 @@ type ShareDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   shareSlug: string;
-  toolTitle: string;
+  appTitle: string;
   publishedUrl?: string;
 };
 
@@ -26,7 +26,7 @@ export function ShareDialog({
   open,
   onOpenChange,
   shareSlug,
-  toolTitle,
+  appTitle,
   publishedUrl,
 }: ShareDialogProps) {
   const [activeTab, setActiveTab] = useState<"preview" | "published">("preview");
@@ -36,12 +36,15 @@ export function ShareDialog({
   const activeUrl = activeTab === "published" && publishedUrl ? publishedUrl : previewUrl;
 
   async function handleCopy() {
-    await navigator.clipboard.writeText(activeUrl);
-    toast("Link copied!");
+    await copyToClipboard(activeUrl, "Link copied!");
   }
 
   async function handleShare() {
-    await navigator.share({ title: toolTitle, url: activeUrl });
+    try {
+      await navigator.share({ title: appTitle, url: activeUrl });
+    } catch {
+      // User cancelled or share not supported — no-op
+    }
   }
 
   return (
@@ -50,7 +53,7 @@ export function ShareDialog({
         {/* Header */}
         <DialogHeader className="flex flex-row items-center justify-between">
           <DialogTitle className="font-headline font-semibold text-lg text-on-surface">
-            Share &apos;{toolTitle}&apos;
+            Share &apos;{appTitle}&apos;
           </DialogTitle>
           <button
             type="button"

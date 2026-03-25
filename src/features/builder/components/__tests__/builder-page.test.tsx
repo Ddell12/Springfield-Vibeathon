@@ -26,6 +26,9 @@ vi.mock("../../hooks/use-streaming", () => ({
     blueprint: null,
     error: null,
     sessionId: null,
+    streamingText: "",
+    activities: [],
+    previewUrl: null,
   }),
 }));
 
@@ -46,12 +49,11 @@ describe("BuilderPage — three-panel layout", () => {
     render(<BuilderPage />);
   });
 
-  it("renders 3 resizable panels", () => {
+  it("renders at least 2 resizable panels in default preview mode", () => {
     render(<BuilderPage />);
-    // The three panels are: chat, code, preview
-    // Resizable panel wrappers use data-panel attribute
+    // Default viewMode is "preview" which shows chat + preview (2 panels)
     const panels = document.querySelectorAll("[data-panel]");
-    expect(panels.length).toBeGreaterThanOrEqual(3);
+    expect(panels.length).toBeGreaterThanOrEqual(2);
   });
 
   it("renders the chat panel area with a text input", () => {
@@ -67,10 +69,11 @@ describe("BuilderPage — three-panel layout", () => {
     expect(timeline).toBeNull();
   });
 
-  it("passes streaming state to child panels — shows preview empty state when idle", () => {
-    render(<BuilderPage />);
-    // When idle with no files, preview should show empty state message
-    expect(screen.getByText(/booting preview environment/i)).toBeTruthy();
+  it("shows preview panel area with loading state when idle + booting", () => {
+    const { container } = render(<BuilderPage />);
+    // Preview panel shows a skeleton pulse when WebContainer is booting
+    const pulse = container.querySelector(".animate-pulse");
+    expect(pulse).toBeTruthy();
   });
 
   it("renders without crashing when sessionId is in URL", () => {
@@ -80,12 +83,9 @@ describe("BuilderPage — three-panel layout", () => {
     mockGet.mockReturnValue(null);
   });
 
-  it("renders a code panel area", () => {
+  it("renders the builder toolbar", () => {
     render(<BuilderPage />);
-    // Code panel should show an empty state or file list
-    const codeIndicator =
-      screen.queryByText(/code will appear|no files|start building/i) ??
-      screen.queryByText(/App\.tsx/);
-    expect(codeIndicator).toBeTruthy();
+    // Toolbar should show the project name (may appear in multiple spots)
+    expect(screen.getAllByText("Untitled App").length).toBeGreaterThan(0);
   });
 });

@@ -1,6 +1,6 @@
-import { fireEvent,render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach,describe, expect, test, vi } from "vitest";
+import { beforeEach, describe, expect, test, vi } from "vitest";
 
 import { ShareDialog } from "../share-dialog";
 
@@ -13,7 +13,10 @@ vi.mock("react-qr-code", () => ({
 
 // Mock sonner toast to avoid DOM side effects in jsdom
 vi.mock("sonner", () => ({
-  toast: vi.fn(),
+  toast: Object.assign(vi.fn(), {
+    success: vi.fn(),
+    error: vi.fn(),
+  }),
 }));
 
 // Mock navigator.clipboard
@@ -34,7 +37,7 @@ const defaultProps = {
   open: true,
   onOpenChange: vi.fn(),
   shareSlug: "abc1234567",
-  toolTitle: "Morning Routine",
+  appTitle: "Morning Routine",
 };
 
 describe("ShareDialog", () => {
@@ -49,12 +52,11 @@ describe("ShareDialog", () => {
     expect(screen.getByText(/Morning Routine/i)).toBeInTheDocument();
   });
 
-  test("renders the share URL in a readonly input containing the share slug path", () => {
+  test("displays the share URL containing the share slug path", () => {
     render(<ShareDialog {...defaultProps} />);
 
-    const input = screen.getByRole("textbox") as HTMLInputElement;
-    expect(input).toHaveAttribute("readonly");
-    expect(input.value).toContain("/tool/abc1234567");
+    // URL is displayed as text in a span element, not an input
+    expect(screen.getByText(/\/tool\/abc1234567/)).toBeInTheDocument();
   });
 
   test("Copy Link button calls navigator.clipboard.writeText with correct URL", async () => {
@@ -141,7 +143,7 @@ describe("ShareDialog", () => {
     expect(screen.getByText(/published link/i)).toBeInTheDocument();
   });
 
-  test("'Published Link' tab displays the Vercel URL", async () => {
+  test("'Published Link' tab displays the Vercel URL when clicked", async () => {
     const user = userEvent.setup();
     render(
       <ShareDialog
@@ -154,13 +156,11 @@ describe("ShareDialog", () => {
     const publishedTab = screen.getByText(/published link/i);
     await user.click(publishedTab);
 
-    const input = screen.getAllByRole("textbox").find(
-      (el) => (el as HTMLInputElement).value?.includes("vercel.app")
-    );
-    expect(input).toBeDefined();
+    // URL is displayed as text in a span
+    expect(screen.getByText(/vercel\.app/)).toBeInTheDocument();
   });
 
-  test("switching tabs shows different URLs", async () => {
+  test("switching tabs changes the displayed URL", async () => {
     const user = userEvent.setup();
     render(
       <ShareDialog
@@ -169,13 +169,14 @@ describe("ShareDialog", () => {
       />
     );
 
-    // Preview link tab should show the slug URL by default
-    const previewTab = screen.getByText(/preview link/i);
-    await user.click(previewTab);
+    // Preview link tab shows the slug URL by default
+    expect(screen.getByText(/\/tool\/abc1234567/)).toBeInTheDocument();
 
-    const slugInput = screen.getAllByRole("textbox").find(
-      (el) => (el as HTMLInputElement).value?.includes("/tool/abc1234567")
-    );
-    expect(slugInput).toBeDefined();
+    // Switch to Published Link tab
+    const publishedTab = screen.getByText(/published link/i);
+    await user.click(publishedTab);
+
+    // Now the Vercel URL should be displayed
+    expect(screen.getByText(/vercel\.app/)).toBeInTheDocument();
   });
 });

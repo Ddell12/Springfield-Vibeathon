@@ -3,6 +3,7 @@
 import { Check, Copy, ExternalLink, Link, QrCode, Share2 } from "lucide-react";
 import { toast } from "sonner";
 
+import { copyToClipboard } from "@/core/clipboard";
 import { cn } from "@/core/utils";
 import { Button } from "@/shared/components/ui/button";
 import {
@@ -28,8 +29,7 @@ export function PublishSuccessModal({
   onBackToBuilder,
 }: PublishSuccessModalProps) {
   async function handleCopyUrl() {
-    await navigator.clipboard.writeText(publishedUrl);
-    toast("Link copied!");
+    await copyToClipboard(publishedUrl, "Link copied!");
   }
 
   return (
@@ -120,11 +120,14 @@ export function PublishSuccessModal({
           <button
             type="button"
             onClick={async () => {
-              if (navigator.share) {
-                await navigator.share({ url: publishedUrl, title: projectName });
-              } else {
-                await navigator.clipboard.writeText(publishedUrl);
-                toast("Link copied!");
+              try {
+                if (navigator.share) {
+                  await navigator.share({ url: publishedUrl, title: projectName });
+                } else {
+                  await copyToClipboard(publishedUrl, "Link copied!");
+                }
+              } catch {
+                // User cancelled share, or clipboard access denied — no-op
               }
             }}
             className="flex flex-col items-center gap-3 py-2 group"

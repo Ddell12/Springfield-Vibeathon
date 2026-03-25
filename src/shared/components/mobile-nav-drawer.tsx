@@ -1,18 +1,11 @@
 "use client";
 
-import {
-  FolderOpen,
-  Home,
-  LayoutGrid,
-  Plus,
-  Settings,
-  Sparkles,
-  X,
-} from "lucide-react";
+import { Plus, Settings, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 
 import { cn } from "@/core/utils";
+import { NAV_ITEMS, isNavActive } from "@/shared/lib/navigation";
 import { Button } from "@/shared/components/ui/button";
 import {
   Sheet,
@@ -24,27 +17,6 @@ import {
 interface MobileNavDrawerProps {
   readonly open: boolean;
   readonly onOpenChange: (open: boolean) => void;
-}
-
-const NAV_ITEMS = [
-  { icon: Home, label: "Home", href: "/dashboard" },
-  { icon: Sparkles, label: "Builder", href: "/builder" },
-  { icon: LayoutGrid, label: "Templates", href: "/dashboard?tab=templates" },
-  { icon: FolderOpen, label: "My Apps", href: "/dashboard?tab=my-projects" },
-] as const;
-
-function isNavActive(href: string, pathname: string, tab: string | null): boolean {
-  if (href === "/dashboard") {
-    return pathname === "/dashboard" && (!tab || tab === "recent");
-  }
-  if (href === "/builder") {
-    return pathname.startsWith("/builder");
-  }
-  if (href.startsWith("/dashboard?tab=")) {
-    const hrefTab = new URL(href, "http://x").searchParams.get("tab");
-    return pathname === "/dashboard" && tab === hrefTab;
-  }
-  return pathname === href;
 }
 
 export function MobileNavDrawer({ open, onOpenChange }: MobileNavDrawerProps) {

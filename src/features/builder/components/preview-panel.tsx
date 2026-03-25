@@ -1,15 +1,16 @@
 "use client";
 
-import { Sparkles } from "lucide-react";
+import { Loader2, Sparkles } from "lucide-react";
 
 import { cn } from "@/core/utils";
 
-import type { DeviceSize } from "./builder-toolbar";
+import type { StreamingStatus } from "../hooks/use-streaming";
 import type { WebContainerStatus } from "../hooks/use-webcontainer";
+import type { DeviceSize } from "./builder-toolbar";
 
 interface PreviewPanelProps {
   previewUrl: string | null;
-  state: string;
+  state: StreamingStatus;
   wcStatus: WebContainerStatus;
   error?: string;
   deviceSize?: DeviceSize;
@@ -32,7 +33,7 @@ export function PreviewPanel({ previewUrl, state, wcStatus, error, deviceSize = 
               src={previewUrl!}
               className="h-full w-full bg-white"
               title="App Preview"
-              sandbox="allow-scripts allow-same-origin"
+              sandbox="allow-scripts"
             />
           </div>
         ) : wcStatus === "booting" ? (
@@ -42,22 +43,7 @@ export function PreviewPanel({ previewUrl, state, wcStatus, error, deviceSize = 
           </div>
         ) : wcStatus === "installing" || isGenerating ? (
           <div role="status" className="flex flex-col items-center gap-3 text-center">
-            <svg
-              className="h-5 w-5 animate-spin text-primary"
-              viewBox="0 0 16 16"
-              fill="none"
-              aria-hidden="true"
-            >
-              <path
-                d="M8 1.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Z"
-                fill="currentColor"
-                opacity={0.2}
-              />
-              <path
-                d="M8 0a8 8 0 0 1 8 8h-1.5A6.5 6.5 0 0 0 8 1.5V0Z"
-                fill="currentColor"
-              />
-            </svg>
+            <Loader2 className="h-6 w-6 animate-spin text-primary" />
             <p className="text-sm text-on-surface-variant">Setting up your preview...</p>
           </div>
         ) : isFailed ? (

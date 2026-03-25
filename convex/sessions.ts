@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 
 import { mutation, query } from "./_generated/server";
+import { SESSION_STATES } from "./lib/session_states";
 
 export const create = mutation({
   args: {
@@ -13,7 +14,7 @@ export const create = mutation({
       userId: args.userId,
       title: args.title,
       query: args.query,
-      state: "idle",
+      state: SESSION_STATES.IDLE,
     });
   },
 });
@@ -40,7 +41,7 @@ export const startGeneration = mutation({
   args: { sessionId: v.id("sessions") },
   handler: async (ctx, args) => {
     await ctx.db.patch(args.sessionId, {
-      state: "generating",
+      state: SESSION_STATES.GENERATING,
       stateMessage: "Generating your app...",
     });
   },
@@ -52,7 +53,7 @@ export const setLive = mutation({
   },
   handler: async (ctx, args) => {
     await ctx.db.patch(args.sessionId, {
-      state: "live",
+      state: SESSION_STATES.LIVE,
       stateMessage: "Live",
     });
   },
@@ -65,7 +66,7 @@ export const setFailed = mutation({
   },
   handler: async (ctx, args) => {
     await ctx.db.patch(args.sessionId, {
-      state: "failed",
+      state: SESSION_STATES.FAILED,
       error: args.error,
     });
   },

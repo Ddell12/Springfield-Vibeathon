@@ -4,13 +4,6 @@ import { describe, expect, it } from "vitest";
 
 import { PreviewPanel } from "../preview-panel";
 
-// Props shape after WebContainer refactor:
-// PreviewPanel({ previewUrl, state, wcStatus, error })
-// - previewUrl: string | null — from WebContainer, not session
-// - state: streaming state from useStreaming
-// - wcStatus: "booting" | "installing" | "ready" | "error"
-// - error: string | undefined
-
 describe("PreviewPanel — WebContainer refactor contract", () => {
   it("renders without crashing with null previewUrl", () => {
     render(<PreviewPanel previewUrl={null} state="idle" wcStatus="booting" />);
@@ -38,18 +31,25 @@ describe("PreviewPanel — WebContainer refactor contract", () => {
       />
     );
     const iframe = screen.getByTitle(/preview/i);
-    // src is set (truthy) — does NOT need to be an e2b domain
     expect((iframe as HTMLIFrameElement).src).toBeTruthy();
   });
 
-  it("wcStatus='booting' renders 'Booting' text", () => {
-    render(<PreviewPanel previewUrl={null} state="idle" wcStatus="booting" />);
-    expect(screen.getByText(/booting/i)).toBeTruthy();
+  it("wcStatus='booting' renders a skeleton/loading state", () => {
+    const { container } = render(
+      <PreviewPanel previewUrl={null} state="idle" wcStatus="booting" />
+    );
+    // Booting state shows animated pulse skeleton
+    const pulseElement = container.querySelector(".animate-pulse");
+    expect(pulseElement).toBeTruthy();
   });
 
-  it("wcStatus='installing' renders 'Installing' text", () => {
-    render(<PreviewPanel previewUrl={null} state="generating" wcStatus="installing" />);
-    expect(screen.getByText(/installing/i)).toBeTruthy();
+  it("wcStatus='installing' renders a spinner with setup text", () => {
+    render(
+      <PreviewPanel previewUrl={null} state="generating" wcStatus="installing" />
+    );
+    // Installing state shows "Setting up your preview..." with spinner
+    expect(screen.getByText(/setting up/i)).toBeTruthy();
+    expect(screen.getByRole("status")).toBeTruthy();
   });
 
   it("wcStatus='ready' with non-null previewUrl renders iframe", () => {
@@ -74,20 +74,22 @@ describe("PreviewPanel — WebContainer refactor contract", () => {
     );
     const spinner =
       screen.queryByRole("status") ??
-      screen.queryByText(/generating|building|creating|installing/i) ??
+      screen.queryByText(/generating|building|creating|installing|setting up/i) ??
       document.querySelector(".animate-pulse, .animate-spin");
     expect(spinner).toBeTruthy();
   });
 
-  it("shows empty state when no previewUrl and state is 'idle'", () => {
-    render(
+  it("shows empty state when no previewUrl and wcStatus is booting", () => {
+    const { container } = render(
       <PreviewPanel
         previewUrl={null}
         state="idle"
         wcStatus="booting"
       />
     );
-    expect(screen.getByText(/booting preview environment/i)).toBeTruthy();
+    // Booting shows skeleton pulse, not iframe
+    expect(container.querySelector(".animate-pulse")).toBeTruthy();
+    expect(screen.queryByTitle(/preview/i)).toBeNull();
   });
 
   it("shows failed state message when state is 'failed'", () => {
@@ -116,15 +118,19 @@ describe("PreviewPanel — WebContainer refactor contract", () => {
     expect(retryButton).toBeNull();
   });
 
-  it("renders responsive size toggle buttons when live", () => {
-    render(
+  it("responsive device sizing is controlled via deviceSize prop", () => {
+    // Device size toggle buttons live in BuilderToolbar, not PreviewPanel.
+    // PreviewPanel accepts deviceSize prop and adjusts iframe width.
+    const { container } = render(
       <PreviewPanel
         previewUrl="http://localhost:5173"
         state="live"
         wcStatus="ready"
+        deviceSize="mobile"
       />
     );
-    expect(screen.getByRole("button", { name: /mobile/i })).toBeTruthy();
-    expect(screen.getByRole("button", { name: /desktop/i })).toBeTruthy();
+    // Mobile device size constrains iframe container to 375px
+    const mobileWrapper = container.querySelector(".w-\\[375px\\]");
+    expect(mobileWrapper).toBeTruthy();
   });
 });

@@ -11,18 +11,13 @@ export default defineSchema({
     state: v.string(),
     stateMessage: v.optional(v.string()),
     error: v.optional(v.string()),
+    // Blueprint produced by the LLM from the user's initial description.
+    // Stored as v.any() because TherapyBlueprintSchema (src/features/builder/lib/schemas)
+    // is a Zod schema — we validate in application code, not at the DB layer.
     blueprint: v.optional(v.any()),
-    sandboxId: v.optional(v.string()), // deprecated: kept for backward compat
+    sandboxId: v.optional(v.string()), // deprecated: kept for backward compat with setSandbox mutation + tests
     previewUrl: v.optional(v.string()), // deprecated: kept for backward compat
     publishedUrl: v.optional(v.string()),
-    // Legacy fields from old pipeline — kept for backward compat with existing data
-    currentPhaseIndex: v.optional(v.number()),
-    phasesRemaining: v.optional(v.number()),
-    mvpGenerated: v.optional(v.boolean()),
-    templateName: v.optional(v.string()),
-    blueprintId: v.optional(v.any()),
-    failureReason: v.optional(v.string()),
-    lastGoodState: v.optional(v.string()),
   }).index("by_user", ["userId"]),
 
   messages: defineTable({
@@ -38,10 +33,6 @@ export default defineSchema({
     path: v.string(),
     contents: v.string(),
     version: v.optional(v.number()),
-    // Legacy fields from old pipeline — kept for backward compat with existing data
-    phaseId: v.optional(v.any()),
-    purpose: v.optional(v.string()),
-    status: v.optional(v.string()),
   }).index("by_session", ["sessionId"])
     .index("by_session_path", ["sessionId", "path"]),
 
@@ -95,7 +86,6 @@ export default defineSchema({
     description: v.string(),
     category: v.string(),
     starterPrompt: v.string(),
-    exampleFragment: v.optional(v.any()),
     sortOrder: v.number(),
   })
     .index("by_category", ["category"])

@@ -1,16 +1,19 @@
 "use client";
 
+import { useQuery } from "convex/react";
 import { Bell, HelpCircle, Menu, Plus, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 
+import { api } from "../../../../convex/_generated/api";
 import { EmptyState } from "@/shared/components/empty-state";
 import { MobileNavDrawer } from "@/shared/components/mobile-nav-drawer";
+import { Button } from "@/shared/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/components/ui/tabs";
 
 import { MainPromptInput } from "./main-prompt-input";
-import { ProjectCard, type ProjectData } from "./project-card";
+import { ProjectCard } from "./project-card";
 import { TemplatesTab } from "./templates-tab";
 
 const TEMPLATE_CHIPS = [
@@ -20,34 +23,6 @@ const TEMPLATE_CHIPS = [
   "Social Story",
 ];
 
-// Placeholder projects for layout -- will be replaced with real data from Convex
-const SAMPLE_PROJECTS: ProjectData[] = [
-  {
-    id: "1",
-    title: "Morning Routine Schedule",
-    thumbnail: null,
-    updatedAt: Date.now() - 2 * 60 * 60 * 1000,
-    userInitial: "D",
-    userColor: "bg-tertiary-fixed text-on-surface",
-  },
-  {
-    id: "2",
-    title: "Calm Down Choices",
-    thumbnail: null,
-    updatedAt: Date.now() - 5 * 60 * 60 * 1000,
-    userInitial: "JD",
-    userColor: "bg-tertiary-fixed text-on-surface",
-  },
-  {
-    id: "3",
-    title: "Playground Safety Story",
-    thumbnail: null,
-    updatedAt: Date.now() - 24 * 60 * 60 * 1000,
-    userInitial: "M",
-    userColor: "bg-tertiary-fixed text-on-surface",
-  },
-];
-
 const VALID_TABS = ["recent", "my-projects", "shared", "templates"] as const;
 type TabValue = (typeof VALID_TABS)[number];
 
@@ -55,6 +30,7 @@ export function DashboardView() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const searchParams = useSearchParams();
   const router = useRouter();
+  const sessions = useQuery(api.sessions.list);
 
   const tabParam = searchParams.get("tab");
   const activeTab: TabValue = VALID_TABS.includes(tabParam as TabValue)
@@ -178,18 +154,44 @@ export function DashboardView() {
           </TabsList>
 
           <TabsContent value="recent">
-            <div className="grid grid-cols-1 gap-8 pb-20 md:grid-cols-2 lg:grid-cols-3">
-              {SAMPLE_PROJECTS.map((project, i) => (
-                <ProjectCard key={project.id} project={project} index={i} />
-              ))}
-            </div>
-            {/* Empty state hint */}
-            <div className="flex flex-col items-center justify-center pb-20 opacity-40">
-              <Sparkles size={32} className="mb-2" />
-              <p className="font-body text-sm">
-                Start by describing what you need — or pick a template above.
-              </p>
-            </div>
+            {sessions && sessions.length > 0 ? (
+              <div className="grid grid-cols-1 gap-8 pb-20 md:grid-cols-2 lg:grid-cols-3">
+                {sessions.map((session, i) => (
+                  <ProjectCard
+                    key={session._id}
+                    project={{
+                      id: session._id,
+                      title: session.title,
+                      thumbnail: null,
+                      updatedAt: session._creationTime,
+                      userInitial: session.title.charAt(0).toUpperCase(),
+                      userColor: "bg-tertiary-fixed text-on-surface",
+                    }}
+                    index={i}
+                  />
+                ))}
+              </div>
+            ) : sessions?.length === 0 ? (
+              <div className="flex flex-col items-center gap-4 py-12 text-center">
+                <div className="flex flex-col items-center justify-center pb-4 opacity-40">
+                  <Sparkles size={32} className="mb-2" />
+                </div>
+                <p className="text-on-surface-variant">No apps yet — describe what you'd like to build!</p>
+                <Link href="/builder">
+                  <Button>Create Your First App</Button>
+                </Link>
+              </div>
+            ) : (
+              /* Loading state */
+              <div className="grid grid-cols-1 gap-8 pb-20 md:grid-cols-2 lg:grid-cols-3">
+                {[0, 1, 2].map((i) => (
+                  <div
+                    key={i}
+                    className="h-64 animate-pulse rounded-2xl bg-surface-container-low"
+                  />
+                ))}
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="my-projects">

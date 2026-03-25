@@ -3,6 +3,17 @@ import { httpRouter } from "convex/server";
 import { internal } from "./_generated/api";
 import { httpAction } from "./_generated/server";
 
+const ALLOWED_ORIGINS = new Set([
+  "http://localhost:3000",
+  "http://localhost:3001",
+  "https://bridges-vibeathon.vercel.app",
+]);
+
+function getCorsOrigin(request: Request): string {
+  const origin = request.headers.get("Origin") ?? "";
+  return ALLOWED_ORIGINS.has(origin) ? origin : "";
+}
+
 const http = httpRouter();
 
 http.route({
@@ -32,7 +43,7 @@ http.route({
       status: 200,
       headers: {
         "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Origin": getCorsOrigin(request),
       },
     });
   }),
@@ -41,11 +52,11 @@ http.route({
 http.route({
   path: "/api/rag/search",
   method: "OPTIONS",
-  handler: httpAction(async (_ctx, _request) => {
+  handler: httpAction(async (_ctx, request) => {
     return new Response(null, {
       status: 204,
       headers: {
-        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Origin": getCorsOrigin(request),
         "Access-Control-Allow-Methods": "POST, OPTIONS",
         "Access-Control-Allow-Headers": "Content-Type",
       },

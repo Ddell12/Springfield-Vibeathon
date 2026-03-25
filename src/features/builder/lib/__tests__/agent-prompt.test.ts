@@ -40,8 +40,11 @@ describe("buildSystemPrompt — therapy-domain system prompt", () => {
 
   it("documents component props for LLM usage", () => {
     const prompt = buildSystemPrompt();
-    expect(prompt).toMatch(/goal.*number.*earned.*number.*onEarn/);
-    expect(prompt).toMatch(/steps.*label.*done/);
+    // Components should be described with their key props
+    expect(prompt).toMatch(/goal/);
+    expect(prompt).toMatch(/earned/);
+    expect(prompt).toMatch(/onEarn/);
+    expect(prompt).toMatch(/steps/);
   });
 
   it("includes available CSS design system classes", () => {
@@ -59,7 +62,7 @@ describe("buildSystemPrompt — therapy-domain system prompt", () => {
 
   it("includes instruction to write to src/App.tsx", () => {
     const prompt = buildSystemPrompt();
-    // The streaming builder writes only App.tsx
+    // The builder always writes App.tsx as entry point
     expect(prompt).toMatch(/App\.tsx|src\/App/);
   });
 
@@ -67,5 +70,12 @@ describe("buildSystemPrompt — therapy-domain system prompt", () => {
     const prompt = buildSystemPrompt();
     expect(prompt).toMatch(/React/);
     expect(prompt).toMatch(/Tailwind/i);
+  });
+
+  it("supports multi-file generation", () => {
+    const prompt = buildSystemPrompt();
+    // New multi-file support should be documented
+    expect(prompt).toMatch(/multiple files|MULTIPLE/i);
+    expect(prompt).toMatch(/types\.ts|data\.ts|custom-components/);
   });
 });

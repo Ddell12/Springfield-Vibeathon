@@ -1,0 +1,28 @@
+[    4003ms] [WARNING] The resource https://w-credentialless-staticblitz.com/fetch.worker.4c73681d.js was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally. @ https://stackblitz.com/headless?coep=credentialless&version=1.6.1:0
+[   22400ms] [WARNING] The resource https://w-credentialless-staticblitz.com/fetch.worker.4c73681d.js was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally. @ https://stackblitz.com/headless?coep=credentialless&version=1.6.1:0
+[   81269ms] [ERROR] Invalid hook call. Hooks can only be called inside of the body of a function component. This could happen for one of the following reasons:
+1. You might have mismatching versions of React and the renderer (such as React DOM)
+2. You might be breaking the Rules of Hooks
+3. You might have more than one copy of React in the same app
+See https://react.dev/link/invalid-hook-call for tips about how to debug and fix this problem. @ https://gqihe0qvkkdzfnah0h6udm3jh3nlo3-1tnf--5173--4c73681d.local-credentialless.webcontainer-api.io/.webcontainer@runtime.4c73681d.js:25
+[   81272ms] [ERROR] Invalid hook call. Hooks can only be called inside of the body of a function component. This could happen for one of the following reasons:
+1. You might have mismatching versions of React and the renderer (such as React DOM)
+2. You might be breaking the Rules of Hooks
+3. You might have more than one copy of React in the same app
+See https://react.dev/link/invalid-hook-call for tips about how to debug and fix this problem. @ https://gqihe0qvkkdzfnah0h6udm3jh3nlo3-1tnf--5173--4c73681d.local-credentialless.webcontainer-api.io/.webcontainer@runtime.4c73681d.js:25
+[   81274ms] TypeError: Cannot read properties of null (reading 'useMemo')
+    at exports.useMemo (https://gqihe0qvkkdzfnah0h6udm3jh3nlo3-1tnf--5173--4c73681d.local-credentialless.webcontainer-api.io/node_modules/.vite/deps/chunk-S73QDKPN.js?v=c001ce58:947:35)
+    at Provider (https://gqihe0qvkkdzfnah0h6udm3jh3nlo3-1tnf--5173--4c73681d.local-credentialless.webcontainer-api.io/node_modules/.vite/deps/@radix-ui_react-progress.js?v=ee814d0b:35:27)
+    at Object.react_stack_bottom_frame (https://gqihe0qvkkdzfnah0h6udm3jh3nlo3-1tnf--5173--4c73681d.local-credentialless.webcontainer-api.io/node_modules/.vite/deps/react-dom_client.js?v=8b0129be:18507:20)
+    at renderWithHooks (https://gqihe0qvkkdzfnah0h6udm3jh3nlo3-1tnf--5173--4c73681d.local-credentialless.webcontainer-api.io/node_modules/.vite/deps/react-dom_client.js?v=8b0129be:5652:24)
+    at updateFunctionComponent (https://gqihe0qvkkdzfnah0h6udm3jh3nlo3-1tnf--5173--4c73681d.local-credentialless.webcontainer-api.io/node_modules/.vite/deps/react-dom_client.js?v=8b0129be:7473:21)
+    at beginWork (https://gqihe0qvkkdzfnah0h6udm3jh3nlo3-1tnf--5173--4c73681d.local-credentialless.webcontainer-api.io/node_modules/.vite/deps/react-dom_client.js?v=8b0129be:8523:20)
+    at runWithFiberInDEV (https://gqihe0qvkkdzfnah0h6udm3jh3nlo3-1tnf--5173--4c73681d.local-credentialless.webcontainer-api.io/node_modules/.vite/deps/react-dom_client.js?v=8b0129be:995:72)
+    at performUnitOfWork (https://gqihe0qvkkdzfnah0h6udm3jh3nlo3-1tnf--5173--4c73681d.local-credentialless.webcontainer-api.io/node_modules/.vite/deps/react-dom_client.js?v=8b0129be:12559:98)
+    at workLoopSync (https://gqihe0qvkkdzfnah0h6udm3jh3nlo3-1tnf--5173--4c73681d.local-credentialless.webcontainer-api.io/node_modules/.vite/deps/react-dom_client.js?v=8b0129be:12422:43)
+    at renderRootSync (https://gqihe0qvkkdzfnah0h6udm3jh3nlo3-1tnf--5173--4c73681d.local-credentialless.webcontainer-api.io/node_modules/.vite/deps/react-dom_client.js?v=8b0129be:12406:13)
+[   81274ms] [WARNING] %s
+
+%s
+ An error occurred in the <ProgressProvider> component. Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://react.dev/link/error-boundaries to learn more about error boundaries. @ https://gqihe0qvkkdzfnah0h6udm3jh3nlo3-1tnf--5173--4c73681d.local-credentialless.webcontainer-api.io/node_modules/.vite/deps/react-dom_client.js?v=8b0129be:6963

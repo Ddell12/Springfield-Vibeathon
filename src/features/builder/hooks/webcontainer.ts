@@ -3,9 +3,11 @@ import { WebContainer } from "@webcontainer/api";
 let _promise: Promise<WebContainer> | null = null;
 
 export function getWebContainer(): Promise<WebContainer> {
-  // SSR guard — return a never-resolving promise when running on server
+  // SSR guard — reject instead of hang when running on server
   if (typeof window === "undefined") {
-    return new Promise(() => {});
+    return Promise.reject(
+      new Error("WebContainer is only available in the browser")
+    );
   }
 
   if (!_promise) {

@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
 import { ChevronRight, File, Folder, Search, X } from "lucide-react";
+import { useMemo, useState } from "react";
 
 import { cn } from "@/core/utils";
 import { Input } from "@/shared/components/ui/input";

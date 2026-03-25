@@ -4,13 +4,14 @@ import {
   ArrowLeft,
   Globe,
   Monitor,
-  Smartphone,
   Share2,
+  Smartphone,
 } from "lucide-react";
 import Link from "next/link";
 
 import { cn } from "@/core/utils";
 import { Button } from "@/shared/components/ui/button";
+import type { StreamingStatus } from "../hooks/use-streaming";
 
 export type DeviceSize = "mobile" | "desktop";
 export type ViewMode = "preview" | "code";
@@ -20,7 +21,7 @@ interface BuilderToolbarProps {
   onViewChange: (view: ViewMode) => void;
   deviceSize: DeviceSize;
   onDeviceSizeChange: (size: DeviceSize) => void;
-  status: string;
+  status: StreamingStatus;
   projectName: string;
   onShare?: () => void;
   onPublish?: () => void;

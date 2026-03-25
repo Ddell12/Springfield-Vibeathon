@@ -52,17 +52,12 @@ describe("webcontainer — singleton lifecycle", () => {
     expect(instance).toBe(mockWc);
   });
 
-  it("getWebContainer() in SSR context (window undefined) returns a never-resolving promise", async () => {
+  it("getWebContainer() in SSR context (window undefined) rejects with SSR error", async () => {
     vi.stubGlobal("window", undefined);
     const { getWebContainer } = await import("../webcontainer");
     const promise = getWebContainer();
-    // Should not resolve — verify it stays pending using a race
-    const NEVER = Symbol("never");
-    const result = await Promise.race([
-      promise,
-      Promise.resolve(NEVER),
-    ]);
-    expect(result).toBe(NEVER);
+    // Should reject with a descriptive error
+    await expect(promise).rejects.toThrow("WebContainer is only available in the browser");
   });
 
   it("teardownWebContainer() calls wc.teardown() and resets singleton", async () => {

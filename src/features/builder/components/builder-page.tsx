@@ -3,13 +3,12 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
+import { ShareDialog } from "@/features/sharing/components/share-dialog";
 import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/shared/components/ui/resizable";
-
-import { ShareDialog } from "@/features/sharing/components/share-dialog";
 
 import { useStreaming } from "../hooks/use-streaming";
 import { useWebContainer } from "../hooks/use-webcontainer";
@@ -31,10 +30,18 @@ export function BuilderPage() {
 
   const { status: wcStatus, previewUrl, writeFile, error: wcError } = useWebContainer();
 
-  const { status, files, generate, blueprint, error, sessionId } =
-    useStreaming({
-      onFileComplete: writeFile,
-    });
+  const {
+    status,
+    files,
+    generate,
+    blueprint,
+    error,
+    sessionId,
+    streamingText,
+    activities,
+  } = useStreaming({
+    onFileComplete: writeFile,
+  });
 
   // Auto-submit prompt from URL query param (e.g., from template chips)
   const promptSubmitted = useRef(false);
@@ -55,8 +62,8 @@ export function BuilderPage() {
     }
   }, [sessionId, sessionIdFromUrl, router]);
 
-  // Derive a project name from blueprint or default
-  const projectName = typeof blueprint?.name === "string" ? blueprint.name : "Untitled App";
+  // Derive an app name from blueprint or default
+  const appName = typeof blueprint?.name === "string" ? blueprint.name : "Untitled App";
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
@@ -66,7 +73,7 @@ export function BuilderPage() {
         deviceSize={deviceSize}
         onDeviceSizeChange={setDeviceSize}
         status={status}
-        projectName={projectName}
+        projectName={appName}
         onShare={() => setShareDialogOpen(true)}
         onPublish={() => setPublishModalOpen(true)}
       />
@@ -76,11 +83,13 @@ export function BuilderPage() {
           <ResizablePanel defaultSize={30} minSize={20}>
             <div className="h-full overflow-hidden rounded-2xl bg-surface-container-lowest">
               <ChatPanel
-                sessionId={null}
+                sessionId={sessionId}
                 status={status}
                 blueprint={blueprint}
                 error={error}
                 onGenerate={generate}
+                streamingText={streamingText}
+                activities={activities}
               />
             </div>
           </ResizablePanel>
@@ -99,7 +108,7 @@ export function BuilderPage() {
           )}
 
           {viewMode === "preview" && (
-            <ResizablePanel defaultSize={viewMode === "preview" ? 70 : 35} minSize={20}>
+            <ResizablePanel defaultSize={70} minSize={20}>
               <div className="h-full overflow-hidden rounded-2xl bg-surface-container-lowest">
                 <PreviewPanel
                   previewUrl={previewUrl}
@@ -118,14 +127,14 @@ export function BuilderPage() {
         open={shareDialogOpen}
         onOpenChange={setShareDialogOpen}
         shareSlug={sessionId ?? "preview"}
-        toolTitle={projectName}
+        appTitle={appName}
       />
 
       <PublishSuccessModal
         open={publishModalOpen}
         onOpenChange={setPublishModalOpen}
-        projectName={projectName}
-        publishedUrl={`https://bridges.app/tool/${sessionId ?? "preview"}`}
+        projectName={appName}
+        publishedUrl={`${typeof window !== "undefined" ? window.location.origin : ""}/tool/${sessionId ?? "preview"}`}
         onBackToBuilder={() => setPublishModalOpen(false)}
       />
     </div>
