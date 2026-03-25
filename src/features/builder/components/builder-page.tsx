@@ -50,6 +50,10 @@ export function BuilderPage() {
     onFileComplete: writeFile,
   });
 
+  // Auto-submit prompt from URL query param (e.g., from template chips)
+  const promptSubmitted = useRef(false);
+  const lastPromptRef = useRef<string>("");
+
   const handleGenerate = (prompt: string) => {
     lastPromptRef.current = prompt;
     generate(prompt);
@@ -60,10 +64,6 @@ export function BuilderPage() {
       generate(lastPromptRef.current);
     }
   };
-
-  // Auto-submit prompt from URL query param (e.g., from template chips)
-  const promptSubmitted = useRef(false);
-  const lastPromptRef = useRef<string>("");
   const promptFromUrl = searchParams.get("prompt");
 
   useEffect(() => {
