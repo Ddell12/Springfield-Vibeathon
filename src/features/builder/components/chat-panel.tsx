@@ -47,9 +47,15 @@ export function ChatPanel({ sessionId, session, onSubmit }: ChatPanelProps) {
     session?.state === "blueprinting" && blueprint && !blueprint.approved;
   const isFailed = session?.state === "failed";
 
+  // Show typing dots for all active pipeline states.
+  // For "blueprinting": show dots while LLM is generating the blueprint,
+  // but hide them once the blueprint arrives and awaits approval.
+  const isBlueprintPending =
+    session?.state === "blueprinting" && (!blueprint || blueprint.approved);
   const isWorking =
     session &&
-    !["idle", "complete", "failed", "blueprinting"].includes(session.state);
+    (isBlueprintPending ||
+      !["idle", "complete", "failed", "blueprinting"].includes(session.state));
 
   return (
     <div className="flex h-full flex-col bg-surface-container-lowest">
@@ -175,7 +181,7 @@ export function ChatPanel({ sessionId, session, onSubmit }: ChatPanelProps) {
           session.state !== "idle" &&
           session.state !== "complete" &&
           session.state !== "failed" &&
-          session.state !== "blueprinting" && (
+          !(session.state === "blueprinting" && blueprint && !blueprint.approved) && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
