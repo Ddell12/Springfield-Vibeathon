@@ -64,24 +64,21 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│  LAYER 1: NEXT.JS API — Step-Based Agent Gateway               │
-│  POST /api/agent/build     — create session + generate blueprint│
-│  POST /api/agent/approve   — approve blueprint, start building  │
-│  POST /api/agent/step      — execute next pipeline step         │
-│  POST /api/agent/message   — send follow-up message             │
+│  LAYER 1: NEXT.JS API — Thin Entry Points                      │
+│  POST /api/agent/build     — create session, schedule pipeline  │
+│  POST /api/agent/approve   — approve blueprint via mutation     │
+│  POST /api/agent/message   — send follow-up via mutation        │
 │                                                                  │
-│  Each endpoint runs ONE step of the pipeline (< 60s), then      │
-│  returns. Convex scheduler chains steps automatically.           │
-│  Uses @anthropic-ai/sdk Messages API with tool_use for LLM.    │
+│  API routes are thin wrappers that call Convex mutations.       │
+│  All pipeline logic lives in Convex internalActions.            │
 ├─────────────────────────────────────────────────────────────────┤
-│  LAYER 2: CONVEX — State, Persistence & Orchestration           │
-│  Tables: sessions, messages, blueprints, phases, files,         │
-│          versions, apps (published), appState, knowledgeBase,   │
-│          ttsCache                                                │
+│  LAYER 2: CONVEX — State, Persistence & Pipeline Orchestration  │
+│  Pipeline: internalActions with "use node" + @anthropic-ai/sdk  │
+│  Tables: sessions, messages, agentContext, blueprints, phases,  │
+│          files, versions, apps, appState, knowledgeBase, ttsCache│
 │  Real-time subscriptions → frontend                             │
-│  Mutations called BY the agent to persist state changes         │
+│  Scheduler chains pipeline steps (each step < 10 min)           │
 │  Queries used BY the frontend to render progress                │
-│  Scheduler chains pipeline steps to avoid serverless timeouts   │
 ├─────────────────────────────────────────────────────────────────┤
 │  LAYER 3: E2B SANDBOX — Preview & Execution                    │
 │  Dynamic template selection (4 therapy templates)               │
@@ -120,8 +117,8 @@ User: "Build a visual schedule for morning routine"
      4. FINALIZING — final review pass
      5. REVIEWING — runtime error check, auto-fix if needed
   → Each step writes state to Convex via mutations
+  → Convex scheduler auto-chains to next step
   → Frontend subscribes to Convex queries, shows real-time progress
-  → Preview URL streamed back via SSE
 ```
 
 ---
@@ -174,9 +171,6 @@ sessions: defineTable({
   stateMessage: v.optional(v.string()),
   failureReason: v.optional(v.string()),  // Set when state is "failed"
   lastGoodState: v.optional(v.string()),  // State before failure, for retry
-
-  // Agent context (Anthropic Messages API conversation history)
-  agentContext: v.optional(v.any()),  // Serialized messages array for resuming
 
   // Blueprint
   blueprintId: v.optional(v.id("blueprints")),
@@ -306,13 +300,12 @@ blueprints: defineTable({
 
 ### Blueprint Approval Flow
 
-1. State enters `blueprinting`
-2. Agent generates TherapyBlueprint via Claude Agent SDK
-3. Agent writes blueprint to Convex `blueprints` table + converts to markdown preview
-4. Frontend subscribes, shows blueprint as a structured card with therapy-specific fields
-5. Therapist clicks "Looks good" → mutation sets `approved: true`
-6. Agent polls for approval → transitions to `template_selecting`
-7. If therapist requests changes → agent revises blueprint, increments version
+1. Pipeline action generates TherapyBlueprint via Anthropic SDK, writes to Convex `blueprints` table + markdown preview
+2. Pipeline action sets state to `blueprinting` (blocking — does not auto-advance) → **action ends**
+3. Frontend subscribes, shows blueprint as a structured card with therapy-specific fields
+4. Therapist clicks "Looks Good" → mutation sets `approved: true` + schedules next pipeline step
+5. If therapist clicks "Request Changes" and types feedback → mutation adds message, re-schedules blueprint generation step with feedback context
+6. No polling — fully event-driven via Convex scheduler
 
 ---
 
@@ -328,98 +321,134 @@ The Anthropic SDK provides:
 - `client.messages.stream()` for streaming responses
 - Full control over the agentic loop (we implement the state machine, not the SDK)
 
-### Step-Based Architecture (Solving Serverless Timeouts)
+### Pipeline Lives in Convex Actions (Not API Routes)
 
-Instead of one long-lived connection, the pipeline is broken into discrete steps. Each step is a single API route call that completes within Vercel's 60-second timeout:
+**Key architectural decision:** The pipeline orchestration runs inside **Convex `internalAction`s** (with `"use node";` for Anthropic SDK access), NOT in Next.js API routes. This eliminates the fragile Convex→API→Convex round-trip and leverages Convex's built-in scheduler for step chaining.
+
+**API routes are thin entry points only:**
 
 ```
-POST /api/agent/build     → Creates session, generates blueprint (step 1)
-                           → Returns sessionId, frontend subscribes to Convex
-                           → Convex scheduler triggers next step
+POST /api/agent/build     → Validates input, calls convex mutation to create session
+                           → Mutation schedules first pipeline action
+                           → Returns sessionId immediately
 
-POST /api/agent/approve   → User approves blueprint
-                           → Triggers template selection + first phase planning
+POST /api/agent/approve   → Calls convex mutation to approve blueprint
+                           → Mutation schedules next pipeline action
 
-POST /api/agent/step      → Executes one pipeline step based on current session state
-                           → Called by Convex scheduler after each step completes
-                           → Each step: read state → call LLM → write results → schedule next
-
-POST /api/agent/message   → User follow-up after completion
-                           → Recharges phase counter, restarts pipeline
+POST /api/agent/message   → Calls convex mutation to add user follow-up
+                           → Mutation recharges counter, schedules pipeline action
 ```
+
+**Pipeline actions in Convex:**
+
+```typescript
+// convex/pipeline.ts
+"use node";
+import Anthropic from "@anthropic-ai/sdk";
+import { internalAction } from "./_generated/server";
+import { internal } from "./_generated/api";
+
+const anthropic = new Anthropic(); // Uses ANTHROPIC_API_KEY from Convex env vars
+
+// Main dispatcher — called by scheduler after each state transition
+export const executeStep = internalAction({
+  args: { sessionId: v.id("sessions") },
+  handler: async (ctx, { sessionId }) => {
+    const session = await ctx.runQuery(internal.sessions.getInternal, { sessionId });
+    if (!session) return;
+
+    try {
+      switch (session.state) {
+        case "blueprinting": await generateBlueprint(ctx, sessionId, session); break;
+        case "template_selecting": await selectTemplate(ctx, sessionId, session); break;
+        case "phase_generating": await generatePhase(ctx, sessionId, session); break;
+        case "phase_implementing": await implementPhase(ctx, sessionId, session); break;
+        case "deploying": await deployToSandbox(ctx, sessionId, session); break;
+        case "validating": await validatePhase(ctx, sessionId, session); break;
+        case "finalizing": await finalize(ctx, sessionId, session); break;
+        case "reviewing": await review(ctx, sessionId, session); break;
+      }
+    } catch (error) {
+      // Transition to failed state with reason
+      await ctx.runMutation(internal.sessions.setFailed, {
+        sessionId,
+        reason: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
+  },
+});
+```
+
+**Convex action timeout:** Convex actions have a 10-minute timeout (configurable up to 15 min). Each individual pipeline step (one LLM call + persistence) should complete well within this. If a step involves multiple LLM calls (e.g., phase implementation with tool_use loop), the action handles the full tool loop internally.
 
 ### Custom Agent Loop (per step)
 
-Each step runs a focused LLM call with specific tools for that step:
+Each step runs a focused LLM call with tools specific to that step:
 
 ```typescript
-// src/lib/agent/pipeline.ts
-import Anthropic from "@anthropic-ai/sdk";
+// Inside convex/pipeline.ts
+async function generateBlueprint(ctx: ActionCtx, sessionId: Id<"sessions">, session: Session) {
+  // Get therapy context from RAG
+  const ragContext = await ctx.runAction(internal.knowledge.searchInternal, {
+    query: session.query
+  });
 
-const anthropic = new Anthropic(); // Uses ANTHROPIC_API_KEY env var
+  // Restore conversation context from previous interactions
+  const contextDoc = await ctx.runQuery(internal.agentContext.get, { sessionId });
+  const priorMessages = contextDoc?.messages ?? [];
 
-async function executeStep(sessionId: string, state: SessionState) {
-  switch (state.state) {
-    case "blueprinting": return await generateBlueprint(sessionId, state);
-    case "template_selecting": return await selectTemplate(sessionId, state);
-    case "phase_generating": return await generatePhase(sessionId, state);
-    case "phase_implementing": return await implementPhase(sessionId, state);
-    case "deploying": return await deployToSandbox(sessionId, state);
-    case "validating": return await validatePhase(sessionId, state);
-    case "finalizing": return await finalize(sessionId, state);
-    case "reviewing": return await review(sessionId, state);
-  }
-}
-
-// Example: blueprint generation step
-async function generateBlueprint(sessionId: string, state: SessionState) {
-  const ragContext = await convex.action(api.knowledge.search, { query: state.query });
+  const messages = [
+    ...priorMessages,
+    { role: "user" as const, content: buildBlueprintPrompt(session.query, ragContext) }
+  ];
 
   const response = await anthropic.messages.create({
     model: "claude-sonnet-4-20250514",
     max_tokens: 4096,
     system: BLUEPRINT_SYSTEM_PROMPT,
-    messages: [
-      { role: "user", content: buildBlueprintPrompt(state.query, ragContext) }
-    ],
-    tools: [searchKnowledgeTool],  // Only tools relevant to this step
+    messages,
+    tools: [searchKnowledgeTool, selectTemplateTool],
   });
 
   // Handle tool_use responses in a loop (max 3 iterations)
   // Parse final response as TherapyBlueprintSchema
-  // Write to Convex blueprints table
-  // Update session state to "blueprinting" (awaiting approval)
+  // Write blueprint to Convex
+  await ctx.runMutation(internal.blueprints.create, { sessionId, blueprint, markdown });
+  // Save updated conversation context
+  await ctx.runMutation(internal.agentContext.save, { sessionId, messages: [...messages, response] });
+  // Update state — does NOT auto-advance (awaits user approval)
+  await ctx.runMutation(internal.sessions.updateState, {
+    sessionId, state: "blueprinting", stateMessage: "Blueprint ready for review"
+  });
 }
 ```
 
-### Agent Context Persistence
+### Agent Context Persistence (Separate Table)
 
-Instead of Claude Agent SDK sessions, we serialize the LLM conversation history to Convex:
+Conversation context is stored in its own table to avoid the 1MB session document limit:
 
 ```typescript
-// After each step, save conversation context for continuity
-await convex.mutation(api.sessions.saveContext, {
-  sessionId,
-  agentContext: messages, // The messages array from the Anthropic API call
-});
-
-// On next step, restore context
-const { agentContext } = await convex.query(api.sessions.get, { sessionId });
-const messages = agentContext ?? [];
-// Append new messages for this step
+// convex/schema.ts
+agentContext: defineTable({
+  sessionId: v.id("sessions"),
+  messages: v.any(),        // Anthropic Messages API conversation history
+  tokenCount: v.number(),   // Track size for compaction
+}).index("by_session", ["sessionId"])
 ```
+
+**Compaction:** When `tokenCount` exceeds 100,000, compact older messages by summarizing them into a single system message. This mirrors VibeSDK's `conversationCompactifier` pattern.
 
 ### Tool Definitions (Anthropic Messages API format)
 
-Tools are defined per-step, not as a global MCP server:
+Tools are defined per-step, not globally. Each step only gets tools relevant to its task:
 
 ```typescript
-// src/lib/agent/tools/index.ts
+// convex/pipeline_tools.ts
 export const searchKnowledgeTool: Anthropic.Tool = {
   name: "search_knowledge",
   description: "Search the therapy knowledge base for ABA, speech therapy, and developmental milestone information",
   input_schema: {
-    type: "object",
+    type: "object" as const,
     properties: {
       query: { type: "string", description: "Search query" },
       category: { type: "string", enum: ["aba-terminology", "speech-therapy", "tool-patterns", "developmental-milestones", "iep-goals"] }
@@ -428,15 +457,33 @@ export const searchKnowledgeTool: Anthropic.Tool = {
   }
 };
 
-// Tool execution handler
-export async function executeToolCall(toolName: string, toolInput: unknown): Promise<string> {
+export const selectTemplateTool: Anthropic.Tool = {
+  name: "select_template",
+  description: "Select the best therapy E2B template based on the blueprint's interaction model and reinforcement strategy",
+  input_schema: {
+    type: "object" as const,
+    properties: {
+      interactionModel: { type: "string" },
+      reinforcementType: { type: "string" },
+      primaryView: { type: "string" },
+    },
+    required: ["interactionModel"]
+  }
+};
+
+// Tool execution handler (runs inside Convex action context)
+export async function executeToolCall(
+  ctx: ActionCtx, toolName: string, toolInput: Record<string, unknown>
+): Promise<string> {
   switch (toolName) {
     case "search_knowledge":
-      return await convex.action(api.knowledge.search, toolInput);
+      return await ctx.runAction(internal.knowledge.searchInternal, toolInput);
+    case "select_template":
+      return selectTemplateByRules(toolInput); // Rule-based, no LLM needed
     case "generate_image":
-      return await convex.action(api.aiActions.generateImage, toolInput);
+      return await ctx.runAction(internal.aiActions.generateImage, toolInput);
     case "generate_speech":
-      return await convex.action(api.aiActions.generateSpeech, toolInput);
+      return await ctx.runAction(internal.aiActions.generateSpeech, toolInput);
     default:
       return `Unknown tool: ${toolName}`;
   }
@@ -445,52 +492,71 @@ export async function executeToolCall(toolName: string, toolInput: unknown): Pro
 
 ### Step Chaining via Convex Scheduler
 
-After each step completes, the API route tells Convex to schedule the next step:
+After each step, the state machine mutation decides whether to auto-advance:
 
 ```typescript
-// In the API route, after step execution:
-await convex.mutation(api.sessions.updateState, {
-  sessionId,
-  state: nextState,
-  stateMessage: nextMessage,
-});
-
-// Convex mutation schedules the next step (unless awaiting user input)
 // convex/sessions.ts
-export const updateState = mutation({
+export const updateState = internalMutation({
   args: { sessionId: v.id("sessions"), state: v.string(), stateMessage: v.string() },
   handler: async (ctx, args) => {
-    await ctx.db.patch(args.sessionId, { state: args.state, stateMessage: args.stateMessage });
+    await ctx.db.patch(args.sessionId, {
+      state: args.state,
+      stateMessage: args.stateMessage,
+    });
 
     // Auto-advance for non-blocking states
-    const nonBlockingStates = ["template_selecting", "phase_generating", "phase_implementing",
+    const autoAdvanceStates = ["template_selecting", "phase_generating", "phase_implementing",
                                "deploying", "validating", "finalizing", "reviewing"];
-    if (nonBlockingStates.includes(args.state)) {
-      await ctx.scheduler.runAfter(0, api.pipeline.triggerNextStep, { sessionId: args.sessionId });
+    if (autoAdvanceStates.includes(args.state)) {
+      await ctx.scheduler.runAfter(0, internal.pipeline.executeStep, {
+        sessionId: args.sessionId
+      });
     }
-    // Blocking states (blueprinting → awaits approval, complete → awaits user) don't auto-advance
+    // Blocking states: "blueprinting" (awaits approval), "complete" (awaits user), "failed" (awaits retry)
   },
 });
 ```
 
-### Blueprint Approval Flow (No Polling)
+### Blueprint Approval Flow (Event-Driven)
 
-The blueprint approval problem is solved cleanly by the step-based design:
-
-1. `POST /api/agent/build` generates blueprint, writes to Convex, sets state to `blueprinting` → **returns**
+1. Pipeline action generates blueprint, writes to Convex, sets state to `blueprinting` → **action ends**
 2. Frontend subscribes to session, shows blueprint card with Approve/Request Changes buttons
-3. User clicks "Approve" → calls `convex mutation api.blueprints.approve` → mutation updates `approved: true` AND schedules next step via `ctx.scheduler.runAfter(0, api.pipeline.triggerNextStep, { sessionId })`
-4. No polling. No long connection. Event-driven.
+3. User clicks "Approve" → frontend calls mutation `api.blueprints.approve`
+4. Mutation sets `approved: true`, updates session state to `template_selecting`, and schedules next pipeline step via `ctx.scheduler.runAfter(0, internal.pipeline.executeStep, { sessionId })`
+5. No polling. No long connection. Fully event-driven.
+
+### Phase Creation
+
+When the `phase_generating` step runs, it creates a phase document in the `phases` table:
+
+```typescript
+await ctx.runMutation(internal.phases.create, {
+  sessionId,
+  index: session.currentPhaseIndex,
+  name: phaseConcept.name,
+  description: phaseConcept.description,
+  status: "generating",
+  files: phaseConcept.files.map(f => ({ path: f.path, purpose: f.purpose, status: "pending" })),
+  installCommands: phaseConcept.installCommands,
+});
+```
 
 ### Event Delivery
 
-Frontend receives ALL events via **Convex subscriptions only** (no SSE needed):
+Frontend receives ALL events via **Convex subscriptions** (no SSE):
 - `useQuery(api.sessions.get, { sessionId })` — state, progress, preview URL
 - `useQuery(api.messages.list, { sessionId })` — conversation history
-- `useQuery(api.phases.list, { sessionId })` — phase timeline
-- `useQuery(api.files.list, { sessionId })` — generated file contents
+- `useQuery(api.phases.list, { sessionId })` — phase timeline with file status
+- `useQuery(api.generatedFiles.list, { sessionId })` — file contents for code editor
 
-The step-based architecture means there's no streaming LLM text to the frontend during generation. Instead, each step writes its output (blueprint markdown, phase plan, status messages) as messages to Convex, which the frontend picks up reactively. This is a simpler UX than streaming tokens — therapists see status updates ("Planning phase 2...", "Generating TokenBoard component...") rather than raw LLM output.
+Each pipeline step writes status messages to the `messages` table, which the frontend picks up reactively. Therapists see clear progress updates ("Planning phase 2...", "Generating TokenBoard component...") rather than raw LLM tokens.
+
+### Authentication
+
+API routes validate that the caller owns the session:
+- `POST /api/agent/build` — no auth needed (creates new session, returns sessionId)
+- `POST /api/agent/approve`, `/message` — validate sessionId belongs to the caller (Clerk userId when auth is added; for now, sessionId acts as a bearer token since it's a UUID)
+- Pipeline actions use `internalAction`/`internalMutation` — not callable from the client, only from other Convex functions and the scheduler
 
 ---
 
@@ -615,7 +681,7 @@ versions: defineTable({
 
 ### Version Limit
 
-Keep last 20 versions per session. Older versions have their `fileSnapshot` and `previousContents` fields cleared (keep just the diff metadata for history display).
+Keep last 20 versions per session. Older versions have their `fileRefs` array cleared (set to empty — the referenced file documents remain for other versions that need them). The `diff` metadata is kept for history display. Cleanup runs as part of the `savePhaseResult` pipeline step — after creating a new version, check if count > 20 and prune the oldest.
 
 ---
 
@@ -770,6 +836,7 @@ When state is `blueprinting` and the blueprint is ready, the chat panel shows a 
 |-------|--------|
 | `sessions` | **NEW** — replaces thread-based agent model |
 | `messages` | **NEW** — conversation messages (separate from session to avoid 1MB limit) |
+| `agentContext` | **NEW** — LLM conversation history per session (separate to avoid 1MB limit) |
 | `blueprints` | **NEW** — therapy-structured PRDs |
 | `phases` | **NEW** — phase tracking with file status |
 | `files` | **NEW** — generated file contents per session |
@@ -825,20 +892,19 @@ phases: defineTable({
 
 ### Created
 
-- `src/app/api/agent/build/route.ts` — create session + generate blueprint
-- `src/app/api/agent/approve/route.ts` — approve blueprint, start building
-- `src/app/api/agent/step/route.ts` — execute next pipeline step
-- `src/app/api/agent/message/route.ts` — follow-up message endpoint
-- `src/lib/agent/` — Anthropic SDK setup, pipeline orchestration
-- `src/lib/agent/tools/` — tool definitions per step (Anthropic Messages API format)
+- `src/app/api/agent/build/route.ts` — thin entry: create session, schedule pipeline
+- `src/app/api/agent/approve/route.ts` — thin entry: approve blueprint via mutation
+- `src/app/api/agent/message/route.ts` — thin entry: follow-up message via mutation
 - `src/lib/agent/prompts/` — system prompts (blueprint, phase gen, phase impl)
 - `src/lib/agent/schemas/` — Zod schemas (TherapyBlueprintSchema, PhaseConceptSchema, etc.)
 - `src/features/builder/` — rebuilt builder page (3-panel layout)
 - `src/features/builder/components/` — chat panel, code editor, preview, phase timeline, blueprint card
-- `src/lib/agent/pipeline.ts` — step-based pipeline orchestration (executeStep, state machine)
+- `convex/pipeline.ts` — `"use node";` internalAction: executeStep dispatcher + per-state handlers
+- `convex/pipeline_tools.ts` — Anthropic tool definitions + executeToolCall handler
+- `convex/pipeline_prompts.ts` — system prompts for each pipeline step
 - `convex/sessions.ts` — session CRUD + state machine mutations + scheduler chaining
 - `convex/messages.ts` — conversation message CRUD
-- `convex/pipeline.ts` — triggerNextStep action (calls API route for next step)
+- `convex/agent_context.ts` — agent conversation context persistence + compaction
 - `convex/blueprints.ts` — blueprint CRUD + approval
 - `convex/phases.ts` — phase tracking
 - `convex/generated_files.ts` — file management
