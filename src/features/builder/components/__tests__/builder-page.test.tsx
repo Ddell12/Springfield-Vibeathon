@@ -25,8 +25,17 @@ vi.mock("../../hooks/use-streaming", () => ({
     generate: vi.fn(),
     blueprint: null,
     error: null,
-    previewUrl: null,
     sessionId: null,
+  }),
+}));
+
+// Mock the WebContainer hook
+vi.mock("../../hooks/use-webcontainer", () => ({
+  useWebContainer: vi.fn().mockReturnValue({
+    status: "booting",
+    previewUrl: null,
+    error: null,
+    writeFile: vi.fn(),
   }),
 }));
 
@@ -61,7 +70,7 @@ describe("BuilderPage — three-panel layout", () => {
   it("passes streaming state to child panels — shows preview empty state when idle", () => {
     render(<BuilderPage />);
     // When idle with no files, preview should show empty state message
-    expect(screen.getByText(/preview will appear/i)).toBeTruthy();
+    expect(screen.getByText(/booting preview environment/i)).toBeTruthy();
   });
 
   it("renders without crashing when sessionId is in URL", () => {

@@ -20,6 +20,10 @@ export interface UseStreamingReturn {
   sessionId: string | null;
 }
 
+export interface UseStreamingOptions {
+  onFileComplete?: (path: string, contents: string) => Promise<void>;
+}
+
 function parseSSEEvents(text: string): Array<{ event: string; data: unknown }> {
   const events: Array<{ event: string; data: unknown }> = [];
   // SSE events are separated by \n\n
@@ -47,12 +51,13 @@ function parseSSEEvents(text: string): Array<{ event: string; data: unknown }> {
   return events;
 }
 
-export function useStreaming(): UseStreamingReturn {
+export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn {
   const [status, setStatus] = useState<StreamingStatus>("idle");
   const [files, setFiles] = useState<StreamingFile[]>([]);
   const [blueprint, setBlueprint] = useState<Record<string, unknown> | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  // previewUrl is always null — WebContainer manages the preview URL client-side
+  const previewUrl: string | null = null;
   const [sessionId, setSessionId] = useState<string | null>(null);
 
   const abortRef = useRef<AbortController | null>(null);
@@ -115,17 +120,15 @@ export function useStreaming(): UseStreamingReturn {
               const newStatus = d.status as string;
               if (newStatus === "live") {
                 setStatus("live");
-                if (d.previewUrl) setPreviewUrl(d.previewUrl as string);
               } else if (newStatus === "generating") {
                 setStatus("generating");
               }
             } else if (event === "file_complete") {
+              const path = d.path as string;
+              const contents = d.contents as string;
               setFiles((prev) => {
-                const idx = prev.findIndex((f) => f.path === (d.path as string));
-                const newFile: StreamingFile = {
-                  path: d.path as string,
-                  contents: d.contents as string,
-                };
+                const idx = prev.findIndex((f) => f.path === path);
+                const newFile: StreamingFile = { path, contents };
                 if (idx >= 0) {
                   const updated = [...prev];
                   updated[idx] = newFile;
@@ -133,11 +136,13 @@ export function useStreaming(): UseStreamingReturn {
                 }
                 return [...prev, newFile];
               });
+              if (options?.onFileComplete) {
+                await options.onFileComplete(path, contents);
+              }
             } else if (event === "blueprint") {
               setBlueprint(d.data as Record<string, unknown>);
             } else if (event === "done") {
               setStatus("live");
-              if (d.previewUrl) setPreviewUrl(d.previewUrl as string);
               if (d.sessionId) setSessionId(d.sessionId as string);
             } else if (event === "error") {
               setError(d.message as string);
@@ -156,11 +161,12 @@ export function useStreaming(): UseStreamingReturn {
               setStatus("failed");
             } else if (event === "status" && (d.status as string) === "live") {
               setStatus("live");
-              if (d.previewUrl) setPreviewUrl(d.previewUrl as string);
             } else if (event === "file_complete") {
+              const path = d.path as string;
+              const contents = d.contents as string;
               setFiles((prev) => {
-                const idx = prev.findIndex((f) => f.path === (d.path as string));
-                const newFile: StreamingFile = { path: d.path as string, contents: d.contents as string };
+                const idx = prev.findIndex((f) => f.path === path);
+                const newFile: StreamingFile = { path, contents };
                 if (idx >= 0) {
                   const updated = [...prev];
                   updated[idx] = newFile;
@@ -168,6 +174,9 @@ export function useStreaming(): UseStreamingReturn {
                 }
                 return [...prev, newFile];
               });
+              if (options?.onFileComplete) {
+                await options.onFileComplete(path, contents);
+              }
             }
           }
         }
@@ -176,7 +185,7 @@ export function useStreaming(): UseStreamingReturn {
       setError((err as Error).message ?? "Unknown error");
       setStatus("failed");
     }
-  }, []);
+  }, [options]);
 
   return { status, files, generate, blueprint, error, previewUrl, sessionId };
 }

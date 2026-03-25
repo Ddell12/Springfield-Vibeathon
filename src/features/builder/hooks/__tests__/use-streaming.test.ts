@@ -1,6 +1,6 @@
 // src/features/builder/hooks/__tests__/use-streaming.test.ts
 import { act,renderHook } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useStreaming } from "../use-streaming";
 
@@ -9,6 +9,10 @@ const mockFetch = vi.fn();
 vi.stubGlobal("fetch", mockFetch);
 
 describe("useStreaming — streaming hook contract", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it("initializes in 'idle' state", () => {
     const { result } = renderHook(() => useStreaming());
     expect(result.current.status).toBe("idle");
@@ -74,13 +78,13 @@ describe("useStreaming — streaming hook contract", () => {
     expect(result.current.error).toBeNull();
   });
 
-  it("status transitions from 'generating' to 'live' when previewUrl received", async () => {
-    // Simulate SSE stream that sends a status:live event
+  it("status transitions from 'generating' to 'live' when done event received", async () => {
+    // Simulate SSE stream that sends a done event (WebContainer handles preview, not the hook)
     const stream = new ReadableStream({
       start(controller) {
         const encoder = new TextEncoder();
         controller.enqueue(
-          encoder.encode('event: status\ndata: {"status":"live","previewUrl":"https://test.e2b.app"}\n\n')
+          encoder.encode('event: done\ndata: {"sessionId":"sess_abc"}\n\n')
         );
         controller.close();
       },
@@ -97,7 +101,8 @@ describe("useStreaming — streaming hook contract", () => {
     });
 
     expect(result.current.status).toBe("live");
-    expect(result.current.previewUrl).toBe("https://test.e2b.app");
+    // previewUrl is NOT set by streaming hook — WebContainer manages the preview URL
+    expect(result.current.previewUrl).toBeNull();
   });
 
   it("files array is populated when file_complete events arrive", async () => {
@@ -153,5 +158,64 @@ describe("useStreaming — streaming hook contract", () => {
 
     expect(result.current.error).toBe("Claude API unavailable");
     expect(result.current.status).toBe("failed");
+  });
+
+  it("onFileComplete callback is called when file_complete SSE event arrives", async () => {
+    const fileContents = 'export default function App() { return <div>Hi</div>; }';
+    const onFileComplete = vi.fn().mockResolvedValue(undefined);
+
+    const stream = new ReadableStream({
+      start(controller) {
+        const encoder = new TextEncoder();
+        controller.enqueue(
+          encoder.encode(
+            `event: file_complete\ndata: ${JSON.stringify({ path: "src/App.tsx", contents: fileContents })}\n\n`
+          )
+        );
+        controller.close();
+      },
+    });
+
+    mockFetch.mockResolvedValueOnce({ ok: true, body: stream });
+
+    const { result } = renderHook(() => useStreaming({ onFileComplete }));
+    await act(async () => {
+      await result.current.generate("Build a token board");
+    });
+
+    expect(onFileComplete).toHaveBeenCalledTimes(1);
+    expect(onFileComplete).toHaveBeenCalledWith("src/App.tsx", fileContents);
+  });
+
+  it("onFileComplete is not called for other event types", async () => {
+    const onFileComplete = vi.fn().mockResolvedValue(undefined);
+
+    const stream = new ReadableStream({
+      start(controller) {
+        const encoder = new TextEncoder();
+        // Send a blueprint event, not file_complete
+        controller.enqueue(
+          encoder.encode(
+            'event: blueprint\ndata: {"data":{"title":"Token Board"}}\n\n'
+          )
+        );
+        controller.close();
+      },
+    });
+
+    mockFetch.mockResolvedValueOnce({ ok: true, body: stream });
+
+    const { result } = renderHook(() => useStreaming({ onFileComplete }));
+    await act(async () => {
+      await result.current.generate("Build a token board");
+    });
+
+    expect(onFileComplete).not.toHaveBeenCalled();
+  });
+
+  it("useStreaming accepts no arguments (onFileComplete is optional)", () => {
+    // Should not throw when called without options
+    expect(() => renderHook(() => useStreaming())).not.toThrow();
+    expect(() => renderHook(() => useStreaming({}))).not.toThrow();
   });
 });

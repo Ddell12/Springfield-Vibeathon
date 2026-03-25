@@ -49,15 +49,11 @@ export const startGeneration = mutation({
 export const setLive = mutation({
   args: {
     sessionId: v.id("sessions"),
-    sandboxId: v.string(),
-    previewUrl: v.string(),
   },
   handler: async (ctx, args) => {
     await ctx.db.patch(args.sessionId, {
       state: "live",
       stateMessage: "Live",
-      sandboxId: args.sandboxId,
-      previewUrl: args.previewUrl,
     });
   },
 });
@@ -75,18 +71,8 @@ export const setFailed = mutation({
   },
 });
 
-export const setBlueprint = mutation({
-  args: {
-    sessionId: v.id("sessions"),
-    blueprint: v.any(),
-  },
-  handler: async (ctx, args) => {
-    await ctx.db.patch(args.sessionId, {
-      blueprint: args.blueprint,
-    });
-  },
-});
-
+// deprecated: kept for backward compat with existing tests and data
+// WebContainer manages preview URL client-side now
 export const setSandbox = mutation({
   args: {
     sessionId: v.id("sessions"),
@@ -97,6 +83,18 @@ export const setSandbox = mutation({
     await ctx.db.patch(args.sessionId, {
       sandboxId: args.sandboxId,
       previewUrl: args.previewUrl,
+    });
+  },
+});
+
+export const setBlueprint = mutation({
+  args: {
+    sessionId: v.id("sessions"),
+    blueprint: v.any(),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.sessionId, {
+      blueprint: args.blueprint,
     });
   },
 });

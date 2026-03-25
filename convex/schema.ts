@@ -12,8 +12,8 @@ export default defineSchema({
     stateMessage: v.optional(v.string()),
     error: v.optional(v.string()),
     blueprint: v.optional(v.any()),
-    sandboxId: v.optional(v.string()),
-    previewUrl: v.optional(v.string()),
+    sandboxId: v.optional(v.string()), // deprecated: kept for backward compat
+    previewUrl: v.optional(v.string()), // deprecated: kept for backward compat
     publishedUrl: v.optional(v.string()),
     // Legacy fields from old pipeline — kept for backward compat with existing data
     currentPhaseIndex: v.optional(v.number()),

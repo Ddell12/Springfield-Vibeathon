@@ -10,6 +10,7 @@ import {
 } from "@/shared/components/ui/resizable";
 
 import { useStreaming } from "../hooks/use-streaming";
+import { useWebContainer } from "../hooks/use-webcontainer";
 import { ChatPanel } from "./chat-panel";
 import { CodePanel } from "./code-panel";
 import { PreviewPanel } from "./preview-panel";
@@ -19,8 +20,12 @@ export function BuilderPage() {
   const router = useRouter();
   const sessionIdFromUrl = searchParams.get("sessionId");
 
-  const { status, files, generate, blueprint, error, previewUrl, sessionId } =
-    useStreaming();
+  const { status: wcStatus, previewUrl, writeFile, error: wcError } = useWebContainer();
+
+  const { status, files, generate, blueprint, error, sessionId } =
+    useStreaming({
+      onFileComplete: writeFile,
+    });
 
   // Update URL when sessionId is set from streaming
   useEffect(() => {
@@ -28,12 +33,6 @@ export function BuilderPage() {
       router.replace(`?sessionId=${sessionId}`);
     }
   }, [sessionId, sessionIdFromUrl, router]);
-
-  const session = {
-    state: status,
-    previewUrl: previewUrl ?? undefined,
-    error: error ?? undefined,
-  };
 
   return (
     <div className="flex h-[calc(100vh-64px)] flex-col">
@@ -60,7 +59,12 @@ export function BuilderPage() {
 
         {/* Preview Panel — right */}
         <ResizablePanel defaultSize={35} minSize={20}>
-          <PreviewPanel session={session} />
+          <PreviewPanel
+            previewUrl={previewUrl}
+            state={status}
+            wcStatus={wcStatus}
+            error={error ?? wcError ?? undefined}
+          />
         </ResizablePanel>
       </ResizablePanelGroup>
     </div>
