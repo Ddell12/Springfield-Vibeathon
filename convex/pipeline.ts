@@ -5,7 +5,8 @@ import { internalAction } from "./_generated/server";
 import { internal, api } from "./_generated/api";
 import { v } from "convex/values";
 import { createPipelineTools } from "./pipeline_tools";
-import { BLUEPRINT_SYSTEM_PROMPT, PHASE_GENERATION_PROMPT, PHASE_IMPLEMENTATION_PROMPT } from "./pipeline_prompts";
+import { BLUEPRINT_SYSTEM_PROMPT, PHASE_GENERATION_PROMPT, PHASE_IMPLEMENTATION_PROMPT, VALIDATION_PROMPT } from "./pipeline_prompts";
+import { createAndDeploySandbox, updateSandboxFiles, getRuntimeErrors } from "./e2b";
 // NOTE: Importing from src/ into convex/ via relative path. Convex "use node" actions
 // are bundled with esbuild which resolves this. If deployment fails, copy the schema
 // into convex/ instead.
@@ -35,16 +36,16 @@ export const executeStep = internalAction({
           await implementPhase(ctx, sessionId, session);
           break;
         case "deploying":
-          // Implemented in Task 8
+          await deployToSandbox(ctx, sessionId, session);
           break;
         case "validating":
-          // Implemented in Task 8
+          await validatePhase(ctx, sessionId, session);
           break;
         case "finalizing":
-          // Implemented in Task 8
+          await finalize(ctx, sessionId, session);
           break;
         case "reviewing":
-          // Implemented in Task 8
+          await review(ctx, sessionId, session);
           break;
         default:
           // idle, complete, failed — no-op
@@ -394,5 +395,286 @@ Generate complete file contents for each file.`;
     sessionId,
     state: "deploying",
     stateMessage: `Deploying phase: ${phase.name}`,
+  });
+}
+
+async function deployToSandbox(
+  ctx: ActionCtx,
+  sessionId: Id<"sessions">,
+  session: {
+    sandboxId?: string;
+    previewUrl?: string;
+    templateName?: string;
+    currentPhaseIndex: number;
+  },
+) {
+  const files = await ctx.runQuery(api.generated_files.list, { sessionId });
+  const phase = await ctx.runQuery(api.phases.get, {
+    sessionId,
+    index: session.currentPhaseIndex,
+  });
+
+  const filePayload = files.map((f: { path: string; contents: string }) => ({
+    filePath: f.path,
+    fileContents: f.contents,
+  }));
+  const commands = (phase as { installCommands?: string[] })?.installCommands ?? [];
+
+  let sandboxId: string;
+  let previewUrl: string;
+
+  if (session.sandboxId) {
+    // Existing sandbox — update files
+    await updateSandboxFiles(session.sandboxId, filePayload, commands);
+    sandboxId = session.sandboxId;
+    previewUrl = session.previewUrl ?? "";
+  } else {
+    // First deploy — create new sandbox
+    const result = await createAndDeploySandbox(
+      session.templateName ?? "vite-therapy",
+      filePayload,
+      commands,
+    );
+    sandboxId = result.sandboxId;
+    previewUrl = result.previewUrl;
+  }
+
+  // Save sandbox info to session
+  await ctx.runMutation(internal.sessions.setSandbox, {
+    sessionId,
+    sandboxId,
+    previewUrl,
+  });
+
+  // Update phase status
+  if (phase) {
+    await ctx.runMutation(internal.phases.updateStatus, {
+      phaseId: (phase as { _id: Id<"phases"> })._id,
+      status: "deploying",
+    });
+  }
+
+  // Advance to validation
+  await ctx.runMutation(internal.sessions.updateState, {
+    sessionId,
+    state: "validating",
+    stateMessage: "Checking for runtime errors...",
+  });
+}
+
+async function validatePhase(
+  ctx: ActionCtx,
+  sessionId: Id<"sessions">,
+  session: {
+    sandboxId?: string;
+    currentPhaseIndex: number;
+    phasesRemaining: number;
+    mvpGenerated: boolean;
+  },
+) {
+  if (!session.sandboxId) throw new Error("No sandbox to validate");
+
+  const errors = await getRuntimeErrors(session.sandboxId);
+  const phase = await ctx.runQuery(api.phases.get, {
+    sessionId,
+    index: session.currentPhaseIndex,
+  });
+
+  if (errors.length > 0 && phase) {
+    // Check fix attempt count (stored in phase.errors)
+    const existingErrors = (phase as { errors?: string[] }).errors ?? [];
+    const fixAttempts = existingErrors.length > 0 ? 1 : 0;
+
+    if (fixAttempts < 2) {
+      // Record errors and try to auto-fix
+      await ctx.runMutation(internal.phases.updateStatus, {
+        phaseId: (phase as { _id: Id<"phases"> })._id,
+        status: "validating",
+        errors: [...existingErrors, ...errors],
+      });
+
+      // Call Anthropic to fix broken files
+      const existingFiles = await ctx.runQuery(api.generated_files.list, {
+        sessionId,
+      });
+      const response = await anthropic.messages.create({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 8192,
+        system: VALIDATION_PROMPT,
+        messages: [
+          {
+            role: "user" as const,
+            content: `Runtime errors:\n${errors.join("\n")}\n\nCurrent files:\n${existingFiles.map((f: { path: string; contents: string }) => `${f.path}:\n${f.contents}`).join("\n---\n")}`,
+          },
+        ],
+      });
+
+      const textBlock = response.content.find(
+        (block): block is Anthropic.TextBlock => block.type === "text",
+      );
+      if (textBlock) {
+        let jsonStr = textBlock.text.trim();
+        const fenceMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
+        if (fenceMatch) jsonStr = fenceMatch[1].trim();
+
+        try {
+          const parsed = PhaseImplementationSchema.safeParse(
+            JSON.parse(jsonStr),
+          );
+          if (parsed.success) {
+            for (const file of parsed.data.files) {
+              await ctx.runMutation(internal.generated_files.upsert, {
+                sessionId,
+                phaseId: (phase as { _id: Id<"phases"> })._id,
+                path: file.filePath,
+                contents: file.fileContents,
+                purpose: file.filePurpose,
+                status: "modified",
+              });
+            }
+          }
+        } catch {
+          // If fix parsing fails, continue with current state
+        }
+      }
+
+      // Redeploy
+      await ctx.runMutation(internal.sessions.updateState, {
+        sessionId,
+        state: "deploying",
+        stateMessage: `Fix attempt ${fixAttempts + 1} — redeploying...`,
+      });
+      return;
+    }
+    // Max fix attempts reached — mark as completed with warnings
+  }
+
+  // Phase is clean (or max attempts reached) — mark completed
+  if (phase) {
+    await ctx.runMutation(internal.phases.updateStatus, {
+      phaseId: (phase as { _id: Id<"phases"> })._id,
+      status: "completed",
+    });
+  }
+
+  // Create version snapshot
+  await createVersionSnapshot(ctx, sessionId, session.currentPhaseIndex);
+
+  // Decrement phases remaining, advance phase index
+  const newPhasesRemaining = session.phasesRemaining - 1;
+  const nextPhaseIndex = session.currentPhaseIndex + 1;
+
+  await ctx.runMutation(internal.sessions.advancePhase, {
+    sessionId,
+    currentPhaseIndex: nextPhaseIndex,
+    phasesRemaining: newPhasesRemaining,
+  });
+
+  // Decide next state
+  if (newPhasesRemaining <= 0) {
+    // No phases left — finalize
+    await ctx.runMutation(internal.sessions.updateState, {
+      sessionId,
+      state: "finalizing",
+      stateMessage: "Finalizing app...",
+    });
+  } else {
+    // More phases — generate next
+    await ctx.runMutation(internal.sessions.updateState, {
+      sessionId,
+      state: "phase_generating",
+      stateMessage: `Planning phase ${nextPhaseIndex + 1}...`,
+    });
+  }
+}
+
+async function createVersionSnapshot(
+  ctx: ActionCtx,
+  sessionId: Id<"sessions">,
+  phaseIndex: number,
+) {
+  const files = await ctx.runQuery(api.generated_files.list, { sessionId });
+  const latestVersion = await ctx.runQuery(api.versions.getLatest, {
+    sessionId,
+  });
+
+  const previousVersion =
+    (latestVersion as { version?: number } | null)?.version ?? 0;
+  const newVersion = previousVersion + 1;
+
+  // Compute diff — files not in prior snapshot are "added", otherwise "modified"
+  const previousPaths = new Set(
+    ((latestVersion as { diff?: { path: string }[] } | null)?.diff ?? []).map(
+      (d) => d.path,
+    ),
+  );
+  const diff = files.map((f: { path: string }) => ({
+    path: f.path,
+    action: previousPaths.has(f.path)
+      ? ("modified" as const)
+      : ("added" as const),
+  }));
+
+  await ctx.runMutation(internal.versions.create, {
+    sessionId,
+    version: newVersion,
+    trigger: "phase_complete",
+    fileRefs: files.map((f: { _id: Id<"files"> }) => f._id),
+    diff,
+    phaseIndex,
+    fileCount: files.length,
+    timestamp: Date.now(),
+  });
+}
+
+async function finalize(
+  ctx: ActionCtx,
+  sessionId: Id<"sessions">,
+  _session: { mvpGenerated: boolean },
+) {
+  // Mark MVP as generated
+  await ctx.runMutation(internal.sessions.setMvpGenerated, { sessionId });
+
+  // Add completion message
+  await ctx.runMutation(internal.messages.create, {
+    sessionId,
+    role: "assistant",
+    content:
+      "Your therapy app is ready! You can try it in the preview panel. Tell me if you'd like any changes.",
+    timestamp: Date.now(),
+  });
+
+  // Move to review
+  await ctx.runMutation(internal.sessions.updateState, {
+    sessionId,
+    state: "reviewing",
+    stateMessage: "Running final review...",
+  });
+}
+
+async function review(
+  ctx: ActionCtx,
+  sessionId: Id<"sessions">,
+  session: { sandboxId?: string },
+) {
+  // Final error check
+  if (session.sandboxId) {
+    const errors = await getRuntimeErrors(session.sandboxId);
+    if (errors.length > 0) {
+      // One more fix attempt
+      await ctx.runMutation(internal.sessions.updateState, {
+        sessionId,
+        state: "validating",
+        stateMessage: "Found issues in final review — fixing...",
+      });
+      return;
+    }
+  }
+
+  // Clean — mark complete
+  await ctx.runMutation(internal.sessions.updateState, {
+    sessionId,
+    state: "complete",
+    stateMessage: "App complete!",
   });
 }

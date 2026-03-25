@@ -121,6 +121,41 @@ export const setTemplate = internalMutation({
   },
 });
 
+export const setSandbox = internalMutation({
+  args: {
+    sessionId: v.id("sessions"),
+    sandboxId: v.string(),
+    previewUrl: v.string(),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.sessionId, {
+      sandboxId: args.sandboxId,
+      previewUrl: args.previewUrl,
+    });
+  },
+});
+
+export const advancePhase = internalMutation({
+  args: {
+    sessionId: v.id("sessions"),
+    currentPhaseIndex: v.number(),
+    phasesRemaining: v.number(),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.sessionId, {
+      currentPhaseIndex: args.currentPhaseIndex,
+      phasesRemaining: args.phasesRemaining,
+    });
+  },
+});
+
+export const setMvpGenerated = internalMutation({
+  args: { sessionId: v.id("sessions") },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.sessionId, { mvpGenerated: true });
+  },
+});
+
 export const setFailed = internalMutation({
   args: {
     sessionId: v.id("sessions"),
