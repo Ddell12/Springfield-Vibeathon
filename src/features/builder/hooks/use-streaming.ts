@@ -10,14 +10,23 @@ export interface StreamingFile {
   version?: number;
 }
 
+export interface Activity {
+  id: string;
+  type: "thinking" | "writing_file" | "file_written" | "complete";
+  message: string;
+  path?: string;
+  timestamp: number;
+}
+
 export interface UseStreamingReturn {
   status: StreamingStatus;
   files: StreamingFile[];
   generate: (prompt: string) => Promise<void>;
   blueprint: Record<string, unknown> | null;
   error: string | null;
-  previewUrl: string | null;
   sessionId: string | null;
+  streamingText: string;
+  activities: Activity[];
 }
 
 export interface UseStreamingOptions {
@@ -26,7 +35,6 @@ export interface UseStreamingOptions {
 
 function parseSSEEvents(text: string): Array<{ event: string; data: unknown }> {
   const events: Array<{ event: string; data: unknown }> = [];
-  // SSE events are separated by \n\n
   const chunks = text.split("\n\n");
   for (const chunk of chunks) {
     if (!chunk.trim()) continue;
@@ -56,31 +64,134 @@ export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn 
   const [files, setFiles] = useState<StreamingFile[]>([]);
   const [blueprint, setBlueprint] = useState<Record<string, unknown> | null>(null);
   const [error, setError] = useState<string | null>(null);
-  // previewUrl is always null — WebContainer manages the preview URL client-side
-  const previewUrl: string | null = null;
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [streamingText, setStreamingText] = useState("");
+  const [activities, setActivities] = useState<Activity[]>([]);
 
   const abortRef = useRef<AbortController | null>(null);
   const onFileCompleteRef = useRef(options?.onFileComplete);
   onFileCompleteRef.current = options?.onFileComplete;
 
-  const generate = useCallback(async (prompt: string): Promise<void> => {
-    // Cancel any in-flight request
-    if (abortRef.current) {
-      abortRef.current.abort();
-    }
-    const controller = new AbortController();
-    abortRef.current = controller;
+  // Step 1: per-instance activity counter (fixes cross-instance collisions & StrictMode double-fire)
+  const activityCounterRef = useRef(0);
 
-    // Clear previous error immediately (synchronously before async work)
-    setError(null);
-    setStatus("generating");
+  // Step 2: rAF token batching refs
+  const tokenBufferRef = useRef("");
+  const rafIdRef = useRef<number>();
 
-    try {
+  // Step 4: sessionId ref to avoid stale closures in generate callback
+  const sessionIdRef = useRef(sessionId);
+  sessionIdRef.current = sessionId;
+
+  const addActivity = useCallback(
+    (type: Activity["type"], message: string, path?: string) => {
+      const id = `activity-${++activityCounterRef.current}`;
+      setActivities((prev) => [
+        ...prev,
+        { id, type, message, path, timestamp: Date.now() },
+      ]);
+    },
+    []
+  );
+
+  const handleEvent = useCallback(
+    async (event: string, d: Record<string, unknown>) => {
+      switch (event) {
+        case "session":
+          if (d.sessionId) setSessionId(d.sessionId as string);
+          break;
+
+        case "status": {
+          const newStatus = d.status as string;
+          if (newStatus === "live") setStatus("live");
+          else if (newStatus === "generating") setStatus("generating");
+          break;
+        }
+
+        case "token":
+          tokenBufferRef.current += d.token as string;
+          if (!rafIdRef.current) {
+            rafIdRef.current = requestAnimationFrame(() => {
+              setStreamingText(tokenBufferRef.current);
+              rafIdRef.current = undefined;
+            });
+          }
+          break;
+
+        case "activity":
+          addActivity(
+            d.type as Activity["type"],
+            d.message as string,
+            d.path as string | undefined
+          );
+          break;
+
+        case "file_complete": {
+          const path = d.path as string;
+          const contents = d.contents as string;
+          setFiles((prev) => {
+            const idx = prev.findIndex((f) => f.path === path);
+            const newFile: StreamingFile = { path, contents };
+            if (idx >= 0) {
+              const updated = [...prev];
+              updated[idx] = newFile;
+              return updated;
+            }
+            return [...prev, newFile];
+          });
+          if (onFileCompleteRef.current) {
+            await onFileCompleteRef.current(path, contents);
+          }
+          break;
+        }
+
+        case "blueprint":
+          setBlueprint(d.data as Record<string, unknown>);
+          break;
+
+        case "done":
+          setStatus("live");
+          if (d.sessionId) setSessionId(d.sessionId as string);
+          break;
+
+        case "error":
+          setError(d.message as string);
+          setStatus("failed");
+          break;
+      }
+    },
+    [addActivity]
+  );
+
+  const generate = useCallback(
+    async (prompt: string): Promise<void> => {
+      if (abortRef.current) {
+        abortRef.current.abort();
+        // Cancel any pending rAF from the previous generation
+        if (rafIdRef.current) {
+          cancelAnimationFrame(rafIdRef.current);
+          rafIdRef.current = undefined;
+        }
+      }
+      const controller = new AbortController();
+      abortRef.current = controller;
+
+      // Reset state for new generation
+      setError(null);
+      setStatus("generating");
+      setStreamingText("");
+      tokenBufferRef.current = "";
+      setActivities([]);
+      setFiles([]);
+
+      try {
         const response = await fetch("/api/generate", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ prompt }),
+          body: JSON.stringify({
+            prompt,
+            sessionId: sessionIdRef.current ?? undefined,
+          }),
           signal: controller.signal,
         });
 
@@ -107,88 +218,42 @@ export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn 
 
           buffer += decoder.decode(value, { stream: true });
 
-          // Process all complete events (ending with \n\n) from the buffer
-          const lastDoublNewline = buffer.lastIndexOf("\n\n");
-          if (lastDoublNewline === -1) continue;
+          const lastDoubleNewline = buffer.lastIndexOf("\n\n");
+          if (lastDoubleNewline === -1) continue;
 
-          const toProcess = buffer.slice(0, lastDoublNewline + 2);
-          buffer = buffer.slice(lastDoublNewline + 2);
+          const toProcess = buffer.slice(0, lastDoubleNewline + 2);
+          buffer = buffer.slice(lastDoubleNewline + 2);
 
           const events = parseSSEEvents(toProcess);
           for (const { event, data } of events) {
-            const d = data as Record<string, unknown>;
-
-            if (event === "status") {
-              const newStatus = d.status as string;
-              if (newStatus === "live") {
-                setStatus("live");
-              } else if (newStatus === "generating") {
-                setStatus("generating");
-              }
-            } else if (event === "file_complete") {
-              const path = d.path as string;
-              const contents = d.contents as string;
-              setFiles((prev) => {
-                const idx = prev.findIndex((f) => f.path === path);
-                const newFile: StreamingFile = { path, contents };
-                if (idx >= 0) {
-                  const updated = [...prev];
-                  updated[idx] = newFile;
-                  return updated;
-                }
-                return [...prev, newFile];
-              });
-              if (onFileCompleteRef.current) {
-                await onFileCompleteRef.current(path, contents);
-              }
-            } else if (event === "blueprint") {
-              setBlueprint(d.data as Record<string, unknown>);
-            } else if (event === "done") {
-              setStatus("live");
-              if (d.sessionId) setSessionId(d.sessionId as string);
-            } else if (event === "error") {
-              setError(d.message as string);
-              setStatus("failed");
-            }
+            await handleEvent(event, data as Record<string, unknown>);
           }
         }
 
-        // Process any remaining buffer content
+        // Process remaining buffer
         if (buffer.trim()) {
           const events = parseSSEEvents(buffer);
           for (const { event, data } of events) {
-            const d = data as Record<string, unknown>;
-            if (event === "error") {
-              setError(d.message as string);
-              setStatus("failed");
-            } else if (event === "status" && (d.status as string) === "live") {
-              setStatus("live");
-            } else if (event === "file_complete") {
-              const path = d.path as string;
-              const contents = d.contents as string;
-              setFiles((prev) => {
-                const idx = prev.findIndex((f) => f.path === path);
-                const newFile: StreamingFile = { path, contents };
-                if (idx >= 0) {
-                  const updated = [...prev];
-                  updated[idx] = newFile;
-                  return updated;
-                }
-                return [...prev, newFile];
-              });
-              if (onFileCompleteRef.current) {
-                await onFileCompleteRef.current(path, contents);
-              }
-            }
+            await handleEvent(event, data as Record<string, unknown>);
           }
         }
-    } catch (err) {
-      if ((err as Error).name === "AbortError") return;
-      setError((err as Error).message ?? "Unknown error");
-      setStatus("failed");
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- onFileComplete accessed via ref
-  }, []);
+      } catch (err) {
+        if ((err as Error).name === "AbortError") return;
+        setError((err as Error).message ?? "Unknown error");
+        setStatus("failed");
+      }
+    },
+    [handleEvent]
+  );
 
-  return { status, files, generate, blueprint, error, previewUrl, sessionId };
+  return {
+    status,
+    files,
+    generate,
+    blueprint,
+    error,
+    sessionId,
+    streamingText,
+    activities,
+  };
 }

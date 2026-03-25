@@ -18,20 +18,20 @@ vi.mock("../../hooks/use-streaming", () => ({
     generate: vi.fn(),
     blueprint: null,
     error: null,
-    previewUrl: null,
     sessionId: null,
   }),
 }));
 
-import type { Id } from "../../../../../convex/_generated/dataModel";
 import { ChatPanel } from "../chat-panel";
 
 const defaultProps = {
-  sessionId: null as Id<"sessions"> | null,
+  sessionId: null as string | null,
   status: "idle" as const,
   blueprint: null as Record<string, unknown> | null,
   error: null as string | null,
   onGenerate: vi.fn(),
+  streamingText: "",
+  activities: [] as { id: string; type: "thinking" | "writing_file" | "file_written" | "complete"; message: string; path?: string; timestamp: number }[],
 };
 
 describe("ChatPanel — streaming builder contract", () => {
@@ -51,7 +51,7 @@ describe("ChatPanel — streaming builder contract", () => {
       { _id: "msg2", role: "assistant", content: "I'm building your token board app!", timestamp: 2 },
     ]);
 
-    render(<ChatPanel {...defaultProps} sessionId={"session_123" as Id<"sessions">} />);
+    render(<ChatPanel {...defaultProps} sessionId={"session_123"} />);
     expect(screen.getByText("Build a token board")).toBeTruthy();
     expect(screen.getByText(/building your token board/i)).toBeTruthy();
 

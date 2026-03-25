@@ -38,11 +38,6 @@ describe("useStreaming — streaming hook contract", () => {
     expect(result.current.error).toBeNull();
   });
 
-  it("previewUrl is null initially", () => {
-    const { result } = renderHook(() => useStreaming());
-    expect(result.current.previewUrl).toBeNull();
-  });
-
   it("sessionId is null initially", () => {
     const { result } = renderHook(() => useStreaming());
     expect(result.current.sessionId).toBeNull();
@@ -101,8 +96,6 @@ describe("useStreaming — streaming hook contract", () => {
     });
 
     expect(result.current.status).toBe("live");
-    // previewUrl is NOT set by streaming hook — WebContainer manages the preview URL
-    expect(result.current.previewUrl).toBeNull();
   });
 
   it("files array is populated when file_complete events arrive", async () => {
