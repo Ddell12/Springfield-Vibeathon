@@ -1,9 +1,11 @@
 "use client";
 
 import { Loader2, Sparkles } from "lucide-react";
+import { useRef } from "react";
 
 import { cn } from "@/core/utils";
 
+import { usePostMessageBridge } from "../hooks/use-postmessage-bridge";
 import type { StreamingStatus } from "../hooks/use-streaming";
 import type { WebContainerStatus } from "../hooks/use-webcontainer";
 import type { DeviceSize } from "./builder-toolbar";
@@ -17,6 +19,8 @@ interface PreviewPanelProps {
 }
 
 export function PreviewPanel({ previewUrl, state, wcStatus, error, deviceSize = "desktop" }: PreviewPanelProps) {
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  usePostMessageBridge(iframeRef);
   const isGenerating = state === "generating";
   const isFailed = state === "failed" || wcStatus === "error";
   const hasPreview = wcStatus === "ready" && !!previewUrl;
@@ -30,10 +34,12 @@ export function PreviewPanel({ previewUrl, state, wcStatus, error, deviceSize = 
             deviceSize === "mobile" ? "w-[375px]" : "w-full"
           )}>
             <iframe
+              ref={iframeRef}
               src={previewUrl!}
               className="h-full w-full bg-white"
               title="App Preview"
-              sandbox="allow-scripts"
+              sandbox="allow-scripts allow-same-origin"
+              allow="microphone"
             />
           </div>
         ) : wcStatus === "booting" ? (

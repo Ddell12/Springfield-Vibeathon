@@ -147,6 +147,18 @@ export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn 
           break;
         }
 
+        case "image_generated":
+          addActivity("file_written", `Generated image: ${d.label as string}`);
+          break;
+
+        case "speech_generated":
+          addActivity("file_written", `Generated audio: "${d.text as string}"`);
+          break;
+
+        case "stt_enabled":
+          addActivity("complete", "Speech input enabled");
+          break;
+
         case "done":
           // Flush any buffered tokens before marking as live
           if (rafIdRef.current) {
