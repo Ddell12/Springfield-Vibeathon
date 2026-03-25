@@ -1,8 +1,12 @@
 "use client";
 
+import { useAction } from "convex/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 
+import { api } from "../../../../convex/_generated/api";
+import type { Id } from "../../../../convex/_generated/dataModel";
 import { ShareDialog } from "@/features/sharing/components/share-dialog";
 import {
   ResizableHandle,
@@ -27,6 +31,9 @@ export function BuilderPage() {
   const [deviceSize, setDeviceSize] = useState<DeviceSize>("desktop");
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [publishModalOpen, setPublishModalOpen] = useState(false);
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [publishedUrl, setPublishedUrl] = useState<string | null>(null);
+  const publishApp = useAction(api.publish.publishApp);
 
   const { status: wcStatus, previewUrl, writeFile, error: wcError } = useWebContainer();
 
@@ -63,7 +70,26 @@ export function BuilderPage() {
   }, [sessionId, sessionIdFromUrl, router]);
 
   // Derive an app name from blueprint or default
-  const appName = typeof blueprint?.name === "string" ? blueprint.name : "Untitled App";
+  const appName = typeof blueprint?.title === "string" ? blueprint.title : "Untitled App";
+
+  async function handlePublish() {
+    if (!sessionId || isPublishing) return;
+
+    setIsPublishing(true);
+    try {
+      const result = await publishApp({
+        sessionId: sessionId as Id<"sessions">,
+        title: appName,
+      });
+      setPublishedUrl(result.deploymentUrl);
+      setPublishModalOpen(true);
+    } catch (err) {
+      console.error("Publish failed:", err);
+      toast.error("Publishing failed. Please try again.");
+    } finally {
+      setIsPublishing(false);
+    }
+  }
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
@@ -75,7 +101,7 @@ export function BuilderPage() {
         status={status}
         projectName={appName}
         onShare={() => setShareDialogOpen(true)}
-        onPublish={() => setPublishModalOpen(true)}
+        onPublish={handlePublish}
       />
 
       <div className="min-h-0 flex-1 bg-surface-container-low p-2">
@@ -134,8 +160,11 @@ export function BuilderPage() {
         open={publishModalOpen}
         onOpenChange={setPublishModalOpen}
         projectName={appName}
-        publishedUrl={`${typeof window !== "undefined" ? window.location.origin : ""}/tool/${sessionId ?? "preview"}`}
-        onBackToBuilder={() => setPublishModalOpen(false)}
+        publishedUrl={publishedUrl ?? ""}
+        onBackToBuilder={() => {
+          setPublishModalOpen(false);
+          setPublishedUrl(null);
+        }}
       />
     </div>
   );
