@@ -10,7 +10,7 @@ import {
   Sparkles,
   Wand2,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 
 import { cn } from "@/core/utils";
 import { Button } from "@/shared/components/ui/button";
@@ -74,21 +74,14 @@ function StreamingTextBubble({ text }: { text: string }) {
   );
 }
 
+const ACTIVITY_ICONS: Record<Activity["type"], React.ReactNode> = {
+  thinking: <Loader2 className="h-4 w-4 animate-spin text-primary" />,
+  writing_file: <FileCode2 className="h-4 w-4 animate-pulse text-amber-500" />,
+  file_written: <FileCode2 className="h-4 w-4 text-green-600" />,
+  complete: <CheckCircle2 className="h-4 w-4 text-green-600" />,
+};
+
 function ActivityCard({ activity }: { activity: Activity }) {
-  const iconMap: Record<Activity["type"], React.ReactNode> = {
-    thinking: (
-      <Loader2 className="h-4 w-4 animate-spin text-primary" />
-    ),
-    writing_file: (
-      <FileCode2 className="h-4 w-4 animate-pulse text-amber-500" />
-    ),
-    file_written: (
-      <FileCode2 className="h-4 w-4 text-green-600" />
-    ),
-    complete: (
-      <CheckCircle2 className="h-4 w-4 text-green-600" />
-    ),
-  };
 
   return (
     <div
@@ -99,7 +92,7 @@ function ActivityCard({ activity }: { activity: Activity }) {
           : "bg-surface-container-low"
       )}
     >
-      {iconMap[activity.type]}
+      {ACTIVITY_ICONS[activity.type]}
       <span className="text-sm text-on-surface-variant">
         {activity.message}
       </span>
@@ -112,7 +105,7 @@ function ActivityCard({ activity }: { activity: Activity }) {
   );
 }
 
-function ProgressSteps({ activities }: { activities: Activity[] }) {
+const ProgressSteps = memo(function ProgressSteps({ activities }: { activities: Activity[] }) {
   if (activities.length === 0) return null;
 
   // Dedupe by type — show latest of each type
@@ -121,7 +114,7 @@ function ProgressSteps({ activities }: { activities: Activity[] }) {
       type: "thinking",
       label: "Understanding request",
       done: activities.some(
-        (a) => a.type !== "thinking"
+        (a) => a.type === "writing_file" || a.type === "file_written" || a.type === "complete"
       ),
     },
     {
@@ -189,7 +182,7 @@ function ProgressSteps({ activities }: { activities: Activity[] }) {
       ))}
     </div>
   );
-}
+});
 
 // --- Main ChatPanel ---
 
@@ -214,6 +207,7 @@ export function ChatPanel({
 }: ChatPanelProps) {
   const [input, setInput] = useState("");
   const scrollEndRef = useRef<HTMLDivElement>(null);
+  const lastScrollRef = useRef(0);
 
   // Query persisted messages from Convex (skip if no session yet)
   const typedSessionId = sessionId as Id<"sessions"> | null;
@@ -226,8 +220,11 @@ export function ChatPanel({
   const isLive = status === "live";
   const isEmpty = !sessionId && status === "idle";
 
-  // Auto-scroll to bottom on new content
+  // Auto-scroll to bottom on new content — throttled to 200ms to avoid jitter during streaming
   useEffect(() => {
+    const now = Date.now();
+    if (now - lastScrollRef.current < 200) return;
+    lastScrollRef.current = now;
     scrollEndRef.current?.scrollIntoView?.({ behavior: "smooth" });
   }, [messages, streamingText, activities, status]);
 
