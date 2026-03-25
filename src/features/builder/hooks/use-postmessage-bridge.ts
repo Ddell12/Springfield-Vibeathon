@@ -26,6 +26,9 @@ export function usePostMessageBridge(iframeRef: React.RefObject<HTMLIFrameElemen
       const iframe = iframeRef.current;
       if (!iframe?.contentWindow) return;
 
+      // Only process messages from our iframe — ignore cross-origin noise
+      if (event.source !== iframe.contentWindow) return;
+
       const messageType = event.data?.type as string | undefined;
 
       switch (messageType) {
@@ -41,6 +44,10 @@ export function usePostMessageBridge(iframeRef: React.RefObject<HTMLIFrameElemen
             );
           } catch (err) {
             console.error("[PostMessage Bridge] TTS error:", err);
+            iframe.contentWindow.postMessage(
+              { type: "tts-error", text: event.data.text, error: (err as Error).message },
+              "*",
+            );
           }
           break;
         }
@@ -63,12 +70,20 @@ export function usePostMessageBridge(iframeRef: React.RefObject<HTMLIFrameElemen
                 );
               } catch (err) {
                 console.error("[PostMessage Bridge] STT error:", err);
+                iframe.contentWindow?.postMessage(
+                  { type: "stt-error", error: (err as Error).message },
+                  "*",
+                );
               }
             };
             mediaRecorderRef.current = recorder;
             recorder.start();
           } catch (err) {
             console.error("[PostMessage Bridge] Mic access error:", err);
+            iframe.contentWindow.postMessage(
+              { type: "stt-error", error: "Could not access microphone" },
+              "*",
+            );
           }
           break;
         }

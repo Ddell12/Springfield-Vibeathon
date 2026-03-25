@@ -8,9 +8,14 @@ import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 import { sseEncode } from "./sse";
 
-const convex = new ConvexHttpClient(
-  process.env.NEXT_PUBLIC_CONVEX_URL ?? "https://placeholder.convex.cloud"
-);
+if (!process.env.NEXT_PUBLIC_CONVEX_URL) {
+  throw new Error("NEXT_PUBLIC_CONVEX_URL is required for /api/generate");
+}
+if (!process.env.ANTHROPIC_API_KEY) {
+  throw new Error("ANTHROPIC_API_KEY is required for /api/generate");
+}
+
+const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL);
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -192,9 +197,12 @@ export async function POST(request: Request): Promise<Response> {
         const mutationPromises: Promise<unknown>[] = [];
 
         let messages: Anthropic.MessageParam[] = [{ role: "user", content: query }];
+        const MAX_TOOL_TURNS = 10;
+        let turnCount = 0;
         let continueLoop = true;
 
-        while (continueLoop) {
+        while (continueLoop && turnCount < MAX_TOOL_TURNS) {
+          turnCount++;
           const llmStream = anthropic.messages.stream({
             model: "claude-sonnet-4-6",
             max_tokens: 16384,
@@ -233,12 +241,19 @@ export async function POST(request: Request): Promise<Response> {
                     }),
                   );
                   version++;
+                  toolResults.push({
+                    type: "tool_result",
+                    tool_use_id: block.id,
+                    content: "File written successfully",
+                  });
+                } else {
+                  toolResults.push({
+                    type: "tool_result",
+                    tool_use_id: block.id,
+                    content: "Error: write_file requires non-empty path and contents",
+                    is_error: true,
+                  });
                 }
-                toolResults.push({
-                  type: "tool_result",
-                  tool_use_id: block.id,
-                  content: "File written successfully",
-                });
                 break;
               }
 
@@ -295,8 +310,16 @@ export async function POST(request: Request): Promise<Response> {
           }
         }
 
-        // Persist files, assistant message, system summary, and setLive in parallel
-        await Promise.all(mutationPromises);
+        if (turnCount >= MAX_TOOL_TURNS) {
+          send("activity", { type: "complete", message: "Generation complete (reached max steps)" });
+        }
+
+        // Persist files — use allSettled so one failure doesn't kill the whole generation
+        const settled = await Promise.allSettled(mutationPromises);
+        const failures = settled.filter((r) => r.status === "rejected");
+        if (failures.length > 0) {
+          console.error(`[generate] ${failures.length} file persistence failure(s)`);
+        }
 
         const postLlmPromises: Promise<unknown>[] = [];
 

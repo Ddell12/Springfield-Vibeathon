@@ -57,7 +57,8 @@ export const generateSpeech = action({
     );
 
     if (!response.ok) {
-      throw new Error(`ElevenLabs API error: ${response.status}`);
+      const body = await response.text().catch(() => "");
+      throw new Error(`ElevenLabs API error: ${response.status} ${body}`);
     }
 
     const audioBuffer = await response.arrayBuffer();

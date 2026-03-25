@@ -33,7 +33,8 @@ export const transcribeSpeech = action({
     );
 
     if (!response.ok) {
-      throw new Error(`ElevenLabs STT error: ${response.status}`);
+      const body = await response.text().catch(() => "");
+      throw new Error(`ElevenLabs STT error: ${response.status} ${body}`);
     }
 
     const data = (await response.json()) as { text: string; language_code?: string };

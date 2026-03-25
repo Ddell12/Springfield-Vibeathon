@@ -74,6 +74,10 @@ export const publishApp = action({
         appId: existingApp._id,
         publishedUrl: deploymentUrl,
       });
+    } else {
+      console.warn(
+        `[publish] No app record for session ${args.sessionId} — URL not persisted`,
+      );
     }
 
     return { deploymentUrl };
