@@ -32,7 +32,7 @@ export function PreviewPanel({ previewUrl, state, wcStatus, error, deviceSize = 
               src={previewUrl!}
               className="h-full w-full bg-white"
               title="App Preview"
-              sandbox="allow-scripts allow-same-origin"
+              sandbox="allow-scripts"
             />
           </div>
         ) : wcStatus === "booting" ? (
