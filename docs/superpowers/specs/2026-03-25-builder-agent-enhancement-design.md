@@ -387,7 +387,7 @@ Existing `/tool/{shareSlug}` page (`SharedToolPage`) already renders an iframe. 
 - `convex/publish.ts` — `publishApp` action (Vercel Deploy API)
 - `convex/stt.ts` — `transcribeSpeech` action (ElevenLabs STT)
 - WebContainer template components (8 primitives + 4 composed): added to `webcontainer-files.ts`
-- WebContainer template hooks (useTTS, useSTT, useTherapyImages): added to `webcontainer-files.ts`
+- WebContainer template hooks (useTTS, useSTT): added to `webcontainer-files.ts`
 
 ### Modified Files
 - `convex/schema.ts` — add `imageCache` table, update `therapyTemplates` table
