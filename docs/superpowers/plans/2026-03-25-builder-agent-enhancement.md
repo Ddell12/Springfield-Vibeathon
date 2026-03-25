@@ -1003,6 +1003,7 @@ An `internalAction` that generates the ~50 most common therapy images using `gen
 
 import { internalAction } from "../_generated/server";
 import { internal } from "../_generated/api";
+import { api } from "../_generated/api";
 
 const SEED_IMAGES = [
   // Emotions
@@ -1022,7 +1023,7 @@ export const seedImages = internalAction({
 
     for (const { label, category } of SEED_IMAGES) {
       try {
-        await ctx.runAction(internal.image_generation.generateTherapyImage, { label, category });
+        await ctx.runAction(api.image_generation.generateTherapyImage, { label, category });
         console.log(`Seeded: ${label} (${category})`);
       } catch (err) {
         console.error(`Failed to seed ${label}:`, err);
@@ -1127,76 +1128,53 @@ export const publishApp = action({
   },
 });
 
+// IMPORTANT: This function must include ALL template files — not just config.
+// The agent only writes App.tsx and custom files. All infrastructure
+// (main.tsx, therapy components, hooks, CSS) comes from the WebContainer template.
+//
+// To avoid duplicating the file tree, extract the template contents into a shared
+// constant (e.g., `src/features/builder/lib/template-files.ts`) that both
+// webcontainer-files.ts and this publish action can import.
+
+import { getPublishableTemplateFiles } from "../src/features/builder/lib/template-files";
+
 function buildVercelFiles(
   generatedFiles: Array<{ path: string; contents: string }>
 ): Array<{ file: string; data: string }> {
-  // Template files (minimal Vite + React setup)
-  const templateFiles = [
-    { file: "package.json", data: JSON.stringify({
-      name: "bridges-tool",
-      private: true,
-      type: "module",
-      scripts: { dev: "vite", build: "vite build", preview: "vite preview" },
-      dependencies: {
-        react: "19.0.0",
-        "react-dom": "19.0.0",
-        "lucide-react": "^0.469.0",
-        "class-variance-authority": "^0.7.1",
-        clsx: "^2.1.1",
-        "tailwind-merge": "^3.5.0",
-        motion: "^12.0.0",
-      },
-      devDependencies: {
-        "@tailwindcss/vite": "^4.0.0",
-        "@vitejs/plugin-react": "^4.4.0",
-        tailwindcss: "^4.0.0",
-        typescript: "^5.7.0",
-        vite: "^6.0.0",
-      },
-    }, null, 2) },
-    { file: "index.html", data: `<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
-    <title>Bridges App</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
-</html>` },
-    { file: "vite.config.ts", data: `import react from "@vitejs/plugin-react";
-import tailwindcss from "@tailwindcss/vite";
-import { defineConfig } from "vite";
-export default defineConfig({
-  plugins: [react(), tailwindcss()],
-  resolve: { dedupe: ["react", "react-dom"] },
-});` },
-    { file: "tsconfig.json", data: JSON.stringify({
-      compilerOptions: {
-        target: "ES2020", useDefineForClassFields: true, lib: ["ES2020", "DOM", "DOM.Iterable"],
-        module: "ESNext", skipLibCheck: true, moduleResolution: "bundler",
-        allowImportingTsExtensions: true, isolatedModules: true, noEmit: true, jsx: "react-jsx", strict: true,
-      },
-      include: ["src"],
-    }, null, 2) },
-  ];
+  // Template files — includes ALL files needed to build:
+  // package.json, index.html, vite.config.ts, tsconfig.json,
+  // src/main.tsx, src/therapy-ui.css, src/lib/utils.ts,
+  // src/components/*.tsx (all 12 therapy components),
+  // src/hooks/*.ts (useTTS, useSTT, useLocalStorage, useSound, etc.)
+  const templateFiles = getPublishableTemplateFiles();
 
-  // Generated source files
+  // Generated source files (App.tsx, custom components, data files)
+  // These OVERRIDE any template files with the same path
   const sourceFiles = generatedFiles.map((f) => ({
     file: f.path,
     data: f.contents,
   }));
 
-  return [...templateFiles, ...sourceFiles];
+  // Merge: template files first, generated files override matching paths
+  const fileMap = new Map<string, string>();
+  for (const f of templateFiles) {
+    fileMap.set(f.file, f.data);
+  }
+  for (const f of sourceFiles) {
+    fileMap.set(f.file, f.data);
+  }
+
+  return Array.from(fileMap.entries()).map(([file, data]) => ({ file, data }));
 }
 ```
 
-- [ ] **Step 2: Ensure `generated_files.listBySession` query exists**
+- [ ] **Step 2: Create shared `template-files.ts` for publish**
+
+Create `src/features/builder/lib/template-files.ts` that exports a `getPublishableTemplateFiles()` function. This function returns all WebContainer template files as a flat array of `{ file: string; data: string }` objects — the same content that's in `webcontainer-files.ts` but in a format suitable for the Vercel Deploy API.
+
+Also refactor `webcontainer-files.ts` to import from this shared file instead of duplicating the template content.
+
+- [ ] **Step 3: Ensure `generated_files.listBySession` query exists**
 
 Check if `convex/generated_files.ts` has a `listBySession` query. If not, add one:
 
@@ -1214,12 +1192,12 @@ export const listBySession = query({
 
 Note: The `apps.getBySession` query was already added in Task 6, Step 4.
 
-- [ ] **Step 3: Run `npx convex dev --once` to verify**
+- [ ] **Step 4: Run `npx convex dev --once` to verify**
 
-- [ ] **Step 4: Commit**
+- [ ] **Step 5: Commit**
 
 ```bash
-git add convex/publish.ts convex/generated_files.ts
+git add convex/publish.ts convex/generated_files.ts src/features/builder/lib/template-files.ts
 git commit -m "feat: add publishApp action with Vercel Deploy API"
 ```
 
