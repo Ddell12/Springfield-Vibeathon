@@ -1,11 +1,12 @@
 "use client";
 
-import { Lightbulb, Sparkles } from "lucide-react";
+import { Sparkles } from "lucide-react";
 
 import { cn } from "@/core/utils";
+import type { TherapyBlueprint } from "../lib/schemas";
 
 interface BlueprintCardProps {
-  blueprint: Record<string, unknown>;
+  blueprint: TherapyBlueprint;
 }
 
 function BlueprintField({ label, value }: { label: string; value: string }) {
@@ -20,14 +21,7 @@ function BlueprintField({ label, value }: { label: string; value: string }) {
 }
 
 export function BlueprintCard({ blueprint }: BlueprintCardProps) {
-  const title = typeof blueprint.title === "string" ? blueprint.title : undefined;
-  const therapyGoal = typeof blueprint.therapyGoal === "string" ? blueprint.therapyGoal : undefined;
-  const targetSkill = typeof blueprint.targetSkill === "string" ? blueprint.targetSkill : undefined;
-  const ageRange = typeof blueprint.ageRange === "string" ? blueprint.ageRange : undefined;
-  const targetUser = typeof blueprint.targetUser === "string" ? blueprint.targetUser : undefined;
-  const interactionModel = typeof blueprint.interactionModel === "string" ? blueprint.interactionModel : undefined;
-  const description = typeof blueprint.description === "string" ? blueprint.description : undefined;
-  const therapistNote = typeof blueprint.therapistNote === "string" ? blueprint.therapistNote : undefined;
+  const { title, therapyGoal, targetSkill, ageRange, interactionModel, description } = blueprint;
 
   return (
     <div
@@ -47,27 +41,18 @@ export function BlueprintCard({ blueprint }: BlueprintCardProps) {
 
         {/* Content */}
         <div className="p-6 space-y-5">
-          {title && (
-            <h2 className="font-headline font-bold text-xl text-primary leading-tight">
-              {title}
-            </h2>
-          )}
+          <h2 className="font-headline font-bold text-xl text-primary leading-tight">
+            {title}
+          </h2>
 
           <div className="space-y-4">
-            {therapyGoal && <BlueprintField label="Therapy Goal" value={therapyGoal} />}
-            {targetSkill && <BlueprintField label="Target Skill" value={targetSkill} />}
+            <BlueprintField label="Therapy Goal" value={therapyGoal} />
+            <BlueprintField label="Target Skill" value={targetSkill} />
 
-            {/* Age Range + Target User side by side */}
-            {(ageRange || targetUser) && (
-              <div className="grid grid-cols-2 gap-4">
-                {ageRange && <BlueprintField label="Age Range" value={ageRange} />}
-                {targetUser && <BlueprintField label="Target User" value={targetUser} />}
-              </div>
-            )}
-
-            {interactionModel && (
+            <div className="grid grid-cols-2 gap-4">
+              <BlueprintField label="Age Range" value={ageRange} />
               <BlueprintField label="Interaction Model" value={interactionModel} />
-            )}
+            </div>
 
             {description && (
               <div className="pt-2 border-t border-outline-variant/10">
@@ -78,16 +63,6 @@ export function BlueprintCard({ blueprint }: BlueprintCardProps) {
             )}
           </div>
         </div>
-
-        {/* Warm Peach Highlight Bar */}
-        {therapistNote && (
-          <div className="bg-tertiary-fixed px-5 py-4 flex gap-3">
-            <Lightbulb className="size-[18px] text-on-tertiary-fixed shrink-0 mt-0.5" />
-            <p className="text-[12px] font-medium text-on-tertiary-fixed italic leading-snug">
-              &ldquo;{therapistNote}&rdquo;
-            </p>
-          </div>
-        )}
     </div>
   );
 }

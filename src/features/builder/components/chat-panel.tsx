@@ -20,6 +20,7 @@ import { ScrollArea } from "@/shared/components/ui/scroll-area";
 import { api } from "../../../../convex/_generated/api";
 import { Id } from "../../../../convex/_generated/dataModel";
 import type { Activity, StreamingStatus } from "../hooks/use-streaming";
+import type { TherapyBlueprint } from "../lib/schemas";
 import { BlueprintCard } from "./blueprint-card";
 import { SuggestionChips } from "./suggestion-chips";
 
@@ -189,7 +190,7 @@ const ProgressSteps = memo(function ProgressSteps({ activities }: { activities: 
 interface ChatPanelProps {
   sessionId: string | null;
   status: StreamingStatus;
-  blueprint: Record<string, unknown> | null;
+  blueprint: TherapyBlueprint | null;
   error: string | null;
   onGenerate: (prompt: string) => void;
   streamingText: string;

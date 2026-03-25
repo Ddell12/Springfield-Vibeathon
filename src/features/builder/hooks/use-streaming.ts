@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { TherapyBlueprintSchema, type TherapyBlueprint } from "@/features/builder/lib/schemas";
+
 export type StreamingStatus = "idle" | "generating" | "live" | "failed";
 
 export interface StreamingFile {
@@ -22,7 +24,7 @@ export interface UseStreamingReturn {
   status: StreamingStatus;
   files: StreamingFile[];
   generate: (prompt: string) => Promise<void>;
-  blueprint: Record<string, unknown> | null;
+  blueprint: TherapyBlueprint | null;
   error: string | null;
   sessionId: string | null;
   streamingText: string;
@@ -62,7 +64,7 @@ function parseSSEEvents(text: string): Array<{ event: string; data: unknown }> {
 export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn {
   const [status, setStatus] = useState<StreamingStatus>("idle");
   const [files, setFiles] = useState<StreamingFile[]>([]);
-  const [blueprint, setBlueprint] = useState<Record<string, unknown> | null>(null);
+  const [blueprint, setBlueprint] = useState<TherapyBlueprint | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [streamingText, setStreamingText] = useState("");
@@ -144,9 +146,11 @@ export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn 
           break;
         }
 
-        case "blueprint":
-          setBlueprint(d.data as Record<string, unknown>);
+        case "blueprint": {
+          const parsed = TherapyBlueprintSchema.safeParse(d.data);
+          if (parsed.success) setBlueprint(parsed.data);
           break;
+        }
 
         case "done":
           setStatus("live");
