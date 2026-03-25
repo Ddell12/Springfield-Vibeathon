@@ -5,6 +5,46 @@
 
 ---
 
+## [Unreleased] — VibeSDK-Inspired Refactor (2026-03-24)
+
+### Changed
+- **Architecture:** Replaced config-based tool generation with full code generation pipeline
+- **AI Backend:** Replaced `@convex-dev/agent` + Vercel AI SDK with direct `@anthropic-ai/sdk` usage in Convex actions
+- **State Machine:** Added phasic pipeline: blueprinting → template selection → phase generation → implementation → deploy → validate → version snapshot → finalize → review → complete
+- **Schema:** Added 7 new tables (sessions, messages, agentContext, blueprints, phases, files, versions), renamed tools→apps and toolState→appState, removed projects
+- **Frontend:** New three-panel builder (chat + code + preview) with phase timeline, blueprint approval card
+- **Terminology:** "app" replaces "tool" throughout codebase
+
+### Added
+- `convex/pipeline.ts` — Pipeline dispatcher with 8 state handlers
+- `convex/pipeline_tools.ts` — Anthropic betaZodTool definitions (search_knowledge, select_template, generate_image, generate_speech)
+- `convex/pipeline_prompts.ts` — System prompts for each pipeline step
+- `convex/e2b.ts` — E2B sandbox operations (create, update, validate, kill)
+- `convex/sessions.ts` — Session CRUD with state machine + scheduler chaining
+- `convex/blueprints.ts` — Blueprint CRUD with approval flow
+- `convex/phases.ts`, `convex/generated_files.ts`, `convex/versions.ts` — Phase tracking, file management, version history
+- `src/features/builder/` — New builder feature with chat panel, code panel, preview panel, phase timeline, blueprint card
+- `src/app/api/agent/` — Thin API routes (build, approve, message)
+- `src/features/builder/lib/schemas/` — Zod schemas (TherapyBlueprint, PhaseConcept, PhaseImplementation)
+
+### Removed
+- `convex/agents/` — Old Convex Agent definition
+- `convex/chat/` — Old streaming chat
+- `convex/projects.ts`, `convex/tools.ts`, `convex/tool_state.ts` — Replaced by new pipeline tables
+- `src/features/therapy-tools/` — Config-based tool rendering
+- `src/features/builder-v2/` — Old builder feature
+- `src/app/api/chat/` — Old chat API routes
+- `@convex-dev/agent`, `@ai-sdk/anthropic`, `@assistant-ui/react` — Replaced by `@anthropic-ai/sdk`
+
+### Gotchas Discovered
+- `ConvexHttpClient` uses lowercase "ttp" (not `ConvexHTTPClient`)
+- `betaZodTool` import: `@anthropic-ai/sdk/helpers/beta/zod` (not `resources/beta/messages`)
+- `??` operator precedence: `a ?? 0 + b` !== `(a ?? 0) + b`
+- `convex-test` scheduler: `ctx.scheduler.runAfter()` causes unhandled rejections (tests still pass)
+- `"use node"` actions can cross-import from `src/` (esbuild bundles them)
+
+---
+
 ## 2026-03-23 — Project Initialization (Pre-Build)
 
 ### PLAID Intake Complete
