@@ -25,6 +25,8 @@
 
 All components and hooks are pre-installed in the WebContainer template (`webcontainer-files.ts`). The AI agent imports and composes them — it does NOT generate raw UI code for therapy patterns.
 
+**Template dependency note:** The `motion` package (framer-motion) must be added to the WebContainer template's `package.json` dependencies for animation-heavy components (`CelebrationOverlay`, `TokenSlot` earn animation). It is already listed in the main app's dependencies but needs to be in the WebContainer template's own dependency list. Alternatively, components can use CSS-only animations (`@keyframes` + `animation`) to avoid the extra dependency — this is lighter but less flexible.
+
 #### Primitive Components (`src/components/`)
 
 | Component | Purpose | Key Props |
@@ -49,13 +51,22 @@ All components and hooks are pre-installed in the WebContainer template (`webcon
 
 #### Pre-built Hooks (`src/hooks/`)
 
+**Runtime hooks** (used by generated apps inside the iframe, communicate with parent via PostMessage):
+
 | Hook | Purpose | Bridge Pattern |
 |------|---------|----------------|
 | `useTTS()` | `speak(text)` -> parent `postMessage` -> Convex -> ElevenLabs | Returns `{ speak, speaking }` |
 | `useSTT()` | `startListening()` -> parent `postMessage` -> ElevenLabs STT | Returns `{ transcript, listening, startListening, stopListening }` |
-| `useTherapyImages()` | `getImage(label, category)` -> parent `postMessage` -> Convex -> Nano Banana | Returns `{ getImage, loading }` |
 | `useLocalStorage()` | Already exists | Persistence across sessions |
 | `useSound()` | Already exists | Tap feedback sounds |
+
+**Build-time vs. Runtime distinction:**
+- **Images and pre-generated audio** are created at **build time** by the agent calling `generate_image` and `generate_speech` tools. The resulting CDN URLs are baked into the generated code as constants. No runtime image generation needed.
+- **`useTTS()`** is a **runtime hook** for dynamic speech — e.g., the sentence strip composing new sentences the agent couldn't predict. It uses the PostMessage bridge to call ElevenLabs via the parent.
+- **`useSTT()`** is a **runtime hook** for live microphone input. Only active when the agent called `enable_speech_input`.
+- **Published apps (Wave 3):** `useTTS()` and `useSTT()` will NOT work in published standalone apps (no parent bridge). Pre-generated audio URLs still play fine. The hooks gracefully no-op when no parent bridge responds (timeout fallback).
+
+**Removed from hooks:** `useTherapyImages()` — images are always generated at build time by the agent tool and embedded as URLs. No runtime image generation needed.
 
 #### How the Agent Uses Components
 
@@ -75,7 +86,21 @@ export default function App() {
 
 ### 1.2 Agent Tools (via `@anthropic-ai/sdk`)
 
-The builder agent in `route.ts` currently has one tool (`write_file`). Three new tools are added:
+The builder agent in `route.ts` currently has one tool (`write_file`). Three new tools are added.
+
+#### Multi-turn Tool Loop (Critical Architecture Change)
+
+The current `route.ts` uses a single-turn streaming call — Claude generates, emits `write_file` tool calls, and stops. With the new tools, the agent needs to call `generate_image` / `generate_speech` multiple times **before** writing code, then continue to `write_file`. This requires a **multi-turn tool loop**:
+
+1. Start streaming from Claude with all 4 tools available
+2. When Claude emits `stop_reason: "tool_use"` (not `"end_turn"`):
+   - Execute each pending tool call (image gen, speech gen, etc.)
+   - Emit SSE progress events to the frontend (`image_generated`, `speech_generated`)
+   - Send tool results back to Claude as a new message with `role: "user"` containing `tool_result` blocks
+   - Resume streaming from Claude (it continues generating with the URLs it now has)
+3. Repeat until Claude emits `stop_reason: "end_turn"` (all code written, generation complete)
+
+This is the same pattern as `anthropic.beta.messages.toolRunner()` but implemented manually to support SSE streaming. The existing single-turn handler becomes the inner loop of a while loop that runs until `stop_reason === "end_turn"`.
 
 #### `generate_image`
 
@@ -123,10 +148,14 @@ The builder agent in `route.ts` currently has one tool (`write_file`). Three new
 
 **Backend:** Existing Convex `generateSpeech` action -> checks `ttsCache` -> cache miss calls ElevenLabs `eleven_flash_v2_5` -> stores in Convex file storage -> caches URL.
 
-**Voice mapping:**
-- `warm-female` -> Rachel (default, calm and clear)
-- `calm-male` -> Adam
-- `child-friendly` -> selected for clarity with young listeners
+**Voice mapping** (friendly name -> ElevenLabs voice ID):
+- `warm-female` -> `21m00Tcm4TlvDq8ikWAM` (Rachel — default, calm and clear)
+- `calm-male` -> `pNInz6obpgDQGcFmaJgB` (Adam)
+- `child-friendly` -> TBD at implementation (select from ElevenLabs voice library for clarity with young listeners)
+
+The mapping layer lives in the `generateSpeech` Convex action — the agent passes friendly names, the action resolves to voice IDs. The existing action currently takes a raw `voiceId`; add a `voice` arg that maps to IDs, with `voiceId` as a fallback for backward compatibility.
+
+**Image generation model note:** "Nano Banana Pro" refers to Gemini's image generation via the `@google/genai` SDK (model: `gemini-2.0-flash-exp` or latest image-capable model). This replaces the existing `imagen-3.0-generate-002` REST call in `convex/aiActions.ts` with the newer SDK-based approach.
 
 #### `enable_speech_input`
 
@@ -173,7 +202,8 @@ The builder's preview iframe component adds event listeners:
 | `tts-request` `{ text, voice }` | Calls Convex `generateSpeech` | `tts-response` `{ text, audioUrl }` |
 | `stt-start` | Captures audio via `MediaRecorder`, sends to Convex `transcribeSpeech` | `stt-result` `{ transcript }` / `stt-interim` `{ transcript }` |
 | `stt-stop` | Stops `MediaRecorder` | - |
-| `image-request` `{ label, category }` | Calls Convex `generateTherapyImage` | `image-response` `{ label, imageUrl }` |
+
+Note: No `image-request` bridge — images are generated at build time by the agent tool, not at runtime.
 
 ### 1.5 STT Backend
 
@@ -281,7 +311,9 @@ Consolidate existing 8 seed templates to these 4 high-quality ones (the others w
 
 ### 2.4 Pre-seed Image Cache
 
-Batch-generate the ~50 most common therapy images on first deploy:
+Batch-generate the ~50 most common therapy images on first deploy. Guard with a cache check — skip seeding if images already exist (check `imageCache` count > 0). Estimated cost: ~50 Nano Banana calls, well within free tier (~500/day).
+
+Images to pre-seed:
 - **Emotions:** happy, sad, angry, scared, tired, excited, calm, worried, surprised, proud
 - **Core words:** want, help, more, stop, yes, no, go, play, eat, drink, open, close
 - **Daily activities:** wake up, brush teeth, get dressed, eat breakfast, go to school, bath, sleep, wash hands
