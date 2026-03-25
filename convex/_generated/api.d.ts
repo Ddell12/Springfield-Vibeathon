@@ -8,12 +8,10 @@
  * @module
  */
 
-import type * as agent_context from "../agent_context.js";
 import type * as ai from "../ai.js";
 import type * as aiActions from "../aiActions.js";
 import type * as app_state from "../app_state.js";
 import type * as apps from "../apps.js";
-import type * as blueprints from "../blueprints.js";
 import type * as e2b from "../e2b.js";
 import type * as generated_files from "../generated_files.js";
 import type * as http from "../http.js";
@@ -22,16 +20,11 @@ import type * as knowledge_data from "../knowledge/data.js";
 import type * as knowledge_search from "../knowledge/search.js";
 import type * as knowledge_seed from "../knowledge/seed.js";
 import type * as messages from "../messages.js";
-import type * as phases from "../phases.js";
-import type * as pipeline from "../pipeline.js";
-import type * as pipeline_prompts from "../pipeline_prompts.js";
-import type * as pipeline_tools from "../pipeline_tools.js";
 import type * as sessions from "../sessions.js";
 import type * as templates_queries from "../templates/queries.js";
 import type * as templates_seed from "../templates/seed.js";
 import type * as templates_therapy_seeds from "../templates/therapy_seeds.js";
 import type * as therapy_templates from "../therapy_templates.js";
-import type * as versions from "../versions.js";
 
 import type {
   ApiFromModules,
@@ -40,12 +33,10 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
-  agent_context: typeof agent_context;
   ai: typeof ai;
   aiActions: typeof aiActions;
   app_state: typeof app_state;
   apps: typeof apps;
-  blueprints: typeof blueprints;
   e2b: typeof e2b;
   generated_files: typeof generated_files;
   http: typeof http;
@@ -54,16 +45,11 @@ declare const fullApi: ApiFromModules<{
   "knowledge/search": typeof knowledge_search;
   "knowledge/seed": typeof knowledge_seed;
   messages: typeof messages;
-  phases: typeof phases;
-  pipeline: typeof pipeline;
-  pipeline_prompts: typeof pipeline_prompts;
-  pipeline_tools: typeof pipeline_tools;
   sessions: typeof sessions;
   "templates/queries": typeof templates_queries;
   "templates/seed": typeof templates_seed;
   "templates/therapy_seeds": typeof templates_therapy_seeds;
   therapy_templates: typeof therapy_templates;
-  versions: typeof versions;
 }>;
 
 /**
