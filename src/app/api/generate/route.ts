@@ -225,11 +225,13 @@ export async function POST(request: Request): Promise<Response> {
                   name: "resolve-at-alias",
                   setup(build) {
                     build.onResolve({ filter: /^@\// }, args => ({
-                      path: join(buildDir!, "src", args.path.slice(2)),
+                      // Use resolveDir so esbuild handles .tsx/.ts/.jsx/.js extension resolution
+                      path: args.path.slice(2), // strip "@/" → "components/ui/button"
+                      resolveDir: join(buildDir!, "src"),
                     }));
                   },
                 }],
-                logLevel: "warning",
+                logLevel: "info",
               });
 
               if (result.errors.length > 0) {
@@ -289,7 +291,7 @@ export async function POST(request: Request): Promise<Response> {
               }
             } catch (buildError) {
               const errMsg = buildError instanceof Error ? buildError.message : String(buildError);
-              console.error("[generate] esbuild bundle failed:", errMsg);
+              console.error("[generate] esbuild bundle failed:", errMsg.slice(0, 1000));
               send("activity", { type: "complete", message: `Build failed: ${errMsg.slice(0, 200)}` });
               // buildSucceeded stays false — done event will carry buildFailed: true
             }
