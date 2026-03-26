@@ -59,7 +59,7 @@ export function BuilderToolbar({
   return (
     <header className="flex h-12 flex-shrink-0 items-center justify-between bg-surface-container-lowest px-3 shadow-sm">
       {/* Left section: Back + Project Name + Status */}
-      <div className="flex items-center gap-3">
+      <div className="flex min-w-0 flex-shrink items-center gap-3">
         {/* Gradient back button */}
         <Link
           href="/"
@@ -80,14 +80,14 @@ export function BuilderToolbar({
           </button>
         )}
 
-        <h1 className="contents">
+        <h1 className="min-w-0 max-w-[180px]">
           {isEditingName ? (
             <input
               autoFocus
               defaultValue={projectName}
               maxLength={100}
               aria-label="Project name"
-              className="w-[160px] truncate border-b border-primary/50 bg-transparent text-[13px] font-semibold tracking-tight text-primary outline-none"
+              className="w-full truncate border-b border-primary/50 bg-transparent text-[13px] font-semibold tracking-tight text-primary outline-none"
               onBlur={(e) => onNameEditEnd?.(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "Enter") onNameEditEnd?.((e.target as HTMLInputElement).value);
@@ -97,7 +97,7 @@ export function BuilderToolbar({
           ) : (
             <button
               onClick={onNameEditStart}
-              className="truncate text-[13px] font-semibold tracking-tight text-primary transition-all hover:underline hover:underline-offset-2"
+              className="block max-w-full truncate text-[13px] font-semibold tracking-tight text-primary transition-all hover:underline hover:underline-offset-2"
               title="Click to rename"
             >
               {projectName}
@@ -107,7 +107,7 @@ export function BuilderToolbar({
 
         {/* Status indicator pill */}
         {isGenerating && (
-          <div className="hidden sm:flex items-center gap-2 rounded-full bg-surface-container-low px-2 py-1">
+          <div className="hidden sm:flex flex-shrink-0 items-center gap-2 rounded-full bg-surface-container-low px-2 py-1">
             <span className="relative flex h-2 w-2 items-center justify-center">
               <span className="absolute h-1.5 w-1.5 animate-pulse rounded-full bg-primary-container" />
               <span className="h-1.5 w-1.5 rounded-full bg-primary-container" />
@@ -152,7 +152,7 @@ export function BuilderToolbar({
       )}
 
       {/* Center section: View toggle + Device sizes + URL bar (desktop) */}
-      <div className="absolute left-1/2 -translate-x-1/2 hidden lg:flex items-center gap-3">
+      <div className="hidden min-w-0 flex-1 items-center justify-center gap-3 lg:flex">
         {/* Segmented control */}
         <div className="flex items-center rounded-lg bg-surface-container-high p-1" role="tablist">
           <button
@@ -208,14 +208,14 @@ export function BuilderToolbar({
         {/* Separator */}
         <div className="h-4 w-px bg-outline-variant/30" />
 
-        <div className="flex items-center gap-2 rounded-full bg-surface-container-low px-3 py-1 min-w-[120px]">
-          <MaterialIcon icon="language" className="text-sm text-outline" />
+        <div className="flex min-w-0 max-w-[200px] items-center gap-2 rounded-full bg-surface-container-low px-3 py-1">
+          <MaterialIcon icon="language" className="flex-shrink-0 text-sm text-outline" />
           <span className="truncate text-xs font-medium text-outline">{projectName}</span>
         </div>
       </div>
 
       {/* Right section: Share + Publish */}
-      <div className="flex items-center gap-2">
+      <div className="flex flex-shrink-0 items-center gap-2">
         <Button
           variant="ghost"
           size="sm"
