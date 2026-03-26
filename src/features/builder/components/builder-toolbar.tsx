@@ -7,7 +7,6 @@ import { MaterialIcon } from "@/shared/components/material-icon";
 import { Button } from "@/shared/components/ui/button";
 
 import type { StreamingStatus } from "../hooks/use-streaming";
-import type { WebContainerStatus } from "../hooks/use-webcontainer";
 
 export type DeviceSize = "mobile" | "desktop";
 export type ViewMode = "preview" | "code";
@@ -18,7 +17,6 @@ interface BuilderToolbarProps {
   deviceSize: DeviceSize;
   onDeviceSizeChange: (size: DeviceSize) => void;
   status: StreamingStatus;
-  wcStatus: WebContainerStatus;
   isPublishing: boolean;
   projectName: string;
   isEditingName?: boolean;
@@ -42,7 +40,6 @@ export function BuilderToolbar({
   deviceSize,
   onDeviceSizeChange,
   status,
-  wcStatus,
   isPublishing,
   projectName,
   isEditingName,
@@ -55,7 +52,7 @@ export function BuilderToolbar({
   onMobilePanelChange,
 }: BuilderToolbarProps) {
   const isGenerating = status === "generating";
-  const canPublish = wcStatus === "ready" && !isGenerating && !isPublishing;
+  const canPublish = !isGenerating && !isPublishing;
 
   return (
     <header className="flex h-12 flex-shrink-0 items-center justify-between bg-surface-container-lowest px-3 shadow-sm">

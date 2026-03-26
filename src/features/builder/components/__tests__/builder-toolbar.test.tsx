@@ -23,7 +23,6 @@ const baseProps = {
   deviceSize: "desktop" as const,
   onDeviceSizeChange: vi.fn(),
   status: "idle" as const,
-  wcStatus: "ready" as const,
   isPublishing: false,
   projectName: "My Cool App",
 };
@@ -96,11 +95,10 @@ describe("BuilderToolbar", () => {
     expect(onShare).toHaveBeenCalled();
   });
 
-  it("Publish button is enabled when wcStatus='ready' and not generating and not publishing", () => {
+  it("Publish button is enabled when not generating and not publishing", () => {
     render(
       <BuilderToolbar
         {...baseProps}
-        wcStatus="ready"
         status="idle"
         isPublishing={false}
       />
@@ -109,24 +107,10 @@ describe("BuilderToolbar", () => {
     expect(publishBtn).not.toBeDisabled();
   });
 
-  it("Publish button is disabled when wcStatus != 'ready'", () => {
-    render(
-      <BuilderToolbar
-        {...baseProps}
-        wcStatus="booting"
-        status="idle"
-        isPublishing={false}
-      />
-    );
-    const publishBtn = screen.getByRole("button", { name: /Publish/i });
-    expect(publishBtn).toBeDisabled();
-  });
-
   it("Publish button is disabled when isPublishing=true", () => {
     render(
       <BuilderToolbar
         {...baseProps}
-        wcStatus="ready"
         status="idle"
         isPublishing={true}
       />
