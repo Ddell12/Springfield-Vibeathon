@@ -10,13 +10,15 @@ import schema from "../schema";
 
 const modules = import.meta.glob("../**/*.*s"); // REQUIRED for convex-test
 
-/** Helper: insert a fake PNG blob into storage and return a valid storageId */
+/** Helper: insert a fake PNG blob into storage and return a valid storageId.
+ *  Uses Blob constructed from ArrayBuffer to avoid SubtleCrypto.digest
+ *  compatibility issues in jsdom CI environments. */
 async function storeTestImage(ctx: { storage: { store: (blob: Blob) => Promise<string> } }) {
-  // Minimal 1x1 transparent PNG bytes
+  // Minimal PNG header bytes — only need enough to get a valid storage ID
   const pngBytes = new Uint8Array([
     0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a,
   ]);
-  const blob = new Blob([pngBytes], { type: "image/png" });
+  const blob = new Blob([pngBytes.buffer], { type: "image/png" });
   return await ctx.storage.store(blob);
 }
 
