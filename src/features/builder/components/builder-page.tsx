@@ -7,6 +7,9 @@ import { toast } from "sonner";
 
 import { useIsMobile } from "@/core/hooks/use-mobile";
 import { ShareDialog } from "@/features/sharing/components/share-dialog";
+import { MaterialIcon } from "@/shared/components/material-icon";
+import { Button } from "@/shared/components/ui/button";
+import { Input } from "@/shared/components/ui/input";
 import {
   ResizableHandle,
   ResizablePanel,
@@ -22,6 +25,26 @@ import { ChatPanel } from "./chat-panel";
 import { CodePanel } from "./code-panel";
 import { PreviewPanel } from "./preview-panel";
 import { PublishSuccessModal } from "./publish-success-modal";
+import { SuggestionChips } from "./suggestion-chips";
+
+const PLACEHOLDER_APP = `export default function App() {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-teal-50 to-cyan-50">
+      <div className="text-center">
+        <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-4 border-teal-200 border-t-teal-600" />
+        <p className="text-lg font-medium text-teal-800">Building your app...</p>
+        <p className="mt-1 text-sm text-teal-600/70">This usually takes 10-20 seconds</p>
+      </div>
+    </div>
+  );
+}`;
+
+const THERAPY_SUGGESTIONS = [
+  "Token board with star rewards for completing morning tasks",
+  "Visual daily schedule with drag-to-reorder steps",
+  "Communication picture board with text-to-speech",
+  "Feelings check-in tool with emoji faces and journaling",
+];
 
 export function BuilderPage() {
   const searchParams = useSearchParams();
@@ -39,6 +62,7 @@ export function BuilderPage() {
   const publishApp = useAction(api.publish.publishApp);
   const updateTitle = useMutation(api.sessions.updateTitle);
   const [isEditingName, setIsEditingName] = useState(false);
+  const [promptInput, setPromptInput] = useState("");
 
   const { status: wcStatus, previewUrl, writeFile, error: wcError } = useWebContainer();
 
@@ -65,6 +89,10 @@ export function BuilderPage() {
     api.generated_files.list,
     sessionIdFromUrl ? { sessionId: sessionIdFromUrl as Id<"sessions"> } : "skip"
   );
+
+  const mostRecent = useQuery(api.sessions.getMostRecent);
+  const autoResumed = useRef(false);
+  const pendingPlaceholderRef = useRef(false);
 
   // Resume an existing session when navigating from My Apps
   const sessionResumed = useRef(false);
@@ -101,6 +129,14 @@ export function BuilderPage() {
 
   const handleGenerate = (prompt: string) => {
     lastPromptRef.current = prompt;
+
+    // Write placeholder immediately so preview shows something within 1-2s
+    if (wcStatus === "ready") {
+      writeFile("src/App.tsx", PLACEHOLDER_APP).catch(() => {});
+    } else {
+      pendingPlaceholderRef.current = true;
+    }
+
     generate(prompt);
   };
 
@@ -109,6 +145,14 @@ export function BuilderPage() {
       generate(lastPromptRef.current);
     }
   };
+
+  // Drain queued placeholder write when WebContainer becomes ready after prompt submit
+  useEffect(() => {
+    if (wcStatus === "ready" && pendingPlaceholderRef.current) {
+      pendingPlaceholderRef.current = false;
+      writeFile("src/App.tsx", PLACEHOLDER_APP).catch(() => {});
+    }
+  }, [wcStatus, writeFile]);
 
   const handleNameEditEnd = async (name: string) => {
     setIsEditingName(false);
@@ -131,12 +175,38 @@ export function BuilderPage() {
     }
   }, [promptFromUrl, status, generate, router]);
 
-  // Update URL when sessionId is set from streaming
+  // Auto-resume: redirect to most recent session if no sessionId in URL
   useEffect(() => {
-    if (sessionId && !sessionIdFromUrl) {
-      router.replace(`?sessionId=${sessionId}`);
+    if (
+      !sessionIdFromUrl &&
+      mostRecent &&
+      status === "idle" &&
+      wcStatus === "ready" &&
+      !autoResumed.current
+    ) {
+      autoResumed.current = true;
+      router.replace(`?sessionId=${mostRecent._id}`);
+    }
+  }, [sessionIdFromUrl, mostRecent, status, wcStatus, router]);
+
+  // Update URL when sessionId is set from streaming, and persist to localStorage
+  useEffect(() => {
+    if (sessionId) {
+      localStorage.setItem("bridges_last_session", sessionId);
+      if (!sessionIdFromUrl) {
+        router.replace(`?sessionId=${sessionId}`);
+      }
     }
   }, [sessionId, sessionIdFromUrl, router]);
+
+  // Clear stale localStorage if session doesn't exist in Convex
+  useEffect(() => {
+    if (sessionIdFromUrl && resumeSessionData === null && resumeFiles !== undefined) {
+      localStorage.removeItem("bridges_last_session");
+      autoResumed.current = false;
+      router.replace("/builder");
+    }
+  }, [sessionIdFromUrl, resumeSessionData, resumeFiles, router]);
 
   // Derive an app name from blueprint or default
   const appName = typeof blueprint?.title === "string" ? blueprint.title : "Untitled App";
@@ -160,103 +230,156 @@ export function BuilderPage() {
     }
   }
 
+  const showPromptScreen = !sessionId && status === "idle" && !sessionIdFromUrl;
+
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
-      <BuilderToolbar
-        view={viewMode}
-        onViewChange={setViewMode}
-        deviceSize={deviceSize}
-        onDeviceSizeChange={setDeviceSize}
-        status={status}
-        wcStatus={wcStatus}
-        isPublishing={isPublishing}
-        projectName={appName}
-        isEditingName={isEditingName}
-        onNameEditStart={() => setIsEditingName(true)}
-        onNameEditEnd={handleNameEditEnd}
-        onShare={() => setShareDialogOpen(true)}
-        onPublish={handlePublish}
-        isMobile={isMobile}
-        mobilePanel={mobilePanel}
-        onMobilePanelChange={setMobilePanel}
-      />
+      {showPromptScreen ? (
+        /* Phase 1: Full-width centered prompt — no session yet */
+        <div className="flex flex-1 flex-col items-center justify-center gap-6 p-6">
+          <div className="text-center">
+            <h1 className="font-headline text-3xl font-semibold text-foreground">
+              What would you like to build?
+            </h1>
+            <p className="mt-2 text-base text-on-surface-variant">
+              Describe a therapy tool and I&apos;ll build it for you.
+            </p>
+          </div>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (!promptInput.trim()) return;
+              handleGenerate(promptInput.trim());
+              setPromptInput("");
+            }}
+            className="w-full max-w-2xl"
+          >
+            <div className="flex items-center gap-2 rounded-full border border-outline-variant/40 bg-surface-container-lowest px-4 py-2 shadow-sm focus-within:ring-2 focus-within:ring-primary/30">
+              <Input
+                value={promptInput}
+                onChange={(e) => setPromptInput(e.target.value)}
+                placeholder="Describe the therapy tool you want to build…"
+                className="flex-1 border-0 bg-transparent p-0 text-base shadow-none focus-visible:ring-0"
+                aria-label="Describe the therapy tool you want to build"
+              />
+              <Button
+                type="submit"
+                disabled={!promptInput.trim()}
+                size="icon"
+                className="shrink-0 rounded-full"
+                aria-label="Generate app"
+              >
+                <MaterialIcon icon="auto_fix_high" size="xs" />
+              </Button>
+            </div>
+          </form>
+          <SuggestionChips
+            suggestions={THERAPY_SUGGESTIONS}
+            onSelect={(suggestion) => {
+              handleGenerate(suggestion);
+            }}
+          />
+        </div>
+      ) : (
+        /* Phase 2+: Split-panel layout with toolbar */
+        <>
+          <BuilderToolbar
+            view={viewMode}
+            onViewChange={setViewMode}
+            deviceSize={deviceSize}
+            onDeviceSizeChange={setDeviceSize}
+            status={status}
+            wcStatus={wcStatus}
+            isPublishing={isPublishing}
+            projectName={appName}
+            isEditingName={isEditingName}
+            onNameEditStart={() => setIsEditingName(true)}
+            onNameEditEnd={handleNameEditEnd}
+            onShare={() => setShareDialogOpen(true)}
+            onPublish={handlePublish}
+            isMobile={isMobile}
+            mobilePanel={mobilePanel}
+            onMobilePanelChange={setMobilePanel}
+          />
 
-      <div className="min-h-0 flex-1 bg-surface-container-low p-2">
-        {isMobile ? (
-          /* Mobile: single-panel view toggled via toolbar */
-          <div className="h-full">
-            {mobilePanel === "chat" ? (
-              <div className="h-full overflow-hidden rounded-2xl bg-surface-container-lowest">
-                <ChatPanel
-                  sessionId={sessionId}
-                  status={status}
-                  blueprint={blueprint}
-                  error={error}
-                  onGenerate={handleGenerate}
-                  onRetry={handleRetry}
-                  streamingText={streamingText}
-                  activities={activities}
-                />
+          <div className="min-h-0 flex-1 bg-surface-container-low p-2">
+            {isMobile ? (
+              /* Mobile: single-panel view toggled via toolbar */
+              <div className="h-full">
+                {mobilePanel === "chat" ? (
+                  <div className="h-full overflow-hidden rounded-2xl bg-surface-container-lowest">
+                    <ChatPanel
+                      sessionId={sessionId}
+                      status={status}
+                      blueprint={blueprint}
+                      error={error}
+                      onGenerate={handleGenerate}
+                      onRetry={handleRetry}
+                      streamingText={streamingText}
+                      activities={activities}
+                    />
+                  </div>
+                ) : (
+                  <div className="h-full overflow-hidden rounded-2xl bg-surface-container-lowest">
+                    <PreviewPanel
+                      previewUrl={previewUrl}
+                      state={status}
+                      wcStatus={wcStatus}
+                      error={error ?? wcError ?? undefined}
+                      deviceSize="mobile"
+                    />
+                  </div>
+                )}
               </div>
             ) : (
-              <div className="h-full overflow-hidden rounded-2xl bg-surface-container-lowest">
-                <PreviewPanel
-                  previewUrl={previewUrl}
-                  state={status}
-                  wcStatus={wcStatus}
-                  error={error ?? wcError ?? undefined}
-                  deviceSize="mobile"
-                />
-              </div>
-            )}
-          </div>
-        ) : (
-          /* Desktop: resizable side-by-side panels */
-          <ResizablePanelGroup orientation="horizontal" className="h-full">
-            <ResizablePanel defaultSize={30} minSize={20}>
-              <div className="h-full overflow-hidden rounded-2xl bg-surface-container-lowest">
-                <ChatPanel
-                  sessionId={sessionId}
-                  status={status}
-                  blueprint={blueprint}
-                  error={error}
-                  onGenerate={handleGenerate}
-                  onRetry={handleRetry}
-                  streamingText={streamingText}
-                  activities={activities}
-                />
-              </div>
-            </ResizablePanel>
-
-            <ResizableHandle withHandle />
-
-            {viewMode === "code" && (
-              <>
-                <ResizablePanel defaultSize={35} minSize={20}>
+              /* Desktop: resizable side-by-side panels */
+              <ResizablePanelGroup orientation="horizontal" className="h-full">
+                <ResizablePanel defaultSize={30} minSize={20}>
                   <div className="h-full overflow-hidden rounded-2xl bg-surface-container-lowest">
-                    <CodePanel files={files} status={status} />
+                    <ChatPanel
+                      sessionId={sessionId}
+                      status={status}
+                      blueprint={blueprint}
+                      error={error}
+                      onGenerate={handleGenerate}
+                      onRetry={handleRetry}
+                      streamingText={streamingText}
+                      activities={activities}
+                    />
                   </div>
                 </ResizablePanel>
-                <ResizableHandle withHandle />
-              </>
-            )}
 
-            {viewMode === "preview" && (
-              <ResizablePanel defaultSize={70} minSize={20}>
-                <div className="h-full overflow-hidden rounded-2xl bg-surface-container-lowest">
-                  <PreviewPanel
-                    previewUrl={previewUrl}
-                    state={status}
-                    wcStatus={wcStatus}
-                    error={error ?? wcError ?? undefined}
-                    deviceSize={deviceSize}
-                  />
-                </div>
-              </ResizablePanel>
+                <ResizableHandle withHandle />
+
+                {viewMode === "code" && (
+                  <>
+                    <ResizablePanel defaultSize={35} minSize={20}>
+                      <div className="h-full overflow-hidden rounded-2xl bg-surface-container-lowest">
+                        <CodePanel files={files} status={status} />
+                      </div>
+                    </ResizablePanel>
+                    <ResizableHandle withHandle />
+                  </>
+                )}
+
+                {viewMode === "preview" && (
+                  <ResizablePanel defaultSize={70} minSize={20}>
+                    <div className="h-full overflow-hidden rounded-2xl bg-surface-container-lowest">
+                      <PreviewPanel
+                        previewUrl={previewUrl}
+                        state={status}
+                        wcStatus={wcStatus}
+                        error={error ?? wcError ?? undefined}
+                        deviceSize={deviceSize}
+                      />
+                    </div>
+                  </ResizablePanel>
+                )}
+              </ResizablePanelGroup>
             )}
-          </ResizablePanelGroup>
-        )}
-      </div>
+          </div>
+        </>
+      )}
 
       <ShareDialog
         open={shareDialogOpen}

@@ -28,6 +28,11 @@
 .claude/command-audit.log
 .claude/worktrees/
 
+# git worktrees
+.worktrees/
+.wc-template/
+public/wc-snapshot.bin
+
 # debug
 npm-debug.log*
 yarn-debug.log*

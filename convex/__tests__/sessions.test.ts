@@ -3,6 +3,7 @@ import { convexTest } from "convex-test";
 import { describe, expect, it } from "vitest";
 
 import { api } from "../_generated/api";
+import { SESSION_STATES } from "../lib/session_states";
 import schema from "../schema";
 
 const modules = import.meta.glob("../**/*.*s"); // REQUIRED for convex-test
@@ -127,5 +128,76 @@ describe("sessions — streaming builder mutations", () => {
     await t.mutation(api.sessions.startGeneration, { sessionId: id });
     const session = await t.query(api.sessions.get, { sessionId: id });
     expect(session?.state).toBe("generating");
+  });
+
+  describe("getMostRecent", () => {
+    it("returns null when no live sessions exist", async () => {
+      const t = convexTest(schema, modules);
+      const result = await t.query(api.sessions.getMostRecent, {});
+      expect(result).toBeNull();
+    });
+
+    it("returns null when sessions exist but none are live", async () => {
+      const t = convexTest(schema, modules);
+      const id = await t.mutation(api.sessions.create, {
+        title: "Idle Session",
+        query: "test",
+      });
+      await t.mutation(api.sessions.startGeneration, { sessionId: id });
+      const result = await t.query(api.sessions.getMostRecent, {});
+      expect(result).toBeNull();
+    });
+
+    it("returns the live session when one exists", async () => {
+      const t = convexTest(schema, modules);
+      const id = await t.mutation(api.sessions.create, {
+        title: "Live App",
+        query: "Build a token board",
+      });
+      await t.mutation(api.sessions.setLive, { sessionId: id });
+      const result = await t.query(api.sessions.getMostRecent, {});
+      expect(result).not.toBeNull();
+      expect(result?._id).toBe(id);
+      expect(result?.state).toBe(SESSION_STATES.LIVE);
+      expect(result?.title).toBe("Live App");
+    });
+
+    it("returns the most recently created live session when multiple exist", async () => {
+      const t = convexTest(schema, modules);
+      const id1 = await t.mutation(api.sessions.create, {
+        title: "First Live",
+        query: "first",
+      });
+      await t.mutation(api.sessions.setLive, { sessionId: id1 });
+      const id2 = await t.mutation(api.sessions.create, {
+        title: "Second Live",
+        query: "second",
+      });
+      await t.mutation(api.sessions.setLive, { sessionId: id2 });
+      const result = await t.query(api.sessions.getMostRecent, {});
+      expect(result?._id).toBe(id2);
+      expect(result?.title).toBe("Second Live");
+    });
+
+    it("does not return failed or generating sessions", async () => {
+      const t = convexTest(schema, modules);
+      const idFailed = await t.mutation(api.sessions.create, {
+        title: "Failed Session",
+        query: "failed",
+      });
+      await t.mutation(api.sessions.setFailed, {
+        sessionId: idFailed,
+        error: "Something went wrong",
+      });
+      const idGenerating = await t.mutation(api.sessions.create, {
+        title: "Generating Session",
+        query: "generating",
+      });
+      await t.mutation(api.sessions.startGeneration, {
+        sessionId: idGenerating,
+      });
+      const result = await t.query(api.sessions.getMostRecent, {});
+      expect(result).toBeNull();
+    });
   });
 });

@@ -1,0 +1,121 @@
+// convex/__tests__/apps.test.ts
+import { convexTest } from "convex-test";
+import { describe, expect, it } from "vitest";
+
+import { api } from "../_generated/api";
+import schema from "../schema";
+
+const modules = import.meta.glob("../**/*.*s"); // REQUIRED for convex-test
+
+describe("apps", () => {
+  it("create and get roundtrip", async () => {
+    const t = convexTest(schema, modules);
+    const appId = await t.mutation(api.apps.create, {
+      title: "Token Board",
+      description: "A reinforcement token board for ABA therapy",
+      shareSlug: "token-board-abc123",
+    });
+    const app = await t.query(api.apps.get, { appId });
+    expect(app).not.toBeNull();
+    expect(app?.title).toBe("Token Board");
+    expect(app?.description).toBe("A reinforcement token board for ABA therapy");
+    expect(app?.shareSlug).toBe("token-board-abc123");
+  });
+
+  it("getByShareSlug returns app for matching slug", async () => {
+    const t = convexTest(schema, modules);
+    await t.mutation(api.apps.create, {
+      title: "Communication Board",
+      description: "A picture communication board",
+      shareSlug: "comm-board-xyz789",
+    });
+    const app = await t.query(api.apps.getByShareSlug, { shareSlug: "comm-board-xyz789" });
+    expect(app).not.toBeNull();
+    expect(app?.title).toBe("Communication Board");
+  });
+
+  it("getByShareSlug returns null for unknown slug", async () => {
+    const t = convexTest(schema, modules);
+    const app = await t.query(api.apps.getByShareSlug, { shareSlug: "nonexistent-slug" });
+    expect(app).toBeNull();
+  });
+
+  it("update patches title and description", async () => {
+    const t = convexTest(schema, modules);
+    const appId = await t.mutation(api.apps.create, {
+      title: "Old Title",
+      description: "Old description",
+      shareSlug: "update-test-slug",
+    });
+    await t.mutation(api.apps.update, {
+      appId,
+      title: "New Title",
+      description: "New description",
+    });
+    const app = await t.query(api.apps.get, { appId });
+    expect(app?.title).toBe("New Title");
+    expect(app?.description).toBe("New description");
+  });
+
+  it("update patches publishedUrl without touching title", async () => {
+    const t = convexTest(schema, modules);
+    const appId = await t.mutation(api.apps.create, {
+      title: "Stable Title",
+      description: "Stable description",
+      shareSlug: "publish-test-slug",
+    });
+    await t.mutation(api.apps.update, {
+      appId,
+      publishedUrl: "https://vercel.app/my-app",
+    });
+    const app = await t.query(api.apps.get, { appId });
+    expect(app?.title).toBe("Stable Title");
+    expect(app?.publishedUrl).toBe("https://vercel.app/my-app");
+  });
+
+  it("list returns created apps ordered by creation time descending", async () => {
+    const t = convexTest(schema, modules);
+    await t.mutation(api.apps.create, {
+      title: "App One",
+      description: "First app",
+      shareSlug: "app-one",
+    });
+    await t.mutation(api.apps.create, {
+      title: "App Two",
+      description: "Second app",
+      shareSlug: "app-two",
+    });
+    const apps = await t.query(api.apps.list, {});
+    expect(apps.length).toBeGreaterThanOrEqual(2);
+    // Most recently created app should be first
+    expect(apps[0].title).toBe("App Two");
+  });
+
+  it("getBySession returns app linked to session", async () => {
+    const t = convexTest(schema, modules);
+    const sessionId = await t.mutation(api.sessions.create, {
+      title: "Test Session",
+      query: "Build a therapy app",
+    });
+    const appId = await t.mutation(api.apps.create, {
+      title: "Session App",
+      description: "App linked to session",
+      shareSlug: "session-linked-app",
+      sessionId,
+    });
+    const app = await t.query(api.apps.getBySession, { sessionId });
+    expect(app).not.toBeNull();
+    expect(app?._id).toBe(appId);
+    expect(app?.title).toBe("Session App");
+  });
+
+  it("getBySession returns null for session with no app", async () => {
+    const t = convexTest(schema, modules);
+    const sessionId = await t.mutation(api.sessions.create, {
+      title: "Orphan Session",
+      query: "test",
+    });
+    const app = await t.query(api.apps.getBySession, { sessionId });
+    expect(app).toBeNull();
+  });
+});
