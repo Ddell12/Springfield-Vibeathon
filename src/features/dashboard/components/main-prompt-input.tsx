@@ -33,7 +33,7 @@ export function MainPromptInput() {
           value={value}
           onChange={(e) => setValue(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Describe a therapy tool\u2026"
+          placeholder="Describe a therapy tool…"
           aria-label="Describe a therapy tool"
           autoComplete="off"
           className="flex-1 border-none bg-transparent py-3 font-body text-lg text-on-surface placeholder:text-outline focus:outline-none focus:ring-0"

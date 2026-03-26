@@ -237,8 +237,8 @@ export function ChatPanel({
               onChange={(e) => setInput(e.target.value)}
               placeholder={
                 isLive
-                  ? "Request changes to your app\u2026"
-                  : "Describe the therapy tool you want to build\u2026"
+                  ? "Request changes to your app…"
+                  : "Describe the therapy tool you want to build…"
               }
               disabled={isGenerating}
               className="pl-10"
