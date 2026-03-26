@@ -172,4 +172,14 @@ describe("parseSSEEvent", () => {
     const result = parseSSEEvent("", {});
     expect(result).toBeNull();
   });
+
+  it("parses bundle event", () => {
+    const result = parseSSEEvent("bundle", { html: "<html>test</html>" });
+    expect(result).toEqual({ event: "bundle", html: "<html>test</html>" });
+  });
+
+  it("parses bundling status", () => {
+    const result = parseSSEEvent("status", { status: "bundling" });
+    expect(result).toEqual({ event: "status", status: "bundling" });
+  });
 });

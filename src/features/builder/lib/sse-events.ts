@@ -2,7 +2,7 @@
 
 export type SSEEvent =
   | { event: "session"; sessionId: string }
-  | { event: "status"; status: "generating" | "live" | "failed"; message?: string }
+  | { event: "status"; status: "generating" | "bundling" | "live" | "failed"; message?: string }
   | { event: "token"; token: string }
   | { event: "activity"; type: "thinking" | "writing_file" | "file_written" | "complete"; message: string; path?: string }
   | { event: "file_complete"; path: string; contents: string }
@@ -11,6 +11,7 @@ export type SSEEvent =
   | { event: "image_generated"; label: string; imageUrl: string }
   | { event: "speech_generated"; text: string; audioUrl: string }
   | { event: "stt_enabled"; purpose: string }
+  | { event: "bundle"; html: string }
   | { event: "done"; sessionId?: string; files?: Array<{ path: string; contents: string }> }
   | { event: "error"; message: string };
 
@@ -24,7 +25,7 @@ export function parseSSEEvent(event: string, data: unknown): SSEEvent | null {
     case "session":
       return { event: "session", sessionId: String(d.sessionId ?? "") };
     case "status":
-      return { event: "status", status: d.status as "generating" | "live" | "failed", message: d.message as string | undefined };
+      return { event: "status", status: d.status as "generating" | "bundling" | "live" | "failed", message: d.message as string | undefined };
     case "token":
       return { event: "token", token: String(d.token ?? "") };
     case "activity":
@@ -41,6 +42,8 @@ export function parseSSEEvent(event: string, data: unknown): SSEEvent | null {
       return { event: "speech_generated", text: String(d.text ?? ""), audioUrl: String(d.audioUrl ?? "") };
     case "stt_enabled":
       return { event: "stt_enabled", purpose: String(d.purpose ?? "") };
+    case "bundle":
+      return { event: "bundle", html: String(d.html ?? "") };
     case "done":
       return { event: "done", sessionId: d.sessionId as string | undefined, files: d.files as Array<{ path: string; contents: string }> | undefined };
     case "error":
