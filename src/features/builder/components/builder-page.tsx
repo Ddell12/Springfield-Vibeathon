@@ -41,6 +41,7 @@ export function BuilderPage() {
   const [publishedUrl, setPublishedUrl] = useState<string | null>(null);
   const publishApp = useAction(api.publish.publishApp);
   const updateTitle = useMutation(api.sessions.updateTitle);
+  const ensureApp = useMutation(api.apps.ensureForSession);
   const [isEditingName, setIsEditingName] = useState(false);
   const [promptInput, setPromptInput] = useState("");
 
@@ -68,6 +69,15 @@ export function BuilderPage() {
     sessionIdFromUrl ? { sessionId: sessionIdFromUrl as Id<"sessions"> } : "skip"
   );
 
+  const activeSessionId = sessionId ?? sessionIdFromUrl;
+  const currentSession = useQuery(
+    api.sessions.get,
+    activeSessionId ? { sessionId: activeSessionId as Id<"sessions"> } : "skip"
+  );
+  const appRecord = useQuery(
+    api.apps.getBySession,
+    activeSessionId ? { sessionId: activeSessionId as Id<"sessions"> } : "skip"
+  );
   const mostRecent = useQuery(api.sessions.getMostRecent, sessionIdFromUrl ? "skip" : {});
   const autoResumed = useRef(false);
 
@@ -169,8 +179,9 @@ export function BuilderPage() {
     }
   }, [sessionIdFromUrl, resumeSessionData, resumeFiles]);
 
-  // Derive an app name from blueprint or default
-  const appName = typeof blueprint?.title === "string" ? blueprint.title : "Untitled App";
+  // Derive app name: prefer Convex session title (reactive) > blueprint > default
+  const appName = currentSession?.title
+    ?? (typeof blueprint?.title === "string" ? blueprint.title : "Untitled App");
 
   async function handlePublish() {
     if (!sessionId || isPublishing) return;
@@ -189,6 +200,20 @@ export function BuilderPage() {
     } finally {
       setIsPublishing(false);
     }
+  }
+
+  async function handleShare() {
+    if (activeSessionId) {
+      try {
+        await ensureApp({
+          sessionId: activeSessionId as Id<"sessions">,
+          title: appName,
+        });
+      } catch (err) {
+        console.error("Failed to create share link:", err);
+      }
+    }
+    setShareDialogOpen(true);
   }
 
   const showPromptScreen = !sessionId && status === "idle" && !sessionIdFromUrl;
@@ -255,7 +280,7 @@ export function BuilderPage() {
             isEditingName={isEditingName}
             onNameEditStart={() => setIsEditingName(true)}
             onNameEditEnd={handleNameEditEnd}
-            onShare={() => setShareDialogOpen(true)}
+            onShare={handleShare}
             onPublish={handlePublish}
             onNewChat={() => {
               reset();
@@ -348,8 +373,9 @@ export function BuilderPage() {
       <ShareDialog
         open={shareDialogOpen}
         onOpenChange={setShareDialogOpen}
-        shareSlug={sessionId ?? "preview"}
+        shareSlug={appRecord?.shareSlug ?? sessionId ?? "preview"}
         appTitle={appName}
+        publishedUrl={appRecord?.publishedUrl ?? publishedUrl ?? undefined}
       />
 
       <PublishSuccessModal

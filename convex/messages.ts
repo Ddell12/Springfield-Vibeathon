@@ -10,6 +10,9 @@ export const create = mutation({
     timestamp: v.number(),
   },
   handler: async (ctx, args) => {
+    if (args.content.length > 50_000) {
+      throw new Error("Message content exceeds maximum length of 50,000 characters");
+    }
     return await ctx.db.insert("messages", {
       sessionId: args.sessionId,
       role: args.role,
@@ -36,6 +39,9 @@ export const addUserMessage = mutation({
     content: v.string(),
   },
   handler: async (ctx, args) => {
+    if (args.content.length > 10_000) {
+      throw new Error("Message content exceeds maximum length of 10,000 characters");
+    }
     return await ctx.db.insert("messages", {
       sessionId: args.sessionId,
       role: "user",

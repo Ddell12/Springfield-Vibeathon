@@ -73,6 +73,37 @@ export const list = query({
   },
 });
 
+// Ensure an app record exists for a session (idempotent — safe to call multiple times)
+export const ensureForSession = mutation({
+  args: {
+    sessionId: v.id("sessions"),
+    title: v.string(),
+    description: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const existing = await ctx.db
+      .query("apps")
+      .withIndex("by_session", (q) => q.eq("sessionId", args.sessionId))
+      .first();
+    if (existing) return existing;
+
+    const slug = Array.from({ length: 8 }, () =>
+      "abcdefghijklmnopqrstuvwxyz0123456789"[Math.floor(Math.random() * 36)]
+    ).join("");
+
+    const now = Date.now();
+    const appId = await ctx.db.insert("apps", {
+      title: args.title,
+      description: args.description ?? "",
+      sessionId: args.sessionId,
+      shareSlug: slug,
+      createdAt: now,
+      updatedAt: now,
+    });
+    return await ctx.db.get(appId);
+  },
+});
+
 // Used by publishApp action and potential publish UI checks
 export const getBySession = query({
   args: { sessionId: v.id("sessions") },
