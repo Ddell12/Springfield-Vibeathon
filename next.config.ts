@@ -1,6 +1,11 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Include the WAB scaffold (and its node_modules installed by postinstall)
+  // in the /api/generate serverless function so Parcel can bundle at runtime
+  outputFileTracingIncludes: {
+    "/api/generate": ["./artifacts/wab-scaffold/**/*"],
+  },
   async headers() {
     return [
       {

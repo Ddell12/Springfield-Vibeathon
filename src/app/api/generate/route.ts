@@ -200,8 +200,21 @@ export async function POST(request: Request): Promise<Response> {
 
             try {
               // Parcel build + html-inline for proper asset inlining
+              // Use local node_modules/.bin/ — works both locally (pnpm install) and
+              // on Vercel (postinstall + outputFileTracingIncludes).
+              const scaffoldBin = join(buildDir!, "node_modules", ".bin");
+              const parcelBin = join(scaffoldBin, "parcel");
+              const htmlInlineBin = join(scaffoldBin, "html-inline");
+
+              if (!existsSync(parcelBin)) {
+                throw new Error(
+                  `Parcel binary not found at ${parcelBin}. ` +
+                  "Run 'cd artifacts/wab-scaffold && npm install' to install scaffold deps."
+                );
+              }
+
               await execAsync(
-                "pnpm exec parcel build index.html --no-source-maps --dist-dir dist && pnpm exec html-inline dist/index.html -b dist > bundle.html",
+                `"${parcelBin}" build index.html --no-source-maps --dist-dir dist && "${htmlInlineBin}" dist/index.html -b dist > bundle.html`,
                 { cwd: buildDir, timeout: 30000 },
               );
               const bundlePath = join(buildDir!, "bundle.html");

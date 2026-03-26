@@ -91,10 +91,10 @@ export function ChatPanel({
 
   // Auto-scroll to bottom when new messages arrive or streaming updates
   useEffect(() => {
-    if (scrollEndRef.current && typeof scrollEndRef.current.scrollIntoView === "function") {
-      scrollEndRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
+    if (scrollEndRef.current) {
+      scrollEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
-  }, [messages?.length, streamingText, activities.length]);
+  }, [messages?.length, streamingText, activities.length, isGenerating, isLive]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
