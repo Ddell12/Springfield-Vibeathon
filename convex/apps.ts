@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 
 import { mutation, query } from "./_generated/server";
+import { assertSessionOwner, getAuthUserId } from "./lib/auth";
 
 export const create = mutation({
   args: {
@@ -13,11 +14,12 @@ export const create = mutation({
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Not authenticated");
     const now = Date.now();
     return await ctx.db.insert("apps", {
       title: args.title,
       description: args.description,
-      userId: identity?.subject,
+      userId: identity.subject,
       sessionId: args.sessionId,
       shareSlug: args.shareSlug,
       previewUrl: args.previewUrl,
@@ -31,7 +33,12 @@ export const create = mutation({
 export const get = query({
   args: { appId: v.id("apps") },
   handler: async (ctx, args) => {
-    return await ctx.db.get(args.appId);
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return null;
+    const app = await ctx.db.get(args.appId);
+    if (!app) return null;
+    if (app.userId && app.userId !== userId) return null;
+    return app;
   },
 });
 
@@ -53,6 +60,12 @@ export const update = mutation({
     publishedUrl: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Not authenticated");
+    const app = await ctx.db.get(args.appId);
+    if (!app) throw new Error("App not found");
+    if (app.userId && app.userId !== identity.subject) throw new Error("Not authorized");
+
     const { appId, ...fields } = args;
     const patch: Record<string, unknown> = { updatedAt: Date.now() };
     if (fields.title !== undefined) patch.title = fields.title;
@@ -85,13 +98,15 @@ export const ensureForSession = mutation({
     description: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    await assertSessionOwner(ctx, args.sessionId);
+
     const existing = await ctx.db
       .query("apps")
       .withIndex("by_session", (q) => q.eq("sessionId", args.sessionId))
       .first();
     if (existing) return existing;
 
-    const slug = Array.from({ length: 8 }, () =>
+    const slug = Array.from({ length: 12 }, () =>
       "abcdefghijklmnopqrstuvwxyz0123456789"[Math.floor(Math.random() * 36)]
     ).join("");
 
@@ -114,6 +129,8 @@ export const ensureForSession = mutation({
 export const getBySession = query({
   args: { sessionId: v.id("sessions") },
   handler: async (ctx, args) => {
+    const session = await assertSessionOwner(ctx, args.sessionId, { soft: true });
+    if (!session) return null;
     return await ctx.db
       .query("apps")
       .withIndex("by_session", (q) => q.eq("sessionId", args.sessionId))

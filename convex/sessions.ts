@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 
 import { mutation, query } from "./_generated/server";
+import { assertSessionOwner, getAuthUserId } from "./lib/auth";
 import { SESSION_STATES } from "./lib/session_states";
 
 export const create = mutation({
@@ -23,7 +24,7 @@ export const create = mutation({
 export const get = query({
   args: { sessionId: v.id("sessions") },
   handler: async (ctx, args) => {
-    return await ctx.db.get(args.sessionId);
+    return await assertSessionOwner(ctx, args.sessionId, { soft: true });
   },
 });
 
@@ -43,6 +44,7 @@ export const list = query({
 export const startGeneration = mutation({
   args: { sessionId: v.id("sessions") },
   handler: async (ctx, args) => {
+    await assertSessionOwner(ctx, args.sessionId);
     await ctx.db.patch(args.sessionId, {
       state: SESSION_STATES.GENERATING,
       stateMessage: "Generating your app...",
@@ -55,6 +57,7 @@ export const setLive = mutation({
     sessionId: v.id("sessions"),
   },
   handler: async (ctx, args) => {
+    await assertSessionOwner(ctx, args.sessionId);
     await ctx.db.patch(args.sessionId, {
       state: SESSION_STATES.LIVE,
       stateMessage: "Live",
@@ -68,6 +71,7 @@ export const setFailed = mutation({
     error: v.string(),
   },
   handler: async (ctx, args) => {
+    await assertSessionOwner(ctx, args.sessionId);
     await ctx.db.patch(args.sessionId, {
       state: SESSION_STATES.FAILED,
       error: args.error,
@@ -75,17 +79,17 @@ export const setFailed = mutation({
   },
 });
 
-
-const VALID_STATES = Object.values(SESSION_STATES);
-
 export const listByState = query({
   args: { state: v.union(v.literal("idle"), v.literal("generating"), v.literal("live"), v.literal("failed")) },
   handler: async (ctx, args) => {
-    return await ctx.db
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return [];
+    const sessions = await ctx.db
       .query("sessions")
       .withIndex("by_state", (q) => q.eq("state", args.state))
       .order("desc")
       .take(50);
+    return sessions.filter((s) => !s.userId || s.userId === userId);
   },
 });
 
@@ -143,22 +147,23 @@ export const updateTitle = mutation({
     title: v.string(),
   },
   handler: async (ctx, args) => {
+    await assertSessionOwner(ctx, args.sessionId);
     const trimmed = args.title.slice(0, 100);
-    await ctx.db.patch(args.sessionId, {
-      title: trimmed,
-    });
+    await ctx.db.patch(args.sessionId, { title: trimmed });
   },
 });
 
 export const getMostRecent = query({
   args: {},
   handler: async (ctx) => {
-    const session = await ctx.db
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return null;
+    const userSessions = await ctx.db
       .query("sessions")
-      .withIndex("by_state", (q) => q.eq("state", SESSION_STATES.LIVE))
+      .withIndex("by_user", (q) => q.eq("userId", userId))
       .order("desc")
-      .first();
-    return session;
+      .take(100);
+    return userSessions.find((s) => s.state === SESSION_STATES.LIVE) ?? null;
   },
 });
 
@@ -168,8 +173,7 @@ export const setBlueprint = mutation({
     blueprint: v.any(), // Validated via TherapyBlueprintSchema (Zod) at app layer before persistence
   },
   handler: async (ctx, args) => {
-    await ctx.db.patch(args.sessionId, {
-      blueprint: args.blueprint,
-    });
+    await assertSessionOwner(ctx, args.sessionId);
+    await ctx.db.patch(args.sessionId, { blueprint: args.blueprint });
   },
 });

@@ -9,6 +9,7 @@ import schema from "../schema";
 const modules = import.meta.glob("../**/*.*s"); // REQUIRED for convex-test
 
 const TEST_IDENTITY = { subject: "test-user-123", issuer: "clerk" };
+const OTHER_IDENTITY = { subject: "other-user-456", issuer: "clerk" };
 
 describe("sessions — streaming builder mutations", () => {
   it("create returns session in idle state with query stored", async () => {
@@ -213,6 +214,72 @@ describe("sessions — streaming builder mutations", () => {
         sessionId: idGenerating,
       });
       const result = await t.query(api.sessions.getMostRecent, {});
+      expect(result).toBeNull();
+    });
+  });
+
+  describe("authorization — cross-user rejection", () => {
+    it("get returns null for another user's session", async () => {
+      const t = convexTest(schema, modules);
+      const id = await t.withIdentity(TEST_IDENTITY).mutation(api.sessions.create, {
+        title: "Private",
+        query: "test",
+      });
+      const session = await t.withIdentity(OTHER_IDENTITY).query(api.sessions.get, { sessionId: id });
+      expect(session).toBeNull();
+    });
+
+    it("get returns null when not authenticated", async () => {
+      const t = convexTest(schema, modules);
+      const id = await t.withIdentity(TEST_IDENTITY).mutation(api.sessions.create, {
+        title: "Test",
+        query: "test",
+      });
+      const session = await t.query(api.sessions.get, { sessionId: id });
+      expect(session).toBeNull();
+    });
+
+    it("startGeneration throws for non-owner", async () => {
+      const t = convexTest(schema, modules);
+      const id = await t.withIdentity(TEST_IDENTITY).mutation(api.sessions.create, {
+        title: "Test",
+        query: "test",
+      });
+      await expect(
+        t.withIdentity(OTHER_IDENTITY).mutation(api.sessions.startGeneration, { sessionId: id }),
+      ).rejects.toThrow("Not authorized");
+    });
+
+    it("updateTitle throws for non-owner", async () => {
+      const t = convexTest(schema, modules);
+      const id = await t.withIdentity(TEST_IDENTITY).mutation(api.sessions.create, {
+        title: "Test",
+        query: "test",
+      });
+      await expect(
+        t.withIdentity(OTHER_IDENTITY).mutation(api.sessions.updateTitle, { sessionId: id, title: "Hacked" }),
+      ).rejects.toThrow("Not authorized");
+    });
+
+    it("listByState only returns caller's sessions", async () => {
+      const t = convexTest(schema, modules);
+      const id = await t.withIdentity(TEST_IDENTITY).mutation(api.sessions.create, {
+        title: "User1 Live",
+        query: "test",
+      });
+      await t.withIdentity(TEST_IDENTITY).mutation(api.sessions.setLive, { sessionId: id });
+      const results = await t.withIdentity(OTHER_IDENTITY).query(api.sessions.listByState, { state: "live" });
+      expect(results).toEqual([]);
+    });
+
+    it("getMostRecent only returns caller's live sessions", async () => {
+      const t = convexTest(schema, modules);
+      const id = await t.withIdentity(TEST_IDENTITY).mutation(api.sessions.create, {
+        title: "User1 Live",
+        query: "test",
+      });
+      await t.withIdentity(TEST_IDENTITY).mutation(api.sessions.setLive, { sessionId: id });
+      const result = await t.withIdentity(OTHER_IDENTITY).query(api.sessions.getMostRecent, {});
       expect(result).toBeNull();
     });
   });

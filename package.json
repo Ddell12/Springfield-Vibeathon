@@ -56,6 +56,7 @@
     "@clerk/testing": "^2.0.6",
     "@edge-runtime/vm": "^5.0.0",
     "@faker-js/faker": "^10.3.0",
+    "@mswjs/interceptors": "^0.41.3",
     "@next/bundle-analyzer": "^16.2.1",
     "@playwright/test": "^1.58.2",
     "@tailwindcss/postcss": "^4",
