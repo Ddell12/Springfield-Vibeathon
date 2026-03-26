@@ -86,7 +86,7 @@ describe("PreviewPanel — WebContainer refactor contract", () => {
     );
     const spinner =
       screen.queryByRole("status") ??
-      screen.queryByText(/generating|building|creating|setting up/i) ??
+      screen.queryByText(/getting ready|building your app/i) ??
       document.querySelector(".animate-pulse, .animate-spin");
     expect(spinner).toBeTruthy();
   });
