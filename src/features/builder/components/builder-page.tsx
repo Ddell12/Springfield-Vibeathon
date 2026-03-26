@@ -27,6 +27,18 @@ import { PreviewPanel } from "./preview-panel";
 import { PublishSuccessModal } from "./publish-success-modal";
 import { SuggestionChips } from "./suggestion-chips";
 
+const PLACEHOLDER_APP = `export default function App() {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-teal-50 to-cyan-50">
+      <div className="text-center">
+        <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-4 border-teal-200 border-t-teal-600" />
+        <p className="text-lg font-medium text-teal-800">Building your app...</p>
+        <p className="mt-1 text-sm text-teal-600/70">This usually takes 10-20 seconds</p>
+      </div>
+    </div>
+  );
+}`;
+
 const THERAPY_SUGGESTIONS = [
   "Token board with star rewards for completing morning tasks",
   "Visual daily schedule with drag-to-reorder steps",
@@ -80,6 +92,7 @@ export function BuilderPage() {
 
   const mostRecent = useQuery(api.sessions.getMostRecent);
   const autoResumed = useRef(false);
+  const pendingPlaceholderRef = useRef(false);
 
   // Resume an existing session when navigating from My Apps
   const sessionResumed = useRef(false);
@@ -116,6 +129,14 @@ export function BuilderPage() {
 
   const handleGenerate = (prompt: string) => {
     lastPromptRef.current = prompt;
+
+    // Write placeholder immediately so preview shows something within 1-2s
+    if (wcStatus === "ready") {
+      writeFile("src/App.tsx", PLACEHOLDER_APP).catch(() => {});
+    } else {
+      pendingPlaceholderRef.current = true;
+    }
+
     generate(prompt);
   };
 
@@ -124,6 +145,14 @@ export function BuilderPage() {
       generate(lastPromptRef.current);
     }
   };
+
+  // Drain queued placeholder write when WebContainer becomes ready after prompt submit
+  useEffect(() => {
+    if (wcStatus === "ready" && pendingPlaceholderRef.current) {
+      pendingPlaceholderRef.current = false;
+      writeFile("src/App.tsx", PLACEHOLDER_APP).catch(() => {});
+    }
+  }, [wcStatus, writeFile]);
 
   const handleNameEditEnd = async (name: string) => {
     setIsEditingName(false);
