@@ -27,6 +27,13 @@ import { PreviewPanel } from "./preview-panel";
 import { PublishSuccessModal } from "./publish-success-modal";
 import { SuggestionChips } from "./suggestion-chips";
 
+const THERAPY_SUGGESTIONS = [
+  "Token board with star rewards for completing morning tasks",
+  "Visual daily schedule with drag-to-reorder steps",
+  "Communication picture board with text-to-speech",
+  "Feelings check-in tool with emoji faces and journaling",
+];
+
 export function BuilderPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -167,20 +174,6 @@ export function BuilderPage() {
 
   const showPromptScreen = !sessionId && status === "idle" && !sessionIdFromUrl;
 
-  const THERAPY_SUGGESTIONS = [
-    "Token board with star rewards for completing morning tasks",
-    "Visual daily schedule with drag-to-reorder steps",
-    "Communication picture board with text-to-speech",
-    "Feelings check-in tool with emoji faces and journaling",
-  ];
-
-  const handlePromptSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!promptInput.trim()) return;
-    handleGenerate(promptInput.trim());
-    setPromptInput("");
-  };
-
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
       {showPromptScreen ? (
@@ -195,7 +188,12 @@ export function BuilderPage() {
             </p>
           </div>
           <form
-            onSubmit={handlePromptSubmit}
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (!promptInput.trim()) return;
+              handleGenerate(promptInput.trim());
+              setPromptInput("");
+            }}
             className="w-full max-w-2xl"
           >
             <div className="flex items-center gap-2 rounded-full border border-outline-variant/40 bg-surface-container-lowest px-4 py-2 shadow-sm focus-within:ring-2 focus-within:ring-primary/30">

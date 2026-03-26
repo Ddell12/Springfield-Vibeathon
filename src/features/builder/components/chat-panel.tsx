@@ -159,8 +159,8 @@ export function ChatPanel({
             </div>
           )}
 
-          {/* Lovable-style file badges */}
-          {activities.length > 0 && (
+          {/* Lovable-style file badges — only during generation to avoid stale display */}
+          {isGenerating && activities.length > 0 && (
             <FileBadges
               files={activities
                 .filter((a) => a.type === "file_written" && a.path)
