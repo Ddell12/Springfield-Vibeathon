@@ -91,7 +91,7 @@ export const getMostRecent = query({
   handler: async (ctx) => {
     const session = await ctx.db
       .query("sessions")
-      .withIndex("by_state", (q) => q.eq("state", "live"))
+      .withIndex("by_state", (q) => q.eq("state", SESSION_STATES.LIVE))
       .order("desc")
       .first();
     return session;

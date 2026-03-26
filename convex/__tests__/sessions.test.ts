@@ -3,6 +3,7 @@ import { convexTest } from "convex-test";
 import { describe, expect, it } from "vitest";
 
 import { api } from "../_generated/api";
+import { SESSION_STATES } from "../lib/session_states";
 import schema from "../schema";
 
 const modules = import.meta.glob("../**/*.*s"); // REQUIRED for convex-test
@@ -157,7 +158,7 @@ describe("sessions — streaming builder mutations", () => {
       const result = await t.query(api.sessions.getMostRecent, {});
       expect(result).not.toBeNull();
       expect(result?._id).toBe(id);
-      expect(result?.state).toBe("live");
+      expect(result?.state).toBe(SESSION_STATES.LIVE);
       expect(result?.title).toBe("Live App");
     });
 
