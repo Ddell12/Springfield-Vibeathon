@@ -64,7 +64,7 @@ export function TemplatesTab() {
       {TEMPLATES.map((template) => (
         <Link
           key={template.id}
-          href={`/builder?template=${template.id}`}
+          href={`/builder?prompt=${encodeURIComponent(`Build me a ${template.title}: ${template.subtitle}`)}`}
           className="group flex flex-col rounded-xl bg-surface-container-lowest overflow-hidden transition-shadow duration-200 hover:shadow-[0_4px_20px_rgba(0,0,0,0.08)]"
         >
           <div

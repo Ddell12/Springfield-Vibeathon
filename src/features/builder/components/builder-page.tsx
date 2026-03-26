@@ -6,6 +6,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { useIsMobile } from "@/core/hooks/use-mobile";
+import { extractErrorMessage } from "@/core/utils";
 import { ShareDialog } from "@/features/sharing/components/share-dialog";
 import { MaterialIcon } from "@/shared/components/material-icon";
 import { Button } from "@/shared/components/ui/button";
@@ -196,7 +197,7 @@ export function BuilderPage() {
       setPublishModalOpen(true);
     } catch (err) {
       console.error("Publish failed:", err);
-      toast.error("Publishing failed. Please try again.");
+      toast.error(extractErrorMessage(err));
     } finally {
       setIsPublishing(false);
     }
