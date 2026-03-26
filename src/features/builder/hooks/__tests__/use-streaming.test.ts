@@ -2,8 +2,8 @@
 import { act,renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { useStreaming } from "../use-streaming";
 import type { TherapyBlueprint } from "../../lib/schemas";
+import { useStreaming } from "../use-streaming";
 
 // Mock fetch for SSE stream tests
 const mockFetch = vi.fn();

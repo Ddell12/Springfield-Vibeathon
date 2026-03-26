@@ -34,7 +34,8 @@ export const transcribeSpeech = action({
 
     if (!response.ok) {
       const body = await response.text().catch(() => "");
-      throw new Error(`ElevenLabs STT error: ${response.status} ${body}`);
+      console.error(`[STT] ElevenLabs error ${response.status}:`, body);
+      throw new Error("Speech recognition failed. Please try again.");
     }
 
     const data = (await response.json()) as { text: string; language_code?: string };

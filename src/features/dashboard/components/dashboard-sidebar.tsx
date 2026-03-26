@@ -4,7 +4,8 @@ import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 
 import { cn } from "@/core/utils";
-import { isNavActive,NAV_ITEMS } from "@/shared/lib/navigation";
+import { MaterialIcon } from "@/shared/components/material-icon";
+import { isNavActive, NAV_ITEMS } from "@/shared/lib/navigation";
 
 export function DashboardSidebar() {
   const pathname = usePathname();
@@ -27,7 +28,6 @@ export function DashboardSidebar() {
       <nav className="flex flex-1 flex-col items-center gap-6">
         {NAV_ITEMS.map((item) => {
           const isActive = isNavActive(item.href, pathname, tab);
-          const Icon = item.icon;
 
           return (
             <Link
@@ -40,7 +40,7 @@ export function DashboardSidebar() {
                   : "text-on-surface-variant hover:bg-surface-container-high"
               )}
             >
-              <Icon size={22} fill={isActive ? "currentColor" : "none"} />
+              <MaterialIcon icon={item.icon} filled={isActive} size="md" />
               <span className="pointer-events-none absolute left-16 rounded-lg bg-primary px-2 py-1 text-xs font-medium text-white opacity-0 transition-opacity group-hover:opacity-100">
                 {item.label}
               </span>

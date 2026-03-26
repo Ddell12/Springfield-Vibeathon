@@ -1,12 +1,11 @@
 "use client";
 
-import { useAction, useQuery } from "convex/react";
+import { useAction, useMutation, useQuery } from "convex/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
-import { api } from "../../../../convex/_generated/api";
-import type { Id } from "../../../../convex/_generated/dataModel";
+import { useIsMobile } from "@/core/hooks/use-mobile";
 import { ShareDialog } from "@/features/sharing/components/share-dialog";
 import {
   ResizableHandle,
@@ -14,6 +13,8 @@ import {
   ResizablePanelGroup,
 } from "@/shared/components/ui/resizable";
 
+import { api } from "../../../../convex/_generated/api";
+import type { Id } from "../../../../convex/_generated/dataModel";
 import { useStreaming } from "../hooks/use-streaming";
 import { useWebContainer } from "../hooks/use-webcontainer";
 import { BuilderToolbar, type DeviceSize, type ViewMode } from "./builder-toolbar";
@@ -27,13 +28,17 @@ export function BuilderPage() {
   const router = useRouter();
   const sessionIdFromUrl = searchParams.get("sessionId");
 
+  const isMobile = useIsMobile();
   const [viewMode, setViewMode] = useState<ViewMode>("preview");
   const [deviceSize, setDeviceSize] = useState<DeviceSize>("desktop");
+  const [mobilePanel, setMobilePanel] = useState<"chat" | "preview">("chat");
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [publishModalOpen, setPublishModalOpen] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
   const [publishedUrl, setPublishedUrl] = useState<string | null>(null);
   const publishApp = useAction(api.publish.publishApp);
+  const updateTitle = useMutation(api.sessions.updateTitle);
+  const [isEditingName, setIsEditingName] = useState(false);
 
   const { status: wcStatus, previewUrl, writeFile, error: wcError } = useWebContainer();
 
@@ -104,6 +109,18 @@ export function BuilderPage() {
       generate(lastPromptRef.current);
     }
   };
+
+  const handleNameEditEnd = async (name: string) => {
+    setIsEditingName(false);
+    const trimmed = name.trim();
+    if (!trimmed || trimmed === appName || !sessionId) return;
+    try {
+      await updateTitle({ sessionId: sessionId as Id<"sessions">, title: trimmed });
+    } catch {
+      toast.error("Failed to rename app");
+    }
+  };
+
   const promptFromUrl = searchParams.get("prompt");
 
   useEffect(() => {
@@ -151,55 +168,94 @@ export function BuilderPage() {
         deviceSize={deviceSize}
         onDeviceSizeChange={setDeviceSize}
         status={status}
+        wcStatus={wcStatus}
+        isPublishing={isPublishing}
         projectName={appName}
+        isEditingName={isEditingName}
+        onNameEditStart={() => setIsEditingName(true)}
+        onNameEditEnd={handleNameEditEnd}
         onShare={() => setShareDialogOpen(true)}
         onPublish={handlePublish}
+        isMobile={isMobile}
+        mobilePanel={mobilePanel}
+        onMobilePanelChange={setMobilePanel}
       />
 
       <div className="min-h-0 flex-1 bg-surface-container-low p-2">
-        <ResizablePanelGroup orientation="horizontal" className="h-full">
-          <ResizablePanel defaultSize={30} minSize={20}>
-            <div className="h-full overflow-hidden rounded-2xl bg-surface-container-lowest">
-              <ChatPanel
-                sessionId={sessionId}
-                status={status}
-                blueprint={blueprint}
-                error={error}
-                onGenerate={handleGenerate}
-                onRetry={handleRetry}
-                streamingText={streamingText}
-                activities={activities}
-              />
-            </div>
-          </ResizablePanel>
-
-          <ResizableHandle withHandle />
-
-          {viewMode === "code" && (
-            <>
-              <ResizablePanel defaultSize={35} minSize={20}>
-                <div className="h-full overflow-hidden rounded-2xl bg-surface-container-lowest">
-                  <CodePanel files={files} status={status} />
-                </div>
-              </ResizablePanel>
-              <ResizableHandle withHandle />
-            </>
-          )}
-
-          {viewMode === "preview" && (
-            <ResizablePanel defaultSize={70} minSize={20}>
+        {isMobile ? (
+          /* Mobile: single-panel view toggled via toolbar */
+          <div className="h-full">
+            {mobilePanel === "chat" ? (
+              <div className="h-full overflow-hidden rounded-2xl bg-surface-container-lowest">
+                <ChatPanel
+                  sessionId={sessionId}
+                  status={status}
+                  blueprint={blueprint}
+                  error={error}
+                  onGenerate={handleGenerate}
+                  onRetry={handleRetry}
+                  streamingText={streamingText}
+                  activities={activities}
+                />
+              </div>
+            ) : (
               <div className="h-full overflow-hidden rounded-2xl bg-surface-container-lowest">
                 <PreviewPanel
                   previewUrl={previewUrl}
                   state={status}
                   wcStatus={wcStatus}
                   error={error ?? wcError ?? undefined}
-                  deviceSize={deviceSize}
+                  deviceSize="mobile"
+                />
+              </div>
+            )}
+          </div>
+        ) : (
+          /* Desktop: resizable side-by-side panels */
+          <ResizablePanelGroup orientation="horizontal" className="h-full">
+            <ResizablePanel defaultSize={30} minSize={20}>
+              <div className="h-full overflow-hidden rounded-2xl bg-surface-container-lowest">
+                <ChatPanel
+                  sessionId={sessionId}
+                  status={status}
+                  blueprint={blueprint}
+                  error={error}
+                  onGenerate={handleGenerate}
+                  onRetry={handleRetry}
+                  streamingText={streamingText}
+                  activities={activities}
                 />
               </div>
             </ResizablePanel>
-          )}
-        </ResizablePanelGroup>
+
+            <ResizableHandle withHandle />
+
+            {viewMode === "code" && (
+              <>
+                <ResizablePanel defaultSize={35} minSize={20}>
+                  <div className="h-full overflow-hidden rounded-2xl bg-surface-container-lowest">
+                    <CodePanel files={files} status={status} />
+                  </div>
+                </ResizablePanel>
+                <ResizableHandle withHandle />
+              </>
+            )}
+
+            {viewMode === "preview" && (
+              <ResizablePanel defaultSize={70} minSize={20}>
+                <div className="h-full overflow-hidden rounded-2xl bg-surface-container-lowest">
+                  <PreviewPanel
+                    previewUrl={previewUrl}
+                    state={status}
+                    wcStatus={wcStatus}
+                    error={error ?? wcError ?? undefined}
+                    deviceSize={deviceSize}
+                  />
+                </div>
+              </ResizablePanel>
+            )}
+          </ResizablePanelGroup>
+        )}
       </div>
 
       <ShareDialog

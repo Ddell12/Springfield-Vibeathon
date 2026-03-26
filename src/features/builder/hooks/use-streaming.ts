@@ -2,8 +2,9 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { extractErrorMessage } from "@/core/utils";
 import { type TherapyBlueprint,TherapyBlueprintSchema } from "@/features/builder/lib/schemas";
-import { type SSEEvent, parseSSEEvent } from "@/features/builder/lib/sse-events";
+import { parseSSEEvent,type SSEEvent } from "@/features/builder/lib/sse-events";
 
 export type StreamingStatus = "idle" | "generating" | "live" | "failed";
 
@@ -279,7 +280,7 @@ export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn 
         }
       } catch (err) {
         if (err instanceof Error && err.name === "AbortError") return;
-        setError(err instanceof Error ? err.message : "Unknown error");
+        setError(extractErrorMessage(err));
         setStatus("failed");
       }
     },

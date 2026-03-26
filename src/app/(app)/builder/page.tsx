@@ -2,8 +2,8 @@
 
 import { ErrorBoundary } from "react-error-boundary";
 
-import { Button } from "@/shared/components/ui/button";
 import { BuilderPage } from "@/features/builder/components/builder-page";
+import { Button } from "@/shared/components/ui/button";
 
 function BuilderErrorFallback({ resetErrorBoundary }: { resetErrorBoundary: () => void }) {
   return (

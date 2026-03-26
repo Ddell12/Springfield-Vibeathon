@@ -58,7 +58,8 @@ export const generateSpeech = action({
 
     if (!response.ok) {
       const body = await response.text().catch(() => "");
-      throw new Error(`ElevenLabs API error: ${response.status} ${body}`);
+      console.error(`[TTS] ElevenLabs error ${response.status}:`, body);
+      throw new Error("Speech generation failed. Please try again.");
     }
 
     const audioBuffer = await response.arrayBuffer();

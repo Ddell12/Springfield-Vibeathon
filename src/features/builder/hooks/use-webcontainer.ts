@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { extractErrorMessage } from "@/core/utils";
+
 import { getWebContainer } from "./webcontainer";
 import { templateFiles } from "./webcontainer-files";
 
@@ -47,12 +49,16 @@ export function useWebContainer(): UseWebContainerReturn {
         setStatus("installing");
         const installProcess = await wc.spawn("npm", ["install"]);
 
-        // Capture output for error diagnostics
+        // Capture output for error diagnostics (capped to prevent unbounded growth)
+        const MAX_OUTPUT_CHARS = 50_000;
         let installOutput = "";
         installProcess.output.pipeTo(
           new WritableStream({
             write(chunk) {
               installOutput += chunk;
+              if (installOutput.length > MAX_OUTPUT_CHARS) {
+                installOutput = installOutput.slice(-MAX_OUTPUT_CHARS);
+              }
             },
           })
         ).catch(() => {/* stream may close early */});
@@ -76,7 +82,7 @@ export function useWebContainer(): UseWebContainerReturn {
         // status will transition to "ready" when server-ready fires
       } catch (err) {
         setStatus("error");
-        setError(err instanceof Error ? err.message : "WebContainer boot failed");
+        setError(extractErrorMessage(err, "WebContainer boot failed"));
       }
     }
 

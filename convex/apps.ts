@@ -58,6 +58,7 @@ export const update = mutation({
     if (fields.description !== undefined) patch.description = fields.description;
     if (fields.publishedUrl !== undefined) patch.publishedUrl = fields.publishedUrl;
     await ctx.db.patch(appId, patch);
+    return appId;
   },
 });
 

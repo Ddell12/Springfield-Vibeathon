@@ -3,6 +3,8 @@
 import { useAction } from "convex/react";
 import { useCallback, useEffect, useRef } from "react";
 
+import { extractErrorMessage } from "@/core/utils";
+
 import { api } from "../../../../convex/_generated/api";
 
 /** Convert a Blob to a base64 data string (without the data-URL prefix). */
@@ -16,6 +18,15 @@ function blobToBase64(blob: Blob): Promise<string> {
     reader.onerror = reject;
     reader.readAsDataURL(blob);
   });
+}
+
+/** Get the iframe's origin for secure postMessage targeting. */
+function getIframeOrigin(iframe: HTMLIFrameElement): string {
+  try {
+    return iframe.src ? new URL(iframe.src).origin : "*";
+  } catch {
+    return "*";
+  }
 }
 
 export function usePostMessageBridge(iframeRef: React.RefObject<HTMLIFrameElement | null>): void {
@@ -32,6 +43,7 @@ export function usePostMessageBridge(iframeRef: React.RefObject<HTMLIFrameElemen
       // Only process messages from our iframe — ignore cross-origin noise
       if (event.source !== iframe.contentWindow) return;
 
+      const targetOrigin = getIframeOrigin(iframe);
       const messageType = typeof event.data?.type === "string" ? event.data.type : undefined;
 
       switch (messageType) {
@@ -43,13 +55,13 @@ export function usePostMessageBridge(iframeRef: React.RefObject<HTMLIFrameElemen
             });
             iframe.contentWindow.postMessage(
               { type: "tts-response", text: event.data.text, audioUrl: result.audioUrl },
-              "*",
+              targetOrigin,
             );
           } catch (err) {
             console.error("[PostMessage Bridge] TTS error:", err);
             iframe.contentWindow.postMessage(
-              { type: "tts-error", text: event.data.text, error: err instanceof Error ? err.message : "Unknown error" },
-              "*",
+              { type: "tts-error", text: event.data.text, error: extractErrorMessage(err) },
+              targetOrigin,
             );
           }
           break;
@@ -69,13 +81,13 @@ export function usePostMessageBridge(iframeRef: React.RefObject<HTMLIFrameElemen
                 const result = await transcribeSpeech({ audioBase64: base64 });
                 iframe.contentWindow?.postMessage(
                   { type: "stt-result", transcript: result.transcript },
-                  "*",
+                  targetOrigin,
                 );
               } catch (err) {
                 console.error("[PostMessage Bridge] STT error:", err);
                 iframe.contentWindow?.postMessage(
-                  { type: "stt-error", error: err instanceof Error ? err.message : "Unknown error" },
-                  "*",
+                  { type: "stt-error", error: extractErrorMessage(err) },
+                  targetOrigin,
                 );
               }
             };
@@ -85,7 +97,7 @@ export function usePostMessageBridge(iframeRef: React.RefObject<HTMLIFrameElemen
             console.error("[PostMessage Bridge] Mic access error:", err);
             iframe.contentWindow.postMessage(
               { type: "stt-error", error: "Could not access microphone" },
-              "*",
+              targetOrigin,
             );
           }
           break;

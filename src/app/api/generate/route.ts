@@ -1,6 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { ConvexHttpClient } from "convex/browser";
 
+import { extractErrorMessage, settleInBatches } from "@/core/utils";
 import { buildSystemPrompt } from "@/features/builder/lib/agent-prompt";
 import { GenerateInputSchema } from "@/features/builder/lib/schemas/generate";
 
@@ -124,19 +125,6 @@ const TOOLS: Anthropic.Tool[] = [
 // Helpers
 // ---------------------------------------------------------------------------
 
-async function settleInBatches<T>(
-  thunks: (() => Promise<T>)[],
-  batchSize: number,
-): Promise<PromiseSettledResult<T>[]> {
-  const results: PromiseSettledResult<T>[] = [];
-  for (let i = 0; i < thunks.length; i += batchSize) {
-    const batch = thunks.slice(i, i + batchSize);
-    const settled = await Promise.allSettled(batch.map((fn) => fn()));
-    results.push(...settled);
-  }
-  return results;
-}
-
 function jsonErrorResponse(message: string, status: number): Response {
   return new Response(JSON.stringify({ error: message }), {
     status,
@@ -178,7 +166,7 @@ async function runToolAction(
     return {
       type: "tool_result",
       tool_use_id: toolUseId,
-      content: `Error: ${err instanceof Error ? err.message : String(err)}`,
+      content: `Error: ${extractErrorMessage(err)}`,
       is_error: true,
     };
   }
@@ -457,7 +445,7 @@ export async function POST(request: Request): Promise<Response> {
         try {
           await convex.mutation(api.sessions.setFailed, {
             sessionId,
-            error: error instanceof Error ? error.message : "Unknown error",
+            error: extractErrorMessage(error),
           });
         } catch (persistError) {
           console.error("[generate] Failed to persist error state:", persistError);
