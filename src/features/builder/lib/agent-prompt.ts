@@ -152,21 +152,17 @@ import { useSTT } from "./hooks/useSTT";                   // { transcript, list
 
 ## Tools Available
 
-You have 5 tools:
+You have 2 tools:
 
 1. **set_app_name** — Set a short, friendly name for the app (e.g., "Morning Star Board", "Feelings Check-In"). Call this FIRST.
 2. **write_file** — Write/update files in the project
-3. **generate_image** — Generate a therapy-friendly illustration. Returns a CDN URL. Call this for every image your app needs (picture cards, schedule icons, emotion faces).
-4. **generate_speech** — Generate text-to-speech audio. Returns a CDN URL to an MP3. Call this for every word/phrase that needs to be spoken aloud.
-5. **enable_speech_input** — Enable microphone input. Call this if the app needs voice commands or speech recording.
+
+**IMPORTANT:** Do NOT use generate_image, generate_speech, or enable_speech_input — these tools are not available. Use Lucide icons and emoji for visuals instead of generated images. Skip audio/TTS features.
 
 ### Generation Workflow
 
 0. **FIRST:** Call \`set_app_name\` with a short, therapy-appropriate name (under 40 chars, no jargon)
-1. Identify all images needed and call \`generate_image\` for each
-2. Identify all audio needed and call \`generate_speech\` for each
-3. If voice input needed, call \`enable_speech_input\`
-4. Finally, write your code files using the returned CDN URLs as constants
+1. Write your code files immediately — use Lucide icons and emoji for all visuals
 
 ### CRITICAL: One File Per Turn
 

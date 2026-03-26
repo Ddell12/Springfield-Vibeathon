@@ -64,61 +64,63 @@ const TOOLS: Anthropic.Tool[] = [
       required: ["path", "contents"],
     },
   },
-  {
-    name: "generate_image",
-    description:
-      "Generate a therapy-friendly illustration. Returns a CDN URL. Use for picture cards, schedule icons, emotion faces, and any visual content.",
-    input_schema: {
-      type: "object" as const,
-      properties: {
-        label: {
-          type: "string",
-          description: "What to illustrate (e.g., 'happy face', 'brush teeth')",
-        },
-        category: {
-          type: "string",
-          enum: ["emotions", "daily-activities", "animals", "food", "objects", "people", "places"],
-          description: "Image category for style",
-        },
-      },
-      required: ["label", "category"],
-    },
-  },
-  {
-    name: "generate_speech",
-    description:
-      "Generate text-to-speech audio. Returns a CDN URL to an MP3. Use for communication board labels, story narration, schedule steps.",
-    input_schema: {
-      type: "object" as const,
-      properties: {
-        text: {
-          type: "string",
-          description: "Text to speak",
-        },
-        voice: {
-          type: "string",
-          enum: ["warm-female", "calm-male", "child-friendly"],
-          description: "Voice style",
-        },
-      },
-      required: ["text"],
-    },
-  },
-  {
-    name: "enable_speech_input",
-    description:
-      "Enable microphone input for this app. The useSTT() hook will become active.",
-    input_schema: {
-      type: "object" as const,
-      properties: {
-        purpose: {
-          type: "string",
-          description: "What speech input is for",
-        },
-      },
-      required: ["purpose"],
-    },
-  },
+  // NOTE: Media tools commented out for demo speed — image gen (Google GenAI) and TTS (ElevenLabs) add 10-60s per request.
+  // Uncomment to re-enable for production.
+  // {
+  //   name: "generate_image",
+  //   description:
+  //     "Generate a therapy-friendly illustration. Returns a CDN URL. Use for picture cards, schedule icons, emotion faces, and any visual content.",
+  //   input_schema: {
+  //     type: "object" as const,
+  //     properties: {
+  //       label: {
+  //         type: "string",
+  //         description: "What to illustrate (e.g., 'happy face', 'brush teeth')",
+  //       },
+  //       category: {
+  //         type: "string",
+  //         enum: ["emotions", "daily-activities", "animals", "food", "objects", "people", "places"],
+  //         description: "Image category for style",
+  //       },
+  //     },
+  //     required: ["label", "category"],
+  //   },
+  // },
+  // {
+  //   name: "generate_speech",
+  //   description:
+  //     "Generate text-to-speech audio. Returns a CDN URL to an MP3. Use for communication board labels, story narration, schedule steps.",
+  //   input_schema: {
+  //     type: "object" as const,
+  //     properties: {
+  //       text: {
+  //         type: "string",
+  //         description: "Text to speak",
+  //       },
+  //       voice: {
+  //         type: "string",
+  //         enum: ["warm-female", "calm-male", "child-friendly"],
+  //         description: "Voice style",
+  //       },
+  //     },
+  //     required: ["text"],
+  //   },
+  // },
+  // {
+  //   name: "enable_speech_input",
+  //   description:
+  //     "Enable microphone input for this app. The useSTT() hook will become active.",
+  //   input_schema: {
+  //     type: "object" as const,
+  //     properties: {
+  //       purpose: {
+  //         type: "string",
+  //         description: "What speech input is for",
+  //       },
+  //     },
+  //     required: ["purpose"],
+  //   },
+  // },
 ];
 
 // ---------------------------------------------------------------------------
@@ -312,74 +314,75 @@ export async function POST(request: Request): Promise<Response> {
                 break;
               }
 
-              case "generate_image": {
-                const label = typeof input.label === "string" ? input.label : "";
-                const category = typeof input.category === "string" ? input.category : "objects";
-                if (!label) {
-                  toolResults.push({
-                    type: "tool_result",
-                    tool_use_id: block.id,
-                    content: "Error: generate_image requires a non-empty label",
-                    is_error: true,
-                  });
-                  break;
-                }
-                send("activity", { type: "thinking", message: `Generating image: ${label}...` });
-                const result = await runToolAction(block.id, () =>
-                  convex.action(api.image_generation.generateTherapyImage, {
-                    label,
-                    category,
-                  }),
-                );
-                if (!result.is_error) {
-                  const parsed = typeof result.content === "string" ? JSON.parse(result.content) : null;
-                  if (parsed?.imageUrl) {
-                    send("image_generated", { label, imageUrl: parsed.imageUrl });
-                  }
-                }
-                toolResults.push(result);
-                break;
-              }
-
-              case "generate_speech": {
-                const text = typeof input.text === "string" ? input.text : "";
-                const voice = typeof input.voice === "string" ? input.voice : "warm-female";
-                if (!text) {
-                  toolResults.push({
-                    type: "tool_result",
-                    tool_use_id: block.id,
-                    content: "Error: generate_speech requires non-empty text",
-                    is_error: true,
-                  });
-                  break;
-                }
-                send("activity", { type: "thinking", message: `Generating audio: "${text}"...` });
-                const result = await runToolAction(block.id, () =>
-                  convex.action(api.aiActions.generateSpeech, {
-                    text,
-                    voice,
-                  }),
-                );
-                if (!result.is_error) {
-                  const parsed = typeof result.content === "string" ? JSON.parse(result.content) : null;
-                  if (parsed?.audioUrl) {
-                    send("speech_generated", { text, audioUrl: parsed.audioUrl });
-                  }
-                }
-                toolResults.push(result);
-                break;
-              }
-
-              case "enable_speech_input": {
-                const purpose = typeof input.purpose === "string" ? input.purpose : "";
-                send("stt_enabled", { purpose });
-                toolResults.push({
-                  type: "tool_result",
-                  tool_use_id: block.id,
-                  content: JSON.stringify({ enabled: true }),
-                });
-                break;
-              }
+              // NOTE: Media tool handlers commented out for demo speed. Uncomment to re-enable.
+              // case "generate_image": {
+              //   const label = typeof input.label === "string" ? input.label : "";
+              //   const category = typeof input.category === "string" ? input.category : "objects";
+              //   if (!label) {
+              //     toolResults.push({
+              //       type: "tool_result",
+              //       tool_use_id: block.id,
+              //       content: "Error: generate_image requires a non-empty label",
+              //       is_error: true,
+              //     });
+              //     break;
+              //   }
+              //   send("activity", { type: "thinking", message: `Generating image: ${label}...` });
+              //   const result = await runToolAction(block.id, () =>
+              //     convex.action(api.image_generation.generateTherapyImage, {
+              //       label,
+              //       category,
+              //     }),
+              //   );
+              //   if (!result.is_error) {
+              //     const parsed = typeof result.content === "string" ? JSON.parse(result.content) : null;
+              //     if (parsed?.imageUrl) {
+              //       send("image_generated", { label, imageUrl: parsed.imageUrl });
+              //     }
+              //   }
+              //   toolResults.push(result);
+              //   break;
+              // }
+              //
+              // case "generate_speech": {
+              //   const text = typeof input.text === "string" ? input.text : "";
+              //   const voice = typeof input.voice === "string" ? input.voice : "warm-female";
+              //   if (!text) {
+              //     toolResults.push({
+              //       type: "tool_result",
+              //       tool_use_id: block.id,
+              //       content: "Error: generate_speech requires non-empty text",
+              //       is_error: true,
+              //     });
+              //     break;
+              //   }
+              //   send("activity", { type: "thinking", message: `Generating audio: "${text}"...` });
+              //   const result = await runToolAction(block.id, () =>
+              //     convex.action(api.aiActions.generateSpeech, {
+              //       text,
+              //       voice,
+              //     }),
+              //   );
+              //   if (!result.is_error) {
+              //     const parsed = typeof result.content === "string" ? JSON.parse(result.content) : null;
+              //     if (parsed?.audioUrl) {
+              //       send("speech_generated", { text, audioUrl: parsed.audioUrl });
+              //     }
+              //   }
+              //   toolResults.push(result);
+              //   break;
+              // }
+              //
+              // case "enable_speech_input": {
+              //   const purpose = typeof input.purpose === "string" ? input.purpose : "";
+              //   send("stt_enabled", { purpose });
+              //   toolResults.push({
+              //     type: "tool_result",
+              //     tool_use_id: block.id,
+              //     content: JSON.stringify({ enabled: true }),
+              //   });
+              //   break;
+              // }
             }
           }
 
