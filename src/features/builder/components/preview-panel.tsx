@@ -19,7 +19,8 @@ interface PreviewPanelProps {
 
 export function PreviewPanel({ bundleHtml, state, error, deviceSize = "desktop", buildFailed = false }: PreviewPanelProps) {
   const [refreshKey, setRefreshKey] = useState(0);
-  const [iframeReady, setIframeReady] = useState(false);
+  // Track which blobUrl the iframe has finished loading — null means "not yet loaded"
+  const [loadedBlobUrl, setLoadedBlobUrl] = useState<string | null>(null);
 
   const blobUrl = useMemo(() => {
     if (!bundleHtml) return null;
@@ -27,6 +28,9 @@ export function PreviewPanel({ bundleHtml, state, error, deviceSize = "desktop",
     const blob = new Blob([bundleHtml], { type: "text/html" });
     return URL.createObjectURL(blob);
   }, [bundleHtml, refreshKey]);
+
+  // Derive readiness: iframe is ready when we've loaded the current blobUrl
+  const iframeReady = loadedBlobUrl !== null && loadedBlobUrl === blobUrl;
 
   // Delay revocation of previous blob URL so iframe finishes loading the new one
   const prevBlobUrlRef = useRef<string | null>(null);
@@ -47,9 +51,6 @@ export function PreviewPanel({ bundleHtml, state, error, deviceSize = "desktop",
     };
   }, []);
 
-  // Reset loading state when blob URL changes (new bundle or refresh)
-  useEffect(() => setIframeReady(false), [blobUrl]);
-
   const hasPreview = !!blobUrl;
   const isGenerating = state === "generating";
   const isFailed = state === "failed";
@@ -61,7 +62,7 @@ export function PreviewPanel({ bundleHtml, state, error, deviceSize = "desktop",
           <iframe
             title="App preview"
             src={blobUrl}
-            onLoad={() => setIframeReady(true)}
+            onLoad={() => setLoadedBlobUrl(blobUrl)}
             // allow-same-origin is required: blob: URLs need same-origin context for
             // inline scripts to execute. CSP meta tag in bundle.html restricts capabilities
             // (no fetch, no nested frames, no form submissions). See inline-bundle.cjs.
