@@ -1,9 +1,9 @@
 "use client";
 
-import { ArrowLeft, ChevronDown } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
+import { MaterialIcon } from "@/shared/components/material-icon";
 import { Button } from "@/shared/components/ui/button";
 
 import { AccountSection } from "./account-section";
@@ -32,7 +32,7 @@ export function SettingsPage() {
           className="flex h-8 w-8 items-center justify-center rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors"
           aria-label="Back to dashboard"
         >
-          <ArrowLeft className="h-4 w-4" />
+          <MaterialIcon icon="arrow_back" size="xs" />
         </Link>
         <div className="relative">
           <Button
@@ -42,7 +42,7 @@ export function SettingsPage() {
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           >
             {SECTION_LABELS[section]}
-            <ChevronDown className="h-3.5 w-3.5" />
+            <MaterialIcon icon="expand_more" className="text-sm" />
           </Button>
           {mobileMenuOpen && (
             <div className="absolute top-full left-0 z-50 mt-1 w-48 rounded-lg bg-surface-container-lowest p-1 shadow-lg">

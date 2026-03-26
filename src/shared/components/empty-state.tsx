@@ -1,15 +1,9 @@
 "use client";
 
-import {
-  AlertCircle,
-  Blocks,
-  FileX,
-  Plus,
-  Users,
-} from "lucide-react";
 import Link from "next/link";
 
 import { cn } from "@/core/utils";
+import { MaterialIcon } from "@/shared/components/material-icon";
 import { Button } from "@/shared/components/ui/button";
 
 interface EmptyStateAction {
@@ -28,25 +22,25 @@ interface EmptyStateProps {
 
 const VARIANT_CONFIG = {
   "no-projects": {
-    icon: Blocks,
-    accentIcon: Plus,
+    icon: "widgets",
+    accentIcon: "add",
     bgClass: "bg-primary/10",
     iconClass: "text-primary",
   },
   "no-shared": {
-    icon: Users,
+    icon: "group",
     accentIcon: null,
     bgClass: "bg-secondary/10",
     iconClass: "text-secondary",
   },
   "not-found": {
-    icon: FileX,
+    icon: "description_off",
     accentIcon: null,
     bgClass: "bg-on-surface-variant/10",
     iconClass: "text-on-surface-variant",
   },
   error: {
-    icon: AlertCircle,
+    icon: "error",
     accentIcon: null,
     bgClass: "bg-error/10",
     iconClass: "text-error",
@@ -99,7 +93,6 @@ export function EmptyState({
   secondaryAction,
 }: EmptyStateProps) {
   const config = VARIANT_CONFIG[variant];
-  const Icon = config.icon;
   const isError = variant === "error";
 
   return (
@@ -113,11 +106,11 @@ export function EmptyState({
       >
         {isError ? (
           <div className="flex h-16 w-16 items-center justify-center rounded-full bg-error-container">
-            <Icon size={32} className="text-on-error-container" />
+            <MaterialIcon icon={config.icon} size="lg" className="text-on-error-container" />
           </div>
         ) : (
           <div className="relative flex items-center justify-center">
-            <Icon size={48} className={config.iconClass} />
+            <MaterialIcon icon={config.icon} size="xl" className={config.iconClass} />
             {config.accentIcon && (
               <div
                 className={cn(
@@ -125,7 +118,7 @@ export function EmptyState({
                   "bg-primary-container"
                 )}
               >
-                <config.accentIcon size={14} className="text-white" />
+                <MaterialIcon icon={config.accentIcon} className="text-sm text-white" />
               </div>
             )}
           </div>

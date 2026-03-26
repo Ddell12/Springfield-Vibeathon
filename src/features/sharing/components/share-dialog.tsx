@@ -1,11 +1,11 @@
 "use client";
 
-import { Copy, Share2, X } from "lucide-react";
 import { useState } from "react";
 import QRCode from "react-qr-code";
 
 import { copyToClipboard } from "@/core/clipboard";
 import { cn } from "@/core/utils";
+import { MaterialIcon } from "@/shared/components/material-icon";
 import { Button } from "@/shared/components/ui/button";
 import {
   Dialog,
@@ -61,7 +61,7 @@ export function ShareDialog({
             className="p-1 hover:bg-surface-container transition-colors rounded-full text-on-surface-variant"
             aria-label="Close"
           >
-            <X className="size-5" />
+            <MaterialIcon icon="close" size="sm" />
           </button>
         </DialogHeader>
 
@@ -112,7 +112,7 @@ export function ShareDialog({
             onClick={handleCopy}
             className="flex items-center gap-2 px-4 py-2.5 text-primary font-medium text-sm hover:bg-primary-fixed/20 transition-all rounded-lg"
           >
-            <Copy className="size-4" />
+            <MaterialIcon icon="content_copy" size="xs" />
             Copy Link
           </button>
         </div>
@@ -131,7 +131,7 @@ export function ShareDialog({
               onClick={handleShare}
               className="bg-gradient-to-br from-primary to-primary-container text-on-primary hover:opacity-90 shadow-sm"
             >
-              <Share2 className="size-4" />
+              <MaterialIcon icon="share" size="xs" />
               Share
             </Button>
           )}

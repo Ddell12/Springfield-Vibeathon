@@ -1,19 +1,19 @@
 "use client";
 
-import { BookOpen, MessageSquare, Star, Sun } from "lucide-react";
 import Link from "next/link";
 
 import { cn } from "@/core/utils";
+import { MaterialIcon } from "@/shared/components/material-icon";
 
 import { THERAPY_SEED_PROMPTS } from "../../../../convex/templates/therapy_seeds";
 
 const PRIMARY_GRADIENT = "from-primary to-primary-container";
 
 const TEMPLATE_STYLES = [
-  { gradient: PRIMARY_GRADIENT, Icon: MessageSquare },
-  { gradient: "from-[#2e7d32] to-[#66bb6a]", Icon: Sun },
-  { gradient: "from-[#f59e0b] to-[#fbbf24]", Icon: Star },
-  { gradient: "from-[#5c6bc0] to-[#7986cb]", Icon: BookOpen },
+  { gradient: PRIMARY_GRADIENT, icon: "chat" },
+  { gradient: "from-tertiary to-tertiary-container", icon: "light_mode" },
+  { gradient: "from-tertiary-fixed-dim to-tertiary-fixed", icon: "star" },
+  { gradient: "from-secondary to-secondary-container", icon: "menu_book" },
 ];
 
 export function TemplatesPage() {
@@ -47,7 +47,7 @@ export function TemplatesPage() {
                   style.gradient,
                 )}
               >
-                <style.Icon className="h-16 w-16 text-white/30" strokeWidth={1.5} />
+                <MaterialIcon icon={style.icon} size="2xl" className="text-white/30" />
 
                 {/* Hover overlay */}
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-300 flex items-center justify-center p-6">

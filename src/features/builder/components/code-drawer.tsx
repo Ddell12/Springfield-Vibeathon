@@ -1,9 +1,9 @@
 "use client";
 
-import { ChevronRight, File, Folder, Search, X } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { cn } from "@/core/utils";
+import { MaterialIcon } from "@/shared/components/material-icon";
 import { Input } from "@/shared/components/ui/input";
 import { ScrollArea } from "@/shared/components/ui/scroll-area";
 
@@ -84,18 +84,19 @@ function FileTreeItem({
       >
         {node.isDir ? (
           <>
-            <ChevronRight
+            <MaterialIcon
+              icon="chevron_right"
               className={cn(
-                "h-3 w-3 flex-shrink-0 transition-transform",
+                "text-sm flex-shrink-0 transition-transform",
                 expanded && "rotate-90"
               )}
             />
-            <Folder className="h-3.5 w-3.5 flex-shrink-0 text-primary/60" />
+            <MaterialIcon icon="folder" className="text-sm flex-shrink-0 text-primary/60" />
           </>
         ) : (
           <>
             <span className="w-3" />
-            <File className="h-3.5 w-3.5 flex-shrink-0 text-on-surface-variant/60" />
+            <MaterialIcon icon="description" className="text-sm flex-shrink-0 text-on-surface-variant/60" />
           </>
         )}
         <span className="truncate">{node.name}</span>
@@ -144,7 +145,7 @@ export function CodeDrawer({ files, onClose }: CodeDrawerProps) {
           className="flex items-center gap-1 rounded-md px-2 py-1 text-xs text-on-surface-variant transition-colors hover:bg-surface-container-low hover:text-on-surface"
         >
           Close
-          <X className="h-3.5 w-3.5" />
+          <MaterialIcon icon="close" className="text-sm" />
         </button>
       </div>
 
@@ -180,7 +181,7 @@ export function CodeDrawer({ files, onClose }: CodeDrawerProps) {
           {activeTab === "search" && (
             <div className="p-2">
               <div className="relative">
-                <Search className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-on-surface-variant" />
+                <MaterialIcon icon="search" className="absolute left-2 top-1/2 text-sm -translate-y-1/2 text-on-surface-variant" />
                 <Input
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -218,7 +219,7 @@ export function CodeDrawer({ files, onClose }: CodeDrawerProps) {
                         : "text-on-surface-variant hover:bg-surface-container-low"
                     )}
                   >
-                    <File className="h-3.5 w-3.5 flex-shrink-0" />
+                    <MaterialIcon icon="description" className="text-sm flex-shrink-0" />
                     <span className="truncate">{file.path}</span>
                   </button>
                 ))

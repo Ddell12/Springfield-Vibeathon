@@ -4,10 +4,10 @@ type MaterialIconProps = {
   icon: string;
   filled?: boolean;
   className?: string;
-  size?: "sm" | "md" | "lg" | "xl";
+  size?: "xs" | "sm" | "md" | "lg" | "xl" | "2xl";
 };
 
-const sizeMap = { sm: "text-lg", md: "text-2xl", lg: "text-3xl", xl: "text-4xl" };
+const sizeMap = { xs: "text-base", sm: "text-lg", md: "text-2xl", lg: "text-3xl", xl: "text-4xl", "2xl": "text-7xl" };
 
 export function MaterialIcon({ icon, filled = false, className, size = "md" }: MaterialIconProps) {
   return (

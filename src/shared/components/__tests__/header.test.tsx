@@ -28,8 +28,8 @@ vi.mock("@/shared/components/ui/sheet", () => ({
   SheetContent: ({ children }: { children: React.ReactNode }) => <div data-testid="sheet-content">{children}</div>,
 }));
 
-vi.mock("lucide-react", () => ({
-  Menu: (props: Record<string, unknown>) => <svg data-testid="menu-icon" {...props} />,
+vi.mock("@/shared/components/material-icon", () => ({
+  MaterialIcon: ({ icon }: { icon: string }) => <span data-testid={`icon-${icon}`}>{icon}</span>,
 }));
 
 describe("Header", () => {
@@ -75,6 +75,6 @@ describe("Header", () => {
 
   it("renders a mobile menu trigger", () => {
     render(<Header />);
-    expect(screen.getByTestId("menu-icon")).toBeInTheDocument();
+    expect(screen.getByTestId("icon-menu")).toBeInTheDocument();
   });
 });

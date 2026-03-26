@@ -1,9 +1,9 @@
 "use client";
 
-import { Loader2, Sparkles } from "lucide-react";
 import { useRef } from "react";
 
 import { cn } from "@/core/utils";
+import { MaterialIcon } from "@/shared/components/material-icon";
 
 import { usePostMessageBridge } from "../hooks/use-postmessage-bridge";
 import type { StreamingStatus } from "../hooks/use-streaming";
@@ -49,7 +49,7 @@ export function PreviewPanel({ previewUrl, state, wcStatus, error, deviceSize = 
           </div>
         ) : wcStatus === "installing" || isGenerating ? (
           <div role="status" className="flex flex-col items-center gap-3 text-center">
-            <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            <MaterialIcon icon="progress_activity" size="md" className="animate-spin text-primary" />
             <p className="text-sm text-on-surface-variant">Setting up your preview...</p>
           </div>
         ) : isFailed ? (
@@ -60,7 +60,7 @@ export function PreviewPanel({ previewUrl, state, wcStatus, error, deviceSize = 
           </div>
         ) : (
           <div className="flex flex-col items-center gap-3 text-center">
-            <Sparkles className="h-8 w-8 text-outline-variant/40" />
+            <MaterialIcon icon="auto_awesome" size="lg" className="text-outline-variant/40" />
             <p className="text-sm text-on-surface-variant">Your app will appear here</p>
           </div>
         )}

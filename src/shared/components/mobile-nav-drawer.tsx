@@ -1,10 +1,10 @@
 "use client";
 
-import { Plus, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 
 import { cn } from "@/core/utils";
+import { MaterialIcon } from "@/shared/components/material-icon";
 import { Button } from "@/shared/components/ui/button";
 import {
   Sheet,
@@ -52,13 +52,13 @@ export function MobileNavDrawer({ open, onOpenChange }: MobileNavDrawerProps) {
               className="flex h-11 w-11 items-center justify-center rounded-full hover:bg-surface-container-low transition-colors active:scale-95"
               aria-label="Close navigation"
             >
-              <X size={20} className="text-on-surface-variant" />
+              <MaterialIcon icon="close" size="sm" className="text-on-surface-variant" />
             </button>
           </div>
 
           {/* Profile area */}
           <div className="flex items-center gap-4 p-2">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-orange-600 text-lg font-bold text-white">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-tertiary text-lg font-bold text-on-tertiary">
               D
             </div>
             <div className="flex flex-col">
@@ -76,7 +76,6 @@ export function MobileNavDrawer({ open, onOpenChange }: MobileNavDrawerProps) {
         <nav className="flex-1 flex flex-col gap-1">
           {NAV_ITEMS.map((item) => {
             const isActive = isNavActive(item.href, pathname, tab);
-            const Icon = item.icon;
 
             return (
               <Link
@@ -90,9 +89,10 @@ export function MobileNavDrawer({ open, onOpenChange }: MobileNavDrawerProps) {
                     : "text-on-surface-variant hover:bg-surface-container-low"
                 )}
               >
-                <Icon
-                  size={22}
-                  fill={isActive ? "currentColor" : "none"}
+                <MaterialIcon
+                  icon={item.icon}
+                  size="sm"
+                  filled={isActive}
                 />
                 <span className="font-headline">{item.label}</span>
               </Link>
@@ -107,7 +107,7 @@ export function MobileNavDrawer({ open, onOpenChange }: MobileNavDrawerProps) {
             className="w-full h-14 bg-gradient-to-br from-primary to-primary-container text-white rounded-xl font-bold shadow-lg shadow-primary/20 active:scale-95 transition-transform"
           >
             <Link href="/builder" onClick={handleNavClick}>
-              <Plus size={20} />
+              <MaterialIcon icon="add" size="sm" />
               <span>New Project</span>
             </Link>
           </Button>

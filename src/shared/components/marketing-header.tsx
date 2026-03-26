@@ -1,10 +1,10 @@
 "use client";
 
-import { Menu } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { cn } from "@/core/utils";
+import { MaterialIcon } from "@/shared/components/material-icon";
 import { Button } from "@/shared/components/ui/button";
 import {
   Sheet,
@@ -62,7 +62,7 @@ export function MarketingHeader() {
             <Sheet>
               <SheetTrigger asChild>
                 <Button variant="ghost" size="icon" aria-label="Open menu">
-                  <Menu className="h-5 w-5" />
+                  <MaterialIcon icon="menu" size="sm" />
                 </Button>
               </SheetTrigger>
               <SheetContent side="right" className="w-64">

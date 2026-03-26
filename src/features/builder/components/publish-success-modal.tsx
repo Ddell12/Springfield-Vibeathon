@@ -1,10 +1,10 @@
 "use client";
 
-import { Check, Copy, ExternalLink, Link, QrCode, Share2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { copyToClipboard } from "@/core/clipboard";
 import { cn } from "@/core/utils";
+import { MaterialIcon } from "@/shared/components/material-icon";
 import { Button } from "@/shared/components/ui/button";
 import {
   Dialog,
@@ -50,7 +50,7 @@ export function PublishSuccessModal({
 
             {/* Checkmark Circle */}
             <div className="w-24 h-24 rounded-full bg-primary-container flex items-center justify-center relative z-10">
-              <Check className="size-12 text-white" strokeWidth={3} />
+              <MaterialIcon icon="check" size="xl" className="text-white" />
             </div>
 
             {/* Decorative Rings */}
@@ -86,7 +86,7 @@ export function PublishSuccessModal({
               )}
               aria-label="Copy URL"
             >
-              <Copy className="size-5" />
+              <MaterialIcon icon="content_copy" size="sm" />
             </button>
           </div>
         </div>
@@ -99,7 +99,7 @@ export function PublishSuccessModal({
             className="flex flex-col items-center gap-3 py-2 group"
           >
             <div className="w-12 h-12 rounded-full bg-surface-container-low flex items-center justify-center text-primary group-hover:bg-tertiary-fixed group-hover:text-on-tertiary-fixed transition-colors">
-              <Link className="size-5" />
+              <MaterialIcon icon="link" size="sm" />
             </div>
             <span className="text-[11px] font-bold uppercase tracking-widest text-on-surface-variant/70">
               Copy Link
@@ -111,7 +111,7 @@ export function PublishSuccessModal({
             className="flex flex-col items-center gap-3 py-2 group"
           >
             <div className="w-12 h-12 rounded-full bg-surface-container-low flex items-center justify-center text-primary group-hover:bg-tertiary-fixed group-hover:text-on-tertiary-fixed transition-colors">
-              <QrCode className="size-5" />
+              <MaterialIcon icon="qr_code" size="sm" />
             </div>
             <span className="text-[11px] font-bold uppercase tracking-widest text-on-surface-variant/70">
               QR Code
@@ -133,7 +133,7 @@ export function PublishSuccessModal({
             className="flex flex-col items-center gap-3 py-2 group"
           >
             <div className="w-12 h-12 rounded-full bg-surface-container-low flex items-center justify-center text-primary group-hover:bg-tertiary-fixed group-hover:text-on-tertiary-fixed transition-colors">
-              <Share2 className="size-5" />
+              <MaterialIcon icon="share" size="sm" />
             </div>
             <span className="text-[11px] font-bold uppercase tracking-widest text-on-surface-variant/70">
               Share
@@ -164,7 +164,7 @@ export function PublishSuccessModal({
             className="w-full py-2 text-primary font-semibold text-sm hover:underline flex justify-center items-center gap-2"
           >
             View published tool
-            <ExternalLink className="size-4" />
+            <MaterialIcon icon="open_in_new" size="xs" />
           </a>
         </div>
       </DialogContent>

@@ -1,10 +1,8 @@
-import { FolderOpen,Home, LayoutGrid, Sparkles } from "lucide-react";
-
 export const NAV_ITEMS = [
-  { icon: Home, label: "Home", href: "/dashboard" },
-  { icon: Sparkles, label: "Builder", href: "/builder" },
-  { icon: LayoutGrid, label: "Templates", href: "/dashboard?tab=templates" },
-  { icon: FolderOpen, label: "My Apps", href: "/dashboard?tab=my-projects" },
+  { icon: "home", label: "Home", href: "/dashboard" },
+  { icon: "auto_awesome", label: "Builder", href: "/builder" },
+  { icon: "grid_view", label: "Templates", href: "/dashboard?tab=templates" },
+  { icon: "folder_open", label: "My Apps", href: "/dashboard?tab=my-projects" },
 ] as const;
 
 export function isNavActive(

@@ -1,16 +1,16 @@
 "use client";
 
-import { ArrowLeft, Palette, Shield, User } from "lucide-react";
 import Link from "next/link";
 
 import { cn } from "@/core/utils";
+import { MaterialIcon } from "@/shared/components/material-icon";
 
 import type { SettingsSection } from "./settings-page";
 
-const SECTIONS: { id: SettingsSection; label: string; icon: typeof User }[] = [
-  { id: "profile", label: "Profile", icon: User },
-  { id: "account", label: "Account", icon: Shield },
-  { id: "appearance", label: "Appearance", icon: Palette },
+const SECTIONS: { id: SettingsSection; label: string; icon: string }[] = [
+  { id: "profile", label: "Profile", icon: "person" },
+  { id: "account", label: "Account", icon: "shield" },
+  { id: "appearance", label: "Appearance", icon: "palette" },
 ];
 
 export function SettingsSidebar({
@@ -27,7 +27,7 @@ export function SettingsSidebar({
         href="/dashboard"
         className="mb-4 flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors"
       >
-        <ArrowLeft size={14} />
+        <MaterialIcon icon="arrow_back" className="text-sm" />
         <span>Back</span>
       </Link>
 
@@ -38,7 +38,6 @@ export function SettingsSidebar({
 
       <nav className="space-y-1">
         {SECTIONS.map((item) => {
-          const Icon = item.icon;
           const isActive = activeSection === item.id;
           return (
             <button
@@ -47,11 +46,11 @@ export function SettingsSidebar({
               className={cn(
                 "flex w-full items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold font-headline tracking-wide text-left transition-all duration-200",
                 isActive
-                  ? "bg-primary-container text-on-primary border-l-4 border-primary shadow-sm"
+                  ? "bg-primary-container text-on-primary shadow-sm"
                   : "text-on-surface-variant hover:bg-surface-container-high hover:translate-x-1"
               )}
             >
-              <Icon size={18} />
+              <MaterialIcon icon={item.icon} size="sm" filled={isActive} />
               <span>{item.label}</span>
             </button>
           );

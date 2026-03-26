@@ -1,7 +1,8 @@
 "use client";
 
-import { Send } from "lucide-react";
 import { useRouter } from "next/navigation";
+
+import { MaterialIcon } from "@/shared/components/material-icon";
 import { useState } from "react";
 
 export function MainPromptInput() {
@@ -40,7 +41,7 @@ export function MainPromptInput() {
           disabled={!value.trim()}
           className="ml-2 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-primary-container text-white transition-transform hover:scale-105 active:scale-95 disabled:opacity-40 disabled:hover:scale-100"
         >
-          <Send size={20} fill="currentColor" />
+          <MaterialIcon icon="send" size="sm" />
         </button>
       </div>
     </div>

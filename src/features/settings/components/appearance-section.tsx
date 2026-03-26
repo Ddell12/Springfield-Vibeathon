@@ -56,9 +56,9 @@ export function AppearanceSection() {
                 : "hover:ring-2 hover:ring-outline-variant/30"
             )}
           >
-            <div className="w-16 h-10 bg-slate-800 rounded-sm shadow-sm flex flex-col p-1 gap-1">
-              <div className="h-1 w-full bg-slate-700 rounded-full" />
-              <div className="h-1 w-2/3 bg-slate-700 rounded-full" />
+            <div className="w-16 h-10 bg-inverse-surface rounded-sm shadow-sm flex flex-col p-1 gap-1">
+              <div className="h-1 w-full bg-outline rounded-full" />
+              <div className="h-1 w-2/3 bg-outline rounded-full" />
             </div>
           </div>
           <span

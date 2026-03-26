@@ -1,7 +1,6 @@
 "use client";
 
-import { AlertTriangle } from "lucide-react";
-
+import { MaterialIcon } from "@/shared/components/material-icon";
 import { Button } from "@/shared/components/ui/button";
 
 export function AccountSection() {
@@ -17,7 +16,7 @@ export function AccountSection() {
       <div className="bg-surface-container-low p-8 rounded-xl space-y-6">
         <div className="flex items-start gap-4">
           <div className="bg-error-container p-2 rounded-lg flex-shrink-0">
-            <AlertTriangle size={20} className="text-error" />
+            <MaterialIcon icon="warning" size="sm" className="text-error" />
           </div>
           <div>
             <h3 className="font-headline font-bold text-on-surface mb-1">

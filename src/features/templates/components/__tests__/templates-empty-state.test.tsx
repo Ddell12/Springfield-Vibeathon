@@ -25,11 +25,8 @@ vi.mock("@/core/utils", () => ({
     args.filter(Boolean).join(" "),
 }));
 
-vi.mock("lucide-react", () => ({
-  BookOpen: () => <svg data-testid="icon-book-open" />,
-  MessageSquare: () => <svg data-testid="icon-message-square" />,
-  Star: () => <svg data-testid="icon-star" />,
-  Sun: () => <svg data-testid="icon-sun" />,
+vi.mock("@/shared/components/material-icon", () => ({
+  MaterialIcon: ({ icon }: { icon: string }) => <span data-testid={`icon-${icon}`}>{icon}</span>,
 }));
 
 describe("TemplatesPage — static seed grid", () => {

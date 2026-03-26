@@ -1,10 +1,10 @@
 "use client";
 
-import { Copy, Download, Loader2, X } from "lucide-react";
 import { useState } from "react";
 
 import { copyToClipboard } from "@/core/clipboard";
 import { cn } from "@/core/utils";
+import { MaterialIcon } from "@/shared/components/material-icon";
 import { ScrollArea } from "@/shared/components/ui/scroll-area";
 
 import type { StreamingFile, StreamingStatus } from "../hooks/use-streaming";
@@ -35,7 +35,7 @@ export function CodePanel({ files, status }: CodePanelProps) {
     return (
       <div className="flex h-full items-center justify-center bg-surface-container text-on-surface-variant">
         <div className="flex flex-col items-center gap-3 text-center">
-          <Loader2 className="h-6 w-6 animate-spin text-primary" />
+          <MaterialIcon icon="progress_activity" size="md" className="animate-spin text-primary" />
           <p className="text-sm">Generating your files...</p>
         </div>
       </div>
@@ -70,7 +70,7 @@ export function CodePanel({ files, status }: CodePanelProps) {
                 {filename}
                 {isActive && (
                   <span className="rounded p-0.5 transition-colors hover:bg-black/10">
-                    <X className="h-3.5 w-3.5" />
+                    <MaterialIcon icon="close" className="text-sm" />
                   </span>
                 )}
               </button>
@@ -89,7 +89,7 @@ export function CodePanel({ files, status }: CodePanelProps) {
               }
             }}
           >
-            <Copy className="h-[18px] w-[18px]" />
+            <MaterialIcon icon="content_copy" size="sm" />
           </button>
           <button
             className="rounded-md p-1.5 text-on-surface-variant transition-all hover:bg-white/50 active:scale-95"
@@ -105,7 +105,7 @@ export function CodePanel({ files, status }: CodePanelProps) {
               URL.revokeObjectURL(url);
             }}
           >
-            <Download className="h-[18px] w-[18px]" />
+            <MaterialIcon icon="download" size="sm" />
           </button>
         </div>
       </header>

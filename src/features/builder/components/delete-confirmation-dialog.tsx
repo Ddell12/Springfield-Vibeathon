@@ -1,8 +1,7 @@
 "use client";
 
-import { AlertTriangle } from "lucide-react";
-
 import { cn } from "@/core/utils";
+import { MaterialIcon } from "@/shared/components/material-icon";
 import { Button } from "@/shared/components/ui/button";
 import {
   Dialog,
@@ -32,7 +31,7 @@ export function DeleteConfirmationDialog({
       >
         {/* Warning Icon */}
         <div className="w-12 h-12 rounded-full bg-error flex items-center justify-center mb-8">
-          <AlertTriangle className="size-6 text-on-error" fill="currentColor" />
+          <MaterialIcon icon="warning" size="md" className="text-on-error" filled />
         </div>
 
         {/* Content */}

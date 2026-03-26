@@ -1,11 +1,11 @@
 "use client";
 
-import { Menu } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { APP_NAME } from "@/core/config";
 import { cn } from "@/core/utils";
+import { MaterialIcon } from "@/shared/components/material-icon";
 import { Button } from "@/shared/components/ui/button";
 import {
   Sheet,
@@ -23,7 +23,7 @@ export function Header() {
   const pathname = usePathname();
 
   return (
-    <header className="h-16 bg-surface border-b border-border w-full">
+    <header className="h-16 bg-surface w-full">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center justify-between">
         {/* Logo */}
         <Link href="/" className="text-primary font-bold text-xl">
@@ -54,7 +54,7 @@ export function Header() {
           <Sheet>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" aria-label="Open menu">
-                <Menu className="h-5 w-5" />
+                <MaterialIcon icon="menu" size="sm" />
               </Button>
             </SheetTrigger>
             <SheetContent side="right" className="w-64">

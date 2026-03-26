@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import { MaterialIcon } from "@/shared/components/material-icon";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
@@ -25,7 +26,7 @@ export function ProfileSection() {
 
       {/* Avatar */}
       <div className="flex flex-col items-start gap-6">
-        <div className="w-20 h-20 rounded-full bg-orange-600 flex items-center justify-center text-white text-3xl font-bold font-headline shadow-inner">
+        <div className="w-20 h-20 rounded-full bg-tertiary flex items-center justify-center text-on-tertiary text-3xl font-bold font-headline shadow-inner">
           {displayName.charAt(0).toUpperCase()}
         </div>
         <button className="px-4 py-2 rounded-lg text-sm font-medium text-primary hover:bg-surface-container-high transition-colors outline outline-1 outline-outline-variant/15">
@@ -92,19 +93,7 @@ export function ProfileSection() {
               <option>Speech Therapist</option>
               <option>Teacher</option>
             </select>
-            <svg
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="m6 9 6 6 6-6" />
-            </svg>
+            <MaterialIcon icon="expand_more" size="xs" className="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none" />
           </div>
         </div>
 

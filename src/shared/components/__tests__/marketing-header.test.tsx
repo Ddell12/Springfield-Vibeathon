@@ -15,7 +15,7 @@ vi.mock("next/navigation", () => ({
 }));
 
 vi.mock("@/shared/components/material-icon", () => ({
-  MaterialIcon: ({ icon }: { icon: string }) => <span>{icon}</span>,
+  MaterialIcon: ({ icon }: { icon: string }) => <span data-testid={`icon-${icon}`}>{icon}</span>,
 }));
 
 vi.mock("@/shared/components/ui/button", () => ({
@@ -36,9 +36,6 @@ vi.mock("@/shared/components/ui/sheet", () => ({
   ),
 }));
 
-vi.mock("lucide-react", () => ({
-  Menu: (props: Record<string, unknown>) => <svg data-testid="menu-icon" {...props} />,
-}));
 
 describe("MarketingHeader", () => {
   it("renders the Bridges logo as a link to home", () => {
@@ -69,7 +66,7 @@ describe("MarketingHeader", () => {
   it("renders a mobile menu trigger", () => {
     render(<MarketingHeader />);
     expect(screen.getByTestId("sheet-trigger")).toBeInTheDocument();
-    expect(screen.getByTestId("menu-icon")).toBeInTheDocument();
+    expect(screen.getByTestId("icon-menu")).toBeInTheDocument();
   });
 
   it("highlights active nav link when pathname matches", async () => {

@@ -1,16 +1,9 @@
 "use client";
 
-import {
-  ArrowLeft,
-  Globe,
-  Loader2,
-  Monitor,
-  Share2,
-  Smartphone,
-} from "lucide-react";
 import Link from "next/link";
 
 import { cn } from "@/core/utils";
+import { MaterialIcon } from "@/shared/components/material-icon";
 import { Button } from "@/shared/components/ui/button";
 
 import type { StreamingStatus } from "../hooks/use-streaming";
@@ -33,11 +26,14 @@ interface BuilderToolbarProps {
   onNameEditEnd?: (name: string) => void;
   onShare?: () => void;
   onPublish?: () => void;
+  isMobile?: boolean;
+  mobilePanel?: "chat" | "preview";
+  onMobilePanelChange?: (panel: "chat" | "preview") => void;
 }
 
-const DEVICE_OPTIONS: { key: DeviceSize; icon: typeof Smartphone; label: string }[] = [
-  { key: "mobile", icon: Smartphone, label: "Mobile" },
-  { key: "desktop", icon: Monitor, label: "Desktop" },
+const DEVICE_OPTIONS: { key: DeviceSize; icon: string; label: string }[] = [
+  { key: "mobile", icon: "smartphone", label: "Mobile" },
+  { key: "desktop", icon: "desktop_windows", label: "Desktop" },
 ];
 
 export function BuilderToolbar({
@@ -54,6 +50,9 @@ export function BuilderToolbar({
   onNameEditEnd,
   onShare,
   onPublish,
+  isMobile,
+  mobilePanel,
+  onMobilePanelChange,
 }: BuilderToolbarProps) {
   const isGenerating = status === "generating";
   const canPublish = wcStatus === "ready" && !isGenerating && !isPublishing;
@@ -68,7 +67,7 @@ export function BuilderToolbar({
           className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded bg-gradient-to-br from-primary-container to-primary text-white transition-transform active:scale-90"
           aria-label="Back to dashboard"
         >
-          <ArrowLeft className="h-4 w-4" />
+          <MaterialIcon icon="arrow_back" size="xs" />
         </Link>
 
         {isEditingName ? (
@@ -106,7 +105,35 @@ export function BuilderToolbar({
         )}
       </div>
 
-      {/* Center section: View toggle + Device sizes + URL bar */}
+      {/* Center section: Mobile panel toggle (< lg) */}
+      {isMobile && onMobilePanelChange && (
+        <div className="flex items-center rounded-lg bg-surface-container-high p-1">
+          <button
+            onClick={() => onMobilePanelChange("chat")}
+            className={cn(
+              "rounded-md px-3 py-1 text-[13px] font-semibold transition-all duration-200",
+              mobilePanel === "chat"
+                ? "bg-white text-primary shadow-sm dark:bg-surface-container-lowest"
+                : "text-on-surface-variant hover:text-primary"
+            )}
+          >
+            Chat
+          </button>
+          <button
+            onClick={() => onMobilePanelChange("preview")}
+            className={cn(
+              "rounded-md px-3 py-1 text-[13px] font-semibold transition-all duration-200",
+              mobilePanel === "preview"
+                ? "bg-white text-primary shadow-sm dark:bg-surface-container-lowest"
+                : "text-on-surface-variant hover:text-primary"
+            )}
+          >
+            Preview
+          </button>
+        </div>
+      )}
+
+      {/* Center section: View toggle + Device sizes + URL bar (desktop) */}
       <div className="absolute left-1/2 -translate-x-1/2 hidden lg:flex items-center gap-3">
         {/* Segmented control */}
         <div className="flex items-center rounded-lg bg-surface-container-high p-1">
@@ -139,7 +166,7 @@ export function BuilderToolbar({
 
         {/* Device size icons */}
         <div className="flex items-center gap-1">
-          {DEVICE_OPTIONS.map(({ key, icon: Icon, label }) => (
+          {DEVICE_OPTIONS.map(({ key, icon, label }) => (
             <button
               key={key}
               onClick={() => onDeviceSizeChange(key)}
@@ -151,7 +178,7 @@ export function BuilderToolbar({
               )}
               aria-label={label}
             >
-              <Icon className="h-[18px] w-[18px]" />
+              <MaterialIcon icon={icon} size="sm" />
             </button>
           ))}
         </div>
@@ -160,7 +187,7 @@ export function BuilderToolbar({
         <div className="h-4 w-px bg-outline-variant/30" />
 
         <div className="flex items-center gap-2 rounded-full bg-surface-container-low px-3 py-1 min-w-[120px]">
-          <Globe className="h-3.5 w-3.5 text-outline" />
+          <MaterialIcon icon="language" className="text-sm text-outline" />
           <span className="truncate text-xs font-medium text-outline">{projectName}</span>
         </div>
       </div>
@@ -173,7 +200,7 @@ export function BuilderToolbar({
           className="h-8 gap-1.5 rounded-md px-3 text-xs font-semibold text-on-surface-variant transition-all active:scale-95"
           onClick={onShare}
         >
-          <Share2 className="h-[18px] w-[18px]" />
+          <MaterialIcon icon="share" size="sm" />
           Share
         </Button>
         <Button
@@ -182,7 +209,7 @@ export function BuilderToolbar({
           onClick={onPublish}
           disabled={!canPublish}
         >
-          {isPublishing ? <Loader2 className="h-4 w-4 animate-spin" /> : "Publish"}
+          {isPublishing ? <MaterialIcon icon="progress_activity" size="xs" className="animate-spin" /> : "Publish"}
         </Button>
       </div>
     </header>

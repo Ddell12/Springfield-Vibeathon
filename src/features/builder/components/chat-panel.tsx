@@ -1,20 +1,12 @@
 "use client";
 
 import { useQuery } from "convex/react";
-import {
-  CheckCircle2,
-  FileCode2,
-  Loader2,
-  MessageSquare,
-  Send,
-  Sparkles,
-  Wand2,
-} from "lucide-react";
 import { memo, useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
 import { cn } from "@/core/utils";
+import { MaterialIcon } from "@/shared/components/material-icon";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
 import { ScrollArea } from "@/shared/components/ui/scroll-area";
@@ -68,10 +60,10 @@ function SystemMessage({ content }: { content: string }) {
 }
 
 const ACTIVITY_ICONS: Record<Activity["type"], React.ReactNode> = {
-  thinking: <Loader2 className="h-4 w-4 animate-spin text-primary" aria-label="Loading" />,
-  writing_file: <FileCode2 className="h-4 w-4 animate-pulse text-amber-500" />,
-  file_written: <FileCode2 className="h-4 w-4 text-green-600" />,
-  complete: <CheckCircle2 className="h-4 w-4 text-green-600" />,
+  thinking: <MaterialIcon icon="progress_activity" size="xs" className="animate-spin text-primary" />,
+  writing_file: <MaterialIcon icon="code" size="xs" className="animate-pulse text-tertiary" />,
+  file_written: <MaterialIcon icon="code" size="xs" className="text-primary" />,
+  complete: <MaterialIcon icon="check_circle" size="xs" className="text-primary" filled />,
 };
 
 function ActivityCard({ activity }: { activity: Activity }) {
@@ -80,7 +72,7 @@ function ActivityCard({ activity }: { activity: Activity }) {
       className={cn(
         "flex items-center gap-3 rounded-xl px-4 py-2.5 transition-all duration-300",
         activity.type === "complete"
-          ? "bg-green-50 dark:bg-green-950/20"
+          ? "bg-primary/5 dark:bg-primary/10"
           : "bg-surface-container-low"
       )}
     >
@@ -138,16 +130,16 @@ const ProgressSteps = memo(function ProgressSteps({ activities }: { activities: 
             className={cn(
               "flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold transition-all duration-300",
               i < activeIdx
-                ? "bg-green-600 text-white"
+                ? "bg-primary text-on-primary"
                 : i === activeIdx
                   ? "bg-primary text-white"
                   : "bg-surface-container-lowest text-on-surface-variant"
             )}
           >
             {i < activeIdx ? (
-              <CheckCircle2 className="h-3.5 w-3.5" />
+              <MaterialIcon icon="check" className="text-sm" />
             ) : i === activeIdx ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" aria-label="Loading" />
+              <MaterialIcon icon="progress_activity" className="text-sm animate-spin" />
             ) : (
               i + 1
             )}
@@ -166,7 +158,7 @@ const ProgressSteps = memo(function ProgressSteps({ activities }: { activities: 
             <div
               className={cn(
                 "mx-1 h-px w-4 transition-colors",
-                i < activeIdx ? "bg-green-600" : "bg-border"
+                i < activeIdx ? "bg-primary" : "bg-border"
               )}
             />
           )}
@@ -239,7 +231,7 @@ export function ChatPanel({
           {isEmpty && (
             <div className="flex h-full flex-col items-center justify-center gap-4 py-16">
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10">
-                <Sparkles className="h-6 w-6 text-primary" />
+                <MaterialIcon icon="auto_awesome" size="md" className="text-primary" />
               </div>
               <div className="text-center">
                 <h2 className="font-headline text-xl font-semibold">
@@ -293,7 +285,7 @@ export function ChatPanel({
           {/* Generating indicator when no streaming text yet */}
           {isGenerating && !streamingText && activities.length === 0 && (
             <div className="flex items-center gap-2 py-2">
-              <Loader2 className="h-4 w-4 animate-spin text-primary" aria-label="Loading" />
+              <MaterialIcon icon="progress_activity" size="xs" className="animate-spin text-primary" />
               <span className="text-sm text-on-surface-variant">
                 Starting generation...
               </span>
@@ -302,13 +294,13 @@ export function ChatPanel({
 
           {/* Success state */}
           {isLive && (
-            <div className="flex items-center gap-2 rounded-xl bg-green-50 px-4 py-3 dark:bg-green-950/20">
-              <CheckCircle2 className="h-5 w-5 text-green-600" />
+            <div className="flex items-center gap-2 rounded-xl bg-primary/5 px-4 py-3 dark:bg-primary/10">
+              <MaterialIcon icon="check_circle" size="sm" className="text-primary" filled />
               <div>
-                <p className="text-sm font-medium text-green-700 dark:text-green-400">
+                <p className="text-sm font-medium text-primary dark:text-primary-fixed-dim">
                   App is live and ready!
                 </p>
-                <p className="text-xs text-green-600/70 dark:text-green-500/70">
+                <p className="text-xs text-primary/70 dark:text-primary-fixed-dim/70">
                   Check the preview panel. Send a message to request changes.
                 </p>
               </div>
@@ -347,7 +339,7 @@ export function ChatPanel({
       >
         <div className="flex gap-2">
           <div className="relative flex-1">
-            <MessageSquare className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-on-surface-variant/50" />
+            <MaterialIcon icon="chat" size="xs" className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant/50" />
             <Input
               value={input}
               onChange={(e) => setInput(e.target.value)}
@@ -367,11 +359,11 @@ export function ChatPanel({
             className="shrink-0"
           >
             {isGenerating ? (
-              <Loader2 className="h-4 w-4 animate-spin" aria-label="Loading" />
+              <MaterialIcon icon="progress_activity" size="xs" className="animate-spin" />
             ) : isLive ? (
-              <Send className="h-4 w-4" />
+              <MaterialIcon icon="send" size="xs" />
             ) : (
-              <Wand2 className="h-4 w-4" />
+              <MaterialIcon icon="auto_fix_high" size="xs" />
             )}
           </Button>
         </div>

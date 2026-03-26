@@ -1,12 +1,12 @@
 "use client";
 
 import { useQuery } from "convex/react";
-import { Bell, HelpCircle, Menu, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 
 import { EmptyState } from "@/shared/components/empty-state";
+import { MaterialIcon } from "@/shared/components/material-icon";
 import { MobileNavDrawer } from "@/shared/components/mobile-nav-drawer";
 import { Button } from "@/shared/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/components/ui/tabs";
@@ -55,14 +55,14 @@ export function DashboardView() {
             className="flex h-11 w-11 items-center justify-center rounded-lg hover:bg-surface-container-low transition-colors active:scale-95"
             aria-label="Open navigation menu"
           >
-            <Menu size={24} className="text-primary" />
+            <MaterialIcon icon="menu" size="md" className="text-primary" />
           </button>
           <span className="font-headline font-bold tracking-tight text-lg text-primary">
             Bridges
           </span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-orange-600 text-xs font-bold text-white">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-tertiary text-xs font-bold text-on-tertiary">
             D
           </div>
         </div>
@@ -79,14 +79,8 @@ export function DashboardView() {
         </div>
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-4 text-on-surface-variant/50">
-            <Bell
-              size={20}
-              className="pointer-events-none"
-            />
-            <HelpCircle
-              size={20}
-              className="pointer-events-none"
-            />
+            <MaterialIcon icon="notifications" size="sm" className="pointer-events-none" />
+            <MaterialIcon icon="help" size="sm" className="pointer-events-none" />
           </div>
           <Link
             href="/builder"
@@ -174,7 +168,7 @@ export function DashboardView() {
             ) : sessions?.length === 0 ? (
               <div className="flex flex-col items-center gap-4 py-12 text-center">
                 <div className="flex flex-col items-center justify-center pb-4 opacity-40">
-                  <Sparkles size={32} className="mb-2" />
+                  <MaterialIcon icon="auto_awesome" size="lg" className="mb-2" />
                 </div>
                 <p className="text-on-surface-variant">No apps yet — describe what you&apos;d like to build!</p>
                 <Link href="/builder">

@@ -11,6 +11,11 @@ vi.mock("react-qr-code", () => ({
   ),
 }));
 
+// Mock MaterialIcon to avoid font-loading issues
+vi.mock("@/shared/components/material-icon", () => ({
+  MaterialIcon: ({ icon }: { icon: string }) => <span data-testid={`icon-${icon}`} aria-hidden="true" />,
+}));
+
 // Mock sonner toast to avoid DOM side effects in jsdom
 vi.mock("sonner", () => ({
   toast: Object.assign(vi.fn(), {

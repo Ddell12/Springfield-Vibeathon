@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import { MaterialIcon } from "@/shared/components/material-icon";
+
 /**
  * "Close the Gap" hero for the Springfield Vibeathon landing page.
  * Communicates the mission: bridging the gap between therapists, parents,
@@ -21,7 +23,7 @@ export function CloseTheGapHero() {
       <div className="relative max-w-5xl mx-auto px-6 py-24 md:py-36 text-center">
         {/* Vibeathon badge */}
         <div className="inline-flex items-center gap-2 bg-tertiary-fixed/40 text-on-tertiary-fixed px-4 py-1.5 rounded-full text-xs font-semibold uppercase tracking-widest mb-8">
-          <span>&#9679;</span>
+          <MaterialIcon icon="circle" size="xs" />
           Springfield Vibeathon 2026 — Close the Gap Challenge
         </div>
 
@@ -61,7 +63,7 @@ export function CloseTheGapHero() {
             className="w-full sm:w-auto bg-gradient-to-br from-primary to-primary-container text-white px-8 py-4 rounded-2xl text-base font-bold font-headline inline-flex items-center justify-center gap-2 transition-all duration-300 hover:opacity-90 active:scale-95 min-h-[52px]"
           >
             Build Your First App
-            <span aria-hidden>&#8594;</span>
+            <MaterialIcon icon="arrow_forward" size="sm" />
           </Link>
           <Link
             href="/templates"
