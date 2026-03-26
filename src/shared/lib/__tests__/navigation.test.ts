@@ -1,10 +1,11 @@
 import { isNavActive, NAV_ITEMS } from "../navigation";
 
 describe("NAV_ITEMS", () => {
-  it("exports an array with 4 items", () => {
-    expect(NAV_ITEMS).toHaveLength(4);
+  it("exports an array with 5 items", () => {
+    expect(NAV_ITEMS).toHaveLength(5);
     expect(NAV_ITEMS[0].href).toBe("/dashboard");
     expect(NAV_ITEMS[1].href).toBe("/builder");
+    expect(NAV_ITEMS[2].href).toBe("/flashcards");
   });
 });
 
@@ -56,6 +57,16 @@ describe("isNavActive", () => {
 
     it("handles my-projects tab", () => {
       expect(isNavActive("/dashboard?tab=my-projects", "/dashboard", "my-projects")).toBe(true);
+    });
+  });
+
+  describe("flashcards branch (/flashcards)", () => {
+    it("returns true for exact /flashcards path", () => {
+      expect(isNavActive("/flashcards", "/flashcards", null)).toBe(true);
+    });
+
+    it("returns false when pathname is not /flashcards", () => {
+      expect(isNavActive("/flashcards", "/builder", null)).toBe(false);
     });
   });
 
