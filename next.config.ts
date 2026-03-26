@@ -1,8 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Include the WAB scaffold (and its node_modules installed by postinstall)
-  // in the /api/generate serverless function so Parcel can bundle at runtime
+  // esbuild ships a native binary that Turbopack can't parse — keep it external
+  serverExternalPackages: ["esbuild"],
+  // Include the WAB scaffold (and its prod node_modules installed by postinstall)
+  // in the /api/generate serverless function so esbuild can resolve imports at runtime
   outputFileTracingIncludes: {
     "/api/generate": ["./artifacts/wab-scaffold/**/*"],
   },

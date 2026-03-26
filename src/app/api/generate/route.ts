@@ -1,12 +1,11 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { auth } from "@clerk/nextjs/server";
-import { exec } from "child_process";
 import { ConvexHttpClient } from "convex/browser";
+import * as esbuild from "esbuild";
 import { existsSync, mkdtempSync, readFileSync, rmSync } from "fs";
 import { cp } from "fs/promises";
 import { tmpdir } from "os";
 import { join } from "path";
-import { promisify } from "util";
 
 import { extractErrorMessage, settleInBatches } from "@/core/utils";
 import { buildSystemPrompt } from "@/features/builder/lib/agent-prompt";
@@ -19,8 +18,6 @@ import { createFlashcardTools } from "@/features/flashcards/lib/flashcard-tools"
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 import { sseEncode } from "./sse";
-
-const execAsync = promisify(exec);
 
 if (!process.env.NEXT_PUBLIC_CONVEX_URL) {
   throw new Error("NEXT_PUBLIC_CONVEX_URL is required for /api/generate");
@@ -199,28 +196,84 @@ export async function POST(request: Request): Promise<Response> {
             send("activity", { type: "thinking", message: "Bundling your app..." });
 
             try {
-              // Parcel build + html-inline for proper asset inlining
-              // Use local node_modules/.bin/ — works both locally (pnpm install) and
-              // on Vercel (postinstall + outputFileTracingIncludes).
-              const scaffoldBin = join(buildDir!, "node_modules", ".bin");
-              const parcelBin = join(scaffoldBin, "parcel");
-              const htmlInlineBin = join(scaffoldBin, "html-inline");
+              // esbuild bundles JS/TSX; Tailwind CDN handles CSS at runtime in the browser.
+              // This replaces the Parcel+html-inline pipeline which was too large for Vercel (367MB).
+              const entryPoint = join(buildDir!, "src", "main.tsx");
+              if (!existsSync(entryPoint)) throw new Error("Scaffold entry point src/main.tsx not found");
 
-              if (!existsSync(parcelBin)) {
-                throw new Error(
-                  `Parcel binary not found at ${parcelBin}. ` +
-                  "Run 'cd artifacts/wab-scaffold && npm install' to install scaffold deps."
-                );
+              // Resolve from scaffold's prod deps AND root node_modules (for shared packages)
+              const nodePaths = [
+                join(buildDir!, "node_modules"),
+                join(process.cwd(), "node_modules"),
+              ].filter(existsSync);
+
+              const result = await esbuild.build({
+                entryPoints: [entryPoint],
+                bundle: true,
+                format: "esm",
+                target: ["chrome100"],
+                outdir: join(buildDir!, "dist"),
+                jsx: "automatic",
+                loader: { ".tsx": "tsx", ".ts": "ts", ".jsx": "jsx", ".js": "js" },
+                minify: true,
+                sourcemap: false,
+                nodePaths,
+                // Skip CSS imports — we inject Tailwind CDN + raw CSS in the HTML instead
+                external: ["*.css"],
+                // Resolve @/* path aliases used by scaffold components
+                plugins: [{
+                  name: "resolve-at-alias",
+                  setup(build) {
+                    build.onResolve({ filter: /^@\// }, args => ({
+                      path: join(buildDir!, "src", args.path.slice(2)),
+                    }));
+                  },
+                }],
+                logLevel: "warning",
+              });
+
+              if (result.errors.length > 0) {
+                throw new Error(`esbuild errors: ${result.errors.map(e => e.text).join("; ")}`);
               }
 
-              await execAsync(
-                `"${parcelBin}" build index.html --no-source-maps --dist-dir dist && "${htmlInlineBin}" dist/index.html -b dist > bundle.html`,
-                { cwd: buildDir, timeout: 30000 },
-              );
-              const bundlePath = join(buildDir!, "bundle.html");
-              if (!existsSync(bundlePath)) throw new Error("Parcel produced no bundle.html");
-              const bundleHtml = readFileSync(bundlePath, "utf-8");
-              if (bundleHtml.length < 100) throw new Error("bundle.html is suspiciously small");
+              // Read the bundled JS
+              const jsBundle = readFileSync(join(buildDir!, "dist", "main.js"), "utf-8");
+
+              // Read the scaffold CSS (Tailwind directives + custom styles)
+              const cssPath = join(buildDir!, "src", "index.css");
+              const rawCss = existsSync(cssPath) ? readFileSync(cssPath, "utf-8") : "";
+              // Strip @tailwind directives (CDN handles them) but keep everything else
+              const customCss = rawCss
+                .replace(/@tailwind\s+(?:base|components|utilities)\s*;/g, "")
+                .trim();
+
+              // Read tailwind.config.js for CDN inline config
+              const twConfigPath = join(buildDir!, "tailwind.config.js");
+              const twConfigRaw = existsSync(twConfigPath) ? readFileSync(twConfigPath, "utf-8") : "";
+              // Extract the theme.extend object for inline CDN config
+              const twExtendMatch = twConfigRaw.match(/extend:\s*(\{[\s\S]*?\n\s{2}\})/);
+              const twExtend = twExtendMatch ? twExtendMatch[1] : "{}";
+
+              // Assemble self-contained HTML
+              const bundleHtml = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' blob: data: https://fonts.googleapis.com https://fonts.gstatic.com https://cdn.tailwindcss.com;" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwindcss.config = { darkMode: ["class"], theme: { extend: ${twExtend} } };</script>
+  <style type="text/tailwindcss">${customCss}</style>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap" />
+  <title>Bridges App</title>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="module">${jsBundle}</script>
+</body>
+</html>`;
+
+              if (bundleHtml.length < 200) throw new Error("bundle HTML is suspiciously small");
               send("bundle", { html: bundleHtml });
               buildSucceeded = true;
               // Persist bundle for session resume
@@ -236,7 +289,7 @@ export async function POST(request: Request): Promise<Response> {
               }
             } catch (buildError) {
               const errMsg = buildError instanceof Error ? buildError.message : String(buildError);
-              console.error("[generate] Parcel build failed:", errMsg);
+              console.error("[generate] esbuild bundle failed:", errMsg);
               send("activity", { type: "complete", message: `Build failed: ${errMsg.slice(0, 200)}` });
               // buildSucceeded stays false — done event will carry buildFailed: true
             }
