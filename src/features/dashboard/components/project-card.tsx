@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import { cn } from "@/core/utils";
 import { MaterialIcon } from "@/shared/components/material-icon";
@@ -50,11 +50,15 @@ export function ProjectCard({
   index?: number;
   onDelete?: () => void;
 }) {
+  const router = useRouter();
   const gradient = GRADIENTS[index % GRADIENTS.length];
 
   return (
-    <Link
-      href={`/builder?sessionId=${project.id}`}
+    <div
+      role="link"
+      tabIndex={0}
+      onClick={() => router.push(`/builder?sessionId=${project.id}`)}
+      onKeyDown={(e) => { if (e.key === "Enter") router.push(`/builder?sessionId=${project.id}`); }}
       className="group cursor-pointer rounded-2xl bg-surface-container-lowest p-5 shadow-[0_12px_32px_rgba(25,28,32,0.06)] transition-all duration-300 hover:-translate-y-2"
     >
       {/* Thumbnail */}
@@ -137,6 +141,6 @@ export function ProjectCard({
           {project.userInitial}
         </div>
       </div>
-    </Link>
+    </div>
   );
 }

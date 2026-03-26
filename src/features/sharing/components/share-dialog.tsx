@@ -31,6 +31,7 @@ export function ShareDialog({
   publishedUrl,
 }: ShareDialogProps) {
   const [activeTab, setActiveTab] = useState<"preview" | "published">("preview");
+  const [copied, setCopied] = useState(false);
 
   const origin = typeof window !== "undefined" ? window.location.origin : "";
   const previewUrl = `${origin}/tool/${shareSlug}`;
@@ -38,6 +39,8 @@ export function ShareDialog({
 
   async function handleCopy() {
     await copyToClipboard(activeUrl, "Link copied!");
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   }
 
   async function handleShare() {
@@ -116,8 +119,8 @@ export function ShareDialog({
             onClick={handleCopy}
             className="flex items-center gap-2 px-4 py-2.5 text-primary font-medium text-sm hover:bg-primary-fixed/20 transition-all rounded-lg"
           >
-            <MaterialIcon icon="content_copy" size="xs" />
-            Copy Link
+            <MaterialIcon icon={copied ? "check" : "content_copy"} size="xs" />
+            {copied ? "Copied!" : "Copy Link"}
           </button>
         </div>
 
