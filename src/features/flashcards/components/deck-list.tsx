@@ -28,7 +28,11 @@ export function DeckList({ activeDeckId, onSelectDeck }: DeckListProps) {
 
   return (
     <div className="flex flex-col gap-1">
-      <h3 className="px-3 pb-2 font-manrope text-xs font-semibold uppercase tracking-wider text-on-surface-variant/60">
+      <button className="mb-3 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-br from-primary to-primary-container px-6 py-4 font-bold text-on-primary shadow-md shadow-primary/20 transition-all hover:shadow-lg active:scale-95">
+        <MaterialIcon icon="add" size="xs" />
+        <span>Create New Deck</span>
+      </button>
+      <h3 className="px-3 pb-2 font-headline text-xl font-bold text-on-background">
         Your Decks
       </h3>
       {decks.map((deck) => (

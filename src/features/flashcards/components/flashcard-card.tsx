@@ -3,7 +3,6 @@
 import { useCallback, useRef, useState } from "react";
 
 import { MaterialIcon } from "@/shared/components/material-icon";
-import { Button } from "@/shared/components/ui/button";
 
 interface FlashcardCardProps {
   label: string;
@@ -32,9 +31,10 @@ export function FlashcardCard({ label, imageUrl, audioUrl, index, total }: Flash
 
   return (
     <div className="flex flex-col items-center gap-4">
-      <div className="relative w-full max-w-sm overflow-hidden rounded-2xl bg-surface-container-lowest shadow-lg">
+      <div className="relative w-full max-w-sm overflow-hidden rounded-[2rem] bg-surface-container-lowest shadow-xl shadow-on-surface/5">
+        <div className="absolute bottom-0 left-0 top-0 w-1.5 bg-primary" />
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <div className="aspect-square w-full overflow-hidden">
+        <div className="aspect-square w-full overflow-hidden rounded-2xl shadow-inner">
           <img
             src={imageUrl ?? PLACEHOLDER_IMAGE}
             alt={label}
@@ -44,24 +44,22 @@ export function FlashcardCard({ label, imageUrl, audioUrl, index, total }: Flash
         </div>
 
         <div className="flex items-center justify-between px-6 py-4">
-          <span className="font-manrope text-2xl font-semibold text-on-surface">
+          <span className="font-manrope text-5xl font-extrabold tracking-tight text-on-surface">
             {label}
           </span>
           {audioUrl && (
-            <Button
-              variant="ghost"
-              size="icon"
+            <button
               onClick={playAudio}
               disabled={isPlaying}
-              className="shrink-0 text-primary"
+              className="shrink-0 rounded-full bg-primary-container/10 p-4 text-primary hover:bg-primary-container/20"
               aria-label={`Listen to "${label}"`}
             >
               <MaterialIcon
                 icon="volume_up"
-                size="sm"
+                size="lg"
                 className={isPlaying ? "animate-pulse text-primary/70" : ""}
               />
-            </Button>
+            </button>
           )}
         </div>
       </div>

@@ -51,15 +51,26 @@ export function FlashcardChatPanel({
           {messages?.map((msg) => (
             <div
               key={msg._id}
-              className={`rounded-xl px-4 py-2.5 text-sm ${
-                msg.role === "user"
-                  ? "ml-8 bg-primary/10 text-on-surface"
-                  : msg.role === "system"
-                    ? "text-xs text-on-surface-variant/60 italic"
-                    : "mr-8 bg-surface-container-low text-on-surface"
-              }`}
+              className={`flex ${
+                msg.role === "user" ? "items-end" : "items-start"
+              } flex-col`}
             >
-              {msg.content}
+              {msg.role !== "system" && (
+                <span className="mb-1 px-1 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">
+                  {msg.role === "user" ? "You" : "Therapy Assistant"}
+                </span>
+              )}
+              <div
+                className={`text-sm ${
+                  msg.role === "user"
+                    ? "max-w-[90%] rounded-2xl rounded-tr-none bg-primary px-4 py-2.5 text-on-primary shadow-sm"
+                    : msg.role === "system"
+                      ? "text-xs italic text-on-surface-variant/60"
+                      : "max-w-[90%] rounded-2xl rounded-tl-none bg-surface-container-lowest px-4 py-2.5 shadow-sm"
+                }`}
+              >
+                {msg.content}
+              </div>
             </div>
           ))}
 

@@ -2,6 +2,8 @@
 
 import { useRef, useEffect } from "react";
 
+import { MaterialIcon } from "@/shared/components/material-icon";
+
 import { useDeckNavigation } from "../hooks/use-deck-navigation";
 import { FlashcardCard } from "./flashcard-card";
 
@@ -74,19 +76,39 @@ export function FlashcardSwiper({ cards }: FlashcardSwiperProps) {
         ))}
       </div>
 
-      <div className="flex gap-2">
-        {cards.map((_, i) => (
-          <button
-            key={i}
-            onClick={() => goTo(i)}
-            className={`h-2 w-2 rounded-full transition-all duration-300 ${
-              i === currentIndex
-                ? "w-6 bg-primary"
-                : "bg-on-surface-variant/30"
-            }`}
-            aria-label={`Go to card ${i + 1}`}
-          />
-        ))}
+      <div className="flex items-center gap-3">
+        <button
+          onClick={() => goTo(Math.max(0, currentIndex - 1))}
+          disabled={currentIndex === 0}
+          className="rounded-full p-3 text-on-surface-variant transition-all hover:bg-surface-container-low hover:text-primary disabled:opacity-30"
+          aria-label="Previous card"
+        >
+          <MaterialIcon icon="chevron_left" size="sm" />
+        </button>
+
+        <div className="flex gap-2">
+          {cards.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => goTo(i)}
+              className={`h-2 w-2 rounded-full transition-all duration-300 ${
+                i === currentIndex
+                  ? "w-6 bg-primary"
+                  : "bg-on-surface-variant/30"
+              }`}
+              aria-label={`Go to card ${i + 1}`}
+            />
+          ))}
+        </div>
+
+        <button
+          onClick={() => goTo(Math.min(cards.length - 1, currentIndex + 1))}
+          disabled={currentIndex === cards.length - 1}
+          className="rounded-full p-3 text-on-surface-variant transition-all hover:bg-surface-container-low hover:text-primary disabled:opacity-30"
+          aria-label="Next card"
+        >
+          <MaterialIcon icon="chevron_right" size="sm" />
+        </button>
       </div>
     </div>
   );

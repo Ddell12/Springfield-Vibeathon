@@ -51,13 +51,13 @@ export function FlashcardPage() {
   return (
     <div className="flex h-full flex-col bg-surface">
       {/* Toolbar */}
-      <div className="flex items-center gap-3 border-b border-border/40 bg-surface-container-lowest px-4 py-2.5">
+      <div className="flex items-center gap-3 bg-surface/70 px-4 py-2.5 shadow-sm shadow-on-surface/5 backdrop-blur-xl">
         <Button variant="ghost" size="icon" asChild>
           <Link href="/dashboard" aria-label="Back to dashboard">
             <MaterialIcon icon="arrow_back" size="xs" />
           </Link>
         </Button>
-        <h1 className="font-manrope text-lg font-semibold text-on-surface">
+        <h1 className="font-headline font-manrope text-lg font-extrabold tracking-tight text-on-surface">
           Flashcard Creator
         </h1>
       </div>
