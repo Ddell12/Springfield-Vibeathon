@@ -89,11 +89,16 @@ export function BuilderPage() {
     ) {
       sessionResumed.current = true;
 
+      // Separate the persisted bundle from user-visible files
+      const bundleFile = resumeFiles.find((f) => f.path === "_bundle.html");
+      const appFiles = resumeFiles.filter((f) => f.path !== "_bundle.html");
+
       // Restore streaming hook state
       resumeSession({
         sessionId: sessionIdFromUrl,
-        files: resumeFiles.map((f) => ({ path: f.path, contents: f.contents })),
+        files: appFiles.map((f) => ({ path: f.path, contents: f.contents })),
         blueprint: resumeSessionData.blueprint ?? null,
+        bundleHtml: bundleFile?.contents ?? null,
       });
     }
   }, [sessionIdFromUrl, resumeSessionData, resumeFiles, status, resumeSession]);

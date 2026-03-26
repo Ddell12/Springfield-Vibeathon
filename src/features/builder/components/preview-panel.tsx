@@ -1,8 +1,10 @@
 "use client";
 
-import { useMemo, useEffect } from "react";
-import { Loader2, Monitor, AlertCircle } from "lucide-react";
+import { AlertCircle, Loader2, Monitor, RefreshCw } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+
 import { cn } from "@/core/utils";
+
 import type { StreamingStatus } from "../hooks/use-streaming";
 
 type DeviceSize = "desktop" | "mobile";
@@ -15,11 +17,14 @@ interface PreviewPanelProps {
 }
 
 export function PreviewPanel({ bundleHtml, state, error, deviceSize = "desktop" }: PreviewPanelProps) {
+  const [refreshKey, setRefreshKey] = useState(0);
+
   const blobUrl = useMemo(() => {
     if (!bundleHtml) return null;
+    void refreshKey; // dependency trigger — incrementing forces a new blob URL
     const blob = new Blob([bundleHtml], { type: "text/html" });
     return URL.createObjectURL(blob);
-  }, [bundleHtml]);
+  }, [bundleHtml, refreshKey]);
 
   useEffect(() => {
     return () => {
@@ -73,6 +78,18 @@ export function PreviewPanel({ bundleHtml, state, error, deviceSize = "desktop" 
           <Monitor className="h-12 w-12 opacity-20" />
           <p className="text-sm">Your app will appear here</p>
         </div>
+      )}
+
+      {/* Reload button */}
+      {hasPreview && !isGenerating && (
+        <button
+          onClick={() => setRefreshKey((k) => k + 1)}
+          className="absolute top-3 right-3 rounded-lg bg-background/80 p-2 shadow-md backdrop-blur-sm transition-all hover:bg-background active:scale-95"
+          title="Reload preview"
+          aria-label="Reload preview"
+        >
+          <RefreshCw className="h-4 w-4 text-muted-foreground" />
+        </button>
       )}
     </div>
   );

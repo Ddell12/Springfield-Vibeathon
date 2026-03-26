@@ -1,13 +1,12 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { exec } from "child_process";
+import { ConvexHttpClient } from "convex/browser";
 import { cpSync, existsSync, mkdtempSync, readFileSync, rmSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
-import { exec } from "child_process";
 import { promisify } from "util";
-import { ConvexHttpClient } from "convex/browser";
 
 import { extractErrorMessage, settleInBatches } from "@/core/utils";
-
 import { buildSystemPrompt } from "@/features/builder/lib/agent-prompt";
 import { createAgentTools } from "@/features/builder/lib/agent-tools";
 import { buildReviewMessages, DESIGN_REVIEW_PROMPT } from "@/features/builder/lib/review-prompt";
@@ -173,6 +172,12 @@ export async function POST(request: Request): Promise<Response> {
             const bundleHtml = readFileSync(bundlePath, "utf-8");
             if (bundleHtml.length < 100) throw new Error("bundle.html is suspiciously small");
             send("bundle", { html: bundleHtml });
+            // Persist bundle for session resume — fire-and-forget to avoid blocking SSE
+            convex.mutation(api.generated_files.upsertAutoVersion, {
+              sessionId,
+              path: "_bundle.html",
+              contents: bundleHtml,
+            }).catch((err) => console.error("[generate] Failed to persist bundle:", err));
           } catch (buildError) {
             console.error("[generate] Parcel build failed:", buildError);
             send("activity", { type: "thinking", message: "Build failed — showing raw files instead" });

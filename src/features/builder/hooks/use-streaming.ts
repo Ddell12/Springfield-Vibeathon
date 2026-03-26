@@ -26,6 +26,7 @@ export interface ResumeSessionArgs {
   sessionId: string;
   files: StreamingFile[];
   blueprint?: TherapyBlueprint | null;
+  bundleHtml?: string | null;
 }
 
 export interface UseStreamingReturn {
@@ -318,6 +319,9 @@ export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn 
       setActivities([]);
       if (args.blueprint !== undefined) {
         setBlueprint(args.blueprint ?? null);
+      }
+      if (args.bundleHtml !== undefined) {
+        setBundleHtml(args.bundleHtml ?? null);
       }
     },
     []

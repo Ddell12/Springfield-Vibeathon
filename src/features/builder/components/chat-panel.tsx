@@ -8,6 +8,7 @@ import remarkGfm from "remark-gfm";
 import { MaterialIcon } from "@/shared/components/material-icon";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
+
 import { api } from "../../../../convex/_generated/api";
 import { Id } from "../../../../convex/_generated/dataModel";
 import type { Activity, StreamingStatus } from "../hooks/use-streaming";
@@ -37,8 +38,8 @@ function AssistantBubble({ content, isStreaming }: { content: string; isStreamin
   if (isStreaming && !content) return null;
   return (
     <div className="flex justify-start">
-      <div className="max-w-[85%] break-words rounded-2xl rounded-bl-md bg-surface-container-low px-4 py-3">
-        <div className="text-sm text-foreground [&_a]:text-primary [&_a]:underline [&_code]:rounded [&_code]:bg-surface-container-lowest [&_code]:px-1 [&_code]:py-0.5 [&_code]:text-xs [&_code]:font-mono [&_h1]:text-lg [&_h1]:font-bold [&_h2]:text-base [&_h2]:font-semibold [&_h3]:text-sm [&_h3]:font-semibold [&_li]:my-0.5 [&_ol]:my-1 [&_ol]:ml-4 [&_ol]:list-decimal [&_p:last-child]:mb-0 [&_p]:my-1 [&_pre]:my-2 [&_pre]:overflow-x-auto [&_pre]:rounded-lg [&_pre]:bg-surface-container-lowest [&_pre]:p-3 [&_strong]:font-semibold [&_ul]:my-1 [&_ul]:ml-4 [&_ul]:list-disc">
+      <div className="max-w-[85%] break-words rounded-2xl rounded-bl-md border border-outline-variant/15 bg-surface-container px-4 py-3">
+        <div className="overflow-x-auto text-sm text-foreground [&_a]:text-primary [&_a]:underline [&_code]:rounded [&_code]:bg-surface-container-lowest [&_code]:px-1 [&_code]:py-0.5 [&_code]:text-xs [&_code]:font-mono [&_h1]:text-lg [&_h1]:font-bold [&_h2]:text-base [&_h2]:font-semibold [&_h3]:text-sm [&_h3]:font-semibold [&_li]:my-0.5 [&_ol]:my-1 [&_ol]:ml-4 [&_ol]:list-decimal [&_p:last-child]:mb-0 [&_p]:my-1 [&_pre]:my-2 [&_pre]:overflow-x-auto [&_pre]:rounded-lg [&_pre]:bg-surface-container-lowest [&_pre]:p-3 [&_strong]:font-semibold [&_ul]:my-1 [&_ul]:ml-4 [&_ul]:list-disc">
           <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
         </div>
         {isStreaming && <span className="mt-1 inline-block h-4 w-1 animate-pulse bg-primary/60" />}

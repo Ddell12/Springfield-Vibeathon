@@ -234,6 +234,7 @@ describe("BuilderPage — three-panel layout", () => {
         sessionId: "test_session_123",
         files: [{ path: "src/App.tsx", contents: "<div>Hello</div>" }],
         blueprint: null,
+        bundleHtml: null,
       });
     });
 
