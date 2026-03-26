@@ -3,22 +3,41 @@
 // so we use t.run() for direct DB access instead of api/internal refs in convex-test.
 // storageId requires a real storage entry — use ctx.storage.store() to generate valid IDs.
 import { convexTest } from "convex-test";
-import { describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
 
 import { internal } from "../_generated/api";
 import schema from "../schema";
 
 const modules = import.meta.glob("../**/*.*s"); // REQUIRED for convex-test
 
-/** Helper: insert a fake PNG blob into storage and return a valid storageId.
- *  Uses Blob constructed from ArrayBuffer to avoid SubtleCrypto.digest
- *  compatibility issues in jsdom CI environments. */
+// Patch SubtleCrypto.digest for jsdom CI compatibility.
+// jsdom's Blob.arrayBuffer() returns a polyfilled ArrayBuffer that
+// crypto.subtle.digest() rejects on Ubuntu CI. This wrapper converts
+// the data to a real Uint8Array before hashing.
+beforeAll(() => {
+  const originalDigest = crypto.subtle.digest.bind(crypto.subtle);
+  vi.stubGlobal("crypto", {
+    ...crypto,
+    subtle: {
+      ...crypto.subtle,
+      digest: async (algo: AlgorithmIdentifier, data: BufferSource) => {
+        const buf = data instanceof ArrayBuffer
+          ? data
+          : ArrayBuffer.isView(data)
+            ? data.buffer
+            : new Uint8Array(data as unknown as ArrayLike<number>).buffer;
+        return originalDigest(algo, buf);
+      },
+    },
+  });
+});
+
+/** Helper: insert a fake PNG blob into storage and return a valid storageId. */
 async function storeTestImage(ctx: { storage: { store: (blob: Blob) => Promise<string> } }) {
-  // Minimal PNG header bytes — only need enough to get a valid storage ID
   const pngBytes = new Uint8Array([
     0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a,
   ]);
-  const blob = new Blob([pngBytes.buffer], { type: "image/png" });
+  const blob = new Blob([pngBytes], { type: "image/png" });
   return await ctx.storage.store(blob);
 }
 
