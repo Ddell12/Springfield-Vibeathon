@@ -92,22 +92,28 @@ export const listByState = query({
 export const remove = mutation({
   args: { sessionId: v.id("sessions") },
   handler: async (ctx, args) => {
-    // Cascade-delete messages (batched to avoid unbounded memory)
-    const messages = await ctx.db
-      .query("messages")
-      .withIndex("by_session", (q) => q.eq("sessionId", args.sessionId))
-      .take(1000);
-    for (const msg of messages) {
-      await ctx.db.delete(msg._id);
+    // Cascade-delete messages in batches (loop prevents orphans for large sessions)
+    while (true) {
+      const batch = await ctx.db
+        .query("messages")
+        .withIndex("by_session", (q) => q.eq("sessionId", args.sessionId))
+        .take(500);
+      if (batch.length === 0) break;
+      for (const msg of batch) {
+        await ctx.db.delete(msg._id);
+      }
     }
 
-    // Cascade-delete files (typically < 20 per session)
-    const files = await ctx.db
-      .query("files")
-      .withIndex("by_session", (q) => q.eq("sessionId", args.sessionId))
-      .take(200);
-    for (const file of files) {
-      await ctx.db.delete(file._id);
+    // Cascade-delete files in batches
+    while (true) {
+      const batch = await ctx.db
+        .query("files")
+        .withIndex("by_session", (q) => q.eq("sessionId", args.sessionId))
+        .take(200);
+      if (batch.length === 0) break;
+      for (const file of batch) {
+        await ctx.db.delete(file._id);
+      }
     }
 
     // Cascade-delete apps (typically 0-1 per session)
