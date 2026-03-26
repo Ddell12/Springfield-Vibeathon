@@ -1,17 +1,19 @@
 import { betaZodTool } from "@anthropic-ai/sdk/helpers/beta/zod";
 import { ToolError } from "@anthropic-ai/sdk/lib/tools/ToolError";
 import type { ConvexHttpClient } from "convex/browser";
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "fs";
+import { dirname, join, resolve } from "path";
 import { z } from "zod";
 
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
-import { templateFiles } from "@/features/builder/hooks/webcontainer-files";
 
 export interface ToolContext {
   send: (event: string, data: object) => void;
   sessionId: Id<"sessions">;
   collectedFiles: Map<string, string>;
   convex: ConvexHttpClient;
+  buildDir: string; // path to temp WAB scaffold copy
 }
 
 /**
@@ -33,76 +35,35 @@ export function isValidFilePath(path: string): boolean {
   return true;
 }
 
-type FileSystemNode =
-  | { file: { contents: string } }
-  | { directory: Record<string, FileSystemNode> };
-
 /**
- * Walk the FileSystemTree to retrieve file contents by path.
- * Returns null if the path doesn't exist in the template.
+ * Scaffold files that the AI is not permitted to overwrite.
+ * These are pre-built components, hooks, and utilities in the WAB scaffold.
  */
-export function getTemplateFileContents(path: string): string | null {
-  const parts = path.split("/").filter(Boolean);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let current: Record<string, any> = templateFiles as Record<string, any>;
-
-  for (let i = 0; i < parts.length - 1; i++) {
-    const segment = parts[i];
-    const node = current[segment];
-    if (!node) return null;
-    if ("directory" in node) {
-      current = node.directory;
-    } else {
-      return null;
-    }
-  }
-
-  const leaf = current[parts[parts.length - 1]];
-  if (!leaf) return null;
-  if ("file" in leaf && typeof leaf.file.contents === "string") {
-    return leaf.file.contents;
-  }
-  return null;
-}
-
-/**
- * List all file paths within a given directory in the template tree,
- * merged with any generated files that share the same directory prefix.
- */
-export function getTemplateDirectoryListing(
-  directory: string,
-  generatedFiles: Map<string, string>,
-): string[] {
-  // Normalize directory — ensure trailing slash stripped for segment lookup
-  const dirNorm = directory.endsWith("/") ? directory.slice(0, -1) : directory;
-  const parts = dirNorm.split("/").filter(Boolean);
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let current: Record<string, any> = templateFiles as Record<string, any>;
-
-  for (const part of parts) {
-    const node = current[part];
-    if (!node) {
-      // Directory not in template — only return generated files
-      const prefix = directory.endsWith("/") ? directory : directory + "/";
-      return [...generatedFiles.keys()].filter((k) => k.startsWith(prefix));
-    }
-    if ("directory" in node) {
-      current = node.directory;
-    } else {
-      return [];
-    }
-  }
-
-  const prefix = dirNorm ? dirNorm + "/" : "";
-  const templateListing = Object.keys(current).map((name) => prefix + name);
-
-  const generatedListing = [...generatedFiles.keys()].filter((k) =>
-    k.startsWith(prefix),
-  );
-
-  return [...new Set([...templateListing, ...generatedListing])];
-}
+const PROTECTED_PATHS = [
+  "src/components/ui/",
+  "src/lib/utils.ts",
+  "src/components/TokenBoard.tsx",
+  "src/components/CommunicationBoard.tsx",
+  "src/components/SentenceStrip.tsx",
+  "src/components/CelebrationOverlay.tsx",
+  "src/components/VisualSchedule.tsx",
+  "src/components/TapCard.tsx",
+  "src/components/BoardGrid.tsx",
+  "src/components/DataTracker.tsx",
+  "src/components/ChoiceGrid.tsx",
+  "src/components/TimerBar.tsx",
+  "src/components/PromptCard.tsx",
+  "src/components/PageViewer.tsx",
+  "src/components/TherapyCard.tsx",
+  "src/components/SocialStory.tsx",
+  "src/components/RewardPicker.tsx",
+  "src/components/TokenSlot.tsx",
+  "src/components/StepItem.tsx",
+  "src/hooks/useLocalStorage.ts",
+  "src/hooks/useTTS.ts",
+  "src/hooks/useAnimation.ts",
+  "src/hooks/useDataCollection.ts",
+];
 
 /** Add `inputSchema` alias to satisfy test introspection while keeping SDK shape intact. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -156,8 +117,25 @@ export function createAgentTools(ctx: ToolContext) {
             "Error: Invalid file path — must be within src/ and use a supported extension",
           );
         }
+
+        // Path traversal guard
+        const fullPath = join(ctx.buildDir, path);
+        const resolved = resolve(fullPath);
+        if (!resolved.startsWith(resolve(ctx.buildDir))) {
+          throw new ToolError(`Path traversal blocked: ${path}`);
+        }
+
+        // Scaffold file protection
+        if (PROTECTED_PATHS.some((p) => path.startsWith(p) || path === p)) {
+          throw new ToolError(`Cannot overwrite scaffold file: ${path}`);
+        }
+
+        // Dual write: disk (for Parcel build) + Map (for Convex persistence & review)
+        mkdirSync(dirname(fullPath), { recursive: true });
+        writeFileSync(fullPath, contents, "utf-8");
         ctx.collectedFiles.set(path, contents);
-        ctx.send("file_complete", { path, contents });
+
+        ctx.send("file_complete", { path }); // path only, no contents
         ctx.send("activity", { type: "file_written", message: `Wrote ${path}`, path });
         return "File written successfully";
       },
@@ -168,18 +146,16 @@ export function createAgentTools(ctx: ToolContext) {
     betaZodTool({
       name: "read_file",
       description:
-        "Read the current contents of a file. Checks generated files first, then falls back to the template.",
+        "Read the current contents of a file from the build directory on disk.",
       inputSchema: z.object({
         path: z.string().describe("File path relative to project root"),
       }),
       run: async ({ path }) => {
-        const generated = ctx.collectedFiles.get(path);
-        if (generated !== undefined) return generated;
-
-        const template = getTemplateFileContents(path);
-        if (template !== null) return template;
-
-        throw new ToolError(`Error: File not found: ${path}`);
+        const fullPath = join(ctx.buildDir, path);
+        if (!existsSync(fullPath)) {
+          throw new ToolError(`Error: File not found: ${path}`);
+        }
+        return readFileSync(fullPath, "utf-8");
       },
     }),
   );
@@ -188,7 +164,7 @@ export function createAgentTools(ctx: ToolContext) {
     betaZodTool({
       name: "list_files",
       description:
-        "List all files available in a directory, including template files and generated files.",
+        "List all files and directories available in a directory of the build directory.",
       inputSchema: z.object({
         directory: z
           .string()
@@ -197,8 +173,12 @@ export function createAgentTools(ctx: ToolContext) {
           ),
       }),
       run: async ({ directory }) => {
-        const listing = getTemplateDirectoryListing(directory, ctx.collectedFiles);
-        return listing.join("\n");
+        const fullPath = join(ctx.buildDir, directory);
+        if (!existsSync(fullPath)) return "Directory not found";
+        const entries = readdirSync(fullPath, { withFileTypes: true });
+        return entries
+          .map((e) => (e.isDirectory() ? `${e.name}/` : e.name))
+          .join("\n");
       },
     }),
   );

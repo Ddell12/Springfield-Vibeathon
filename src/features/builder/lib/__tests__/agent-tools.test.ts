@@ -1,11 +1,13 @@
 // src/features/builder/lib/__tests__/agent-tools.test.ts
-import { describe, it, expect, vi, beforeEach } from "vitest";
+// @vitest-environment node
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "fs";
+import { join } from "path";
+import { tmpdir } from "os";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   createAgentTools,
   isValidFilePath,
-  getTemplateFileContents,
-  getTemplateDirectoryListing,
   type ToolContext,
 } from "../agent-tools";
 
@@ -15,18 +17,28 @@ const mockConvex = {
   mutation: mockConvexMutation,
 } as unknown as import("convex/browser").ConvexHttpClient;
 
+let tempDir: string;
+
 function makeContext(overrides?: Partial<ToolContext>): ToolContext {
   return {
     send: vi.fn(),
     sessionId: "mock-session-id" as unknown as import("convex/values").GenericId<"sessions">,
     collectedFiles: new Map<string, string>(),
     convex: mockConvex,
+    buildDir: tempDir,
     ...overrides,
   };
 }
 
 beforeEach(() => {
   vi.clearAllMocks();
+  // Create a fresh temp directory per test
+  tempDir = mkdtempSync(join(tmpdir(), "agent-tools-test-"));
+});
+
+afterEach(() => {
+  // Clean up temp dir
+  rmSync(tempDir, { recursive: true, force: true });
 });
 
 // ---------------------------------------------------------------------------
@@ -76,54 +88,6 @@ describe("isValidFilePath", () => {
 });
 
 // ---------------------------------------------------------------------------
-// getTemplateFileContents
-// ---------------------------------------------------------------------------
-
-describe("getTemplateFileContents", () => {
-  it("returns contents for known template file src/lib/utils.ts containing cn", () => {
-    const contents = getTemplateFileContents("src/lib/utils.ts");
-    expect(contents).not.toBeNull();
-    expect(contents).toContain("cn");
-  });
-
-  it("returns null for a nonexistent file", () => {
-    const contents = getTemplateFileContents("src/does-not-exist.ts");
-    expect(contents).toBeNull();
-  });
-
-  it("returns contents for nested component src/components/TokenBoard.tsx", () => {
-    const contents = getTemplateFileContents("src/components/TokenBoard.tsx");
-    expect(contents).not.toBeNull();
-    expect(typeof contents).toBe("string");
-  });
-});
-
-// ---------------------------------------------------------------------------
-// getTemplateDirectoryListing
-// ---------------------------------------------------------------------------
-
-describe("getTemplateDirectoryListing", () => {
-  it("lists template files in src/components/", () => {
-    const listing = getTemplateDirectoryListing("src/components/", new Map());
-    expect(Array.isArray(listing)).toBe(true);
-    expect(listing.length).toBeGreaterThan(0);
-    // Should include at least some known components
-    expect(listing.some((f) => f.includes("TokenBoard"))).toBe(true);
-  });
-
-  it("merges generated files into listing", () => {
-    const generated = new Map([["src/components/MyCustom.tsx", "export default function MyCustom() {}"]]);
-    const listing = getTemplateDirectoryListing("src/components/", generated);
-    expect(listing).toContain("src/components/MyCustom.tsx");
-  });
-
-  it("returns empty array for nonexistent directory", () => {
-    const listing = getTemplateDirectoryListing("src/nonexistent/", new Map());
-    expect(listing).toEqual([]);
-  });
-});
-
-// ---------------------------------------------------------------------------
 // createAgentTools
 // ---------------------------------------------------------------------------
 
@@ -166,7 +130,30 @@ describe("createAgentTools", () => {
       expect(ctx.collectedFiles.get("src/App.tsx")).toBe("export default function App() {}");
     });
 
-    it("rejects invalid paths with ToolError or thrown error", async () => {
+    it("writes file to disk in buildDir", async () => {
+      const ctx = makeContext();
+      const tools = createAgentTools(ctx);
+      const writeFile = tools.find((t) => t.name === "write_file")!;
+
+      await writeFile.run({ path: "src/App.tsx", contents: "export default function App() {}" });
+
+      const diskPath = join(tempDir, "src/App.tsx");
+      expect(existsSync(diskPath)).toBe(true);
+      expect(readFileSync(diskPath, "utf-8")).toBe("export default function App() {}");
+    });
+
+    it("creates intermediate directories when writing nested file", async () => {
+      const ctx = makeContext();
+      const tools = createAgentTools(ctx);
+      const writeFile = tools.find((t) => t.name === "write_file")!;
+
+      await writeFile.run({ path: "src/features/MyFeature.tsx", contents: "// feature" });
+
+      const diskPath = join(tempDir, "src/features/MyFeature.tsx");
+      expect(existsSync(diskPath)).toBe(true);
+    });
+
+    it("rejects invalid paths with ToolError", async () => {
       const ctx = makeContext();
       const tools = createAgentTools(ctx);
       const writeFile = tools.find((t) => t.name === "write_file")!;
@@ -176,17 +163,66 @@ describe("createAgentTools", () => {
       ).rejects.toThrow();
     });
 
-    it("sends file_complete SSE event after writing", async () => {
+    it("blocks path traversal attempts", async () => {
+      // We need to test a path that passes isValidFilePath but escapes the buildDir.
+      // The isValidFilePath check rejects ".." already, so we test that the
+      // resolve guard is in place by directly checking the guard logic.
+      // Instead, test a path that would be valid but still blocked by resolve guard
+      // by testing the ToolError message for a .. path.
+      const ctx = makeContext();
+      const tools = createAgentTools(ctx);
+      const writeFile = tools.find((t) => t.name === "write_file")!;
+
+      // This path will be caught by isValidFilePath first (contains ..)
+      await expect(
+        writeFile.run({ path: "src/../../etc/passwd", contents: "hacked" })
+      ).rejects.toThrow();
+    });
+
+    it("blocks overwriting protected scaffold files", async () => {
+      const ctx = makeContext();
+      const tools = createAgentTools(ctx);
+      const writeFile = tools.find((t) => t.name === "write_file")!;
+
+      await expect(
+        writeFile.run({ path: "src/components/TokenBoard.tsx", contents: "// overwrite attempt" })
+      ).rejects.toThrow("Cannot overwrite scaffold file");
+    });
+
+    it("blocks overwriting protected hooks", async () => {
+      const ctx = makeContext();
+      const tools = createAgentTools(ctx);
+      const writeFile = tools.find((t) => t.name === "write_file")!;
+
+      await expect(
+        writeFile.run({ path: "src/hooks/useLocalStorage.ts", contents: "// overwrite attempt" })
+      ).rejects.toThrow("Cannot overwrite scaffold file");
+    });
+
+    it("blocks overwriting files in src/components/ui/ directory", async () => {
+      const ctx = makeContext();
+      const tools = createAgentTools(ctx);
+      const writeFile = tools.find((t) => t.name === "write_file")!;
+
+      await expect(
+        writeFile.run({ path: "src/components/ui/button.tsx", contents: "// overwrite attempt" })
+      ).rejects.toThrow("Cannot overwrite scaffold file");
+    });
+
+    it("sends file_complete SSE event with path only (no contents)", async () => {
       const ctx = makeContext();
       const tools = createAgentTools(ctx);
       const writeFile = tools.find((t) => t.name === "write_file")!;
 
       await writeFile.run({ path: "src/App.tsx", contents: "export default function App() {}" });
 
-      expect(ctx.send).toHaveBeenCalledWith(
-        "file_complete",
-        expect.objectContaining({ path: "src/App.tsx" })
+      expect(ctx.send).toHaveBeenCalledWith("file_complete", { path: "src/App.tsx" });
+      // Ensure contents are NOT sent in file_complete
+      const fileCompleteCall = (ctx.send as ReturnType<typeof vi.fn>).mock.calls.find(
+        (c: string[]) => c[0] === "file_complete"
       );
+      expect(fileCompleteCall).toBeDefined();
+      expect(fileCompleteCall![1]).not.toHaveProperty("contents");
     });
 
     it("sends activity SSE event after writing", async () => {
@@ -204,27 +240,31 @@ describe("createAgentTools", () => {
   });
 
   describe("read_file tool", () => {
-    it("reads from generated files first", async () => {
+    it("reads file from disk (buildDir)", async () => {
+      // Pre-populate the disk
+      const srcDir = join(tempDir, "src");
+      mkdirSync(srcDir, { recursive: true });
+      writeFileSync(join(srcDir, "App.tsx"), "// from disk");
+
       const ctx = makeContext();
-      ctx.collectedFiles.set("src/App.tsx", "// generated version");
       const tools = createAgentTools(ctx);
       const readFile = tools.find((t) => t.name === "read_file")!;
 
       const result = await readFile.run({ path: "src/App.tsx" });
 
-      expect(result).toContain("// generated version");
+      expect(result).toBe("// from disk");
     });
 
-    it("falls back to template files when not in generated files", async () => {
+    it("reads file written by write_file tool from disk", async () => {
       const ctx = makeContext();
       const tools = createAgentTools(ctx);
+      const writeFile = tools.find((t) => t.name === "write_file")!;
       const readFile = tools.find((t) => t.name === "read_file")!;
 
-      // src/lib/utils.ts exists in the template
-      const result = await readFile.run({ path: "src/lib/utils.ts" });
+      await writeFile.run({ path: "src/App.tsx", contents: "// just written" });
+      const result = await readFile.run({ path: "src/App.tsx" });
 
-      expect(result).toBeTruthy();
-      expect(result).toContain("cn");
+      expect(result).toBe("// just written");
     });
 
     it("throws ToolError for missing files", async () => {
@@ -255,17 +295,63 @@ describe("createAgentTools", () => {
   });
 
   describe("list_files tool", () => {
-    it("returns template and generated files", async () => {
+    it("lists files from disk buildDir", async () => {
+      // Pre-populate the disk
+      const srcDir = join(tempDir, "src");
+      mkdirSync(srcDir, { recursive: true });
+      writeFileSync(join(srcDir, "App.tsx"), "// app");
+      writeFileSync(join(srcDir, "main.tsx"), "// main");
+
       const ctx = makeContext();
-      ctx.collectedFiles.set("src/App.tsx", "// my app");
       const tools = createAgentTools(ctx);
       const listFiles = tools.find((t) => t.name === "list_files")!;
 
-      const result = await listFiles.run({ directory: "src/" });
+      const result = await listFiles.run({ directory: "src" });
 
-      // Result should be a string listing files
       expect(typeof result).toBe("string");
-      expect(result).toContain("src/App.tsx");
+      expect(result).toContain("App.tsx");
+      expect(result).toContain("main.tsx");
+    });
+
+    it("includes files written by write_file tool", async () => {
+      const ctx = makeContext();
+      const tools = createAgentTools(ctx);
+      const writeFile = tools.find((t) => t.name === "write_file")!;
+      const listFiles = tools.find((t) => t.name === "list_files")!;
+
+      await writeFile.run({ path: "src/App.tsx", contents: "// my app" });
+      const result = await listFiles.run({ directory: "src" });
+
+      expect(result).toContain("App.tsx");
+    });
+
+    it("appends trailing slash for directories in listing", async () => {
+      // Pre-populate with a subdirectory
+      const componentsDir = join(tempDir, "src", "components");
+      mkdirSync(componentsDir, { recursive: true });
+      writeFileSync(join(componentsDir, "Foo.tsx"), "// foo");
+
+      const srcDir = join(tempDir, "src");
+      writeFileSync(join(srcDir, "App.tsx"), "// app");
+
+      const ctx = makeContext();
+      const tools = createAgentTools(ctx);
+      const listFiles = tools.find((t) => t.name === "list_files")!;
+
+      const result = await listFiles.run({ directory: "src" });
+
+      expect(result).toContain("components/");
+      expect(result).toContain("App.tsx");
+    });
+
+    it("returns 'Directory not found' for nonexistent directory", async () => {
+      const ctx = makeContext();
+      const tools = createAgentTools(ctx);
+      const listFiles = tools.find((t) => t.name === "list_files")!;
+
+      const result = await listFiles.run({ directory: "src/nonexistent" });
+
+      expect(result).toBe("Directory not found");
     });
   });
 });
