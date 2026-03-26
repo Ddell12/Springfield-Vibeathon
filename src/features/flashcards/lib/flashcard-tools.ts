@@ -2,6 +2,8 @@ import { betaZodTool } from "@anthropic-ai/sdk/helpers/beta/zod";
 import type { ConvexHttpClient } from "convex/browser";
 import { z } from "zod";
 
+import { settleInBatches } from "@/core/utils";
+
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 
@@ -48,47 +50,47 @@ export function createFlashcardTools(ctx: FlashcardToolContext) {
         message: `Generating ${cards.length} flashcards with images and audio...`,
       });
 
-      const results = await Promise.allSettled(
-        cards.map(async (card, index) => {
-          let imageUrl: string | undefined;
-          try {
-            const imageResult = await ctx.convex.action(
-              api.image_generation.generateTherapyImage,
-              { label: card.label, category: card.category ?? "objects" },
-            );
-            imageUrl = imageResult.imageUrl;
-          } catch (err) {
-            console.error(`[flashcards] Image gen failed for "${card.label}":`, err);
-          }
+      const cardThunks = cards.map((card, index) => async () => {
+        let imageUrl: string | undefined;
+        try {
+          const imageResult = await ctx.convex.action(
+            api.image_generation.generateTherapyImage,
+            { label: card.label, category: card.category ?? "objects" },
+          );
+          imageUrl = imageResult.imageUrl;
+        } catch (err) {
+          console.error(`[flashcards] Image gen failed for "${card.label}":`, err);
+        }
 
-          let audioUrl: string | undefined;
-          try {
-            const speechResult = await ctx.convex.action(api.aiActions.generateSpeech, {
-              text: card.label,
-              voice: "child-friendly",
-            });
-            audioUrl = speechResult.audioUrl;
-          } catch (err) {
-            console.error(`[flashcards] TTS failed for "${card.label}":`, err);
-          }
-
-          await ctx.convex.mutation(api.flashcard_cards.create, {
-            deckId: deckId as Id<"flashcardDecks">,
-            label: card.label,
-            imageUrl,
-            audioUrl,
-            sortOrder: index,
-            category: card.category,
+        let audioUrl: string | undefined;
+        try {
+          const speechResult = await ctx.convex.action(api.aiActions.generateSpeech, {
+            text: card.label,
+            voice: "child-friendly",
           });
+          audioUrl = speechResult.audioUrl;
+        } catch (err) {
+          console.error(`[flashcards] TTS failed for "${card.label}":`, err);
+        }
 
-          ctx.send("activity", {
-            type: "card_created",
-            message: `Created card: ${card.label}`,
-          });
+        await ctx.convex.mutation(api.flashcard_cards.create, {
+          deckId: deckId as Id<"flashcardDecks">,
+          label: card.label,
+          imageUrl,
+          audioUrl,
+          sortOrder: index,
+          category: card.category,
+        });
 
-          return { label: card.label, imageUrl: !!imageUrl, audioUrl: !!audioUrl };
-        }),
-      );
+        ctx.send("activity", {
+          type: "card_created",
+          message: `Created card: ${card.label}`,
+        });
+
+        return { label: card.label, imageUrl: !!imageUrl, audioUrl: !!audioUrl };
+      });
+
+      const results = await settleInBatches(cardThunks, 3);
 
       const succeeded = results.filter((r) => r.status === "fulfilled").length;
       const failed = results.filter((r) => r.status === "rejected").length;

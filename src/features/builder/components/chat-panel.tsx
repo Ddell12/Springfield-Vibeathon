@@ -11,19 +11,13 @@ import { Input } from "@/shared/components/ui/input";
 import { VoiceInput } from "@/shared/components/voice-input";
 
 import { api } from "../../../../convex/_generated/api";
-import { Id } from "../../../../convex/_generated/dataModel";
+import type { Id } from "../../../../convex/_generated/dataModel";
 import type { Activity, StreamingStatus } from "../hooks/use-streaming";
+import { THERAPY_SUGGESTIONS } from "../lib/constants";
 import type { TherapyBlueprint } from "../lib/schemas";
 import { BlueprintCard } from "./blueprint-card";
 import { FileBadges } from "./file-badges";
-import { SuggestionChips } from "./suggestion-chips";
-
-const THERAPY_SUGGESTIONS = [
-  "Token board with star rewards for completing morning tasks",
-  "Visual daily schedule with drag-to-reorder steps",
-  "Communication picture board with text-to-speech",
-  "Feelings check-in tool with emoji faces and journaling",
-];
+import { SuggestionChips } from "@/shared/components/suggestion-chips";
 
 function UserMessage({ content }: { content: string }) {
   return (

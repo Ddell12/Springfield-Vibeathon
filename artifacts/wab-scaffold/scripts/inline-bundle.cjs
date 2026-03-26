@@ -36,6 +36,10 @@ html = html.replace(
   }
 );
 
+// Inject Content-Security-Policy to harden iframe even with allow-same-origin
+const cspTag = '<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; script-src \'unsafe-inline\'; style-src \'unsafe-inline\'; img-src data: https:; font-src data: https://fonts.gstatic.com; connect-src \'none\'; frame-src \'none\'; object-src \'none\'; base-uri \'none\'; form-action \'none\'">';
+html = html.replace('<head>', '<head>\n' + cspTag);
+
 fs.writeFileSync(outPath, html, "utf-8");
 const size = (fs.statSync(outPath).size / 1024).toFixed(1);
 process.stderr.write(`Bundled: ${outPath} (${size} KB)\n`);

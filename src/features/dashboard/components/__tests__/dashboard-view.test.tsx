@@ -93,7 +93,7 @@ vi.mock("../../../../convex/_generated/api", () => ({
   },
 }));
 
-vi.mock("@/features/builder/components/delete-confirmation-dialog", () => ({
+vi.mock("@/shared/components/delete-confirmation-dialog", () => ({
   DeleteConfirmationDialog: () => null,
 }));
 

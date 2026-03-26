@@ -19,19 +19,13 @@ import {
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 import { useStreaming } from "../hooks/use-streaming";
+import { THERAPY_SUGGESTIONS } from "../lib/constants";
 import { BuilderToolbar, type DeviceSize, type ViewMode } from "./builder-toolbar";
 import { ChatPanel } from "./chat-panel";
 import { CodePanel } from "./code-panel";
 import { PreviewPanel } from "./preview-panel";
 import { PublishSuccessModal } from "./publish-success-modal";
-import { SuggestionChips } from "./suggestion-chips";
-
-const THERAPY_SUGGESTIONS = [
-  "Token board with star rewards for completing morning tasks",
-  "Visual daily schedule with drag-to-reorder steps",
-  "Communication picture board with text-to-speech",
-  "Feelings check-in tool with emoji faces and journaling",
-];
+import { SuggestionChips } from "@/shared/components/suggestion-chips";
 
 export function BuilderPage() {
   const searchParams = useSearchParams();
@@ -74,7 +68,7 @@ export function BuilderPage() {
     sessionIdFromUrl ? { sessionId: sessionIdFromUrl as Id<"sessions"> } : "skip"
   );
 
-  const mostRecent = useQuery(api.sessions.getMostRecent);
+  const mostRecent = useQuery(api.sessions.getMostRecent, sessionIdFromUrl ? "skip" : {});
   const autoResumed = useRef(false);
 
   // Resume an existing session when navigating from My Apps

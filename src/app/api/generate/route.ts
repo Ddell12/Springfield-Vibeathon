@@ -1,7 +1,8 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { exec } from "child_process";
 import { ConvexHttpClient } from "convex/browser";
-import { cpSync, existsSync, mkdtempSync, readFileSync, rmSync } from "fs";
+import { cp } from "fs/promises";
+import { existsSync, mkdtempSync, readFileSync, rmSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
 import { promisify } from "util";
@@ -64,6 +65,13 @@ export async function POST(request: Request): Promise<Response> {
     return jsonErrorResponse(parsed.error.issues[0]?.message ?? "Invalid request", 400);
   }
 
+  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "anonymous";
+  try {
+    await convex.mutation(api.rate_limit_check.checkGenerateLimit, { key: ip });
+  } catch (e) {
+    return jsonErrorResponse(e instanceof Error ? e.message : "Rate limited", 429);
+  }
+
   const query = parsed.data.query ?? parsed.data.prompt!;
   const mode = parsed.data.mode;
   const providedSessionId = parsed.data.sessionId as Id<"sessions"> | undefined;
@@ -115,7 +123,7 @@ export async function POST(request: Request): Promise<Response> {
         if (!isFlashcardMode) {
           // Copy WAB scaffold to temp dir for this build
           buildDir = mkdtempSync(join(tmpdir(), "bridges-build-"));
-          cpSync(join(process.cwd(), "artifacts/wab-scaffold"), buildDir, { recursive: true });
+          await cp(join(process.cwd(), "artifacts/wab-scaffold"), buildDir, { recursive: true });
         }
 
         const tools = isFlashcardMode
@@ -149,7 +157,7 @@ export async function POST(request: Request): Promise<Response> {
           // Design review pass — re-check generated files for visual polish
           if (collectedFiles.size > 0) {
             send("activity", { type: "thinking", message: "Polishing design..." });
-            const reviewTools = [tools[1]]; // write_file only
+            const reviewTools = tools.filter(t => t.name === "write_file");
             const reviewRunner = anthropic.beta.messages.toolRunner({
               model: "claude-sonnet-4-6",
               max_tokens: 8192,
@@ -251,8 +259,10 @@ export async function POST(request: Request): Promise<Response> {
           );
         }
 
-        postLlmPromises.push(convex.mutation(api.sessions.setLive, { sessionId }));
-        await Promise.all(postLlmPromises);
+        // Persist messages — failures don't prevent going live
+        await Promise.allSettled(postLlmPromises);
+        // Always transition to live
+        await convex.mutation(api.sessions.setLive, { sessionId });
 
         send("activity", { type: "complete", message: "App is ready!" });
         send("status", { status: "live" });

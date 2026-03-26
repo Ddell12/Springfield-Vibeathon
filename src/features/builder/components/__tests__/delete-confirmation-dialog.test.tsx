@@ -1,6 +1,6 @@
 import { fireEvent,render } from "@testing-library/react";
 
-import { DeleteConfirmationDialog } from "../delete-confirmation-dialog";
+import { DeleteConfirmationDialog } from "@/shared/components/delete-confirmation-dialog";
 
 vi.mock("@/shared/components/material-icon", () => ({
   MaterialIcon: ({ icon }: { icon: string }) => (

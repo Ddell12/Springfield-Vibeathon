@@ -15,14 +15,12 @@ const VOICE_MAP: Record<string, string> = {
 export const generateSpeech = action({
   args: {
     text: v.string(),
-    voiceId: v.optional(v.string()),
-    voice: v.optional(v.string()),
+    voice: v.optional(v.string()), // friendly name only — raw ElevenLabs IDs not accepted
   },
   handler: async (ctx, args): Promise<{ audioUrl: string }> => {
-    // Resolve voice: friendly name -> ID, or use raw voiceId, or default
+    // Resolve voice: friendly name -> ID, or default. voiceId arg removed to prevent raw ID passthrough.
     const resolvedVoiceId =
       (args.voice ? VOICE_MAP[args.voice] : undefined) ??
-      args.voiceId ??
       VOICE_MAP["warm-female"];
 
     // Check cache first
