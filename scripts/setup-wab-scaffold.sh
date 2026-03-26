@@ -38,5 +38,17 @@ PARCELRC
 # Install motion (framer-motion) for therapy animations
 pnpm add motion
 
+# Restore git-tracked therapy components, hooks, and design tokens
+# (init-artifact.sh creates a fresh project, overwriting committed files)
+cd "$PROJECT_ROOT"
+git checkout HEAD -- \
+  artifacts/wab-scaffold/src/components/ \
+  artifacts/wab-scaffold/src/hooks/useLocalStorage.ts \
+  artifacts/wab-scaffold/src/hooks/useTTS.ts \
+  artifacts/wab-scaffold/src/hooks/useAnimation.ts \
+  artifacts/wab-scaffold/src/hooks/useDataCollection.ts \
+  artifacts/wab-scaffold/src/index.css \
+  artifacts/wab-scaffold/index.html \
+  2>/dev/null || echo "⚠️  No therapy components committed yet — run Task 2"
+
 echo "✅ WAB scaffold ready at artifacts/wab-scaffold/"
-echo "   Next: run Task 2 to add therapy components"
