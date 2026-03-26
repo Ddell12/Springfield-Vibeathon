@@ -21,16 +21,17 @@ describe("TemplatesTab", () => {
     expect(links).toHaveLength(6);
   });
 
-  it("each card links to /builder?template={id}", () => {
+  it("each card links to /builder?prompt=... with template description", () => {
     render(<TemplatesTab />);
     const links = screen.getAllByRole("link");
-    const hrefs = links.map((l) => l.getAttribute("href"));
-    expect(hrefs).toContain("/builder?template=token-board");
-    expect(hrefs).toContain("/builder?template=visual-schedule");
-    expect(hrefs).toContain("/builder?template=communication-board");
-    expect(hrefs).toContain("/builder?template=social-story");
-    expect(hrefs).toContain("/builder?template=feelings-check-in");
-    expect(hrefs).toContain("/builder?template=first-then-board");
+    const hrefs = links.map((l) => l.getAttribute("href") ?? "");
+    // Each template should generate a ?prompt= URL containing the template title
+    expect(hrefs.some((h) => h.includes("prompt=") && h.includes("Token%20Board"))).toBe(true);
+    expect(hrefs.some((h) => h.includes("prompt=") && h.includes("Visual%20Schedule"))).toBe(true);
+    expect(hrefs.some((h) => h.includes("prompt=") && h.includes("Communication%20Board"))).toBe(true);
+    expect(hrefs.some((h) => h.includes("prompt=") && h.includes("Social%20Story"))).toBe(true);
+    expect(hrefs.some((h) => h.includes("prompt=") && h.includes("Feelings%20Check-In"))).toBe(true);
+    expect(hrefs.some((h) => h.includes("prompt=") && h.includes("First-Then%20Board"))).toBe(true);
   });
 
   it("shows all template titles", () => {

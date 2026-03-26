@@ -2,12 +2,9 @@ import { render, screen } from "@testing-library/react";
 
 import { ProjectCard, type ProjectData } from "../project-card";
 
-vi.mock("next/link", () => ({
-  default: ({ href, children, ...props }: any) => (
-    <a href={href} {...props}>
-      {children}
-    </a>
-  ),
+const mockPush = vi.fn();
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: mockPush }),
 }));
 
 vi.mock("next/image", () => ({
@@ -28,15 +25,20 @@ const baseProject: ProjectData = {
 };
 
 describe("ProjectCard", () => {
+  beforeEach(() => {
+    mockPush.mockClear();
+  });
+
   it("renders the project title", () => {
     render(<ProjectCard project={baseProject} />);
     expect(screen.getByText("Token Board App")).toBeInTheDocument();
   });
 
-  it("links to /builder?sessionId={id}", () => {
+  it("navigates to /builder?sessionId={id} on click", () => {
     render(<ProjectCard project={baseProject} />);
-    const link = screen.getByRole("link");
-    expect(link).toHaveAttribute("href", "/builder?sessionId=session123");
+    const card = screen.getByRole("link");
+    card.click();
+    expect(mockPush).toHaveBeenCalledWith("/builder?sessionId=session123");
   });
 
   it("shows first letter as fallback when no thumbnail", () => {
