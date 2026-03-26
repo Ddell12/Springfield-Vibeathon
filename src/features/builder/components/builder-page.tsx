@@ -19,25 +19,12 @@ import {
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 import { useStreaming } from "../hooks/use-streaming";
-import { useWebContainer } from "../hooks/use-webcontainer";
 import { BuilderToolbar, type DeviceSize, type ViewMode } from "./builder-toolbar";
 import { ChatPanel } from "./chat-panel";
 import { CodePanel } from "./code-panel";
 import { PreviewPanel } from "./preview-panel";
 import { PublishSuccessModal } from "./publish-success-modal";
 import { SuggestionChips } from "./suggestion-chips";
-
-const PLACEHOLDER_APP = `export default function App() {
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-teal-50 to-cyan-50">
-      <div className="text-center">
-        <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-4 border-teal-200 border-t-teal-600" />
-        <p className="text-lg font-medium text-teal-800">Building your app...</p>
-        <p className="mt-1 text-sm text-teal-600/70">This usually takes 10-20 seconds</p>
-      </div>
-    </div>
-  );
-}`;
 
 const THERAPY_SUGGESTIONS = [
   "Token board with star rewards for completing morning tasks",
@@ -64,8 +51,6 @@ export function BuilderPage() {
   const [isEditingName, setIsEditingName] = useState(false);
   const [promptInput, setPromptInput] = useState("");
 
-  const { status: wcStatus, previewUrl, writeFile, error: wcError } = useWebContainer();
-
   const {
     status,
     files,
@@ -76,9 +61,8 @@ export function BuilderPage() {
     sessionId,
     streamingText,
     activities,
-  } = useStreaming({
-    onFileComplete: writeFile,
-  });
+    bundleHtml,
+  } = useStreaming();
 
   // Session resume: fetch session + files when ?sessionId is in URL
   const resumeSessionData = useQuery(
@@ -92,7 +76,6 @@ export function BuilderPage() {
 
   const mostRecent = useQuery(api.sessions.getMostRecent);
   const autoResumed = useRef(false);
-  const pendingPlaceholderRef = useRef(false);
 
   // Resume an existing session when navigating from My Apps
   const sessionResumed = useRef(false);
@@ -101,18 +84,10 @@ export function BuilderPage() {
       sessionIdFromUrl &&
       resumeSessionData &&
       resumeFiles &&
-      wcStatus === "ready" &&
       status === "idle" &&
       !sessionResumed.current
     ) {
       sessionResumed.current = true;
-
-      // Write all files to WebContainer
-      for (const file of resumeFiles) {
-        writeFile(file.path, file.contents).catch((err: unknown) => {
-          console.error(`[resume] Failed to write ${file.path}:`, err);
-        });
-      }
 
       // Restore streaming hook state
       resumeSession({
@@ -121,7 +96,7 @@ export function BuilderPage() {
         blueprint: resumeSessionData.blueprint ?? null,
       });
     }
-  }, [sessionIdFromUrl, resumeSessionData, resumeFiles, wcStatus, status, writeFile, resumeSession]);
+  }, [sessionIdFromUrl, resumeSessionData, resumeFiles, status, resumeSession]);
 
   // Auto-submit prompt from URL query param (e.g., from template chips)
   const promptSubmitted = useRef(false);
@@ -129,14 +104,6 @@ export function BuilderPage() {
 
   const handleGenerate = (prompt: string) => {
     lastPromptRef.current = prompt;
-
-    // Write placeholder immediately so preview shows something within 1-2s
-    if (wcStatus === "ready") {
-      writeFile("src/App.tsx", PLACEHOLDER_APP).catch(() => {});
-    } else {
-      pendingPlaceholderRef.current = true;
-    }
-
     generate(prompt);
   };
 
@@ -145,14 +112,6 @@ export function BuilderPage() {
       generate(lastPromptRef.current);
     }
   };
-
-  // Drain queued placeholder write when WebContainer becomes ready after prompt submit
-  useEffect(() => {
-    if (wcStatus === "ready" && pendingPlaceholderRef.current) {
-      pendingPlaceholderRef.current = false;
-      writeFile("src/App.tsx", PLACEHOLDER_APP).catch(() => {});
-    }
-  }, [wcStatus, writeFile]);
 
   const handleNameEditEnd = async (name: string) => {
     setIsEditingName(false);
@@ -181,13 +140,12 @@ export function BuilderPage() {
       !sessionIdFromUrl &&
       mostRecent &&
       status === "idle" &&
-      wcStatus === "ready" &&
       !autoResumed.current
     ) {
       autoResumed.current = true;
       router.replace(`?sessionId=${mostRecent._id}`);
     }
-  }, [sessionIdFromUrl, mostRecent, status, wcStatus, router]);
+  }, [sessionIdFromUrl, mostRecent, status, router]);
 
   // Update URL when sessionId is set from streaming, and persist to localStorage
   useEffect(() => {
@@ -289,7 +247,6 @@ export function BuilderPage() {
             deviceSize={deviceSize}
             onDeviceSizeChange={setDeviceSize}
             status={status}
-            wcStatus={wcStatus}
             isPublishing={isPublishing}
             projectName={appName}
             isEditingName={isEditingName}
@@ -322,10 +279,9 @@ export function BuilderPage() {
                 ) : (
                   <div className="h-full overflow-hidden rounded-2xl bg-surface-container-lowest">
                     <PreviewPanel
-                      previewUrl={previewUrl}
+                      bundleHtml={bundleHtml}
                       state={status}
-                      wcStatus={wcStatus}
-                      error={error ?? wcError ?? undefined}
+                      error={error ?? undefined}
                       deviceSize="mobile"
                     />
                   </div>
@@ -366,10 +322,9 @@ export function BuilderPage() {
                   <ResizablePanel defaultSize={70} minSize={20}>
                     <div className="h-full overflow-hidden rounded-2xl bg-surface-container-lowest">
                       <PreviewPanel
-                        previewUrl={previewUrl}
+                        bundleHtml={bundleHtml}
                         state={status}
-                        wcStatus={wcStatus}
-                        error={error ?? wcError ?? undefined}
+                        error={error ?? undefined}
                         deviceSize={deviceSize}
                       />
                     </div>

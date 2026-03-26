@@ -38,16 +38,7 @@ vi.mock("../../hooks/use-streaming", () => ({
     sessionId: null,
     streamingText: "",
     activities: [],
-  }),
-}));
-
-// Mock the WebContainer hook
-vi.mock("../../hooks/use-webcontainer", () => ({
-  useWebContainer: vi.fn().mockReturnValue({
-    status: "booting",
-    previewUrl: null,
-    error: null,
-    writeFile: vi.fn(),
+    bundleHtml: null,
   }),
 }));
 
@@ -81,13 +72,13 @@ describe("BuilderPage — three-panel layout", () => {
     expect(timeline).toBeNull();
   });
 
-  it("shows preview panel area with loading state when idle + booting", () => {
+  it("shows preview panel area when a session is active", () => {
     // When sessionId is present, the split-panel layout is shown
     mockGet.mockReturnValueOnce("active_session_123");
     const { container } = render(<BuilderPage />);
-    // Preview panel shows a skeleton pulse when WebContainer is booting
-    const pulse = container.querySelector(".animate-pulse");
-    expect(pulse).toBeTruthy();
+    // Preview panel shows a monitor icon placeholder when no bundleHtml
+    const panelGroup = container.querySelector("[data-panel-group]");
+    expect(panelGroup).toBeTruthy();
     mockGet.mockReturnValue(null);
   });
 
@@ -121,6 +112,7 @@ describe("BuilderPage — three-panel layout", () => {
       sessionId: "session_123",
       streamingText: "",
       activities: [],
+      bundleHtml: null,
     });
     render(<BuilderPage />);
     // Default viewMode is "preview" — at least chat panel should render
@@ -149,10 +141,11 @@ describe("BuilderPage — three-panel layout", () => {
       sessionId: null,
       streamingText: "",
       activities: [],
+      bundleHtml: null,
     });
 
     render(<BuilderPage />);
-    expect(screen.getByText(/Generation failed/i)).toBeTruthy();
+    expect(screen.getAllByText(/Generation failed/i).length).toBeGreaterThan(0);
   });
 
   it("shows project name from blueprint title", async () => {
@@ -168,6 +161,7 @@ describe("BuilderPage — three-panel layout", () => {
       sessionId: "session_123",
       streamingText: "",
       activities: [],
+      bundleHtml: null,
     });
 
     render(<BuilderPage />);
@@ -187,6 +181,7 @@ describe("BuilderPage — three-panel layout", () => {
       sessionId: "session_123",
       streamingText: "",
       activities: [],
+      bundleHtml: null,
     });
 
     // Render with default viewMode (preview), test still renders
@@ -203,17 +198,6 @@ describe("BuilderPage — three-panel layout", () => {
 
     // Mock useQuery to return session data and files
     const { useQuery } = await import("convex/react");
-    vi.mocked(useQuery).mockImplementation((_queryFn: unknown, args: unknown) => {
-      if (args === "skip") return null;
-      // Distinguish by args shape — files query returns an array
-      const argsObj = args as Record<string, unknown>;
-      if (argsObj?.sessionId === "test_session_123") {
-        // Both queries get the same args — return based on call context
-        // First call is sessions.get, second is generated_files.list
-        return null; // Will be overridden below
-      }
-      return null;
-    });
 
     // More specific mocking: sessions.get returns a session, generated_files.list returns files
     let queryCallCount = 0;
@@ -225,15 +209,6 @@ describe("BuilderPage — three-panel layout", () => {
         return { _id: "test_session_123", title: "Test App", state: "live", query: "test", blueprint: null };
       }
       return [{ path: "src/App.tsx", contents: "<div>Hello</div>", _id: "f1", sessionId: "test_session_123" }];
-    });
-
-    // Mock WebContainer as ready
-    const { useWebContainer } = await import("../../hooks/use-webcontainer");
-    vi.mocked(useWebContainer).mockReturnValue({
-      status: "ready",
-      previewUrl: "http://localhost:3000",
-      error: null,
-      writeFile: vi.fn().mockResolvedValue(undefined),
     });
 
     // Re-mock useStreaming to provide resumeSession
@@ -249,6 +224,7 @@ describe("BuilderPage — three-panel layout", () => {
       sessionId: null,
       streamingText: "",
       activities: [],
+      bundleHtml: null,
     });
 
     render(<BuilderPage />);
@@ -264,5 +240,30 @@ describe("BuilderPage — three-panel layout", () => {
     // Reset mocks
     mockGet.mockReturnValue(null);
     vi.mocked(useQuery).mockReturnValue(null);
+  });
+
+  it("passes bundleHtml from streaming hook to PreviewPanel", async () => {
+    const { useStreaming } = await import("../../hooks/use-streaming");
+    vi.mocked(useStreaming).mockReturnValueOnce({
+      status: "live",
+      files: [],
+      generate: vi.fn(),
+      resumeSession: mockResumeSession,
+      blueprint: null,
+      appName: null,
+      error: null,
+      sessionId: "session_123",
+      streamingText: "",
+      activities: [],
+      bundleHtml: "<html><body><h1>Hello</h1></body></html>",
+    });
+
+    mockGet.mockReturnValueOnce("session_123");
+    render(<BuilderPage />);
+
+    // When bundleHtml is present, the preview panel renders an iframe
+    const iframe = document.querySelector("iframe[title='App preview']");
+    expect(iframe).toBeTruthy();
+    mockGet.mockReturnValue(null);
   });
 });
