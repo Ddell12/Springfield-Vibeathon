@@ -3,28 +3,22 @@ import { isNavActive, NAV_ITEMS } from "../navigation";
 describe("NAV_ITEMS", () => {
   it("exports an array with 5 items", () => {
     expect(NAV_ITEMS).toHaveLength(5);
-    expect(NAV_ITEMS[0].href).toBe("/dashboard");
+    expect(NAV_ITEMS[0].href).toBe("/");
     expect(NAV_ITEMS[1].href).toBe("/builder");
     expect(NAV_ITEMS[2].href).toBe("/flashcards");
+    expect(NAV_ITEMS[3].href).toBe("/templates");
+    expect(NAV_ITEMS[4].href).toBe("/my-tools");
   });
 });
 
 describe("isNavActive", () => {
-  describe("dashboard home branch (/dashboard)", () => {
-    it("returns true when on /dashboard with no tab", () => {
-      expect(isNavActive("/dashboard", "/dashboard", null)).toBe(true);
+  describe("home branch (/)", () => {
+    it("returns true when on /", () => {
+      expect(isNavActive("/", "/", null)).toBe(true);
     });
 
-    it("returns true when on /dashboard with tab=recent", () => {
-      expect(isNavActive("/dashboard", "/dashboard", "recent")).toBe(true);
-    });
-
-    it("returns false when on /dashboard with a non-recent tab", () => {
-      expect(isNavActive("/dashboard", "/dashboard", "templates")).toBe(false);
-    });
-
-    it("returns false when pathname is not /dashboard", () => {
-      expect(isNavActive("/dashboard", "/builder", null)).toBe(false);
+    it("returns false when pathname is not /", () => {
+      expect(isNavActive("/", "/builder", null)).toBe(false);
     });
   });
 
@@ -38,25 +32,7 @@ describe("isNavActive", () => {
     });
 
     it("returns false when pathname does not start with /builder", () => {
-      expect(isNavActive("/builder", "/dashboard", null)).toBe(false);
-    });
-  });
-
-  describe("tab-based dashboard routes (/dashboard?tab=...)", () => {
-    it("returns true when tab matches the href tab", () => {
-      expect(isNavActive("/dashboard?tab=templates", "/dashboard", "templates")).toBe(true);
-    });
-
-    it("returns false when tab does not match", () => {
-      expect(isNavActive("/dashboard?tab=templates", "/dashboard", "my-projects")).toBe(false);
-    });
-
-    it("returns false when pathname is not /dashboard", () => {
-      expect(isNavActive("/dashboard?tab=templates", "/builder", "templates")).toBe(false);
-    });
-
-    it("handles my-projects tab", () => {
-      expect(isNavActive("/dashboard?tab=my-projects", "/dashboard", "my-projects")).toBe(true);
+      expect(isNavActive("/builder", "/", null)).toBe(false);
     });
   });
 
@@ -67,6 +43,24 @@ describe("isNavActive", () => {
 
     it("returns false when pathname is not /flashcards", () => {
       expect(isNavActive("/flashcards", "/builder", null)).toBe(false);
+    });
+  });
+
+  describe("standalone routes (/templates, /my-tools)", () => {
+    it("returns true for exact /templates match", () => {
+      expect(isNavActive("/templates", "/templates", null)).toBe(true);
+    });
+
+    it("returns false for /templates when on /builder", () => {
+      expect(isNavActive("/templates", "/builder", null)).toBe(false);
+    });
+
+    it("returns true for exact /my-tools match", () => {
+      expect(isNavActive("/my-tools", "/my-tools", null)).toBe(true);
+    });
+
+    it("returns false for /my-tools when on /templates", () => {
+      expect(isNavActive("/my-tools", "/templates", null)).toBe(false);
     });
   });
 

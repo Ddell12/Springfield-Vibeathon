@@ -215,7 +215,7 @@ export function DashboardView() {
                 title="No apps yet"
                 description="Describe what your child needs, or browse templates to get started."
                 primaryAction={{ label: "Start Building", href: "/builder" }}
-                secondaryAction={{ label: "Browse Templates", href: "/dashboard?tab=templates" }}
+                secondaryAction={{ label: "Browse Templates", href: "/templates" }}
               />
             ) : (
               <div className="grid grid-cols-1 gap-8 pb-20 md:grid-cols-2 lg:grid-cols-3">
@@ -234,7 +234,7 @@ export function DashboardView() {
               variant="no-shared"
               title="Nothing shared with you yet"
               description="When someone shares an app with you, it will appear here."
-              secondaryAction={{ label: "Explore Templates", href: "/dashboard?tab=templates" }}
+              secondaryAction={{ label: "Explore Templates", href: "/templates" }}
             />
           </TabsContent>
 

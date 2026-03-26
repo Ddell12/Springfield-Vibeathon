@@ -48,7 +48,7 @@ export function SettingsPage() {
       {/* Mobile header with back + section picker */}
       <div className="flex items-center gap-2 bg-surface-container-low px-4 py-3 md:hidden">
         <Link
-          href="/dashboard"
+          href="/"
           className="flex h-8 w-8 items-center justify-center rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors"
           aria-label="Back to dashboard"
         >

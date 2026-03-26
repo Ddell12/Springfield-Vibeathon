@@ -11,7 +11,7 @@ vi.mock("next/link", () => ({
 }));
 
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/dashboard",
+  usePathname: () => "/",
   useSearchParams: () => ({ get: () => null }),
 }));
 
@@ -27,10 +27,10 @@ vi.mock("@/core/utils", () => ({
 
 vi.mock("@/shared/lib/navigation", () => ({
   NAV_ITEMS: [
-    { icon: "home", label: "Home", href: "/dashboard" },
+    { icon: "home", label: "Home", href: "/" },
     { icon: "auto_awesome", label: "Builder", href: "/builder" },
   ],
-  isNavActive: vi.fn((href: string) => href === "/dashboard"),
+  isNavActive: vi.fn((href: string) => href === "/"),
 }));
 
 describe("DashboardSidebar", () => {
@@ -39,14 +39,14 @@ describe("DashboardSidebar", () => {
     // 2 nav item links + 1 logo link = 3 total
     const links = screen.getAllByRole("link");
     const hrefs = links.map((l) => l.getAttribute("href"));
-    expect(hrefs).toContain("/dashboard");
+    expect(hrefs).toContain("/");
     expect(hrefs).toContain("/builder");
   });
 
-  it("logo 'B' links to /dashboard", () => {
+  it("logo 'B' links to /", () => {
     render(<DashboardSidebar />);
     const logoLink = screen.getByText("B").closest("a");
-    expect(logoLink).toHaveAttribute("href", "/dashboard");
+    expect(logoLink).toHaveAttribute("href", "/");
   });
 
   it("shows avatar 'D'", () => {

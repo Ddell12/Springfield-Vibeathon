@@ -82,10 +82,10 @@ describe("BuilderToolbar", () => {
     expect(onNameEditEnd).toHaveBeenCalledWith("My Cool App");
   });
 
-  it("back to dashboard link has href='/dashboard'", () => {
+  it("back to dashboard link has href='/'", () => {
     render(<BuilderToolbar {...baseProps} />);
     const link = screen.getByRole("link", { name: "Back to dashboard" });
-    expect(link).toHaveAttribute("href", "/dashboard");
+    expect(link).toHaveAttribute("href", "/");
   });
 
   it("Share button calls onShare", () => {

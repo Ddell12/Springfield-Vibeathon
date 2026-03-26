@@ -61,10 +61,10 @@ describe("SettingsPage", () => {
     expect(screen.getByTestId("settings-sidebar")).toBeInTheDocument();
   });
 
-  it("renders back link to /dashboard", () => {
+  it("renders back link to /", () => {
     render(<SettingsPage />);
     const backLink = screen.getByRole("link", { name: /back to dashboard/i });
-    expect(backLink).toHaveAttribute("href", "/dashboard");
+    expect(backLink).toHaveAttribute("href", "/");
   });
 
   it("mobile dropdown button shows current section label (Profile)", () => {

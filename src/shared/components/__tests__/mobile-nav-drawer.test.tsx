@@ -24,7 +24,7 @@ vi.mock("@/shared/components/ui/sheet", () => ({
   SheetDescription: ({ children }: any) => <p>{children}</p>,
 }));
 
-const mockPathname = vi.fn().mockReturnValue("/dashboard");
+const mockPathname = vi.fn().mockReturnValue("/");
 const mockSearchParams = { get: vi.fn().mockReturnValue(null) };
 vi.mock("next/navigation", () => ({
   usePathname: () => mockPathname(),
@@ -33,7 +33,7 @@ vi.mock("next/navigation", () => ({
 
 vi.mock("@/shared/lib/navigation", () => ({
   NAV_ITEMS: [
-    { icon: "home", label: "Home", href: "/dashboard" },
+    { icon: "home", label: "Home", href: "/" },
     { icon: "auto_awesome", label: "Builder", href: "/builder" },
   ],
   isNavActive: vi.fn().mockReturnValue(false),
