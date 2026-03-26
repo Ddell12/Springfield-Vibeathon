@@ -76,6 +76,8 @@ Run: `npm install -D @webcontainer/snapshot`
 
 - [ ] **Step 2: Create the snapshot generation script**
 
+First, create the directory: `mkdir -p scripts`
+
 Create `scripts/generate-wc-snapshot.ts`:
 
 ```typescript
@@ -576,14 +578,14 @@ useEffect(() => {
 
 Note: `resumeSessionData === null` (not `undefined`) means the query loaded and returned nothing. `undefined` means still loading.
 
-- [ ] **Step 3: Verify manually**
+- [ ] **Step 4: Verify manually**
 
 1. Go to `/builder`, submit a prompt, wait for generation to complete.
 2. Navigate to another page (e.g., `/`).
 3. Navigate back to `/builder` — should auto-resume the previous session with the app visible in the preview.
 4. Hard refresh the page — should also auto-resume.
 
-- [ ] **Step 4: Commit**
+- [ ] **Step 5: Commit**
 
 ```bash
 git add src/features/builder/components/builder-page.tsx
@@ -851,11 +853,13 @@ git commit -m "feat: enrich template design system — fonts, glass cards, rewar
 
 - [ ] **Step 1: Update the "Getting ready" state to match Lovable**
 
-In `preview-panel.tsx`, find lines 50-54 (the `installing || isGenerating` branch). Replace the entire ternary branch from `) : wcStatus === "installing"` through to the closing `</div>` and `)` of that branch:
+**Note:** Task 2 Step 6 already changed `"installing"` to `"booting"` on this line. This step replaces the inner content of that branch with a richer Lovable-style spinner.
+
+In `preview-panel.tsx`, find the loading branch (previously changed in Task 2):
 
 Find:
 ```tsx
-        ) : wcStatus === "installing" || isGenerating ? (
+        ) : wcStatus === "booting" || isGenerating ? (
           <div role="status" className="flex flex-col items-center gap-3 text-center">
             <MaterialIcon icon="progress_activity" size="md" className="animate-spin text-primary" />
             <p className="text-sm text-on-surface-variant">Setting up your preview&#8230;</p>
