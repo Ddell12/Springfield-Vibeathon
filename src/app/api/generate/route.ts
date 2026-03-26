@@ -65,7 +65,9 @@ export async function POST(request: Request): Promise<Response> {
     return jsonErrorResponse(parsed.error.issues[0]?.message ?? "Invalid request", 400);
   }
 
-  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "anonymous";
+  const ip = request.headers.get("x-real-ip")
+      ?? request.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
+      ?? "anonymous";
   try {
     await convex.mutation(api.rate_limit_check.checkGenerateLimit, { key: ip });
   } catch (e) {
@@ -95,6 +97,7 @@ export async function POST(request: Request): Promise<Response> {
       };
 
       let buildDir: string | undefined;
+      let buildSucceeded = false;
 
       try {
         send("session", { sessionId });
@@ -195,15 +198,21 @@ export async function POST(request: Request): Promise<Response> {
               const bundleHtml = readFileSync(bundlePath, "utf-8");
               if (bundleHtml.length < 100) throw new Error("bundle.html is suspiciously small");
               send("bundle", { html: bundleHtml });
-              // Persist bundle for session resume — fire-and-forget to avoid blocking SSE
-              convex.mutation(api.generated_files.upsertAutoVersion, {
-                sessionId,
-                path: "_bundle.html",
-                contents: bundleHtml,
-              }).catch((err) => console.error("[generate] Failed to persist bundle:", err));
+              buildSucceeded = true;
+              // Persist bundle for session resume
+              try {
+                await convex.mutation(api.generated_files.upsertAutoVersion, {
+                  sessionId,
+                  path: "_bundle.html",
+                  contents: bundleHtml,
+                });
+              } catch (err) {
+                console.error("[generate] Failed to persist bundle:", err);
+                send("activity", { type: "thinking", message: "Warning: app may not load on resume" });
+              }
             } catch (buildError) {
               console.error("[generate] Parcel build failed:", buildError);
-              send("activity", { type: "thinking", message: "Build failed — showing raw files instead" });
+              send("activity", { type: "complete", message: "Build failed — check the Code panel for your files" });
               // Don't throw — still persist files and send done event
             }
           }
@@ -266,7 +275,7 @@ export async function POST(request: Request): Promise<Response> {
 
         send("activity", { type: "complete", message: "App is ready!" });
         send("status", { status: "live" });
-        send("done", { sessionId, files: fileArray });
+        send("done", { sessionId, files: fileArray, buildFailed: !buildSucceeded && collectedFiles.size > 0 });
       } catch (error) {
         console.error("[generate] Error:", error instanceof Error ? error.stack : error);
 
