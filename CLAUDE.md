@@ -13,7 +13,7 @@ Bridges is an AI-powered therapy app builder where ABA therapists, speech therap
 - **Image Generation:** Google Gemini (`gemini-3-pro-image-preview`) with prompt caching
 - **TTS:** ElevenLabs (`eleven_flash_v2_5`) with child-friendly voices
 - **STT:** ElevenLabs Scribe v2
-- **Preview:** WebContainer (in-browser Vite + React)
+- **Preview:** Server-side Parcel bundling → sandboxed iframe (WAB scaffold with Tailwind + 40+ shadcn components)
 - **Deploy:** Vercel (app) + Vercel Deploy API (published apps)
 
 ## Architecture
@@ -31,9 +31,11 @@ Bridges is an AI-powered therapy app builder where ABA therapists, speech therap
 Bridges generates complete React applications through a streaming SSE pipeline:
 
 ```
-User describes app → Claude streams React code with tool calls (images, TTS, STT)
-  → Live preview updates in real-time via WebContainer
-  → Generated app is persisted and publishable
+User describes app → Claude streams React code via SSE with tool calls (write_file, generate_image, generate_speech)
+  → Files written to server-side WAB scaffold (Vite + React + Tailwind + 40+ shadcn components)
+  → Parcel bundles into a single self-contained HTML file
+  → Bundle sent to browser, rendered in sandboxed iframe via blob URL
+  → Persisted to Convex, publishable to Vercel
 ```
 
 Key files:

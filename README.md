@@ -148,15 +148,17 @@ convex/
 
 ```
 User describes app
-  → Claude streams React code with tool calls (images, TTS, STT)
-  → Live preview updates in real-time via WebContainer
-  → Generated app is persisted and publishable
+  → Claude streams React code via SSE with tool calls (write_file, generate_image, generate_speech)
+  → Files written to a server-side scaffold (Vite + React + Tailwind + 40+ shadcn components)
+  → Parcel bundles everything into a single self-contained HTML file
+  → Bundle is sent to the browser and rendered in a sandboxed iframe
+  → Generated app is persisted to Convex and publishable to Vercel
 ```
 
 **Three-layer design:**
-1. **AI Layer** — Claude Sonnet generates therapy-aware React code with 110-entry RAG knowledge base
-2. **Runtime Layer** — WebContainer provides instant in-browser preview with hot module replacement
-3. **Data Layer** — Convex handles real-time state, chat persistence, and file storage
+1. **AI Layer** — Claude Sonnet generates therapy-aware React code with a 110-entry RAG knowledge base and a design review pass for visual polish
+2. **Build Layer** — Server-side Parcel bundling with a pre-configured scaffold containing Tailwind v3, 40+ shadcn/ui components, and therapy-specific utilities
+3. **Data Layer** — Convex handles real-time state, chat persistence, file storage, and image/TTS caching
 
 ## Built With AI
 
