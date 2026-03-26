@@ -74,8 +74,59 @@ describe("buildSystemPrompt — therapy-domain system prompt", () => {
 
   it("supports multi-file generation", () => {
     const prompt = buildSystemPrompt();
-    // New multi-file support should be documented
-    expect(prompt).toMatch(/multiple files|MULTIPLE/i);
-    expect(prompt).toMatch(/types\.ts|data\.ts|custom-components/);
+    // Multi-file support should be documented (structure guidance)
+    expect(prompt).toMatch(/multiple files|MULTIPLE|multi.file|src\/types\.ts|src\/data\.ts/i);
+  });
+
+  it("documents 4 tools including read_file and list_files", () => {
+    const prompt = buildSystemPrompt();
+    expect(prompt).toMatch(/write_file/);
+    expect(prompt).toMatch(/read_file/);
+    expect(prompt).toMatch(/list_files/);
+    expect(prompt).toMatch(/set_app_name/);
+  });
+
+  it("includes shadcn component reference from ./ui", () => {
+    const prompt = buildSystemPrompt();
+    expect(prompt).toMatch(/from "\.\/ui"/);
+  });
+
+  it("includes layout templates section", () => {
+    const prompt = buildSystemPrompt();
+    expect(prompt.toLowerCase()).toMatch(/layout template|layout pattern/);
+  });
+
+  it("includes spacing scale guidance", () => {
+    const prompt = buildSystemPrompt();
+    // Should reference the Tailwind spacing scale tokens used in therapy UI
+    expect(prompt).toMatch(/p-4|p-6|gap-4|gap-6/);
+  });
+
+  it("includes color budget rule", () => {
+    const prompt = buildSystemPrompt();
+    // Color budget = constrain palette to a small set of intentional colors
+    expect(prompt.toLowerCase()).toMatch(/color budget|color palette|2.3 colors|two.three colors/);
+  });
+
+  it("includes strengthened anti-patterns with INSTEAD", () => {
+    const prompt = buildSystemPrompt();
+    // Anti-patterns should include an INSTEAD alternative to guide the LLM
+    expect(prompt).toMatch(/INSTEAD/);
+  });
+
+  it("includes composition recipes", () => {
+    const prompt = buildSystemPrompt();
+    // Composition recipe = concrete pattern showing how to combine shadcn + therapy components
+    expect(prompt.toLowerCase()).toMatch(/composition recipe|recipe|combine/);
+  });
+
+  it("lists radix-ui as pre-installed", () => {
+    const prompt = buildSystemPrompt();
+    expect(prompt.toLowerCase()).toMatch(/radix/);
+  });
+
+  it("includes few-shot examples marked with <example tag", () => {
+    const prompt = buildSystemPrompt();
+    expect(prompt).toMatch(/<example/);
   });
 });

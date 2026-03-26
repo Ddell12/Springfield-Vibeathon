@@ -18,6 +18,7 @@ export const templateFiles: FileSystemTree = {
             clsx: "^2.1.1",
             "lucide-react": "^0.469.0",
             motion: "^12.0.0",
+            "radix-ui": "^1.4.3",
             react: "19.0.0",
             "react-dom": "19.0.0",
             "tailwind-merge": "^3.5.0",
@@ -81,7 +82,7 @@ export default defineConfig({
       "react/jsx-dev-runtime",
       "react-dom/client",
       "lucide-react",
-      "@radix-ui/react-slot",
+      "radix-ui",
       "class-variance-authority",
       "clsx",
       "tailwind-merge",
@@ -181,6 +182,51 @@ createRoot(document.getElementById("root")!).render(
   --radius-md: 12px;
   --radius-lg: 16px;
   --radius-xl: 24px;
+
+  /* shadcn semantic tokens */
+  --color-background: #fafafa;
+  --color-foreground: #1a1a2e;
+  --color-card: #ffffff;
+  --color-card-foreground: #1a1a2e;
+  --color-primary-foreground: #ffffff;
+  --color-secondary-foreground: #ffffff;
+  --color-muted: #f1f5f9;
+  --color-muted-foreground: #6b7280;
+  --color-accent-foreground: #ffffff;
+  --color-destructive: #dc2626;
+  --color-input: #e5e7eb;
+  --color-ring: #00595c;
+  --color-surface-container-high: #f0f0f0;
+  --color-surface-container-lowest: #ffffff;
+  --color-primary-container: #0d7377;
+  --radius: 0.75rem;
+}
+
+@layer base {
+  @keyframes animate-in {
+    from { opacity: 0; transform: translateY(4px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes animate-out {
+    from { opacity: 1; transform: translateY(0); }
+    to   { opacity: 0; transform: translateY(4px); }
+  }
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  @keyframes fade-out {
+    from { opacity: 1; }
+    to   { opacity: 0; }
+  }
+  @keyframes zoom-in {
+    from { transform: scale(0.95); }
+    to   { transform: scale(1); }
+  }
+  @keyframes zoom-out {
+    from { transform: scale(1); }
+    to   { transform: scale(0.95); }
+  }
 }
 
 /* === Base === */
@@ -506,6 +552,425 @@ import { twMerge } from "tailwind-merge";
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
+`,
+            },
+          },
+        },
+      },
+
+      ui: {
+        directory: {
+          "index.ts": {
+            file: {
+              contents: `export { Button, buttonVariants } from "./button";
+export { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter, CardAction } from "./card";
+export { Badge, badgeVariants } from "./badge";
+export { Input } from "./input";
+export { Tabs, TabsList, TabsTrigger, TabsContent, tabsListVariants } from "./tabs";
+export { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose, DialogPortal, DialogOverlay } from "./dialog";
+export { Separator } from "./separator";
+export { Label } from "./label";
+`,
+            },
+          },
+
+          "button.tsx": {
+            file: {
+              contents: `import { cva, type VariantProps } from "class-variance-authority";
+import { Slot } from "radix-ui";
+import * as React from "react";
+
+import { cn } from "../lib/utils";
+
+const buttonVariants = cva(
+  "inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-medium whitespace-nowrap transition-all outline-none focus-visible:ring-[3px] disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0",
+  {
+    variants: {
+      variant: {
+        default: "bg-[var(--color-primary)] text-white hover:opacity-90",
+        destructive: "bg-[var(--color-destructive)] text-white hover:opacity-90",
+        outline: "border-2 border-[var(--color-border)] bg-white hover:bg-[var(--color-primary-bg)] hover:text-[var(--color-primary)]",
+        secondary: "bg-[var(--color-muted)] text-[var(--color-text)] hover:opacity-80",
+        ghost: "hover:bg-[var(--color-primary-bg)] hover:text-[var(--color-primary)]",
+        link: "text-[var(--color-primary)] underline-offset-4 hover:underline",
+        gradient: "bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-container)] text-white shadow-sm hover:opacity-90 active:scale-[0.98] transition-all duration-300",
+      },
+      size: {
+        default: "h-9 px-4 py-2",
+        xs: "h-6 gap-1 rounded-md px-2 text-xs",
+        sm: "h-8 gap-1.5 rounded-md px-3",
+        lg: "h-10 rounded-md px-6",
+        icon: "size-9",
+        "icon-xs": "size-6 rounded-md",
+        "icon-sm": "size-8",
+        "icon-lg": "size-10",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+      size: "default",
+    },
+  }
+);
+
+function Button({
+  className,
+  variant = "default",
+  size = "default",
+  asChild = false,
+  ...props
+}: React.ComponentProps<"button"> &
+  VariantProps<typeof buttonVariants> & { asChild?: boolean }) {
+  const Comp = asChild ? Slot.Root : "button";
+  return (
+    <Comp
+      data-slot="button"
+      className={cn(buttonVariants({ variant, size, className }))}
+      {...props}
+    />
+  );
+}
+
+export { Button, buttonVariants };
+`,
+            },
+          },
+
+          "card.tsx": {
+            file: {
+              contents: `import * as React from "react";
+
+import { cn } from "../lib/utils";
+
+function Card({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="card"
+      className={cn("flex flex-col gap-6 rounded-2xl bg-[var(--color-card)] py-6 text-[var(--color-card-foreground)] shadow-sm", className)}
+      {...props}
+    />
+  );
+}
+
+function CardHeader({ className, ...props }: React.ComponentProps<"div">) {
+  return <div data-slot="card-header" className={cn("grid auto-rows-min gap-2 px-6", className)} {...props} />;
+}
+
+function CardTitle({ className, ...props }: React.ComponentProps<"div">) {
+  return <div data-slot="card-title" className={cn("leading-none font-semibold", className)} {...props} />;
+}
+
+function CardDescription({ className, ...props }: React.ComponentProps<"div">) {
+  return <div data-slot="card-description" className={cn("text-sm text-[var(--color-muted-foreground)]", className)} {...props} />;
+}
+
+function CardAction({ className, ...props }: React.ComponentProps<"div">) {
+  return <div data-slot="card-action" className={cn("col-start-2 row-span-2 row-start-1 self-start justify-self-end", className)} {...props} />;
+}
+
+function CardContent({ className, ...props }: React.ComponentProps<"div">) {
+  return <div data-slot="card-content" className={cn("px-6", className)} {...props} />;
+}
+
+function CardFooter({ className, ...props }: React.ComponentProps<"div">) {
+  return <div data-slot="card-footer" className={cn("flex items-center px-6", className)} {...props} />;
+}
+
+export { Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle };
+`,
+            },
+          },
+
+          "badge.tsx": {
+            file: {
+              contents: `import { cva, type VariantProps } from "class-variance-authority";
+import { Slot } from "radix-ui";
+import * as React from "react";
+
+import { cn } from "../lib/utils";
+
+const badgeVariants = cva(
+  "inline-flex w-fit shrink-0 items-center justify-center gap-1 overflow-hidden rounded-full border border-transparent px-2 py-0.5 text-xs font-medium whitespace-nowrap transition-colors",
+  {
+    variants: {
+      variant: {
+        default: "bg-[var(--color-primary)] text-white",
+        secondary: "bg-[var(--color-muted)] text-[var(--color-text)]",
+        destructive: "bg-[var(--color-destructive)] text-white",
+        outline: "border-[var(--color-border)] text-[var(--color-text)]",
+        ghost: "hover:bg-[var(--color-primary-bg)]",
+        link: "text-[var(--color-primary)] underline-offset-4 hover:underline",
+      },
+    },
+    defaultVariants: { variant: "default" },
+  }
+);
+
+function Badge({
+  className,
+  variant = "default",
+  asChild = false,
+  ...props
+}: React.ComponentProps<"span"> & VariantProps<typeof badgeVariants> & { asChild?: boolean }) {
+  const Comp = asChild ? Slot.Root : "span";
+  return <Comp data-slot="badge" className={cn(badgeVariants({ variant }), className)} {...props} />;
+}
+
+export { Badge, badgeVariants };
+`,
+            },
+          },
+
+          "input.tsx": {
+            file: {
+              contents: `import * as React from "react";
+
+import { cn } from "../lib/utils";
+
+function Input({ className, type, ...props }: React.ComponentProps<"input">) {
+  return (
+    <input
+      type={type}
+      data-slot="input"
+      className={cn(
+        "h-9 w-full min-w-0 rounded-md border-2 border-transparent bg-[var(--color-surface-container-high)] px-3 py-1 text-base transition-all duration-300 outline-none placeholder:text-[var(--color-muted-foreground)] disabled:pointer-events-none disabled:opacity-50",
+        "focus-visible:border-[var(--color-primary)] focus-visible:bg-[var(--color-surface-container-lowest)]",
+        className
+      )}
+      {...props}
+    />
+  );
+}
+
+export { Input };
+`,
+            },
+          },
+
+          "tabs.tsx": {
+            file: {
+              contents: `import { cva, type VariantProps } from "class-variance-authority";
+import { Tabs as TabsPrimitive } from "radix-ui";
+import * as React from "react";
+
+import { cn } from "../lib/utils";
+
+function Tabs({
+  className,
+  orientation = "horizontal",
+  ...props
+}: React.ComponentProps<typeof TabsPrimitive.Root>) {
+  return (
+    <TabsPrimitive.Root
+      data-slot="tabs"
+      orientation={orientation}
+      className={cn("group/tabs flex gap-2 data-[orientation=horizontal]:flex-col", className)}
+      {...props}
+    />
+  );
+}
+
+const tabsListVariants = cva(
+  "group/tabs-list inline-flex w-fit items-center justify-center rounded-lg p-[3px] text-[var(--color-muted-foreground)] group-data-[orientation=horizontal]/tabs:h-9",
+  {
+    variants: {
+      variant: {
+        default: "bg-[var(--color-muted)]",
+        line: "gap-1 bg-transparent",
+      },
+    },
+    defaultVariants: { variant: "default" },
+  }
+);
+
+function TabsList({
+  className,
+  variant = "default",
+  ...props
+}: React.ComponentProps<typeof TabsPrimitive.List> & VariantProps<typeof tabsListVariants>) {
+  return (
+    <TabsPrimitive.List
+      data-slot="tabs-list"
+      data-variant={variant}
+      className={cn(tabsListVariants({ variant }), className)}
+      {...props}
+    />
+  );
+}
+
+function TabsTrigger({ className, ...props }: React.ComponentProps<typeof TabsPrimitive.Trigger>) {
+  return (
+    <TabsPrimitive.Trigger
+      data-slot="tabs-trigger"
+      className={cn(
+        "relative inline-flex h-[calc(100%-1px)] flex-1 items-center justify-center gap-1.5 rounded-md border border-transparent px-2 py-1 text-sm font-medium whitespace-nowrap text-[var(--color-text)]/60 transition-all hover:text-[var(--color-text)] disabled:pointer-events-none disabled:opacity-50",
+        "data-[state=active]:bg-white data-[state=active]:text-[var(--color-text)] data-[state=active]:shadow-sm",
+        className
+      )}
+      {...props}
+    />
+  );
+}
+
+function TabsContent({ className, ...props }: React.ComponentProps<typeof TabsPrimitive.Content>) {
+  return <TabsPrimitive.Content data-slot="tabs-content" className={cn("flex-1 outline-none", className)} {...props} />;
+}
+
+export { Tabs, TabsContent, TabsList, tabsListVariants, TabsTrigger };
+`,
+            },
+          },
+
+          "dialog.tsx": {
+            file: {
+              contents: `import { XIcon } from "lucide-react";
+import { Dialog as DialogPrimitive } from "radix-ui";
+import * as React from "react";
+
+import { cn } from "../lib/utils";
+import { Button } from "./button";
+
+function Dialog({ ...props }: React.ComponentProps<typeof DialogPrimitive.Root>) {
+  return <DialogPrimitive.Root data-slot="dialog" {...props} />;
+}
+
+function DialogTrigger({ ...props }: React.ComponentProps<typeof DialogPrimitive.Trigger>) {
+  return <DialogPrimitive.Trigger data-slot="dialog-trigger" {...props} />;
+}
+
+function DialogPortal({ ...props }: React.ComponentProps<typeof DialogPrimitive.Portal>) {
+  return <DialogPrimitive.Portal data-slot="dialog-portal" {...props} />;
+}
+
+function DialogClose({ ...props }: React.ComponentProps<typeof DialogPrimitive.Close>) {
+  return <DialogPrimitive.Close data-slot="dialog-close" {...props} />;
+}
+
+function DialogOverlay({ className, ...props }: React.ComponentProps<typeof DialogPrimitive.Overlay>) {
+  return (
+    <DialogPrimitive.Overlay
+      data-slot="dialog-overlay"
+      className={cn("fixed inset-0 z-50 bg-black/50", className)}
+      {...props}
+    />
+  );
+}
+
+function DialogContent({
+  className,
+  children,
+  showCloseButton = true,
+  ...props
+}: React.ComponentProps<typeof DialogPrimitive.Content> & { showCloseButton?: boolean }) {
+  return (
+    <DialogPortal>
+      <DialogOverlay />
+      <DialogPrimitive.Content
+        data-slot="dialog-content"
+        className={cn(
+          "fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border bg-white p-6 shadow-lg duration-200 outline-none sm:max-w-lg",
+          className
+        )}
+        {...props}
+      >
+        {children}
+        {showCloseButton && (
+          <DialogPrimitive.Close
+            data-slot="dialog-close"
+            className="absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:outline-none disabled:pointer-events-none"
+          >
+            <XIcon className="size-4" />
+            <span className="sr-only">Close</span>
+          </DialogPrimitive.Close>
+        )}
+      </DialogPrimitive.Content>
+    </DialogPortal>
+  );
+}
+
+function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
+  return <div data-slot="dialog-header" className={cn("flex flex-col gap-2 text-center sm:text-left", className)} {...props} />;
+}
+
+function DialogFooter({ className, showCloseButton = false, children, ...props }: React.ComponentProps<"div"> & { showCloseButton?: boolean }) {
+  return (
+    <div data-slot="dialog-footer" className={cn("flex flex-col-reverse gap-2 sm:flex-row sm:justify-end", className)} {...props}>
+      {children}
+      {showCloseButton && (
+        <DialogPrimitive.Close asChild>
+          <Button variant="outline">Close</Button>
+        </DialogPrimitive.Close>
+      )}
+    </div>
+  );
+}
+
+function DialogTitle({ className, ...props }: React.ComponentProps<typeof DialogPrimitive.Title>) {
+  return <DialogPrimitive.Title data-slot="dialog-title" className={cn("text-lg leading-none font-semibold", className)} {...props} />;
+}
+
+function DialogDescription({ className, ...props }: React.ComponentProps<typeof DialogPrimitive.Description>) {
+  return <DialogPrimitive.Description data-slot="dialog-description" className={cn("text-sm text-[var(--color-muted-foreground)]", className)} {...props} />;
+}
+
+export { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogOverlay, DialogPortal, DialogTitle, DialogTrigger };
+`,
+            },
+          },
+
+          "separator.tsx": {
+            file: {
+              contents: `import { Separator as SeparatorPrimitive } from "radix-ui";
+import * as React from "react";
+
+import { cn } from "../lib/utils";
+
+function Separator({
+  className,
+  orientation = "horizontal",
+  decorative = true,
+  ...props
+}: React.ComponentProps<typeof SeparatorPrimitive.Root>) {
+  return (
+    <SeparatorPrimitive.Root
+      data-slot="separator"
+      decorative={decorative}
+      orientation={orientation}
+      className={cn(
+        "shrink-0 bg-[var(--color-border)] data-[orientation=horizontal]:h-px data-[orientation=horizontal]:w-full data-[orientation=vertical]:h-full data-[orientation=vertical]:w-px",
+        className
+      )}
+      {...props}
+    />
+  );
+}
+
+export { Separator };
+`,
+            },
+          },
+
+          "label.tsx": {
+            file: {
+              contents: `import { Label as LabelPrimitive } from "radix-ui";
+import * as React from "react";
+
+import { cn } from "../lib/utils";
+
+function Label({ className, ...props }: React.ComponentProps<typeof LabelPrimitive.Root>) {
+  return (
+    <LabelPrimitive.Root
+      data-slot="label"
+      className={cn(
+        "flex items-center gap-2 text-sm leading-none font-medium select-none peer-disabled:cursor-not-allowed peer-disabled:opacity-50",
+        className
+      )}
+      {...props}
+    />
+  );
+}
+
+export { Label };
 `,
             },
           },
