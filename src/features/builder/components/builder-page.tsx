@@ -1,8 +1,8 @@
 "use client";
 
 import { useAction, useMutation, useQuery } from "convex/react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { useIsMobile } from "@/core/hooks/use-mobile";
@@ -35,7 +35,6 @@ const THERAPY_SUGGESTIONS = [
 
 export function BuilderPage() {
   const searchParams = useSearchParams();
-  const router = useRouter();
   const sessionIdFromUrl = searchParams.get("sessionId");
 
   const isMobile = useIsMobile();
@@ -108,10 +107,10 @@ export function BuilderPage() {
   const promptSubmitted = useRef(false);
   const lastPromptRef = useRef<string>("");
 
-  const handleGenerate = (prompt: string) => {
+  const handleGenerate = useCallback((prompt: string) => {
     lastPromptRef.current = prompt;
     generate(prompt);
-  };
+  }, [generate]);
 
   const handleRetry = () => {
     if (lastPromptRef.current) {
@@ -136,10 +135,9 @@ export function BuilderPage() {
     if (promptFromUrl && status === "idle" && !promptSubmitted.current && !sessionIdFromUrl) {
       promptSubmitted.current = true;
       handleGenerate(decodeURIComponent(promptFromUrl));
-      router.replace("/builder");
+      window.history.replaceState(null, '', '/builder');
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- fire-once effect guarded by promptSubmitted ref
-  }, [promptFromUrl, status, handleGenerate, router, sessionIdFromUrl]);
+  }, [promptFromUrl, status, handleGenerate, sessionIdFromUrl]);
 
   // Auto-resume: redirect to most recent session if no sessionId in URL
   // Skip when ?new=1 is present (user explicitly wants a fresh session)
@@ -154,28 +152,28 @@ export function BuilderPage() {
       !autoResumed.current
     ) {
       autoResumed.current = true;
-      router.replace(`?sessionId=${mostRecent._id}`);
+      window.history.replaceState(null, '', `?sessionId=${mostRecent._id}`);
     }
-  }, [sessionIdFromUrl, searchParams, promptFromUrl, mostRecent, status, router]);
+  }, [sessionIdFromUrl, searchParams, promptFromUrl, mostRecent, status]);
 
   // Update URL when sessionId is set from streaming, and persist to localStorage
   useEffect(() => {
     if (sessionId) {
       localStorage.setItem("bridges_last_session", sessionId);
       if (!sessionIdFromUrl) {
-        router.replace(`?sessionId=${sessionId}`);
+        window.history.replaceState(null, '', `?sessionId=${sessionId}`);
       }
     }
-  }, [sessionId, sessionIdFromUrl, router]);
+  }, [sessionId, sessionIdFromUrl]);
 
   // Clear stale localStorage if session doesn't exist in Convex
   useEffect(() => {
     if (sessionIdFromUrl && resumeSessionData === null && resumeFiles !== undefined) {
       localStorage.removeItem("bridges_last_session");
       autoResumed.current = false;
-      router.replace("/builder");
+      window.history.replaceState(null, '', '/builder');
     }
-  }, [sessionIdFromUrl, resumeSessionData, resumeFiles, router]);
+  }, [sessionIdFromUrl, resumeSessionData, resumeFiles]);
 
   // Derive an app name from blueprint or default
   const appName = typeof blueprint?.title === "string" ? blueprint.title : "Untitled App";

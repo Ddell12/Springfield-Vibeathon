@@ -79,7 +79,11 @@ export async function POST(request: Request): Promise<Response> {
   const stream = new ReadableStream({
     async start(controller) {
       const send = (eventType: string, data: object) => {
-        controller.enqueue(encoder.encode(sseEncode(eventType, data)));
+        try {
+          controller.enqueue(encoder.encode(sseEncode(eventType, data)));
+        } catch {
+          // Client disconnected — normal for tab close, navigation away, etc.
+        }
       };
 
       let buildDir: string | undefined;
