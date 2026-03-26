@@ -1,7 +1,13 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { cpSync, existsSync, mkdtempSync, readFileSync, rmSync } from "fs";
+import { tmpdir } from "os";
+import { join } from "path";
+import { exec } from "child_process";
+import { promisify } from "util";
 import { ConvexHttpClient } from "convex/browser";
 
 import { extractErrorMessage, settleInBatches } from "@/core/utils";
+
 import { buildSystemPrompt } from "@/features/builder/lib/agent-prompt";
 import { createAgentTools } from "@/features/builder/lib/agent-tools";
 import { buildReviewMessages, DESIGN_REVIEW_PROMPT } from "@/features/builder/lib/review-prompt";
@@ -10,6 +16,8 @@ import { GenerateInputSchema } from "@/features/builder/lib/schemas/generate";
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 import { sseEncode } from "./sse";
+
+const execAsync = promisify(exec);
 
 if (!process.env.NEXT_PUBLIC_CONVEX_URL) {
   throw new Error("NEXT_PUBLIC_CONVEX_URL is required for /api/generate");
@@ -72,6 +80,8 @@ export async function POST(request: Request): Promise<Response> {
         controller.enqueue(encoder.encode(sseEncode(eventType, data)));
       };
 
+      let buildDir: string | undefined;
+
       try {
         send("session", { sessionId });
 
@@ -93,7 +103,11 @@ export async function POST(request: Request): Promise<Response> {
         const collectedFiles = new Map<string, string>();
         let assistantText = "";
 
-        const tools = createAgentTools({ send, sessionId, collectedFiles, convex });
+        // Copy WAB scaffold to temp dir for this build
+        buildDir = mkdtempSync(join(tmpdir(), "bridges-build-"));
+        cpSync(join(process.cwd(), "artifacts/wab-scaffold"), buildDir, { recursive: true });
+
+        const tools = createAgentTools({ send, sessionId, collectedFiles, convex, buildDir });
 
         // Generation pass — tool runner handles the multi-turn loop automatically
         const runner = anthropic.beta.messages.toolRunner({
@@ -140,6 +154,28 @@ export async function POST(request: Request): Promise<Response> {
                 send("token", { token: event.delta.text });
               }
             }
+          }
+        }
+
+        // Bundle with Parcel
+        if (collectedFiles.size > 0) {
+          send("status", { status: "bundling" });
+          send("activity", { type: "thinking", message: "Bundling your app..." });
+
+          try {
+            await execAsync(
+              "pnpm exec parcel build index.html --no-source-maps --dist-dir dist && pnpm exec html-inline dist/index.html > bundle.html",
+              { cwd: buildDir, timeout: 30000 }
+            );
+            const bundlePath = join(buildDir, "bundle.html");
+            if (!existsSync(bundlePath)) throw new Error("Parcel produced no bundle.html");
+            const bundleHtml = readFileSync(bundlePath, "utf-8");
+            if (bundleHtml.length < 100) throw new Error("bundle.html is suspiciously small");
+            send("bundle", { html: bundleHtml });
+          } catch (buildError) {
+            console.error("[generate] Parcel build failed:", buildError);
+            send("activity", { type: "thinking", message: "Build failed — showing raw files instead" });
+            // Don't throw — still persist files and send done event
           }
         }
 
@@ -213,6 +249,9 @@ export async function POST(request: Request): Promise<Response> {
 
         send("error", { message: "Generation failed — please try again" });
       } finally {
+        if (buildDir) {
+          try { rmSync(buildDir, { recursive: true, force: true }); } catch {}
+        }
         controller.close();
       }
     },
