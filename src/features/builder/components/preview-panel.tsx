@@ -1,75 +1,79 @@
 "use client";
 
-import { useRef } from "react";
-
+import { useMemo, useEffect } from "react";
+import { Loader2, Monitor, AlertCircle } from "lucide-react";
 import { cn } from "@/core/utils";
-import { MaterialIcon } from "@/shared/components/material-icon";
-
-import { usePostMessageBridge } from "../hooks/use-postmessage-bridge";
 import type { StreamingStatus } from "../hooks/use-streaming";
-import type { WebContainerStatus } from "../hooks/use-webcontainer";
-import type { DeviceSize } from "./builder-toolbar";
+
+type DeviceSize = "desktop" | "mobile";
 
 interface PreviewPanelProps {
-  previewUrl: string | null;
+  bundleHtml: string | null;
   state: StreamingStatus;
-  wcStatus: WebContainerStatus;
   error?: string;
   deviceSize?: DeviceSize;
 }
 
-export function PreviewPanel({ previewUrl, state, wcStatus, error, deviceSize = "desktop" }: PreviewPanelProps) {
-  const iframeRef = useRef<HTMLIFrameElement>(null);
-  usePostMessageBridge(iframeRef);
+export function PreviewPanel({ bundleHtml, state, error, deviceSize = "desktop" }: PreviewPanelProps) {
+  const blobUrl = useMemo(() => {
+    if (!bundleHtml) return null;
+    const blob = new Blob([bundleHtml], { type: "text/html" });
+    return URL.createObjectURL(blob);
+  }, [bundleHtml]);
+
+  useEffect(() => {
+    return () => {
+      if (blobUrl) URL.revokeObjectURL(blobUrl);
+    };
+  }, [blobUrl]);
+
+  const hasPreview = !!blobUrl;
   const isGenerating = state === "generating";
-  const isFailed = state === "failed" || wcStatus === "error";
-  const hasPreview = wcStatus === "ready" && !!previewUrl;
+  const isFailed = state === "failed";
 
   return (
-    <div className="flex h-full flex-col">
-      <div className="flex flex-1 items-center justify-center overflow-hidden bg-surface-container-low/30 p-4">
-        {hasPreview ? (
-          <div className={cn(
-            "h-full overflow-hidden rounded-2xl shadow-lg transition-[width] duration-300",
-            deviceSize === "mobile" ? "w-[375px]" : "w-full"
-          )}>
-            <iframe
-              ref={iframeRef}
-              src={previewUrl!}
-              className="h-full w-full bg-white"
-              title="App Preview"
-              sandbox="allow-scripts allow-same-origin"
-              allow="microphone"
-            />
+    <div className="relative flex h-full w-full items-center justify-center overflow-hidden bg-muted/30">
+      {hasPreview && (
+        <iframe
+          title="App preview"
+          src={blobUrl}
+          sandbox="allow-scripts allow-same-origin"
+          className={cn(
+            "h-full border-0 bg-white transition-all duration-300",
+            deviceSize === "mobile" ? "w-[375px] rounded-2xl shadow-xl" : "w-full",
+          )}
+        />
+      )}
+
+      {isGenerating && !hasPreview && (
+        <div className="flex flex-col items-center gap-3 text-muted-foreground">
+          <Loader2 className="h-8 w-8 animate-spin" />
+          <p className="text-sm font-medium">Building your app...</p>
+        </div>
+      )}
+
+      {isGenerating && hasPreview && (
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-background/90 px-4 py-2 shadow-lg backdrop-blur-sm">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Updating...
           </div>
-        ) : wcStatus === "booting" ? (
-          <div className="flex flex-col items-center gap-3">
-            <div className="h-48 w-72 animate-pulse rounded-2xl bg-surface-container-low" />
-            <div className="h-4 w-40 animate-pulse rounded-full bg-surface-container-low" />
-          </div>
-        ) : isGenerating ? (
-          <div role="status" className="flex flex-col items-center gap-4 text-center">
-            <div className="relative h-10 w-10">
-              <div className="absolute inset-0 animate-spin rounded-full border-2 border-outline-variant/20 border-t-primary" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-on-surface-variant">Getting ready...</p>
-              <p className="mt-0.5 text-xs text-on-surface-variant/60">Building your app</p>
-            </div>
-          </div>
-        ) : isFailed ? (
-          <div className="text-center text-sm">
-            <p className="text-destructive">
-              {error ?? "Something went wrong. Please try again."}
-            </p>
-          </div>
-        ) : (
-          <div className="flex flex-col items-center gap-3 text-center">
-            <MaterialIcon icon="auto_awesome" size="lg" className="text-outline-variant/40" />
-            <p className="text-sm text-on-surface-variant">Your app will appear here</p>
-          </div>
-        )}
-      </div>
+        </div>
+      )}
+
+      {isFailed && (
+        <div className="flex flex-col items-center gap-3 text-destructive">
+          <AlertCircle className="h-8 w-8" />
+          <p className="text-sm font-medium">{error ?? "Something went wrong"}</p>
+        </div>
+      )}
+
+      {!hasPreview && !isGenerating && !isFailed && (
+        <div className="flex flex-col items-center gap-3 text-muted-foreground">
+          <Monitor className="h-12 w-12 opacity-20" />
+          <p className="text-sm">Your app will appear here</p>
+        </div>
+      )}
     </div>
   );
 }

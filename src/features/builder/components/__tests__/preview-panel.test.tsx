@@ -1,148 +1,68 @@
 // src/features/builder/components/__tests__/preview-panel.test.tsx
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
-
-// Mock Convex hooks — usePostMessageBridge calls useAction
-vi.mock("convex/react", () => ({
-  useQuery: vi.fn().mockReturnValue(null),
-  useMutation: vi.fn().mockReturnValue(vi.fn()),
-  useAction: vi.fn().mockReturnValue(vi.fn().mockResolvedValue({ audioUrl: "https://test.example.com/audio.mp3" })),
-}));
-
-// Mock the PostMessage bridge hook so it doesn't need a ConvexProvider
-vi.mock("../hooks/use-postmessage-bridge", () => ({
-  usePostMessageBridge: vi.fn(),
-}));
+import { describe, expect, it, vi, beforeAll } from "vitest";
 
 import { PreviewPanel } from "../preview-panel";
 
-describe("PreviewPanel — WebContainer refactor contract", () => {
-  it("renders without crashing with null previewUrl", () => {
-    render(<PreviewPanel previewUrl={null} state="idle" wcStatus="booting" />);
-  });
+beforeAll(() => {
+  global.URL.createObjectURL = vi.fn(() => "blob:test-url");
+  global.URL.revokeObjectURL = vi.fn();
+});
 
-  it("shows iframe when previewUrl is set and wcStatus is ready", () => {
-    render(
-      <PreviewPanel
-        previewUrl="http://localhost:5173"
-        state="live"
-        wcStatus="ready"
-      />
-    );
-    const iframe = screen.getByTitle(/preview/i);
+describe("PreviewPanel — blob URL iframe", () => {
+  it("renders iframe with src when bundleHtml is provided", () => {
+    render(<PreviewPanel bundleHtml="<html><body>Hello</body></html>" state="live" />);
+    const iframe = screen.getByTitle(/app preview/i);
     expect(iframe).toBeTruthy();
     expect((iframe as HTMLIFrameElement).src).toBeTruthy();
   });
 
-  it("iframe src does not need to contain 'e2b' — uses WebContainer localhost URL", () => {
-    render(
+  it("shows 'Building your app...' spinner when generating and no preview", () => {
+    render(<PreviewPanel bundleHtml={null} state="generating" />);
+    expect(screen.getByText(/building your app/i)).toBeTruthy();
+  });
+
+  it("shows 'Updating...' overlay when generating with existing preview", () => {
+    render(<PreviewPanel bundleHtml="<html><body>v1</body></html>" state="generating" />);
+    expect(screen.getByText(/updating/i)).toBeTruthy();
+    // iframe is still rendered
+    expect(screen.getByTitle(/app preview/i)).toBeTruthy();
+  });
+
+  it("shows error message when state is failed", () => {
+    render(<PreviewPanel bundleHtml={null} state="failed" error="Build crashed" />);
+    expect(screen.getByText(/build crashed/i)).toBeTruthy();
+  });
+
+  it("shows default error message when failed without error prop", () => {
+    render(<PreviewPanel bundleHtml={null} state="failed" />);
+    expect(screen.getByText(/something went wrong/i)).toBeTruthy();
+  });
+
+  it("shows placeholder when idle with no preview", () => {
+    render(<PreviewPanel bundleHtml={null} state="idle" />);
+    expect(screen.getByText(/your app will appear here/i)).toBeTruthy();
+  });
+
+  it("mobile device size applies w-[375px] class to iframe", () => {
+    const { container } = render(
       <PreviewPanel
-        previewUrl="http://localhost:5173"
+        bundleHtml="<html><body>Hello</body></html>"
         state="live"
-        wcStatus="ready"
-      />
-    );
-    const iframe = screen.getByTitle(/preview/i);
-    expect((iframe as HTMLIFrameElement).src).toBeTruthy();
-  });
-
-  it("wcStatus='booting' renders a skeleton/loading state", () => {
-    const { container } = render(
-      <PreviewPanel previewUrl={null} state="idle" wcStatus="booting" />
-    );
-    // Booting state shows animated pulse skeleton
-    const pulseElement = container.querySelector(".animate-pulse");
-    expect(pulseElement).toBeTruthy();
-  });
-
-  it("wcStatus='booting' with generating state renders skeleton, not spinner", () => {
-    const { container } = render(
-      <PreviewPanel previewUrl={null} state="generating" wcStatus="booting" />
-    );
-    // Booting takes priority — renders the skeleton pulse, NOT the generating spinner
-    expect(container.querySelector(".animate-pulse")).toBeTruthy();
-    expect(screen.queryByRole("status")).toBeNull();
-  });
-
-  it("wcStatus='ready' with non-null previewUrl renders iframe", () => {
-    render(
-      <PreviewPanel
-        previewUrl="http://localhost:5173"
-        state="live"
-        wcStatus="ready"
-      />
-    );
-    const iframe = screen.getByTitle(/preview/i);
-    expect(iframe).toBeTruthy();
-  });
-
-  it("shows generating spinner when state is 'generating'", () => {
-    render(
-      <PreviewPanel
-        previewUrl={null}
-        state="generating"
-        wcStatus="booting"
-      />
-    );
-    const spinner =
-      screen.queryByRole("status") ??
-      screen.queryByText(/getting ready|building your app/i) ??
-      document.querySelector(".animate-pulse, .animate-spin");
-    expect(spinner).toBeTruthy();
-  });
-
-  it("shows empty state when no previewUrl and wcStatus is booting", () => {
-    const { container } = render(
-      <PreviewPanel
-        previewUrl={null}
-        state="idle"
-        wcStatus="booting"
-      />
-    );
-    // Booting shows skeleton pulse, not iframe
-    expect(container.querySelector(".animate-pulse")).toBeTruthy();
-    expect(screen.queryByTitle(/preview/i)).toBeNull();
-  });
-
-  it("shows failed state message when state is 'failed'", () => {
-    render(
-      <PreviewPanel
-        previewUrl={null}
-        state="failed"
-        wcStatus="error"
-        error="Something went wrong"
-      />
-    );
-    const errorIndicator =
-      screen.queryByText(/failed|error|something went wrong/i);
-    expect(errorIndicator).toBeTruthy();
-  });
-
-  it("does not show retry button — streaming restarts automatically", () => {
-    render(
-      <PreviewPanel
-        previewUrl={null}
-        state="failed"
-        wcStatus="error"
-      />
-    );
-    const retryButton = screen.queryByRole("button", { name: /retry/i });
-    expect(retryButton).toBeNull();
-  });
-
-  it("responsive device sizing is controlled via deviceSize prop", () => {
-    // Device size toggle buttons live in BuilderToolbar, not PreviewPanel.
-    // PreviewPanel accepts deviceSize prop and adjusts iframe width.
-    const { container } = render(
-      <PreviewPanel
-        previewUrl="http://localhost:5173"
-        state="live"
-        wcStatus="ready"
         deviceSize="mobile"
       />
     );
-    // Mobile device size constrains iframe container to 375px
-    const mobileWrapper = container.querySelector(".w-\\[375px\\]");
-    expect(mobileWrapper).toBeTruthy();
+    const mobileIframe = container.querySelector(".w-\\[375px\\]");
+    expect(mobileIframe).toBeTruthy();
+  });
+
+  it("does not render iframe when bundleHtml is null", () => {
+    render(<PreviewPanel bundleHtml={null} state="idle" />);
+    expect(screen.queryByTitle(/app preview/i)).toBeNull();
+  });
+
+  it("does not show retry button — errors are handled upstream", () => {
+    render(<PreviewPanel bundleHtml={null} state="failed" />);
+    expect(screen.queryByRole("button", { name: /retry/i })).toBeNull();
   });
 });
