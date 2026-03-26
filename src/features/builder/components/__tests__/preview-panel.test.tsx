@@ -1,6 +1,6 @@
 // src/features/builder/components/__tests__/preview-panel.test.tsx
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi, beforeAll } from "vitest";
+import { beforeAll,describe, expect, it, vi } from "vitest";
 
 import { PreviewPanel } from "../preview-panel";
 

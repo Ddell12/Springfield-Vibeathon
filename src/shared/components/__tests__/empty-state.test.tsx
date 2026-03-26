@@ -1,4 +1,5 @@
-import { render, fireEvent } from "@testing-library/react";
+import { fireEvent,render } from "@testing-library/react";
+
 import { EmptyState } from "../empty-state";
 
 vi.mock("next/link", () => ({

@@ -1,4 +1,5 @@
-import { render, fireEvent } from "@testing-library/react";
+import { fireEvent,render } from "@testing-library/react";
+
 import { ErrorDisplay } from "../error-display";
 
 vi.mock("next/link", () => ({

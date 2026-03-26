@@ -1,4 +1,5 @@
 import { render } from "@testing-library/react";
+
 import { AnimatedGradient } from "../animated-gradient";
 
 describe("AnimatedGradient", () => {

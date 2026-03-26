@@ -1,4 +1,5 @@
 import { render } from "@testing-library/react";
+
 import { BlueprintCard } from "../blueprint-card";
 
 vi.mock("@/shared/components/material-icon", () => ({

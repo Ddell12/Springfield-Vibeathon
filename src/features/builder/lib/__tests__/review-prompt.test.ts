@@ -1,7 +1,7 @@
 // src/features/builder/lib/__tests__/review-prompt.test.ts
-import { describe, it, expect } from "vitest";
+import { describe, expect,it } from "vitest";
 
-import { DESIGN_REVIEW_PROMPT, buildReviewMessages } from "../review-prompt";
+import { buildReviewMessages,DESIGN_REVIEW_PROMPT } from "../review-prompt";
 
 describe("DESIGN_REVIEW_PROMPT", () => {
   it("is a non-empty string", () => {

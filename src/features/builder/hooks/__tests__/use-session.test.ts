@@ -16,8 +16,8 @@ vi.mock("../../../../../convex/_generated/api", () => ({
   },
 }));
 
-import { useSession, useSessionFiles, useSessionMessages } from "../use-session";
 import type { Id } from "../../../../../convex/_generated/dataModel";
+import { useSession, useSessionFiles, useSessionMessages } from "../use-session";
 
 const SESSION_ID = "session_abc123" as Id<"sessions">;
 

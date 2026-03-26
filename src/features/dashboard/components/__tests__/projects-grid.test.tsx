@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 
-import { ProjectsGrid } from "../projects-grid";
 import type { ProjectData } from "../project-card";
+import { ProjectsGrid } from "../projects-grid";
 
 vi.mock("../project-card", () => ({
   ProjectCard: ({ project, index }: any) => (

@@ -1,4 +1,5 @@
 import { renderHook } from "@testing-library/react";
+
 import { useIsMobile } from "../use-mobile";
 
 function installMatchMedia(matches: boolean) {

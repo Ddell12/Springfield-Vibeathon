@@ -1,5 +1,5 @@
 // src/features/builder/lib/__tests__/few-shot-examples.test.ts
-import { describe, it, expect } from "vitest";
+import { describe, expect,it } from "vitest";
 
 import { getFewShotExamples } from "../few-shot-examples";
 

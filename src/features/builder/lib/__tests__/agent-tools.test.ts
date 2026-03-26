@@ -1,8 +1,8 @@
 // src/features/builder/lib/__tests__/agent-tools.test.ts
 // @vitest-environment node
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "fs";
-import { join } from "path";
 import { tmpdir } from "os";
+import { join } from "path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
@@ -104,7 +104,7 @@ describe("createAgentTools", () => {
     for (const tool of tools) {
       expect(typeof tool.name).toBe("string");
       expect(typeof tool.description).toBe("string");
-      expect(tool.inputSchema).toBeDefined();
+      expect(tool.input_schema).toBeDefined();
       expect(typeof tool.run).toBe("function");
     }
   });

@@ -184,7 +184,9 @@ describe("ChatPanel — streaming builder contract", () => {
         ]}
       />
     );
-    expect(screen.getByText("Wrote App.tsx")).toBeTruthy();
+    // FileBadges renders action and filename in separate spans
+    expect(screen.getByText("Edited")).toBeTruthy();
+    expect(screen.getByText("App.tsx")).toBeTruthy();
   });
 
   it("shows progress steps during generation when activities present", () => {
@@ -202,8 +204,8 @@ describe("ChatPanel — streaming builder contract", () => {
         ]}
       />
     );
-    // ProgressSteps renders step labels
-    expect(screen.getByText(/Understanding request/i)).toBeTruthy();
+    // Thinking indicator shows when activity type is "thinking"
+    expect(screen.getByText(/Thinking\.\.\./)).toBeTruthy();
   });
 
   it("shows input placeholder for live status", () => {

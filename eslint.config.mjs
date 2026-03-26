@@ -18,6 +18,14 @@ const eslintConfig = defineConfig([
       }],
     },
   },
+  // Relax rules in test files where strict typing and var restrictions are counterproductive
+  {
+    files: ["**/__tests__/**/*.{ts,tsx}", "**/*.test.{ts,tsx}", "**/*.spec.{ts,tsx}"],
+    rules: {
+      "@typescript-eslint/no-explicit-any": "warn",
+      "no-var": "off", // vitest mock-hoisting plugin converts const→var at transform time
+    },
+  },
   // Override default ignores of eslint-config-next.
   globalIgnores([
     ".next/**",
@@ -30,6 +38,8 @@ const eslintConfig = defineConfig([
     ".agents/**",
     "e2b-templates/**",
     "convex/_generated/**",
+    "aac-board/**",
+    "artifacts/**",
   ]),
 ]);
 
