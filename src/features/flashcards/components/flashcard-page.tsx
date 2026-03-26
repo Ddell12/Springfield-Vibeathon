@@ -1,9 +1,8 @@
 "use client";
 
 import { useQuery } from "convex/react";
-import { useCallback, useEffect, useState } from "react";
-
 import Link from "next/link";
+import { useCallback, useEffect, useState } from "react";
 
 import { MaterialIcon } from "@/shared/components/material-icon";
 import { Button } from "@/shared/components/ui/button";
@@ -15,7 +14,7 @@ import {
 
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
-import { useFlashcardStreaming, type FlashcardStreamingStatus } from "../hooks/use-flashcard-streaming";
+import { type FlashcardStreamingStatus,useFlashcardStreaming } from "../hooks/use-flashcard-streaming";
 import { FlashcardChatPanel } from "./flashcard-chat-panel";
 import { FlashcardPreviewPanel } from "./flashcard-preview-panel";
 
@@ -28,11 +27,13 @@ export function FlashcardPage() {
     sessionId ? { sessionId } : "skip",
   );
 
+  /* eslint-disable react-hooks/set-state-in-effect -- auto-select first deck on load */
   useEffect(() => {
     if (sessionDecks && sessionDecks.length > 0 && !activeDeckId) {
       setActiveDeckId(sessionDecks[0]._id);
     }
   }, [sessionDecks, activeDeckId]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const handleSubmit = useCallback(
     (query: string) => {
@@ -118,9 +119,11 @@ function MobileFlashcardLayout({
 }) {
   const [showChat, setShowChat] = useState(false);
 
+  /* eslint-disable react-hooks/set-state-in-effect -- show chat panel when generation starts */
   useEffect(() => {
     if (status === "generating") setShowChat(true);
   }, [status]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   return (
     <div className="relative flex flex-1 flex-col md:hidden">

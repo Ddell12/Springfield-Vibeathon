@@ -39,6 +39,7 @@ const eslintConfig = defineConfig([
     "e2b-templates/**",
     "convex/_generated/**",
     "aac-board/**",
+    ".worktrees/**",
     "artifacts/**",
   ]),
 ]);

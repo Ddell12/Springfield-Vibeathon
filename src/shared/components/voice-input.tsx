@@ -1,7 +1,7 @@
 "use client";
 
 import { useAction } from "convex/react";
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { MaterialIcon } from "@/shared/components/material-icon";
 import { Button } from "@/shared/components/ui/button";
@@ -19,10 +19,13 @@ export function VoiceInput({ onTranscript, disabled }: VoiceInputProps) {
     useMediaRecorder();
   const transcribe = useAction(api.stt.transcribeSpeech);
   const isTranscribingRef = useRef(false);
+  const [isTranscribing, setIsTranscribing] = useState(false);
 
+  /* eslint-disable react-hooks/set-state-in-effect -- transcription state tracks async operation */
   useEffect(() => {
     if (!audioBase64 || isTranscribingRef.current) return;
     isTranscribingRef.current = true;
+    setIsTranscribing(true);
 
     transcribe({ audioBase64 })
       .then((result) => {
@@ -33,8 +36,10 @@ export function VoiceInput({ onTranscript, disabled }: VoiceInputProps) {
       .catch(() => {})
       .finally(() => {
         isTranscribingRef.current = false;
+        setIsTranscribing(false);
       });
   }, [audioBase64, transcribe, onTranscript]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const handleClick = useCallback(() => {
     if (isRecording) {
@@ -44,7 +49,7 @@ export function VoiceInput({ onTranscript, disabled }: VoiceInputProps) {
     }
   }, [isRecording, startRecording, stopRecording]);
 
-  const isLoading = isProcessing || isTranscribingRef.current;
+  const isLoading = isProcessing || isTranscribing;
 
   return (
     <Button

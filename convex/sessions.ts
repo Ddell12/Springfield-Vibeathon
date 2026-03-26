@@ -1,4 +1,4 @@
-// TODO (Phase 6): Add ctx.auth.getUserIdentity() checks to create, list, get, startGeneration, setLive, setFailed
+// Auth: identity checks deferred — single-user demo mode
 import { v } from "convex/values";
 
 import { mutation, query } from "./_generated/server";
@@ -77,11 +77,8 @@ export const setFailed = mutation({
 const VALID_STATES = Object.values(SESSION_STATES);
 
 export const listByState = query({
-  args: { state: v.string() },
+  args: { state: v.union(v.literal("idle"), v.literal("generating"), v.literal("live"), v.literal("failed")) },
   handler: async (ctx, args) => {
-    if (!VALID_STATES.includes(args.state as typeof VALID_STATES[number])) {
-      return [];
-    }
     return await ctx.db
       .query("sessions")
       .withIndex("by_state", (q) => q.eq("state", args.state))

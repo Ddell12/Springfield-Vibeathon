@@ -60,3 +60,15 @@ artifacts/wab-scaffold/node_modules/
 artifacts/wab-scaffold/.parcel-cache/
 artifacts/wab-scaffold/dist/
 artifacts/wab-scaffold/bundle.html
+
+# Playwright MCP logs
+.playwright-mcp/
+
+# Stitch exports (raw output — design captured in .stitch/)
+stitch_*/
+
+# Prototype directories
+aac-board/
+
+# Misspelled worktree dir
+.claire/

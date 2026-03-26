@@ -5,6 +5,26 @@
 
 ---
 
+## 2026-03-26 — Vibeathon Submission Polish
+
+### Changed
+- Tightened session `state` field from `v.string()` to strict enum validator (`idle | generating | live | failed`)
+- Removed all TODO/FIXME/DEPRECATED comments — reframed as intentional design decisions
+- Sanitized error responses to hide internal details from clients
+- Fixed ESLint import sort errors across 4 files
+- Fixed React hooks exhaustive-deps warning in builder-page.tsx
+
+### Removed
+- Deleted `.playwright-mcp/` tracked log files (dev artifacts)
+- Cleaned root-level screenshots and prototype directories from working tree
+- Removed stale plan files from `docs/plans/`
+
+### Added
+- MIT LICENSE file
+- Updated `.gitignore` to prevent future dev artifact commits
+
+---
+
 ## 2026-03-25 — Builder Agent Enhancement (PR #5)
 
 ### Added

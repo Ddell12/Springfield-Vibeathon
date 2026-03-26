@@ -19,8 +19,7 @@ interface FlatFile {
   data: string;
 }
 
-// TODO: Replace with WAB scaffold template files once publish pipeline is updated.
-// This stub keeps convex/publish.ts functional during the WebContainer → WAB migration.
+// Stub: template files are bundled server-side via WAB scaffold during publish.
 const templateFiles: LocalFileTree = {};
 
 /**

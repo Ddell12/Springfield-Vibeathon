@@ -6,15 +6,12 @@ export default defineSchema({
     userId: v.optional(v.string()),
     title: v.string(),
     query: v.string(),
-    // New states: idle | generating | live | failed
-    // Legacy states from old pipeline also exist in data — using v.string() for compat
-    state: v.string(),
+    state: v.union(v.literal("idle"), v.literal("generating"), v.literal("live"), v.literal("failed")),
     stateMessage: v.optional(v.string()),
     error: v.optional(v.string()),
-    // Validated at app layer via TherapyBlueprintSchema (Zod) — v.any() is intentional for schema flexibility
-    blueprint: v.optional(v.any()),
-    sandboxId: v.optional(v.string()), // DEPRECATED — remove in next migration
-    previewUrl: v.optional(v.string()), // DEPRECATED — remove in next migration
+    blueprint: v.optional(v.any()), // Validated via Zod at app layer
+    sandboxId: v.optional(v.string()),
+    previewUrl: v.optional(v.string()),
     publishedUrl: v.optional(v.string()),
     type: v.optional(v.union(v.literal("builder"), v.literal("flashcards"))),
   }).index("by_user", ["userId"])

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect } from "react";
+import { useEffect,useRef } from "react";
 
 import { MaterialIcon } from "@/shared/components/material-icon";
 

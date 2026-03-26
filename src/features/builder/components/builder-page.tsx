@@ -138,7 +138,8 @@ export function BuilderPage() {
       handleGenerate(decodeURIComponent(promptFromUrl));
       router.replace("/builder");
     }
-  }, [promptFromUrl, status, generate, router, sessionIdFromUrl]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- fire-once effect guarded by promptSubmitted ref
+  }, [promptFromUrl, status, handleGenerate, router, sessionIdFromUrl]);
 
   // Auto-resume: redirect to most recent session if no sessionId in URL
   // Skip when ?new=1 is present (user explicitly wants a fresh session)

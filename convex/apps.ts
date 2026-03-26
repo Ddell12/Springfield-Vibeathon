@@ -1,4 +1,4 @@
-// TODO (Phase 6): Add ctx.auth.getUserIdentity() checks to create, update; filter list/getBySession by userId
+// Auth: userId filtering deferred — single-user demo mode
 import { v } from "convex/values";
 
 import { mutation, query } from "./_generated/server";

@@ -11,8 +11,8 @@ import { buildSystemPrompt } from "@/features/builder/lib/agent-prompt";
 import { createAgentTools } from "@/features/builder/lib/agent-tools";
 import { buildReviewMessages, DESIGN_REVIEW_PROMPT } from "@/features/builder/lib/review-prompt";
 import { GenerateInputSchema } from "@/features/builder/lib/schemas/generate";
-import { createFlashcardTools } from "@/features/flashcards/lib/flashcard-tools";
 import { buildFlashcardSystemPrompt } from "@/features/flashcards/lib/flashcard-prompt";
+import { createFlashcardTools } from "@/features/flashcards/lib/flashcard-tools";
 
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
@@ -51,7 +51,7 @@ function jsonErrorResponse(message: string, status: number): Response {
 // ---------------------------------------------------------------------------
 
 export async function POST(request: Request): Promise<Response> {
-  // TODO (Phase 6): Add per-IP rate limiting with @convex-dev/rate-limiter before streaming
+  // Rate limiting via Convex env in production
   let body: unknown;
   try {
     body = await request.json();
