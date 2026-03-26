@@ -163,10 +163,16 @@ export async function POST(request: Request): Promise<Response> {
           send("activity", { type: "thinking", message: "Bundling your app..." });
 
           try {
+            // Parcel build must succeed
             await execAsync(
-              "pnpm exec parcel build index.html --no-source-maps --dist-dir dist && pnpm exec html-inline dist/index.html > bundle.html",
-              { cwd: buildDir, timeout: 30000 }
+              "pnpm exec parcel build index.html --no-source-maps --dist-dir dist",
+              { cwd: buildDir, timeout: 30000 },
             );
+            // html-inline may exit 1 on external links (Google Fonts) but still produces output
+            await execAsync(
+              "pnpm exec html-inline dist/index.html > bundle.html",
+              { cwd: buildDir, timeout: 15000 },
+            ).catch(() => { /* tolerate exit code 1 — check file existence below */ });
             const bundlePath = join(buildDir, "bundle.html");
             if (!existsSync(bundlePath)) throw new Error("Parcel produced no bundle.html");
             const bundleHtml = readFileSync(bundlePath, "utf-8");
