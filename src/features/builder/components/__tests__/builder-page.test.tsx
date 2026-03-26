@@ -1,6 +1,11 @@
 // src/features/builder/components/__tests__/builder-page.test.tsx
 import { render, screen, waitFor } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeAll, describe, expect, it, vi } from "vitest";
+
+// jsdom doesn't implement scrollIntoView
+beforeAll(() => {
+  Element.prototype.scrollIntoView = vi.fn();
+});
 
 // Mock Next.js navigation before imports
 const mockGet = vi.fn().mockReturnValue(null);
@@ -11,9 +16,9 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ replace: mockReplace }),
 }));
 
-// Mock Convex hooks
+// Mock Convex hooks — return undefined (not null) to match real convex behavior for skipped/loading queries
 vi.mock("convex/react", () => ({
-  useQuery: vi.fn().mockReturnValue(null),
+  useQuery: vi.fn().mockReturnValue(undefined),
   useMutation: vi.fn().mockReturnValue(vi.fn()),
   useAction: vi.fn().mockReturnValue(vi.fn().mockResolvedValue({ audioUrl: "https://test.example.com/audio.mp3" })),
 }));

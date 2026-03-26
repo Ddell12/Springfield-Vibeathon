@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 
 import { mutation, query } from "./_generated/server";
-import { assertSessionOwner, getAuthUserId } from "./lib/auth";
+import { getAuthUserId } from "./lib/auth";
 import { SESSION_STATES } from "./lib/session_states";
 
 export const create = mutation({

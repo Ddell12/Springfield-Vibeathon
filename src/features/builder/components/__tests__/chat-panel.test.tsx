@@ -1,6 +1,11 @@
 // src/features/builder/components/__tests__/chat-panel.test.tsx
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeAll, describe, expect, it, vi } from "vitest";
+
+// jsdom doesn't implement scrollIntoView
+beforeAll(() => {
+  Element.prototype.scrollIntoView = vi.fn();
+});
 
 // Module-level mock so vi.fn() references can be captured
 const mockUseQuery = vi.fn().mockReturnValue([]);

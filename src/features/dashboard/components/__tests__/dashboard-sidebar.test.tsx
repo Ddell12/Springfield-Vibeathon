@@ -4,6 +4,7 @@ import { DashboardSidebar } from "../dashboard-sidebar";
 
 vi.mock("@clerk/nextjs", () => ({
   UserButton: () => <div data-testid="user-button" />,
+  Show: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
 vi.mock("next/link", () => ({

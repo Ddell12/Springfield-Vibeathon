@@ -19,6 +19,7 @@ interface PreviewPanelProps {
 
 export function PreviewPanel({ bundleHtml, state, error, deviceSize = "desktop", buildFailed = false }: PreviewPanelProps) {
   const [refreshKey, setRefreshKey] = useState(0);
+  const [iframeReady, setIframeReady] = useState(false);
 
   const blobUrl = useMemo(() => {
     if (!bundleHtml) return null;
@@ -46,6 +47,9 @@ export function PreviewPanel({ bundleHtml, state, error, deviceSize = "desktop",
     };
   }, []);
 
+  // Reset loading state when blob URL changes (new bundle or refresh)
+  useEffect(() => setIframeReady(false), [blobUrl]);
+
   const hasPreview = !!blobUrl;
   const isGenerating = state === "generating";
   const isFailed = state === "failed";
@@ -53,18 +57,26 @@ export function PreviewPanel({ bundleHtml, state, error, deviceSize = "desktop",
   return (
     <div className="relative flex h-full w-full items-center justify-center overflow-hidden bg-muted/30">
       {hasPreview && (
-        <iframe
-          title="App preview"
-          src={blobUrl}
-          // allow-same-origin is required: blob: URLs need same-origin context for
-          // inline scripts to execute. CSP meta tag in bundle.html restricts capabilities
-          // (no fetch, no nested frames, no form submissions). See inline-bundle.cjs.
-          sandbox="allow-scripts allow-same-origin"
-          className={cn(
-            "h-full border-0 bg-white transition-all duration-300",
-            deviceSize === "mobile" ? "w-[375px] rounded-2xl shadow-xl" : "w-full",
+        <>
+          <iframe
+            title="App preview"
+            src={blobUrl}
+            onLoad={() => setIframeReady(true)}
+            // allow-same-origin is required: blob: URLs need same-origin context for
+            // inline scripts to execute. CSP meta tag in bundle.html restricts capabilities
+            // (no fetch, no nested frames, no form submissions). See inline-bundle.cjs.
+            sandbox="allow-scripts allow-same-origin"
+            className={cn(
+              "h-full border-0 bg-white transition-all duration-300",
+              deviceSize === "mobile" ? "w-[375px] rounded-2xl shadow-xl" : "w-full",
+            )}
+          />
+          {!iframeReady && (
+            <div className="absolute inset-0 flex items-center justify-center bg-background/80">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
           )}
-        />
+        </>
       )}
 
       {isGenerating && !hasPreview && (

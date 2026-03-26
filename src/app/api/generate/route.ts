@@ -264,6 +264,12 @@ export async function POST(request: Request): Promise<Response> {
                   "background-color: hsl(var(--background)); color: hsl(var(--foreground));")
                 // Strip any remaining @apply (fallback — expand common patterns)
                 .replace(/@apply\s+[^;]+;/g, "/* @apply stripped */")
+                // Unwrap :root and .dark from @layer base — CDN manages its own layers
+                .replace(/@layer\s+base\s*\{\s*(:root\s*\{[\s\S]*?\})\s*\}/g, "$1")
+                .replace(/@layer\s+base\s*\{\s*(\.dark\s*\{[\s\S]*?\})\s*\}/g, "$1")
+                // Remove empty/inert @layer base blocks (left after @apply stripping)
+                .replace(/@layer\s+base\s*\{[\s\S]*?\}/g, (match) =>
+                  match.replace(/\/\*[^*]*\*\//g, "").replace(/\s/g, "").length <= "@layerbase{}".length ? "" : match)
                 .trim();
 
               // Read tailwind.config.js for CDN inline config
@@ -287,6 +293,42 @@ export async function POST(request: Request): Promise<Response> {
                 }
               }
 
+              // Inlined tailwindcss-animate CSS — CDN can't load Node plugins via require()
+              const animateCss = `
+@keyframes enter { from { opacity: var(--tw-enter-opacity, 1); transform: translate3d(var(--tw-enter-translate-x, 0), var(--tw-enter-translate-y, 0), 0) scale3d(var(--tw-enter-scale, 1), var(--tw-enter-scale, 1), var(--tw-enter-scale, 1)) rotate(var(--tw-enter-rotate, 0)); } }
+@keyframes exit { to { opacity: var(--tw-exit-opacity, 1); transform: translate3d(var(--tw-exit-translate-x, 0), var(--tw-exit-translate-y, 0), 0) scale3d(var(--tw-exit-scale, 1), var(--tw-exit-scale, 1), var(--tw-exit-scale, 1)) rotate(var(--tw-exit-rotate, 0)); } }
+.animate-in { animation: enter 150ms; }
+.animate-out { animation: exit 150ms; }
+.fade-in, .fade-in-0 { --tw-enter-opacity: 0; }
+.fade-out, .fade-out-0 { --tw-exit-opacity: 0; }
+.fade-out-80 { --tw-exit-opacity: 0.8; }
+.zoom-in-90 { --tw-enter-scale: 0.9; }
+.zoom-in-95 { --tw-enter-scale: 0.95; }
+.zoom-out-95 { --tw-exit-scale: 0.95; }
+.slide-in-from-top { --tw-enter-translate-y: -100%; }
+.slide-in-from-top-2 { --tw-enter-translate-y: -0.5rem; }
+.slide-in-from-top-full { --tw-enter-translate-y: -100%; }
+.slide-in-from-top-\\[48\\%\\] { --tw-enter-translate-y: -48%; }
+.slide-in-from-bottom { --tw-enter-translate-y: 100%; }
+.slide-in-from-bottom-2 { --tw-enter-translate-y: 0.5rem; }
+.slide-in-from-bottom-full { --tw-enter-translate-y: 100%; }
+.slide-in-from-left { --tw-enter-translate-x: -100%; }
+.slide-in-from-left-2 { --tw-enter-translate-x: -0.5rem; }
+.slide-in-from-left-1\\/2 { --tw-enter-translate-x: -50%; }
+.slide-in-from-left-52 { --tw-enter-translate-x: -13rem; }
+.slide-in-from-right { --tw-enter-translate-x: 100%; }
+.slide-in-from-right-2 { --tw-enter-translate-x: 0.5rem; }
+.slide-in-from-right-52 { --tw-enter-translate-x: 13rem; }
+.slide-out-to-top { --tw-exit-translate-y: -100%; }
+.slide-out-to-top-\\[48\\%\\] { --tw-exit-translate-y: -48%; }
+.slide-out-to-bottom { --tw-exit-translate-y: 100%; }
+.slide-out-to-left { --tw-exit-translate-x: -100%; }
+.slide-out-to-left-1\\/2 { --tw-exit-translate-x: -50%; }
+.slide-out-to-left-52 { --tw-exit-translate-x: -13rem; }
+.slide-out-to-right { --tw-exit-translate-x: 100%; }
+.slide-out-to-right-52 { --tw-exit-translate-x: 13rem; }
+.slide-out-to-right-full { --tw-exit-translate-x: 100%; }`;
+
               // Assemble self-contained HTML
               const bundleHtml = `<!DOCTYPE html>
 <html lang="en">
@@ -294,9 +336,10 @@ export async function POST(request: Request): Promise<Response> {
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' blob: data: https://fonts.googleapis.com https://fonts.gstatic.com https://cdn.tailwindcss.com;" />
+  <script>window.tailwind = { config: { darkMode: ["class"], theme: { extend: ${twExtend} } } };</script>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script>tailwindcss.config = { darkMode: ["class"], theme: { extend: ${twExtend} } };</script>
   <style>${processedCss}</style>
+  <style>${animateCss}</style>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap" />
   <title>Bridges App</title>
 </head>
