@@ -64,7 +64,7 @@ export function FlashcardPage() {
 
       {/* Desktop: split panels */}
       <div className="hidden flex-1 md:flex">
-        <ResizablePanelGroup direction="horizontal" className="flex-1">
+        <ResizablePanelGroup orientation="horizontal" className="flex-1">
           <ResizablePanel defaultSize={30} minSize={20} maxSize={50}>
             <FlashcardChatPanel
               sessionId={sessionId}
