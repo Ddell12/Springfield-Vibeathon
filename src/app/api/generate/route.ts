@@ -220,18 +220,15 @@ export async function POST(request: Request): Promise<Response> {
                 nodePaths,
                 // Skip CSS imports — we inject Tailwind CDN + raw CSS in the HTML instead
                 external: ["*.css"],
-                // Resolve @/* path aliases used by scaffold components
-                plugins: [{
-                  name: "resolve-at-alias",
-                  setup(build) {
-                    build.onResolve({ filter: /^@\// }, args => ({
-                      // Use resolveDir so esbuild handles .tsx/.ts/.jsx/.js extension resolution
-                      path: args.path.slice(2), // strip "@/" → "components/ui/button"
-                      resolveDir: join(buildDir!, "src"),
-                    }));
+                // Resolve @/* path aliases via tsconfigRaw (avoids plugin API issues on Vercel)
+                tsconfigRaw: JSON.stringify({
+                  compilerOptions: {
+                    baseUrl: buildDir!,
+                    paths: { "@/*": ["./src/*"] },
+                    jsx: "react-jsx",
                   },
-                }],
-                logLevel: "info",
+                }),
+                logLevel: "warning",
               });
 
               if (result.errors.length > 0) {
