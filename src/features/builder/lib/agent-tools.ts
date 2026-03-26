@@ -65,15 +65,8 @@ const PROTECTED_PATHS = [
   "src/hooks/useDataCollection.ts",
 ];
 
-/** Add `inputSchema` alias to satisfy test introspection while keeping SDK shape intact. */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function withInputSchemaAlias<T extends Record<string, any>>(tool: T) {
-  return Object.assign(tool, { inputSchema: (tool as Record<string, unknown>).input_schema });
-}
-
 export function createAgentTools(ctx: ToolContext) {
-  const setAppName = withInputSchemaAlias(
-    betaZodTool({
+  const setAppName = betaZodTool({
       name: "set_app_name",
       description:
         "Set a short, friendly name for this therapy app. Call this FIRST, before writing any files. The name appears in the toolbar and share links. Keep it under 60 characters, therapy-appropriate, no developer jargon.",
@@ -93,11 +86,9 @@ export function createAgentTools(ctx: ToolContext) {
         ctx.send("app_name", { name });
         return `App name set to "${name}"`;
       },
-    }),
-  );
+    });
 
-  const writeFile = withInputSchemaAlias(
-    betaZodTool({
+  const writeFile = betaZodTool({
       name: "write_file",
       description:
         "Write or overwrite a file in the therapy app project. Use for src/App.tsx, additional components, styles, or utility files.",
@@ -139,11 +130,9 @@ export function createAgentTools(ctx: ToolContext) {
         ctx.send("activity", { type: "file_written", message: `Wrote ${path}`, path });
         return "File written successfully";
       },
-    }),
-  );
+    });
 
-  const readFile = withInputSchemaAlias(
-    betaZodTool({
+  const readFile = betaZodTool({
       name: "read_file",
       description:
         "Read the current contents of a file from the build directory on disk.",
@@ -157,11 +146,9 @@ export function createAgentTools(ctx: ToolContext) {
         }
         return readFileSync(fullPath, "utf-8");
       },
-    }),
-  );
+    });
 
-  const listFiles = withInputSchemaAlias(
-    betaZodTool({
+  const listFiles = betaZodTool({
       name: "list_files",
       description:
         "List all files and directories available in a directory of the build directory.",
@@ -180,8 +167,7 @@ export function createAgentTools(ctx: ToolContext) {
           .map((e) => (e.isDirectory() ? `${e.name}/` : e.name))
           .join("\n");
       },
-    }),
-  );
+    });
 
   return [setAppName, writeFile, readFile, listFiles];
 }
