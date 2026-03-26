@@ -57,6 +57,7 @@ export function BuilderPage() {
     streamingText,
     activities,
     bundleHtml,
+    buildFailed,
     reset,
   } = useStreaming();
 
@@ -85,6 +86,13 @@ export function BuilderPage() {
   // Resume an existing session when navigating from My Apps
   const sessionResumed = useRef(false);
   useEffect(() => {
+    console.log("[resume] check:", {
+      sessionIdFromUrl: !!sessionIdFromUrl,
+      resumeSessionData: !!resumeSessionData,
+      resumeFiles: resumeFiles ? resumeFiles.length : "undefined",
+      status,
+      alreadyResumed: sessionResumed.current,
+    });
     if (
       sessionIdFromUrl &&
       resumeSessionData &&
@@ -97,6 +105,8 @@ export function BuilderPage() {
       // Separate the persisted bundle from user-visible files
       const bundleFile = resumeFiles.find((f) => f.path === "_bundle.html");
       const appFiles = resumeFiles.filter((f) => f.path !== "_bundle.html");
+
+      console.log("[resume] found bundle:", !!bundleFile, "bundleLength:", bundleFile?.contents?.length ?? 0, "files:", appFiles.length);
 
       // Restore streaming hook state
       resumeSession({
@@ -140,7 +150,9 @@ export function BuilderPage() {
     if (promptFromUrl && status === "idle" && !promptSubmitted.current && !sessionIdFromUrl) {
       promptSubmitted.current = true;
       handleGenerate(decodeURIComponent(promptFromUrl));
-      window.history.replaceState(null, '', '/builder');
+      // Don't clear ?prompt= here — line 165-172 will replace it with ?sessionId=
+      // once the session is created, which naturally strips the prompt param.
+      // Clearing here prematurely causes the prompt to be lost on HMR reload.
     }
   }, [promptFromUrl, status, handleGenerate, sessionIdFromUrl]);
 
@@ -318,6 +330,7 @@ export function BuilderPage() {
                       state={status}
                       error={error ?? undefined}
                       deviceSize="mobile"
+                      buildFailed={buildFailed}
                     />
                   </div>
                 )}
@@ -361,6 +374,7 @@ export function BuilderPage() {
                         state={status}
                         error={error ?? undefined}
                         deviceSize={deviceSize}
+                        buildFailed={buildFailed}
                       />
                     </div>
                   </ResizablePanel>

@@ -42,6 +42,7 @@ export const get = query({
   },
 });
 
+/** Intentionally public — shared apps are accessible by anyone with the slug. */
 export const getByShareSlug = query({
   args: { shareSlug: v.string() },
   handler: async (ctx, args) => {

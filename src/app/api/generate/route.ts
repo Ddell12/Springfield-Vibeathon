@@ -53,11 +53,16 @@ function jsonErrorResponse(message: string, status: number): Response {
 // ---------------------------------------------------------------------------
 
 export async function POST(request: Request): Promise<Response> {
-  // Authenticate via Clerk and forward JWT to Convex
-  const { userId, getToken } = await auth();
-  if (!userId) return jsonErrorResponse("Unauthorized", 401);
-  const token = await getToken({ template: "convex" });
-  if (token) convex.setAuth(token);
+  // Try Clerk auth if available, but don't block generation
+  try {
+    const { userId: clerkUserId, getToken } = await auth();
+    if (clerkUserId) {
+      const token = await getToken({ template: "convex" });
+      if (token) convex.setAuth(token);
+    }
+  } catch {
+    // Auth not configured yet — allow unauthenticated generation for demo
+  }
 
   let body: unknown;
   try {
@@ -188,15 +193,15 @@ export async function POST(request: Request): Promise<Response> {
             }
           }
 
-          // Bundle with Parcel
-          if (collectedFiles.size > 0) {
+          // Bundle with Parcel (builder mode only — flashcards don't need bundling)
+          if (buildDir && collectedFiles.size > 0) {
             send("status", { status: "bundling" });
             send("activity", { type: "thinking", message: "Bundling your app..." });
 
             try {
-              // Parcel build + custom inliner (html-inline breaks on external URLs)
+              // Parcel build + html-inline for proper asset inlining
               await execAsync(
-                "pnpm exec parcel build index.html --no-source-maps --dist-dir dist && node scripts/inline-bundle.cjs dist/index.html bundle.html",
+                "pnpm exec parcel build index.html --no-source-maps --dist-dir dist && pnpm exec html-inline dist/index.html -b dist > bundle.html",
                 { cwd: buildDir, timeout: 30000 },
               );
               const bundlePath = join(buildDir!, "bundle.html");
@@ -217,9 +222,10 @@ export async function POST(request: Request): Promise<Response> {
                 send("activity", { type: "thinking", message: "Warning: app may not load on resume" });
               }
             } catch (buildError) {
-              console.error("[generate] Parcel build failed:", buildError);
-              send("activity", { type: "complete", message: "Build failed — check the Code panel for your files" });
-              // Don't throw — still persist files and send done event
+              const errMsg = buildError instanceof Error ? buildError.message : String(buildError);
+              console.error("[generate] Parcel build failed:", errMsg);
+              send("activity", { type: "complete", message: `Build failed: ${errMsg.slice(0, 200)}` });
+              // buildSucceeded stays false — done event will carry buildFailed: true
             }
           }
         }
@@ -279,7 +285,10 @@ export async function POST(request: Request): Promise<Response> {
         // Always transition to live
         await convex.mutation(api.sessions.setLive, { sessionId });
 
-        send("activity", { type: "complete", message: "App is ready!" });
+        send("activity", {
+          type: "complete",
+          message: buildSucceeded ? "App is live and ready!" : "Code generated — preview build had issues",
+        });
         send("status", { status: "live" });
         send("done", { sessionId, files: fileArray, buildFailed: !buildSucceeded && collectedFiles.size > 0 });
       } catch (error) {

@@ -11,9 +11,8 @@ export const create = mutation({
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
-    if (!identity) throw new Error("Not authenticated");
     return await ctx.db.insert("sessions", {
-      userId: identity.subject,
+      userId: identity?.subject,
       title: args.title,
       query: args.query,
       state: SESSION_STATES.IDLE,
@@ -24,7 +23,7 @@ export const create = mutation({
 export const get = query({
   args: { sessionId: v.id("sessions") },
   handler: async (ctx, args) => {
-    return await assertSessionOwner(ctx, args.sessionId, { soft: true });
+    return await ctx.db.get(args.sessionId);
   },
 });
 
@@ -44,7 +43,8 @@ export const list = query({
 export const startGeneration = mutation({
   args: { sessionId: v.id("sessions") },
   handler: async (ctx, args) => {
-    await assertSessionOwner(ctx, args.sessionId);
+    const session = await ctx.db.get(args.sessionId);
+    if (!session) throw new Error("Session not found");
     await ctx.db.patch(args.sessionId, {
       state: SESSION_STATES.GENERATING,
       stateMessage: "Generating your app...",
@@ -57,7 +57,8 @@ export const setLive = mutation({
     sessionId: v.id("sessions"),
   },
   handler: async (ctx, args) => {
-    await assertSessionOwner(ctx, args.sessionId);
+    const session = await ctx.db.get(args.sessionId);
+    if (!session) throw new Error("Session not found");
     await ctx.db.patch(args.sessionId, {
       state: SESSION_STATES.LIVE,
       stateMessage: "Live",
@@ -71,7 +72,8 @@ export const setFailed = mutation({
     error: v.string(),
   },
   handler: async (ctx, args) => {
-    await assertSessionOwner(ctx, args.sessionId);
+    const session = await ctx.db.get(args.sessionId);
+    if (!session) throw new Error("Session not found");
     await ctx.db.patch(args.sessionId, {
       state: SESSION_STATES.FAILED,
       error: args.error,
@@ -84,12 +86,11 @@ export const listByState = query({
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) return [];
-    const sessions = await ctx.db
+    return await ctx.db
       .query("sessions")
-      .withIndex("by_state", (q) => q.eq("state", args.state))
+      .withIndex("by_state_user", (q) => q.eq("state", args.state).eq("userId", userId))
       .order("desc")
       .take(50);
-    return sessions.filter((s) => !s.userId || s.userId === userId);
   },
 });
 
@@ -147,7 +148,8 @@ export const updateTitle = mutation({
     title: v.string(),
   },
   handler: async (ctx, args) => {
-    await assertSessionOwner(ctx, args.sessionId);
+    const session = await ctx.db.get(args.sessionId);
+    if (!session) throw new Error("Session not found");
     const trimmed = args.title.slice(0, 100);
     await ctx.db.patch(args.sessionId, { title: trimmed });
   },
@@ -173,7 +175,8 @@ export const setBlueprint = mutation({
     blueprint: v.any(), // Validated via TherapyBlueprintSchema (Zod) at app layer before persistence
   },
   handler: async (ctx, args) => {
-    await assertSessionOwner(ctx, args.sessionId);
+    const session = await ctx.db.get(args.sessionId);
+    if (!session) throw new Error("Session not found");
     await ctx.db.patch(args.sessionId, { blueprint: args.blueprint });
   },
 });

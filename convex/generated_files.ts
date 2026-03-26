@@ -11,6 +11,10 @@ export const upsert = mutation({
     version: v.number(),
   },
   handler: async (ctx, args) => {
+    if (args.path.length > 500 || args.path.includes("..")) {
+      throw new Error("Invalid file path");
+    }
+
     const existing = await ctx.db
       .query("files")
       .withIndex("by_session_path", (q) =>
@@ -42,6 +46,10 @@ export const upsertAutoVersion = mutation({
     contents: v.string(),
   },
   handler: async (ctx, args): Promise<{ id: Id<"files">; version: number }> => {
+    if (args.path.length > 500 || args.path.includes("..")) {
+      throw new Error("Invalid file path");
+    }
+
     const existing = await ctx.db
       .query("files")
       .withIndex("by_session_path", (q) =>

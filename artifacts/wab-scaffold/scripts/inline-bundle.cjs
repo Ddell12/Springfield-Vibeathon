@@ -31,8 +31,12 @@ html = html.replace(
     if (src.startsWith("http://") || src.startsWith("https://")) return match;
     const jsPath = path.join(distDir, src.replace(/^\//, ""));
     if (!fs.existsSync(jsPath)) return match;
-    const js = fs.readFileSync(jsPath, "utf-8");
-    return `<script>${js}</script>`;
+    let js = fs.readFileSync(jsPath, "utf-8");
+    // Escape </script> and <script inside inline JS to prevent premature tag closing
+    js = js.replace(/<\/script/gi, "<\\/script").replace(/<script/gi, "\\x3cscript");
+    // Preserve type=module — Parcel outputs ES module syntax (export/import)
+    const isModule = /type=["']?module["']?/i.test(match);
+    return isModule ? `<script type="module">${js}</script>` : `<script>${js}</script>`;
   }
 );
 

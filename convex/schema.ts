@@ -17,7 +17,8 @@ export default defineSchema({
     publishedUrl: v.optional(v.string()),
     type: v.optional(v.union(v.literal("builder"), v.literal("flashcards"))),
   }).index("by_user", ["userId"])
-    .index("by_state", ["state"]),
+    .index("by_state", ["state"])
+    .index("by_state_user", ["state", "userId"]),
 
   messages: defineTable({
     sessionId: v.id("sessions"),

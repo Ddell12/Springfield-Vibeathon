@@ -14,9 +14,10 @@ interface PreviewPanelProps {
   state: StreamingStatus;
   error?: string;
   deviceSize?: DeviceSize;
+  buildFailed?: boolean;
 }
 
-export function PreviewPanel({ bundleHtml, state, error, deviceSize = "desktop" }: PreviewPanelProps) {
+export function PreviewPanel({ bundleHtml, state, error, deviceSize = "desktop", buildFailed = false }: PreviewPanelProps) {
   const [refreshKey, setRefreshKey] = useState(0);
 
   const blobUrl = useMemo(() => {
@@ -92,8 +93,14 @@ export function PreviewPanel({ bundleHtml, state, error, deviceSize = "desktop" 
       {!hasPreview && !isGenerating && !isFailed && state === "live" && (
         <div className="flex flex-col items-center gap-3 text-amber-600">
           <AlertCircle className="h-8 w-8" />
-          <p className="text-sm font-medium">Build could not produce a preview</p>
-          <p className="text-xs text-muted-foreground">Check the Code panel for your generated files</p>
+          <p className="text-sm font-medium">
+            {buildFailed ? "Preview build failed" : "Build could not produce a preview"}
+          </p>
+          <p className="max-w-sm text-center text-xs text-muted-foreground">
+            {buildFailed
+              ? "The generated code had build errors. Try sending a follow-up message like \"fix the build errors\" to resolve."
+              : "Check the Code panel for your generated files."}
+          </p>
         </div>
       )}
 

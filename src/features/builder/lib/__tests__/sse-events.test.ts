@@ -79,7 +79,7 @@ describe("parseSSEEvent", () => {
 
   it("parses file_complete event with missing fields (nullish fallback)", () => {
     const result = parseSSEEvent("file_complete", {});
-    expect(result).toEqual({ event: "file_complete", path: "", contents: "" });
+    expect(result).toEqual({ event: "file_complete", path: "", contents: undefined });
   });
 
   it("parses app_name event", () => {

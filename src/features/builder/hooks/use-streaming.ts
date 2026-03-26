@@ -42,6 +42,7 @@ export interface UseStreamingReturn {
   streamingText: string;
   activities: Activity[];
   bundleHtml: string | null;
+  buildFailed: boolean;
   reset: () => void;
 }
 
@@ -61,6 +62,7 @@ export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn 
   const [streamingText, setStreamingText] = useState("");
   const [activities, setActivities] = useState<Activity[]>([]);
   const [bundleHtml, setBundleHtml] = useState<string | null>(null);
+  const [buildFailed, setBuildFailed] = useState(false);
 
   const reset = () => {
     abortRef.current?.abort();
@@ -73,6 +75,7 @@ export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn 
     setStreamingText("");
     setActivities([]);
     setBundleHtml(null);
+    setBuildFailed(false);
   };
 
   const abortRef = useRef<AbortController | null>(null);
@@ -192,6 +195,7 @@ export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn 
           }
           setStreamingText(tokenBufferRef.current);
           setStatus("live");
+          setBuildFailed(sseEvent.buildFailed ?? false);
           if (sseEvent.sessionId) setSessionId(sseEvent.sessionId);
           break;
 
@@ -226,6 +230,7 @@ export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn 
       setFiles([]);
       setAppName(null);
       setBundleHtml(null);
+      setBuildFailed(false);
 
       try {
         const response = await fetch("/api/generate", {
@@ -341,6 +346,7 @@ export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn 
     streamingText,
     activities,
     bundleHtml,
+    buildFailed,
     reset,
   };
 }

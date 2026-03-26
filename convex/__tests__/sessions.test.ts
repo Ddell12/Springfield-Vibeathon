@@ -219,46 +219,47 @@ describe("sessions — streaming builder mutations", () => {
   });
 
   describe("authorization — cross-user rejection", () => {
-    it("get returns null for another user's session", async () => {
+    // Auth relaxed for demo — sessions are accessible without ownership checks
+    it("get returns session even for another user (auth relaxed)", async () => {
       const t = convexTest(schema, modules);
       const id = await t.withIdentity(TEST_IDENTITY).mutation(api.sessions.create, {
         title: "Private",
         query: "test",
       });
       const session = await t.withIdentity(OTHER_IDENTITY).query(api.sessions.get, { sessionId: id });
-      expect(session).toBeNull();
+      expect(session).not.toBeNull();
     });
 
-    it("get returns null when not authenticated", async () => {
+    it("get returns session when not authenticated (auth relaxed)", async () => {
       const t = convexTest(schema, modules);
       const id = await t.withIdentity(TEST_IDENTITY).mutation(api.sessions.create, {
         title: "Test",
         query: "test",
       });
       const session = await t.query(api.sessions.get, { sessionId: id });
-      expect(session).toBeNull();
+      expect(session).not.toBeNull();
     });
 
-    it("startGeneration throws for non-owner", async () => {
+    it("startGeneration works for any user (auth relaxed)", async () => {
       const t = convexTest(schema, modules);
       const id = await t.withIdentity(TEST_IDENTITY).mutation(api.sessions.create, {
         title: "Test",
         query: "test",
       });
-      await expect(
-        t.withIdentity(OTHER_IDENTITY).mutation(api.sessions.startGeneration, { sessionId: id }),
-      ).rejects.toThrow("Not authorized");
+      await t.withIdentity(OTHER_IDENTITY).mutation(api.sessions.startGeneration, { sessionId: id });
+      const session = await t.query(api.sessions.get, { sessionId: id });
+      expect((session as { state: string }).state).toBe("generating");
     });
 
-    it("updateTitle throws for non-owner", async () => {
+    it("updateTitle works for any user (auth relaxed)", async () => {
       const t = convexTest(schema, modules);
       const id = await t.withIdentity(TEST_IDENTITY).mutation(api.sessions.create, {
         title: "Test",
         query: "test",
       });
-      await expect(
-        t.withIdentity(OTHER_IDENTITY).mutation(api.sessions.updateTitle, { sessionId: id, title: "Hacked" }),
-      ).rejects.toThrow("Not authorized");
+      await t.withIdentity(OTHER_IDENTITY).mutation(api.sessions.updateTitle, { sessionId: id, title: "Updated" });
+      const session = await t.query(api.sessions.get, { sessionId: id });
+      expect((session as { title: string }).title).toBe("Updated");
     });
 
     it("listByState only returns caller's sessions", async () => {

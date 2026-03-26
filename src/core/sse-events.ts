@@ -31,7 +31,7 @@ export function parseSSEEvent(event: string, data: unknown): SSEEvent | null {
     case "activity":
       return { event: "activity", type: d.type as "thinking" | "writing_file" | "file_written" | "complete", message: String(d.message ?? ""), path: d.path as string | undefined };
     case "file_complete":
-      return { event: "file_complete", path: String(d.path ?? ""), contents: String(d.contents ?? "") };
+      return { event: "file_complete", path: String(d.path ?? ""), contents: d.contents != null ? String(d.contents) : undefined };
     case "app_name":
       return { event: "app_name", name: String(d.name ?? "") };
     case "blueprint":
