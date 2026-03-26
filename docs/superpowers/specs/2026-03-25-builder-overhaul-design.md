@@ -22,6 +22,8 @@ Restructure the system prompt (`src/features/builder/lib/agent-prompt.ts`) to in
 
 The existing multi-turn tool loop (`MAX_TOOL_TURNS = 10` in `route.ts`) already supports this — each turn produces 1 file, tool result returns, Claude continues. Preview updates after each ~3-5 second turn.
 
+**Risk:** This is prompt-only enforcement. If Claude ignores the instruction and batches multiple `write_file` calls in one response, all files still arrive at once after `finalMessage()`. This is acceptable for the vibeathon — in practice, Claude respects explicit tool-use instructions reliably. A future iteration could use `llmStream.on("tool_use")` for true per-tool-call streaming reactivity.
+
 #### 1b. Skip npm Install via @webcontainer/snapshot
 
 **Build-time snapshot generation:**
@@ -38,6 +40,9 @@ The existing multi-turn tool loop (`MAX_TOOL_TURNS = 10` in `route.ts`) already 
   2. `webcontainer.mount(snapshotBuffer)` instead of `mount(templateFiles)` + `npm install`
   3. Immediately spawn `npm run dev` (Vite) — no install step
   4. Remove the `installing` status state — goes directly from `booting` to `ready`
+  5. Update the `WebContainerStatus` type union from `"booting" | "installing" | "ready" | "error"` to `"booting" | "ready" | "error"` and audit all downstream consumers (`builder-toolbar.tsx`, `preview-panel.tsx`, `builder-page.tsx`)
+
+**Note:** `wc.mount()` with a binary snapshot (`ArrayBuffer`) uses a different overload than the current `wc.mount(templateFiles)` (`FileSystemTree`). The call signature changes but both are supported by the WebContainer API.
 
 **Expected boot time:** <2 seconds (down from 15-30s).
 
@@ -59,7 +64,8 @@ On first prompt submission, before the LLM responds:
     );
   }
   ```
-- This renders in the preview within 1-2s of the user's prompt
+- Write the placeholder only after `wcStatus === "ready"` (WebContainer booted and Vite running). If the user submits before ready, queue the write and execute when ready.
+- This renders in the preview within 1-2s of the user's prompt (assuming snapshot boot is <2s)
 - As Claude's real `src/App.tsx` arrives via `file_complete`, it overwrites this and Vite HMR updates the preview
 
 **Expected end-to-end latency:** Prompt → placeholder visible (~1-2s) → first real file (~3-5s) → subsequent files every ~3-5s → complete app in 15-25s with incremental visual progress.
@@ -167,7 +173,7 @@ export const getMostRecent = query({
     // For now (no auth), return the most recent session in LIVE state
     const session = await ctx.db
       .query("sessions")
-      .withIndex("by_state", (q) => q.eq("state", "LIVE"))
+      .withIndex("by_state", (q) => q.eq("state", "live"))
       .order("desc")
       .first();
     return session;
@@ -182,8 +188,11 @@ Requires a new index on sessions: `.index("by_state", ["state"])`.
 ```typescript
 const mostRecent = useQuery(api.sessions.getMostRecent);
 
+const autoResumed = useRef(false);
+
 useEffect(() => {
-  if (!sessionIdFromUrl && mostRecent && status === "idle" && wcStatus === "ready") {
+  if (!sessionIdFromUrl && mostRecent && status === "idle" && wcStatus === "ready" && !autoResumed.current) {
+    autoResumed.current = true;
     router.replace(`?sessionId=${mostRecent._id}`);
   }
 }, [sessionIdFromUrl, mostRecent, status, wcStatus]);
@@ -208,7 +217,9 @@ On mount, if no `?sessionId` and no `mostRecent` from Convex (e.g., Convex query
 
 File: `src/features/builder/lib/agent-prompt.ts`
 
-Add these sections to the system prompt:
+The existing prompt already has Visual Quality Bar, Therapy Domain Context, Quality Standards, and a gold standard example (lines 63-462). The changes below **augment and strengthen** the existing sections, not replace them. The genuinely new addition is the single-file-per-turn instruction.
+
+Add/strengthen these sections in the system prompt:
 
 **Visual quality rules:**
 - "Create visually polished, production-quality apps worthy of a design portfolio."
