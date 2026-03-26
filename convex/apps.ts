@@ -1,4 +1,3 @@
-// Auth: userId filtering deferred — single-user demo mode
 import { v } from "convex/values";
 
 import { mutation, query } from "./_generated/server";
@@ -13,10 +12,12 @@ export const create = mutation({
     publishedUrl: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
     const now = Date.now();
     return await ctx.db.insert("apps", {
       title: args.title,
       description: args.description,
+      userId: identity?.subject,
       sessionId: args.sessionId,
       shareSlug: args.shareSlug,
       previewUrl: args.previewUrl,
@@ -65,11 +66,14 @@ export const update = mutation({
 export const list = query({
   args: {},
   handler: async (ctx) => {
-    return await ctx.db
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) return [];
+    const all = await ctx.db
       .query("apps")
       .withIndex("by_created")
       .order("desc")
       .take(50);
+    return all.filter((app) => app.userId === identity.subject);
   },
 });
 
@@ -92,11 +96,13 @@ export const ensureForSession = mutation({
     ).join("");
 
     const now = Date.now();
+    const identity = await ctx.auth.getUserIdentity();
     const appId = await ctx.db.insert("apps", {
       title: args.title,
       description: args.description ?? "",
       sessionId: args.sessionId,
       shareSlug: slug,
+      userId: identity?.subject,
       createdAt: now,
       updatedAt: now,
     });

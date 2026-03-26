@@ -7,9 +7,11 @@ import schema from "../schema";
 
 const modules = import.meta.glob("../**/*.*s"); // REQUIRED for convex-test
 
+const TEST_IDENTITY = { subject: "test-user-123", issuer: "clerk" };
+
 describe("messages", () => {
   it("create and list roundtrip", async () => {
-    const t = convexTest(schema, modules);
+    const t = convexTest(schema, modules).withIdentity(TEST_IDENTITY);
     const sessionId = await t.mutation(api.sessions.create, {
       title: "Test Session",
       query: "Build a token board",
@@ -27,7 +29,7 @@ describe("messages", () => {
   });
 
   it("list returns messages in ascending timestamp order", async () => {
-    const t = convexTest(schema, modules);
+    const t = convexTest(schema, modules).withIdentity(TEST_IDENTITY);
     const sessionId = await t.mutation(api.sessions.create, {
       title: "Ordering Test",
       query: "test",
@@ -51,7 +53,7 @@ describe("messages", () => {
   });
 
   it("addUserMessage sets role to user automatically", async () => {
-    const t = convexTest(schema, modules);
+    const t = convexTest(schema, modules).withIdentity(TEST_IDENTITY);
     const sessionId = await t.mutation(api.sessions.create, {
       title: "User Message Test",
       query: "test",
@@ -67,7 +69,7 @@ describe("messages", () => {
   });
 
   it("list returns empty for new session with no messages", async () => {
-    const t = convexTest(schema, modules);
+    const t = convexTest(schema, modules).withIdentity(TEST_IDENTITY);
     const sessionId = await t.mutation(api.sessions.create, {
       title: "Empty Session",
       query: "test",
@@ -77,7 +79,7 @@ describe("messages", () => {
   });
 
   it("messages are isolated per session", async () => {
-    const t = convexTest(schema, modules);
+    const t = convexTest(schema, modules).withIdentity(TEST_IDENTITY);
     const sessionA = await t.mutation(api.sessions.create, {
       title: "Session A",
       query: "test",

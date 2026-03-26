@@ -1,5 +1,6 @@
 "use client";
 
+import { UserButton } from "@clerk/nextjs";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 
@@ -13,7 +14,7 @@ export function DashboardSidebar() {
   const tab = searchParams.get("tab");
 
   return (
-    <aside className="fixed left-0 top-0 z-40 hidden h-screen w-20 md:flex flex-col items-center bg-surface-container py-6">
+    <aside className="fixed left-0 top-0 z-50 hidden h-screen w-20 md:flex flex-col items-center bg-surface-container py-6">
       {/* Logo */}
       <div className="mb-10">
         <Link
@@ -49,11 +50,9 @@ export function DashboardSidebar() {
         })}
       </nav>
 
-      {/* Bottom: Avatar */}
+      {/* Bottom: User menu */}
       <div className="mt-auto flex flex-col items-center gap-6">
-        <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-tertiary-fixed text-xs font-bold text-on-surface">
-          D
-        </div>
+        <UserButton />
       </div>
     </aside>
   );

@@ -7,6 +7,7 @@ Bridges is an AI-powered therapy app builder where ABA therapists, speech therap
 ## Stack
 
 - **Frontend:** Next.js 16 (App Router) + shadcn/ui + Tailwind v4
+- **Auth:** Clerk v7 (`@clerk/nextjs`) — sign-in/sign-up, JWT sessions, Convex integration via `ConvexProviderWithClerk`
 - **Backend:** Convex (real-time, TypeScript, built-in vector search)
 - **AI Code Generation:** Claude Sonnet via `@anthropic-ai/sdk` — streaming SSE pipeline
 - **Knowledge Base:** Google Gemini embeddings (768-dim) via `@convex-dev/rag`
@@ -42,6 +43,8 @@ Key files:
 - `src/app/api/generate/route.ts` — SSE streaming endpoint with multi-turn tool loop
 - `src/features/builder/lib/agent-prompt.ts` — Agent system prompt with component library and design rules
 - `src/features/builder/hooks/use-postmessage-bridge.ts` — TTS/STT bridge between parent and iframe
+- `src/core/providers.tsx` — Clerk + Convex provider bridge
+- `convex/auth.config.ts` — Clerk JWT verification for backend auth
 - `convex/sessions.ts` — Session state machine
 - `convex/image_generation.ts` — Therapy image generation with caching
 - `convex/aiActions.ts` — TTS action with voice caching
@@ -101,14 +104,27 @@ npx playwright test   # E2E tests
 - **Convex backend tests:** `convex-test` mock runtime
 - **E2E tests:** Playwright (chromium + webkit) in `tests/e2e/`
 
+## Authentication
+
+Clerk v7 handles all user authentication. The integration spans three layers:
+
+- **Frontend:** `ClerkProvider` wraps the app in `src/app/layout.tsx`. `ConvexProviderWithClerk` in `src/core/providers.tsx` bridges Clerk sessions to Convex. `UserButton` appears in the sidebar and header.
+- **Pages:** `/sign-in` and `/sign-up` use Clerk's pre-built components.
+- **Backend:** `convex/auth.config.ts` verifies Clerk JWTs using the issuer domain.
+
+Unauthenticated users can explore templates and use the builder. Protected routes (like My Apps) require sign-in.
+
 ## Environment Variables
 
 ### `.env.local` (Next.js)
 - `NEXT_PUBLIC_CONVEX_URL` — Convex deployment URL
+- `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` — Clerk public key
+- `CLERK_SECRET_KEY` — Clerk server-side key
 - `ANTHROPIC_API_KEY` — Claude API key (for streaming route)
 
 ### Convex Dashboard
 - `ANTHROPIC_API_KEY`
+- `CLERK_JWT_ISSUER_DOMAIN` — Clerk JWT issuer for auth verification
 - `GOOGLE_GENERATIVE_AI_API_KEY` — for RAG embeddings and image generation
 - `ELEVENLABS_API_KEY` — for TTS and STT
 - `VERCEL_TOKEN`, `VERCEL_PROJECT_ID` — for publish pipeline

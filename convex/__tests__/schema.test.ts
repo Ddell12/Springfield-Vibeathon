@@ -7,9 +7,11 @@ import schema from "../schema";
 
 const modules = import.meta.glob("../**/*.*s"); // REQUIRED for convex-test
 
+const TEST_IDENTITY = { subject: "test-user-123", issuer: "clerk" };
+
 describe("schema — streaming builder contract", () => {
   it("sessions table exists with 4-state union", async () => {
-    const t = convexTest(schema, modules);
+    const t = convexTest(schema, modules).withIdentity(TEST_IDENTITY);
     // If the union is wrong the insert will throw at runtime
     const id = await t.mutation(api.sessions.create, {
       title: "Test",
@@ -21,7 +23,7 @@ describe("schema — streaming builder contract", () => {
   });
 
   it("sessions state accepts 'generating'", async () => {
-    const t = convexTest(schema, modules);
+    const t = convexTest(schema, modules).withIdentity(TEST_IDENTITY);
     const id = await t.mutation(api.sessions.create, {
       title: "Test",
       query: "test",
@@ -32,7 +34,7 @@ describe("schema — streaming builder contract", () => {
   });
 
   it("sessions state accepts 'live'", async () => {
-    const t = convexTest(schema, modules);
+    const t = convexTest(schema, modules).withIdentity(TEST_IDENTITY);
     const id = await t.mutation(api.sessions.create, {
       title: "Test",
       query: "test",
@@ -43,7 +45,7 @@ describe("schema — streaming builder contract", () => {
   });
 
   it("sessions state accepts 'failed'", async () => {
-    const t = convexTest(schema, modules);
+    const t = convexTest(schema, modules).withIdentity(TEST_IDENTITY);
     const id = await t.mutation(api.sessions.create, {
       title: "Test",
       query: "test",
@@ -73,7 +75,7 @@ describe("schema — streaming builder contract", () => {
   });
 
   it("generated_files table exists with version field", async () => {
-    const t = convexTest(schema, modules);
+    const t = convexTest(schema, modules).withIdentity(TEST_IDENTITY);
     const sessionId = await t.mutation(api.sessions.create, {
       title: "Test",
       query: "test",

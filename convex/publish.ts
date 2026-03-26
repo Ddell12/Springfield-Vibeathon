@@ -14,6 +14,9 @@ export const publishApp = action({
     description: v.optional(v.string()),
   },
   handler: async (ctx, args): Promise<{ deploymentUrl: string }> => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Not authenticated");
+
     const vercelToken = process.env.VERCEL_TOKEN;
     const projectId = process.env.VERCEL_PROJECT_ID;
     const teamId = process.env.VERCEL_TEAM_ID;

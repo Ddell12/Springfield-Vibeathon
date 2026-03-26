@@ -1,4 +1,3 @@
-// Auth: identity checks deferred — single-user demo mode
 import { v } from "convex/values";
 
 import { mutation, query } from "./_generated/server";
@@ -8,13 +7,12 @@ export const create = mutation({
   args: {
     title: v.string(),
     query: v.string(),
-    // ⚠️ Pre-auth placeholder — do NOT use for authorization.
-    // Phase 6 will derive userId from ctx.auth.getUserIdentity()
-    userId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Not authenticated");
     return await ctx.db.insert("sessions", {
-      userId: args.userId,
+      userId: identity.subject,
       title: args.title,
       query: args.query,
       state: SESSION_STATES.IDLE,
@@ -32,9 +30,11 @@ export const get = query({
 export const list = query({
   args: {},
   handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) return [];
     return await ctx.db
       .query("sessions")
-      .withIndex("by_user")
+      .withIndex("by_user", (q) => q.eq("userId", identity.subject))
       .order("desc")
       .take(50);
   },
@@ -92,6 +92,13 @@ export const listByState = query({
 export const remove = mutation({
   args: { sessionId: v.id("sessions") },
   handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Not authenticated");
+    const session = await ctx.db.get(args.sessionId);
+    if (!session || session.userId !== identity.subject) {
+      throw new Error("Not authorized");
+    }
+
     // Cascade-delete messages in batches (loop prevents orphans for large sessions)
     while (true) {
       const batch = await ctx.db

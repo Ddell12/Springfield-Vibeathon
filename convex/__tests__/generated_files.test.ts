@@ -7,9 +7,11 @@ import schema from "../schema";
 
 const modules = import.meta.glob("../**/*.*s"); // REQUIRED for convex-test
 
+const TEST_IDENTITY = { subject: "test-user-123", issuer: "clerk" };
+
 describe("generated_files — version-tracked file operations", () => {
   it("upsert creates a new file with version", async () => {
-    const t = convexTest(schema, modules);
+    const t = convexTest(schema, modules).withIdentity(TEST_IDENTITY);
     const sessionId = await t.mutation(api.sessions.create, {
       title: "Test",
       query: "test",
@@ -31,7 +33,7 @@ describe("generated_files — version-tracked file operations", () => {
   });
 
   it("upsert on existing path updates contents and version — no duplicate created", async () => {
-    const t = convexTest(schema, modules);
+    const t = convexTest(schema, modules).withIdentity(TEST_IDENTITY);
     const sessionId = await t.mutation(api.sessions.create, {
       title: "Test",
       query: "test",
@@ -59,7 +61,7 @@ describe("generated_files — version-tracked file operations", () => {
   });
 
   it("list returns all files for a session", async () => {
-    const t = convexTest(schema, modules);
+    const t = convexTest(schema, modules).withIdentity(TEST_IDENTITY);
     const sessionId = await t.mutation(api.sessions.create, {
       title: "Test",
       query: "test",
@@ -91,7 +93,7 @@ describe("generated_files — version-tracked file operations", () => {
   });
 
   it("list only returns files for the specified session", async () => {
-    const t = convexTest(schema, modules);
+    const t = convexTest(schema, modules).withIdentity(TEST_IDENTITY);
     const sessionA = await t.mutation(api.sessions.create, {
       title: "Session A",
       query: "test A",
@@ -118,7 +120,7 @@ describe("generated_files — version-tracked file operations", () => {
   });
 
   it("getByPath returns null for nonexistent path", async () => {
-    const t = convexTest(schema, modules);
+    const t = convexTest(schema, modules).withIdentity(TEST_IDENTITY);
     const sessionId = await t.mutation(api.sessions.create, {
       title: "Test",
       query: "test",
@@ -131,7 +133,7 @@ describe("generated_files — version-tracked file operations", () => {
   });
 
   it("getByPath returns the correct file", async () => {
-    const t = convexTest(schema, modules);
+    const t = convexTest(schema, modules).withIdentity(TEST_IDENTITY);
     const sessionId = await t.mutation(api.sessions.create, {
       title: "Test",
       query: "test",
@@ -151,7 +153,7 @@ describe("generated_files — version-tracked file operations", () => {
   });
 
   it("upsertAutoVersion creates a new file with auto version 1", async () => {
-    const t = convexTest(schema, modules);
+    const t = convexTest(schema, modules).withIdentity(TEST_IDENTITY);
     const sessionId = await t.mutation(api.sessions.create, {
       title: "Test",
       query: "test",
@@ -171,7 +173,7 @@ describe("generated_files — version-tracked file operations", () => {
   });
 
   it("upsertAutoVersion increments version on existing file", async () => {
-    const t = convexTest(schema, modules);
+    const t = convexTest(schema, modules).withIdentity(TEST_IDENTITY);
     const sessionId = await t.mutation(api.sessions.create, {
       title: "Test",
       query: "test",
@@ -198,7 +200,7 @@ describe("generated_files — version-tracked file operations", () => {
   });
 
   it("upsert stores sessionId on the file", async () => {
-    const t = convexTest(schema, modules);
+    const t = convexTest(schema, modules).withIdentity(TEST_IDENTITY);
     const sessionId = await t.mutation(api.sessions.create, {
       title: "Test",
       query: "test",

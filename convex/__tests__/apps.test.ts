@@ -7,9 +7,11 @@ import schema from "../schema";
 
 const modules = import.meta.glob("../**/*.*s"); // REQUIRED for convex-test
 
+const TEST_IDENTITY = { subject: "test-user-123", issuer: "clerk" };
+
 describe("apps", () => {
   it("create and get roundtrip", async () => {
-    const t = convexTest(schema, modules);
+    const t = convexTest(schema, modules).withIdentity(TEST_IDENTITY);
     const appId = await t.mutation(api.apps.create, {
       title: "Token Board",
       description: "A reinforcement token board for ABA therapy",
@@ -23,7 +25,7 @@ describe("apps", () => {
   });
 
   it("getByShareSlug returns app for matching slug", async () => {
-    const t = convexTest(schema, modules);
+    const t = convexTest(schema, modules).withIdentity(TEST_IDENTITY);
     await t.mutation(api.apps.create, {
       title: "Communication Board",
       description: "A picture communication board",
@@ -35,13 +37,13 @@ describe("apps", () => {
   });
 
   it("getByShareSlug returns null for unknown slug", async () => {
-    const t = convexTest(schema, modules);
+    const t = convexTest(schema, modules).withIdentity(TEST_IDENTITY);
     const app = await t.query(api.apps.getByShareSlug, { shareSlug: "nonexistent-slug" });
     expect(app).toBeNull();
   });
 
   it("update patches title and description", async () => {
-    const t = convexTest(schema, modules);
+    const t = convexTest(schema, modules).withIdentity(TEST_IDENTITY);
     const appId = await t.mutation(api.apps.create, {
       title: "Old Title",
       description: "Old description",
@@ -58,7 +60,7 @@ describe("apps", () => {
   });
 
   it("update patches publishedUrl without touching title", async () => {
-    const t = convexTest(schema, modules);
+    const t = convexTest(schema, modules).withIdentity(TEST_IDENTITY);
     const appId = await t.mutation(api.apps.create, {
       title: "Stable Title",
       description: "Stable description",
@@ -74,7 +76,7 @@ describe("apps", () => {
   });
 
   it("list returns created apps ordered by creation time descending", async () => {
-    const t = convexTest(schema, modules);
+    const t = convexTest(schema, modules).withIdentity(TEST_IDENTITY);
     await t.mutation(api.apps.create, {
       title: "App One",
       description: "First app",
@@ -92,7 +94,7 @@ describe("apps", () => {
   });
 
   it("getBySession returns app linked to session", async () => {
-    const t = convexTest(schema, modules);
+    const t = convexTest(schema, modules).withIdentity(TEST_IDENTITY);
     const sessionId = await t.mutation(api.sessions.create, {
       title: "Test Session",
       query: "Build a therapy app",
@@ -110,7 +112,7 @@ describe("apps", () => {
   });
 
   it("getBySession returns null for session with no app", async () => {
-    const t = convexTest(schema, modules);
+    const t = convexTest(schema, modules).withIdentity(TEST_IDENTITY);
     const sessionId = await t.mutation(api.sessions.create, {
       title: "Orphan Session",
       query: "test",

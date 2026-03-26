@@ -1,3 +1,4 @@
+import { auth } from "@clerk/nextjs/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { exec } from "child_process";
 import { ConvexHttpClient } from "convex/browser";
@@ -52,7 +53,12 @@ function jsonErrorResponse(message: string, status: number): Response {
 // ---------------------------------------------------------------------------
 
 export async function POST(request: Request): Promise<Response> {
-  // Rate limiting via Convex env in production
+  // Authenticate via Clerk and forward JWT to Convex
+  const { userId, getToken } = await auth();
+  if (!userId) return jsonErrorResponse("Unauthorized", 401);
+  const token = await getToken({ template: "convex" });
+  if (token) convex.setAuth(token);
+
   let body: unknown;
   try {
     body = await request.json();

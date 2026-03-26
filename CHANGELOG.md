@@ -4,16 +4,21 @@ All notable changes to this project are documented here.
 
 ---
 
-## 2026-03-26 — Final Polish & Submission
+## 2026-03-26 — Authentication, Final Polish & Submission
+
+### Added
+- **Clerk v7 authentication** — Full sign-in/sign-up flow with `ClerkProvider`, `ConvexProviderWithClerk`, and JWT-verified Convex sessions via `convex/auth.config.ts`
+- Dedicated `/sign-in` and `/sign-up` pages
+- `UserButton` integrated into dashboard sidebar and marketing header for account management
+- Graceful auth degradation — unauthenticated users can still explore templates and the builder
+- MIT LICENSE file
+- Updated `.gitignore` for cleaner repository
 
 ### Changed
 - Tightened session state validation with strict enum validators
 - Sanitized all error responses to hide internal details from clients
 - Fixed ESLint import ordering and React hooks warnings
-
-### Added
-- MIT LICENSE file
-- Updated `.gitignore` for cleaner repository
+- Hardened security: XSS sanitization, rate limiting, blob URL race condition fixes, cascade deletes
 
 ### Removed
 - Cleaned development artifacts and stale plan files from repository

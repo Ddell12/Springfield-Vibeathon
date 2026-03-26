@@ -8,9 +8,11 @@ import schema from "../schema";
 
 const modules = import.meta.glob("../**/*.*s"); // REQUIRED for convex-test
 
+const TEST_IDENTITY = { subject: "test-user-123", issuer: "clerk" };
+
 describe("sessions — streaming builder mutations", () => {
   it("create returns session in idle state with query stored", async () => {
-    const t = convexTest(schema, modules);
+    const t = convexTest(schema, modules).withIdentity(TEST_IDENTITY);
     const id = await t.mutation(api.sessions.create, {
       title: "Token Board App",
       query: "Build a token board for rewarding good behavior",
@@ -23,7 +25,7 @@ describe("sessions — streaming builder mutations", () => {
   });
 
   it("startGeneration transitions state to 'generating'", async () => {
-    const t = convexTest(schema, modules);
+    const t = convexTest(schema, modules).withIdentity(TEST_IDENTITY);
     const id = await t.mutation(api.sessions.create, {
       title: "Test",
       query: "test",
@@ -34,7 +36,7 @@ describe("sessions — streaming builder mutations", () => {
   });
 
   it("setLive only requires sessionId and sets state to 'live'", async () => {
-    const t = convexTest(schema, modules);
+    const t = convexTest(schema, modules).withIdentity(TEST_IDENTITY);
     const id = await t.mutation(api.sessions.create, {
       title: "Test",
       query: "test",
@@ -49,7 +51,7 @@ describe("sessions — streaming builder mutations", () => {
   });
 
   it("setLive does not require sandboxId or previewUrl", async () => {
-    const t = convexTest(schema, modules);
+    const t = convexTest(schema, modules).withIdentity(TEST_IDENTITY);
     const id = await t.mutation(api.sessions.create, {
       title: "Test",
       query: "test",
@@ -61,7 +63,7 @@ describe("sessions — streaming builder mutations", () => {
   });
 
   it("setFailed stores error message and sets state to 'failed'", async () => {
-    const t = convexTest(schema, modules);
+    const t = convexTest(schema, modules).withIdentity(TEST_IDENTITY);
     const id = await t.mutation(api.sessions.create, {
       title: "Test",
       query: "test",
@@ -76,7 +78,7 @@ describe("sessions — streaming builder mutations", () => {
   });
 
   it("setBlueprint stores blueprint data on session", async () => {
-    const t = convexTest(schema, modules);
+    const t = convexTest(schema, modules).withIdentity(TEST_IDENTITY);
     const id = await t.mutation(api.sessions.create, {
       title: "Test",
       query: "test",
@@ -96,7 +98,7 @@ describe("sessions — streaming builder mutations", () => {
   });
 
   it("get returns full session object", async () => {
-    const t = convexTest(schema, modules);
+    const t = convexTest(schema, modules).withIdentity(TEST_IDENTITY);
     const id = await t.mutation(api.sessions.create, {
       title: "Communication Board",
       query: "A picture communication board",
@@ -108,7 +110,7 @@ describe("sessions — streaming builder mutations", () => {
   });
 
   it("list returns sessions ordered descending", async () => {
-    const t = convexTest(schema, modules);
+    const t = convexTest(schema, modules).withIdentity(TEST_IDENTITY);
     await t.mutation(api.sessions.create, { title: "First", query: "first" });
     await t.mutation(api.sessions.create, { title: "Second", query: "second" });
     await t.mutation(api.sessions.create, { title: "Third", query: "third" });
@@ -119,7 +121,7 @@ describe("sessions — streaming builder mutations", () => {
   });
 
   it("state transitions are idempotent — re-setting same state is safe", async () => {
-    const t = convexTest(schema, modules);
+    const t = convexTest(schema, modules).withIdentity(TEST_IDENTITY);
     const id = await t.mutation(api.sessions.create, {
       title: "Test",
       query: "test",
@@ -131,7 +133,7 @@ describe("sessions — streaming builder mutations", () => {
   });
 
   it("updateTitle changes the session title", async () => {
-    const t = convexTest(schema, modules);
+    const t = convexTest(schema, modules).withIdentity(TEST_IDENTITY);
     const id = await t.mutation(api.sessions.create, {
       title: "Original Title",
       query: "test",
@@ -146,13 +148,13 @@ describe("sessions — streaming builder mutations", () => {
 
   describe("getMostRecent", () => {
     it("returns null when no live sessions exist", async () => {
-      const t = convexTest(schema, modules);
+      const t = convexTest(schema, modules).withIdentity(TEST_IDENTITY);
       const result = await t.query(api.sessions.getMostRecent, {});
       expect(result).toBeNull();
     });
 
     it("returns null when sessions exist but none are live", async () => {
-      const t = convexTest(schema, modules);
+      const t = convexTest(schema, modules).withIdentity(TEST_IDENTITY);
       const id = await t.mutation(api.sessions.create, {
         title: "Idle Session",
         query: "test",
@@ -163,7 +165,7 @@ describe("sessions — streaming builder mutations", () => {
     });
 
     it("returns the live session when one exists", async () => {
-      const t = convexTest(schema, modules);
+      const t = convexTest(schema, modules).withIdentity(TEST_IDENTITY);
       const id = await t.mutation(api.sessions.create, {
         title: "Live App",
         query: "Build a token board",
@@ -177,7 +179,7 @@ describe("sessions — streaming builder mutations", () => {
     });
 
     it("returns the most recently created live session when multiple exist", async () => {
-      const t = convexTest(schema, modules);
+      const t = convexTest(schema, modules).withIdentity(TEST_IDENTITY);
       const id1 = await t.mutation(api.sessions.create, {
         title: "First Live",
         query: "first",
@@ -194,7 +196,7 @@ describe("sessions — streaming builder mutations", () => {
     });
 
     it("does not return failed or generating sessions", async () => {
-      const t = convexTest(schema, modules);
+      const t = convexTest(schema, modules).withIdentity(TEST_IDENTITY);
       const idFailed = await t.mutation(api.sessions.create, {
         title: "Failed Session",
         query: "failed",

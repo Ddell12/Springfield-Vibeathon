@@ -1,5 +1,6 @@
 "use client";
 
+import { Show, UserButton } from "@clerk/nextjs";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -50,12 +51,25 @@ export function MarketingHeader() {
         </div>
 
         <div className="flex items-center gap-4">
+          <Show when="signed-out">
+            <Link
+              href="/sign-in"
+              className="hidden md:flex items-center font-headline font-bold text-sm text-on-surface-variant hover:text-primary transition-colors"
+            >
+              Sign in
+            </Link>
+          </Show>
           <Link
             href="/builder"
             className="hidden md:flex items-center gap-2 bg-primary-gradient text-on-primary px-6 py-2.5 rounded-lg font-semibold text-sm shadow-lg shadow-primary/10 hover:shadow-primary/20 transition-all active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
           >
             Start Building
           </Link>
+          <Show when="signed-in">
+            <div className="hidden md:flex">
+              <UserButton />
+            </div>
+          </Show>
 
           {/* Mobile hamburger */}
           <div className="md:hidden">
@@ -87,6 +101,19 @@ export function MarketingHeader() {
                   >
                     Start Building
                   </Link>
+                  <Show when="signed-out">
+                    <Link
+                      href="/sign-in"
+                      className="mt-2 font-headline font-bold text-sm text-center text-on-surface-variant hover:text-primary transition-colors px-3 py-2"
+                    >
+                      Sign in
+                    </Link>
+                  </Show>
+                  <Show when="signed-in">
+                    <div className="mt-4 flex justify-center">
+                      <UserButton />
+                    </div>
+                  </Show>
                 </nav>
               </SheetContent>
             </Sheet>

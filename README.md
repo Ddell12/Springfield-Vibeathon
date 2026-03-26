@@ -41,6 +41,7 @@ Bridges lets anyone describe a therapy tool in plain language and get a working,
 - Dark mode with therapy-optimized color palette
 - Responsive design — works on phones, tablets, and desktops
 - One-click publish to a permanent URL via Vercel
+- User authentication via Clerk — sign in, sign up, and personalized dashboards
 - 625 tests across 77 test files
 
 ## Tech Stack
@@ -49,6 +50,7 @@ Bridges lets anyone describe a therapy tool in plain language and get a working,
 |-------|-----------|
 | Frontend | Next.js 16 (App Router) + Tailwind v4 + shadcn/ui |
 | Backend | Convex (real-time database, serverless functions) |
+| Auth | Clerk v7 (sign-in/sign-up, JWT-verified sessions, Convex integration) |
 | AI Code Generation | Claude Sonnet via `@anthropic-ai/sdk` (streaming SSE) |
 | Knowledge Base | `@convex-dev/rag` + Google Gemini embeddings (768-dim) |
 | Image Generation | Google Gemini (`gemini-3-pro-image-preview`) with prompt caching |
@@ -64,6 +66,7 @@ Bridges lets anyone describe a therapy tool in plain language and get a working,
 
 - Node.js 20+
 - A Convex account ([convex.dev](https://convex.dev))
+- A Clerk account ([clerk.com](https://clerk.com)) with a Convex JWT template configured
 - API keys: Anthropic, Google AI, ElevenLabs
 
 ### Setup
@@ -82,6 +85,7 @@ cp .env.example .env.local
 npx convex env set ANTHROPIC_API_KEY <your-key>
 npx convex env set GOOGLE_GENERATIVE_AI_API_KEY <your-key>
 npx convex env set ELEVENLABS_API_KEY <your-key>
+npx convex env set CLERK_JWT_ISSUER_DOMAIN <your-clerk-domain>
 
 # Start Convex backend + Next.js frontend
 npx convex dev &
@@ -162,7 +166,7 @@ User describes app
 
 ## Built With AI
 
-This entire project was built using [Claude Code](https://claude.ai/code) over 5 days for the Springfield Vibeathon. The AI coding agent handled architecture decisions, implementation, testing, and code review — demonstrating how AI can accelerate development of tools that serve underrepresented communities.
+This entire project was built using [Claude Code](https://claude.ai/code) over 5 days for the Springfield Vibeathon "Close the Gap" challenge. From architecture to auth to final polish, the AI coding agent handled implementation, testing, and code review — demonstrating how AI can accelerate the development of tools that serve underrepresented communities.
 
 ## License
 

@@ -1,12 +1,12 @@
 "use client";
 
-import { ConvexProvider, ConvexReactClient } from "convex/react";
+import { useAuth } from "@clerk/nextjs";
+import { ConvexProviderWithClerk } from "convex/react-clerk";
+import { ConvexReactClient } from "convex/react";
 import { ThemeProvider } from "next-themes";
 import { type ReactNode, useMemo } from "react";
 
-export function Providers({ children }: { children: ReactNode }) {
-  // Guard against missing URL during Next.js SSR/prerender (no Convex URL in build env).
-  // useMemo runs during SSR for "use client" components when Next.js prerenders pages.
+export function ConvexClientProvider({ children }: { children: ReactNode }) {
   const convex = useMemo(
     () =>
       new ConvexReactClient(
@@ -16,10 +16,10 @@ export function Providers({ children }: { children: ReactNode }) {
   );
 
   return (
-    <ConvexProvider client={convex}>
+    <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
       <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
         {children}
       </ThemeProvider>
-    </ConvexProvider>
+    </ConvexProviderWithClerk>
   );
 }

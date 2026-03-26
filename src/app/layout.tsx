@@ -1,8 +1,9 @@
 import "./globals.css";
 
+import { ClerkProvider } from "@clerk/nextjs";
 import type { Metadata } from "next";
 
-import { Providers } from "@/core/providers";
+import { ConvexClientProvider } from "@/core/providers";
 import { SkipToContent } from "@/shared/components/skip-to-content";
 import { Toaster } from "@/shared/components/ui/sonner";
 
@@ -49,10 +50,12 @@ export default function RootLayout({
       {/* eslint-enable @next/next/no-page-custom-font */}
       <body className="min-h-full flex flex-col antialiased">
         <SkipToContent />
-        <Providers>
-          {children}
-          <Toaster />
-        </Providers>
+        <ClerkProvider>
+          <ConvexClientProvider>
+            {children}
+            <Toaster />
+          </ConvexClientProvider>
+        </ClerkProvider>
       </body>
     </html>
   );

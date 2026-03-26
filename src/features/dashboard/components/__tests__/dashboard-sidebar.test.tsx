@@ -2,6 +2,10 @@ import { render, screen } from "@testing-library/react";
 
 import { DashboardSidebar } from "../dashboard-sidebar";
 
+vi.mock("@clerk/nextjs", () => ({
+  UserButton: () => <div data-testid="user-button" />,
+}));
+
 vi.mock("next/link", () => ({
   default: ({ href, children, ...props }: any) => (
     <a href={href} {...props}>
@@ -49,9 +53,9 @@ describe("DashboardSidebar", () => {
     expect(logoLink).toHaveAttribute("href", "/");
   });
 
-  it("shows avatar 'D'", () => {
+  it("shows user button", () => {
     render(<DashboardSidebar />);
-    expect(screen.getByText("D")).toBeInTheDocument();
+    expect(screen.getByTestId("user-button")).toBeInTheDocument();
   });
 
   it("shows tooltip labels for nav items", () => {

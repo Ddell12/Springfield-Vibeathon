@@ -2,6 +2,11 @@ import { render, screen } from "@testing-library/react";
 
 import { MarketingHeader } from "../marketing-header";
 
+vi.mock("@clerk/nextjs", () => ({
+  Show: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  UserButton: () => <div data-testid="user-button" />,
+}));
+
 vi.mock("next/link", () => ({
   default: ({ children, href, ...rest }: { children: React.ReactNode; href: string; [key: string]: unknown }) => (
     <a href={href} {...rest}>

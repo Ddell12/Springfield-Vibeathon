@@ -72,3 +72,6 @@ aac-board/
 
 # Misspelled worktree dir
 .claire/
+
+# clerk configuration (can include secrets)
+/.clerk/
