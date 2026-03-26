@@ -1,21 +1,19 @@
 "use client";
 
 import { useQuery } from "convex/react";
-import { memo, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
-import { cn } from "@/core/utils";
 import { MaterialIcon } from "@/shared/components/material-icon";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
-import { ScrollArea } from "@/shared/components/ui/scroll-area";
-
 import { api } from "../../../../convex/_generated/api";
 import { Id } from "../../../../convex/_generated/dataModel";
 import type { Activity, StreamingStatus } from "../hooks/use-streaming";
 import type { TherapyBlueprint } from "../lib/schemas";
 import { BlueprintCard } from "./blueprint-card";
+import { FileBadges } from "./file-badges";
 import { SuggestionChips } from "./suggestion-chips";
 
 const THERAPY_SUGGESTIONS = [
@@ -59,115 +57,6 @@ function SystemMessage({ content }: { content: string }) {
   );
 }
 
-const ACTIVITY_ICONS: Record<Activity["type"], React.ReactNode> = {
-  thinking: <MaterialIcon icon="progress_activity" size="xs" className="animate-spin text-primary" />,
-  writing_file: <MaterialIcon icon="code" size="xs" className="animate-pulse text-tertiary" />,
-  file_written: <MaterialIcon icon="code" size="xs" className="text-primary" />,
-  complete: <MaterialIcon icon="check_circle" size="xs" className="text-primary" filled />,
-};
-
-function ActivityCard({ activity }: { activity: Activity }) {
-  return (
-    <div
-      className={cn(
-        "flex items-center gap-3 rounded-xl px-4 py-2.5 transition-all duration-300",
-        activity.type === "complete"
-          ? "bg-primary/5 dark:bg-primary/10"
-          : "bg-surface-container-low"
-      )}
-    >
-      {ACTIVITY_ICONS[activity.type]}
-      <span className="text-sm text-on-surface-variant">
-        {activity.message}
-      </span>
-      {activity.path && (
-        <code className="ml-auto rounded bg-surface-container-lowest px-2 py-0.5 text-xs font-mono text-primary">
-          {activity.path}
-        </code>
-      )}
-    </div>
-  );
-}
-
-const ProgressSteps = memo(function ProgressSteps({ activities }: { activities: Activity[] }) {
-  if (activities.length === 0) return null;
-
-  // Dedupe by type — show latest of each type
-  const steps: { type: Activity["type"]; label: string; done: boolean }[] = [
-    {
-      type: "thinking",
-      label: "Understanding request",
-      done: activities.some(
-        (a) => a.type === "writing_file" || a.type === "file_written" || a.type === "complete"
-      ),
-    },
-    {
-      type: "writing_file",
-      label: "Generating code",
-      done: activities.some((a) => a.type === "file_written"),
-    },
-    {
-      type: "file_written",
-      label: "Files written",
-      done: activities.some((a) => a.type === "complete"),
-    },
-    {
-      type: "complete",
-      label: "Ready!",
-      done: activities.some((a) => a.type === "complete"),
-    },
-  ];
-
-  // Find current step (first not-done)
-  const currentIdx = steps.findIndex((s) => !s.done);
-  const activeIdx = currentIdx === -1 ? steps.length - 1 : currentIdx;
-
-  return (
-    <div className="flex items-center gap-1 rounded-xl bg-surface-container-low px-4 py-3">
-      {steps.map((step, i) => (
-        <div key={step.type} className="flex items-center gap-1">
-          <div
-            className={cn(
-              "flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold transition-all duration-300",
-              i < activeIdx
-                ? "bg-primary text-on-primary"
-                : i === activeIdx
-                  ? "bg-primary text-white"
-                  : "bg-surface-container-lowest text-on-surface-variant"
-            )}
-          >
-            {i < activeIdx ? (
-              <MaterialIcon icon="check" className="text-sm" />
-            ) : i === activeIdx ? (
-              <MaterialIcon icon="progress_activity" className="text-sm animate-spin" />
-            ) : (
-              i + 1
-            )}
-          </div>
-          <span
-            className={cn(
-              "text-xs transition-colors",
-              i <= activeIdx
-                ? "font-medium text-foreground"
-                : "text-on-surface-variant"
-            )}
-          >
-            {step.label}
-          </span>
-          {i < steps.length - 1 && (
-            <div
-              className={cn(
-                "mx-1 h-px w-4 transition-colors",
-                i < activeIdx ? "bg-primary" : "bg-border"
-              )}
-            />
-          )}
-        </div>
-      ))}
-    </div>
-  );
-});
-
 // --- Main ChatPanel ---
 
 interface ChatPanelProps {
@@ -193,7 +82,6 @@ export function ChatPanel({
 }: ChatPanelProps) {
   const [input, setInput] = useState("");
   const scrollEndRef = useRef<HTMLDivElement>(null);
-  const lastScrollRef = useRef(0);
 
   const messages = useQuery(
     api.messages.list,
@@ -204,13 +92,12 @@ export function ChatPanel({
   const isLive = status === "live";
   const isEmpty = !sessionId && status === "idle";
 
-  // Auto-scroll to bottom on new content — throttled to 200ms to avoid jitter during streaming
+  // Auto-scroll to bottom when new messages arrive or streaming updates
   useEffect(() => {
-    const now = Date.now();
-    if (now - lastScrollRef.current < 200) return;
-    lastScrollRef.current = now;
-    scrollEndRef.current?.scrollIntoView?.({ behavior: "smooth" });
-  }, [messages, streamingText, activities, status]);
+    if (scrollEndRef.current && typeof scrollEndRef.current.scrollIntoView === "function") {
+      scrollEndRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
+    }
+  }, [messages?.length, streamingText, activities.length]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -225,7 +112,7 @@ export function ChatPanel({
 
   return (
     <div className="flex h-full flex-col">
-      <ScrollArea className="min-h-0 flex-1 p-4">
+      <div className="min-h-0 flex-1 overflow-y-auto p-4">
         <div className="flex flex-col gap-3">
           {/* Empty state */}
           {isEmpty && (
@@ -264,18 +151,22 @@ export function ChatPanel({
           {/* Blueprint card */}
           {blueprint && <BlueprintCard blueprint={blueprint} />}
 
-          {/* Progress steps during generation */}
-          {isGenerating && activities.length > 0 && (
-            <ProgressSteps activities={activities} />
+          {/* Thinking indicator */}
+          {isGenerating && activities.some((a) => a.type === "thinking") && (
+            <div className="flex items-center gap-2 py-1">
+              <MaterialIcon icon="progress_activity" size="xs" className="animate-spin text-primary" />
+              <span className="text-sm text-on-surface-variant">Thinking...</span>
+            </div>
           )}
 
-          {/* Activity feed during generation */}
-          {isGenerating &&
-            activities
-              .filter((a) => a.type === "file_written")
-              .map((activity) => (
-                <ActivityCard key={activity.id} activity={activity} />
-              ))}
+          {/* Lovable-style file badges */}
+          {activities.length > 0 && (
+            <FileBadges
+              files={activities
+                .filter((a) => a.type === "file_written" && a.path)
+                .map((a) => ({ path: a.path!, action: "Edited" as const }))}
+            />
+          )}
 
           {/* Streaming assistant text */}
           {isGenerating && streamingText && (
@@ -330,7 +221,7 @@ export function ChatPanel({
           {/* Scroll anchor */}
           <div ref={scrollEndRef} />
         </div>
-      </ScrollArea>
+      </div>
 
       {/* Input area */}
       <form

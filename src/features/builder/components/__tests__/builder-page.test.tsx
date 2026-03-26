@@ -53,11 +53,14 @@ describe("BuilderPage — three-panel layout", () => {
     render(<BuilderPage />);
   });
 
-  it("renders at least 2 resizable panels in default preview mode", () => {
+  it("renders at least 2 resizable panels when a session is active", () => {
+    // When sessionId is present, showPromptScreen is false and panels are rendered
+    mockGet.mockReturnValueOnce("active_session_123");
     render(<BuilderPage />);
     // Default viewMode is "preview" which shows chat + preview (2 panels)
     const panels = document.querySelectorAll("[data-panel]");
     expect(panels.length).toBeGreaterThanOrEqual(2);
+    mockGet.mockReturnValue(null);
   });
 
   it("renders the chat panel area with a text input", () => {
@@ -74,10 +77,13 @@ describe("BuilderPage — three-panel layout", () => {
   });
 
   it("shows preview panel area with loading state when idle + booting", () => {
+    // When sessionId is present, the split-panel layout is shown
+    mockGet.mockReturnValueOnce("active_session_123");
     const { container } = render(<BuilderPage />);
     // Preview panel shows a skeleton pulse when WebContainer is booting
     const pulse = container.querySelector(".animate-pulse");
     expect(pulse).toBeTruthy();
+    mockGet.mockReturnValue(null);
   });
 
   it("renders without crashing when sessionId is in URL", () => {
@@ -87,10 +93,13 @@ describe("BuilderPage — three-panel layout", () => {
     mockGet.mockReturnValue(null);
   });
 
-  it("renders the builder toolbar", () => {
+  it("renders the builder toolbar when a session is active", () => {
+    // Toolbar only renders when showPromptScreen is false (session exists)
+    mockGet.mockReturnValueOnce("active_session_123");
     render(<BuilderPage />);
     // Toolbar should show the project name (may appear in multiple spots)
     expect(screen.getAllByText("Untitled App").length).toBeGreaterThan(0);
+    mockGet.mockReturnValue(null);
   });
 
   it("calls resumeSession when sessionId is in URL and data is loaded", async () => {
