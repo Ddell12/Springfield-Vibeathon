@@ -209,6 +209,13 @@ import { cn } from "./lib/utils"; // clsx + tailwind-merge — use for condition
 - \`.btn-secondary\` — outlined secondary button
 - \`.token-star\` / \`.token-star.earned\` — token economy stars
 - \`.celebration-burst\` — celebration animation keyframes
+- \`.hero-section\` — gradient header banner (primary → primary-light)
+- \`.feature-grid\` — responsive auto-fit grid (min 280px columns)
+- \`.glass-card\` — frosted glass card with backdrop blur
+- \`.tap-target-lg\` — 56px minimum touch target for child-facing elements
+- \`.reward-burst\` — scale-pop animation for reward moments
+- \`.heading-display\` — Nunito 800 with tight tracking for large headings
+- \`.heading-serif\` — Playfair Display for elegant heading variety
 
 ## File Generation Rules
 
