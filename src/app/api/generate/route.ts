@@ -199,6 +199,7 @@ export async function POST(request: Request): Promise<Response> {
               // esbuild bundles JS/TSX; Tailwind CDN handles CSS at runtime in the browser.
               // This replaces the Parcel+html-inline pipeline which was too large for Vercel (367MB).
               const entryPoint = join(buildDir!, "src", "main.tsx");
+              console.log(`[generate] esbuild: entryPoint=${entryPoint} exists=${existsSync(entryPoint)} buildDir=${buildDir}`);
               if (!existsSync(entryPoint)) throw new Error("Scaffold entry point src/main.tsx not found");
 
               // Resolve from scaffold's prod deps AND root node_modules (for shared packages)
@@ -272,9 +273,11 @@ export async function POST(request: Request): Promise<Response> {
 </body>
 </html>`;
 
+              console.log(`[generate] esbuild bundle assembled: ${jsBundle.length} chars JS, ${customCss.length} chars CSS, ${bundleHtml.length} chars total HTML`);
               if (bundleHtml.length < 200) throw new Error("bundle HTML is suspiciously small");
               send("bundle", { html: bundleHtml });
               buildSucceeded = true;
+              console.log("[generate] bundle SSE event sent, buildSucceeded=true");
               // Persist bundle for session resume
               try {
                 await convex.mutation(api.generated_files.upsertAutoVersion, {
