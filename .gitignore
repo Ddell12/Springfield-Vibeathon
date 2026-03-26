@@ -54,3 +54,9 @@ e2e-screenshots/
 next-env.d.ts
 e2b-templates/vite-therapy/node_modules/
 docs/design/Lovable web Jan 2026/
+
+# WAB scaffold (recreate via scripts/setup-wab-scaffold.sh)
+artifacts/wab-scaffold/node_modules/
+artifacts/wab-scaffold/.parcel-cache/
+artifacts/wab-scaffold/dist/
+artifacts/wab-scaffold/bundle.html
