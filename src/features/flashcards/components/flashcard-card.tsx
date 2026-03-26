@@ -33,8 +33,8 @@ export function FlashcardCard({ label, imageUrl, audioUrl, index, total }: Flash
     <div className="flex flex-col items-center gap-4">
       <div className="relative w-full max-w-sm overflow-hidden rounded-[2rem] bg-surface-container-lowest shadow-xl shadow-on-surface/5">
         <div className="absolute bottom-0 left-0 top-0 w-1.5 bg-primary" />
-        {/* eslint-disable-next-line @next/next/no-img-element */}
         <div className="aspect-square w-full overflow-hidden rounded-2xl shadow-inner">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={imageUrl ?? PLACEHOLDER_IMAGE}
             alt={label}
