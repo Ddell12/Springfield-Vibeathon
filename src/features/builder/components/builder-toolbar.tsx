@@ -24,6 +24,7 @@ interface BuilderToolbarProps {
   onNameEditEnd?: (name: string) => void;
   onShare?: () => void;
   onPublish?: () => void;
+  onNewChat?: () => void;
   isMobile?: boolean;
   mobilePanel?: "chat" | "preview";
   onMobilePanelChange?: (panel: "chat" | "preview") => void;
@@ -47,6 +48,7 @@ export function BuilderToolbar({
   onNameEditEnd,
   onShare,
   onPublish,
+  onNewChat,
   isMobile,
   mobilePanel,
   onMobilePanelChange,
@@ -67,10 +69,22 @@ export function BuilderToolbar({
           <MaterialIcon icon="arrow_back" size="xs" />
         </Link>
 
+        {onNewChat && (
+          <button
+            onClick={onNewChat}
+            className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded bg-surface-container-high text-on-surface-variant transition-all hover:bg-surface-container-highest hover:text-primary active:scale-90"
+            aria-label="New chat"
+            title="Start a new app"
+          >
+            <MaterialIcon icon="add" size="xs" />
+          </button>
+        )}
+
         {isEditingName ? (
           <input
             autoFocus
             defaultValue={projectName}
+            maxLength={100}
             aria-label="Project name"
             className="w-[160px] truncate border-b border-primary/50 bg-transparent text-[13px] font-semibold tracking-tight text-primary outline-none"
             onBlur={(e) => onNameEditEnd?.(e.target.value)}

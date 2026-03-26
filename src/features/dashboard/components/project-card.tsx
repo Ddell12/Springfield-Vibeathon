@@ -4,6 +4,13 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { cn } from "@/core/utils";
+import { MaterialIcon } from "@/shared/components/material-icon";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/shared/components/ui/dropdown-menu";
 
 export interface ProjectData {
   id: string;
@@ -34,7 +41,15 @@ const GRADIENTS = [
   "from-primary/15 to-secondary/10",
 ];
 
-export function ProjectCard({ project, index = 0 }: { project: ProjectData; index?: number }) {
+export function ProjectCard({
+  project,
+  index = 0,
+  onDelete,
+}: {
+  project: ProjectData;
+  index?: number;
+  onDelete?: () => void;
+}) {
   const gradient = GRADIENTS[index % GRADIENTS.length];
 
   return (
@@ -68,6 +83,39 @@ export function ProjectCard({ project, index = 0 }: { project: ProjectData; inde
             Open Tool
           </span>
         </div>
+
+        {/* Action menu */}
+        {onDelete && (
+          <div className="absolute right-2 top-2 z-10 opacity-0 transition-opacity group-hover:opacity-100">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                  }}
+                  className="flex h-8 w-8 items-center justify-center rounded-full bg-surface-container-lowest/90 text-on-surface-variant shadow-sm backdrop-blur-sm transition-colors hover:bg-surface-container-lowest"
+                  aria-label="App options"
+                >
+                  <MaterialIcon icon="more_vert" size="sm" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="min-w-[140px]">
+                <DropdownMenuItem
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onDelete();
+                  }}
+                  className="text-error focus:text-error"
+                >
+                  <MaterialIcon icon="delete" size="sm" className="mr-2" />
+                  Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        )}
       </div>
 
       {/* Info row */}

@@ -20,6 +20,7 @@ vi.mock("next/link", () => ({
 
 vi.mock("convex/react", () => ({
   useQuery: vi.fn().mockReturnValue(undefined),
+  useMutation: vi.fn().mockReturnValue(vi.fn()),
 }));
 
 vi.mock("@/shared/components/empty-state", () => ({
@@ -80,12 +81,20 @@ vi.mock("../templates-tab", () => ({
   TemplatesTab: () => <div data-testid="templates-tab" />,
 }));
 
+vi.mock("../../../../convex/_generated/dataModel", () => ({}));
+
 vi.mock("../../../../convex/_generated/api", () => ({
   api: {
     sessions: {
       list: "sessions:list",
+      listByState: "sessions:listByState",
+      remove: "sessions:remove",
     },
   },
+}));
+
+vi.mock("@/features/builder/components/delete-confirmation-dialog", () => ({
+  DeleteConfirmationDialog: () => null,
 }));
 
 const mockUseQuery = useQuery as ReturnType<typeof vi.fn>;
@@ -136,7 +145,7 @@ describe("DashboardView", () => {
   });
 
   it("shows ProjectCards when sessions are loaded", () => {
-    mockUseQuery.mockReturnValue([
+    const sessionData = [
       {
         _id: "id1",
         title: "My Token Board",
@@ -147,9 +156,19 @@ describe("DashboardView", () => {
         title: "Visual Schedule App",
         _creationTime: Date.now(),
       },
-    ]);
+    ];
+    // useQuery is called for sessions.list (no extra args) and sessions.listByState (with {state})
+    // Return session data only for the list call, empty for listByState
+    let callCount = 0;
+    mockUseQuery.mockImplementation(() => {
+      callCount++;
+      // First call is sessions.list, second is sessions.listByState
+      return callCount === 1 ? sessionData : [];
+    });
     render(<DashboardView />);
-    const cards = screen.getAllByTestId("project-card");
+    // Only the "Recently viewed" tab should show the 2 cards
+    const recentTab = screen.getByTestId("tab-recent");
+    const cards = recentTab.querySelectorAll("[data-testid='project-card']");
     expect(cards).toHaveLength(2);
     expect(screen.getByText("My Token Board")).toBeInTheDocument();
     expect(screen.getByText("Visual Schedule App")).toBeInTheDocument();

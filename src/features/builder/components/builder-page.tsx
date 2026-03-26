@@ -62,6 +62,7 @@ export function BuilderPage() {
     streamingText,
     activities,
     bundleHtml,
+    reset,
   } = useStreaming();
 
   // Session resume: fetch session + files when ?sessionId is in URL
@@ -132,17 +133,21 @@ export function BuilderPage() {
   const promptFromUrl = searchParams.get("prompt");
 
   useEffect(() => {
-    if (promptFromUrl && status === "idle" && !promptSubmitted.current) {
+    if (promptFromUrl && status === "idle" && !promptSubmitted.current && !sessionIdFromUrl) {
       promptSubmitted.current = true;
       handleGenerate(decodeURIComponent(promptFromUrl));
       router.replace("/builder");
     }
-  }, [promptFromUrl, status, generate, router]);
+  }, [promptFromUrl, status, generate, router, sessionIdFromUrl]);
 
   // Auto-resume: redirect to most recent session if no sessionId in URL
+  // Skip when ?new=1 is present (user explicitly wants a fresh session)
+  // Skip when a prompt is being submitted from URL params
   useEffect(() => {
     if (
       !sessionIdFromUrl &&
+      !searchParams.get("new") &&
+      !promptFromUrl &&
       mostRecent &&
       status === "idle" &&
       !autoResumed.current
@@ -150,7 +155,7 @@ export function BuilderPage() {
       autoResumed.current = true;
       router.replace(`?sessionId=${mostRecent._id}`);
     }
-  }, [sessionIdFromUrl, mostRecent, status, router]);
+  }, [sessionIdFromUrl, searchParams, promptFromUrl, mostRecent, status, router]);
 
   // Update URL when sessionId is set from streaming, and persist to localStorage
   useEffect(() => {
@@ -259,6 +264,12 @@ export function BuilderPage() {
             onNameEditEnd={handleNameEditEnd}
             onShare={() => setShareDialogOpen(true)}
             onPublish={handlePublish}
+            onNewChat={() => {
+              reset();
+              sessionResumed.current = false;
+              autoResumed.current = false;
+              window.location.href = "/builder?new=1";
+            }}
             isMobile={isMobile}
             mobilePanel={mobilePanel}
             onMobilePanelChange={setMobilePanel}

@@ -74,14 +74,66 @@ export const setFailed = mutation({
 });
 
 
+const VALID_STATES = Object.values(SESSION_STATES);
+
+export const listByState = query({
+  args: { state: v.string() },
+  handler: async (ctx, args) => {
+    if (!VALID_STATES.includes(args.state as typeof VALID_STATES[number])) {
+      return [];
+    }
+    return await ctx.db
+      .query("sessions")
+      .withIndex("by_state", (q) => q.eq("state", args.state))
+      .order("desc")
+      .take(50);
+  },
+});
+
+export const remove = mutation({
+  args: { sessionId: v.id("sessions") },
+  handler: async (ctx, args) => {
+    // Cascade-delete messages (batched to avoid unbounded memory)
+    const messages = await ctx.db
+      .query("messages")
+      .withIndex("by_session", (q) => q.eq("sessionId", args.sessionId))
+      .take(1000);
+    for (const msg of messages) {
+      await ctx.db.delete(msg._id);
+    }
+
+    // Cascade-delete files (typically < 20 per session)
+    const files = await ctx.db
+      .query("files")
+      .withIndex("by_session", (q) => q.eq("sessionId", args.sessionId))
+      .take(200);
+    for (const file of files) {
+      await ctx.db.delete(file._id);
+    }
+
+    // Cascade-delete apps (typically 0-1 per session)
+    const apps = await ctx.db
+      .query("apps")
+      .withIndex("by_session", (q) => q.eq("sessionId", args.sessionId))
+      .take(10);
+    for (const app of apps) {
+      await ctx.db.delete(app._id);
+    }
+
+    // Delete the session itself
+    await ctx.db.delete(args.sessionId);
+  },
+});
+
 export const updateTitle = mutation({
   args: {
     sessionId: v.id("sessions"),
     title: v.string(),
   },
   handler: async (ctx, args) => {
+    const trimmed = args.title.slice(0, 100);
     await ctx.db.patch(args.sessionId, {
-      title: args.title,
+      title: trimmed,
     });
   },
 });

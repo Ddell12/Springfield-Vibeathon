@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 import { cn } from "@/core/utils";
 import { MaterialIcon } from "@/shared/components/material-icon";
 import { Button } from "@/shared/components/ui/button";
@@ -23,8 +25,15 @@ export function DeleteConfirmationDialog({
   projectName,
   onConfirmDelete,
 }: DeleteConfirmationDialogProps) {
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleOpenChange = (next: boolean) => {
+    if (!next) setIsDeleting(false);
+    onOpenChange(next);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
         className="rounded-2xl p-10 sm:max-w-sm gap-0"
         showCloseButton={false}
@@ -48,7 +57,8 @@ export function DeleteConfirmationDialog({
         <div className="flex items-center justify-end gap-6">
           <Button
             variant="ghost"
-            onClick={() => onOpenChange(false)}
+            onClick={() => handleOpenChange(false)}
+            disabled={isDeleting}
             className={cn(
               "text-sm font-semibold text-on-surface-variant uppercase tracking-widest",
               "hover:text-on-surface"
@@ -57,9 +67,11 @@ export function DeleteConfirmationDialog({
             Cancel
           </Button>
           <Button
+            disabled={isDeleting}
             onClick={() => {
+              setIsDeleting(true);
               onConfirmDelete();
-              onOpenChange(false);
+              handleOpenChange(false);
             }}
             className={cn(
               "bg-error text-on-error font-semibold text-sm uppercase tracking-widest",
@@ -67,7 +79,7 @@ export function DeleteConfirmationDialog({
               "hover:bg-error/90 transition-all"
             )}
           >
-            Delete
+            {isDeleting ? "Deleting…" : "Delete"}
           </Button>
         </div>
       </DialogContent>

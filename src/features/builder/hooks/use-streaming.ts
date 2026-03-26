@@ -41,6 +41,7 @@ export interface UseStreamingReturn {
   streamingText: string;
   activities: Activity[];
   bundleHtml: string | null;
+  reset: () => void;
 }
 
 export interface UseStreamingOptions {
@@ -84,6 +85,19 @@ export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn 
   const [streamingText, setStreamingText] = useState("");
   const [activities, setActivities] = useState<Activity[]>([]);
   const [bundleHtml, setBundleHtml] = useState<string | null>(null);
+
+  const reset = () => {
+    abortRef.current?.abort();
+    setStatus("idle");
+    setFiles([]);
+    setBlueprint(null);
+    setAppName(null);
+    setError(null);
+    setSessionId(null);
+    setStreamingText("");
+    setActivities([]);
+    setBundleHtml(null);
+  };
 
   const abortRef = useRef<AbortController | null>(null);
   const onFileCompleteRef = useRef(options?.onFileComplete);
@@ -351,5 +365,6 @@ export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn 
     streamingText,
     activities,
     bundleHtml,
+    reset,
   };
 }

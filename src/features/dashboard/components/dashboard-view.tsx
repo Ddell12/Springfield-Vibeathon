@@ -1,10 +1,11 @@
 "use client";
 
-import { useQuery } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 
+import { DeleteConfirmationDialog } from "@/features/builder/components/delete-confirmation-dialog";
 import { EmptyState } from "@/shared/components/empty-state";
 import { MaterialIcon } from "@/shared/components/material-icon";
 import { MobileNavDrawer } from "@/shared/components/mobile-nav-drawer";
@@ -12,6 +13,7 @@ import { Button } from "@/shared/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/components/ui/tabs";
 
 import { api } from "../../../../convex/_generated/api";
+import type { Id } from "../../../../convex/_generated/dataModel";
 import { MainPromptInput } from "./main-prompt-input";
 import { ProjectCard } from "./project-card";
 import { TemplatesTab } from "./templates-tab";
@@ -28,9 +30,12 @@ type TabValue = (typeof VALID_TABS)[number];
 
 export function DashboardView() {
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: Id<"sessions">; title: string } | null>(null);
   const searchParams = useSearchParams();
   const router = useRouter();
   const sessions = useQuery(api.sessions.list);
+  const liveSessions = useQuery(api.sessions.listByState, { state: "live" });
+  const removeSession = useMutation(api.sessions.remove);
 
   const tabParam = searchParams.get("tab");
   const activeTab: TabValue = VALID_TABS.includes(tabParam as TabValue)
@@ -78,10 +83,6 @@ export function DashboardView() {
           </h1>
         </div>
         <div className="flex items-center gap-6">
-          <div className="flex items-center gap-4 text-on-surface-variant/50">
-            <MaterialIcon icon="notifications" size="sm" className="pointer-events-none" />
-            <MaterialIcon icon="help" size="sm" className="pointer-events-none" />
-          </div>
           <Link
             href="/builder"
             className="flex items-center gap-2 rounded-lg bg-gradient-to-br from-primary to-primary-container px-5 py-2 font-headline text-sm font-semibold text-white opacity-80 shadow-sm transition-all active:opacity-100"
@@ -162,6 +163,7 @@ export function DashboardView() {
                       userColor: "bg-tertiary-fixed text-on-surface",
                     }}
                     index={i}
+                    onDelete={() => setDeleteTarget({ id: session._id, title: session.title })}
                   />
                 ))}
               </div>
@@ -189,13 +191,42 @@ export function DashboardView() {
           </TabsContent>
 
           <TabsContent value="my-projects">
-            <EmptyState
-              variant="no-projects"
-              title="No apps yet"
-              description="Describe what your child needs, or browse templates to get started."
-              primaryAction={{ label: "Start Building", href: "/builder" }}
-              secondaryAction={{ label: "Browse Templates", href: "/dashboard?tab=templates" }}
-            />
+            {liveSessions && liveSessions.length > 0 ? (
+              <div className="grid grid-cols-1 gap-8 pb-20 md:grid-cols-2 lg:grid-cols-3">
+                {liveSessions.map((session, i) => (
+                  <ProjectCard
+                    key={session._id}
+                    project={{
+                      id: session._id,
+                      title: session.title,
+                      thumbnail: null,
+                      updatedAt: session._creationTime,
+                      userInitial: session.title.charAt(0).toUpperCase(),
+                      userColor: "bg-tertiary-fixed text-on-surface",
+                    }}
+                    index={i}
+                    onDelete={() => setDeleteTarget({ id: session._id, title: session.title })}
+                  />
+                ))}
+              </div>
+            ) : liveSessions?.length === 0 ? (
+              <EmptyState
+                variant="no-projects"
+                title="No apps yet"
+                description="Describe what your child needs, or browse templates to get started."
+                primaryAction={{ label: "Start Building", href: "/builder" }}
+                secondaryAction={{ label: "Browse Templates", href: "/dashboard?tab=templates" }}
+              />
+            ) : (
+              <div className="grid grid-cols-1 gap-8 pb-20 md:grid-cols-2 lg:grid-cols-3">
+                {[0, 1, 2].map((i) => (
+                  <div
+                    key={i}
+                    className="h-64 animate-pulse rounded-2xl bg-surface-container-low"
+                  />
+                ))}
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="shared">
@@ -213,6 +244,18 @@ export function DashboardView() {
         </Tabs>
       </section>
 
+      {/* Delete confirmation dialog */}
+      <DeleteConfirmationDialog
+        open={deleteTarget !== null}
+        onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
+        projectName={deleteTarget?.title ?? ""}
+        onConfirmDelete={() => {
+          if (deleteTarget) {
+            removeSession({ sessionId: deleteTarget.id });
+            setDeleteTarget(null);
+          }
+        }}
+      />
     </main>
   );
 }
