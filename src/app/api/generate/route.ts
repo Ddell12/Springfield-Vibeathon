@@ -219,8 +219,20 @@ export async function POST(request: Request): Promise<Response> {
                 minify: true,
                 sourcemap: false,
                 nodePaths,
-                // Skip CSS imports — we inject Tailwind CDN + raw CSS in the HTML instead
-                external: ["*.css"],
+                // Treat CSS imports as empty — actual CSS is injected via Tailwind CDN in the HTML
+                plugins: [{
+                  name: "ignore-css",
+                  setup(build) {
+                    build.onResolve({ filter: /\.css$/ }, () => ({
+                      path: "css-ignored",
+                      namespace: "ignore",
+                    }));
+                    build.onLoad({ filter: /.*/, namespace: "ignore" }, () => ({
+                      contents: "",
+                      loader: "js",
+                    }));
+                  },
+                }],
                 // Resolve @/* path aliases via tsconfigRaw (avoids plugin API issues on Vercel)
                 tsconfigRaw: JSON.stringify({
                   compilerOptions: {
@@ -239,13 +251,31 @@ export async function POST(request: Request): Promise<Response> {
               // Read the bundled JS
               const jsBundle = readFileSync(join(buildDir!, "dist", "main.js"), "utf-8");
 
-              // Read the scaffold CSS (Tailwind directives + custom styles)
+              // Read the scaffold CSS and split into variable defs vs Tailwind directives
               const cssPath = join(buildDir!, "src", "index.css");
               const rawCss = existsSync(cssPath) ? readFileSync(cssPath, "utf-8") : "";
-              // Strip @tailwind directives (CDN handles them) but keep everything else
-              const customCss = rawCss
+              // Strip @tailwind directives (CDN handles them)
+              const strippedCss = rawCss
                 .replace(/@tailwind\s+(?:base|components|utilities)\s*;/g, "")
                 .trim();
+              // Split: lines with @apply go to tailwindcss style block, rest to regular style
+              const lines = strippedCss.split("\n");
+              const regularCssLines: string[] = [];
+              const tailwindCssLines: string[] = [];
+              let inLayerBlock = false;
+              let braceDepth = 0;
+              for (const line of lines) {
+                if (line.includes("@layer")) inLayerBlock = true;
+                if (inLayerBlock) {
+                  braceDepth += (line.match(/\{/g) || []).length - (line.match(/\}/g) || []).length;
+                  tailwindCssLines.push(line);
+                  if (braceDepth <= 0) { inLayerBlock = false; braceDepth = 0; }
+                } else {
+                  regularCssLines.push(line);
+                }
+              }
+              const regularCss = regularCssLines.join("\n").trim();
+              const tailwindCss = tailwindCssLines.join("\n").trim();
 
               // Read tailwind.config.js for CDN inline config
               const twConfigPath = join(buildDir!, "tailwind.config.js");
@@ -263,7 +293,8 @@ export async function POST(request: Request): Promise<Response> {
   <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' blob: data: https://fonts.googleapis.com https://fonts.gstatic.com https://cdn.tailwindcss.com;" />
   <script src="https://cdn.tailwindcss.com"></script>
   <script>tailwindcss.config = { darkMode: ["class"], theme: { extend: ${twExtend} } };</script>
-  <style type="text/tailwindcss">${customCss}</style>
+  <style>${regularCss}</style>
+  <style type="text/tailwindcss">${tailwindCss}</style>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap" />
   <title>Bridges App</title>
 </head>
@@ -273,7 +304,7 @@ export async function POST(request: Request): Promise<Response> {
 </body>
 </html>`;
 
-              console.log(`[generate] esbuild bundle assembled: ${jsBundle.length} chars JS, ${customCss.length} chars CSS, ${bundleHtml.length} chars total HTML`);
+              console.log(`[generate] esbuild bundle assembled: ${jsBundle.length} chars JS, ${regularCss.length + tailwindCss.length} chars CSS, ${bundleHtml.length} chars total HTML`);
               if (bundleHtml.length < 200) throw new Error("bundle HTML is suspiciously small");
               send("bundle", { html: bundleHtml });
               buildSucceeded = true;
