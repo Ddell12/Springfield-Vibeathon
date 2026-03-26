@@ -12,7 +12,7 @@ export type SSEEvent =
   | { event: "speech_generated"; text: string; audioUrl: string }
   | { event: "stt_enabled"; purpose: string }
   | { event: "bundle"; html: string }
-  | { event: "done"; sessionId?: string; files?: Array<{ path: string; contents: string }> }
+  | { event: "done"; sessionId?: string; files?: Array<{ path: string; contents: string }>; buildFailed?: boolean }
   | { event: "error"; message: string };
 
 /**
@@ -45,7 +45,7 @@ export function parseSSEEvent(event: string, data: unknown): SSEEvent | null {
     case "bundle":
       return { event: "bundle", html: String(d.html ?? "") };
     case "done":
-      return { event: "done", sessionId: d.sessionId as string | undefined, files: d.files as Array<{ path: string; contents: string }> | undefined };
+      return { event: "done", sessionId: d.sessionId as string | undefined, files: d.files as Array<{ path: string; contents: string }> | undefined, buildFailed: d.buildFailed as boolean | undefined };
     case "error":
       return { event: "error", message: String(d.message ?? "Unknown error") };
     default:

@@ -1,7 +1,7 @@
 "use client";
 
 import { AlertCircle, Loader2, Monitor, RefreshCw } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { cn } from "@/core/utils";
 
@@ -26,11 +26,24 @@ export function PreviewPanel({ bundleHtml, state, error, deviceSize = "desktop" 
     return URL.createObjectURL(blob);
   }, [bundleHtml, refreshKey]);
 
+  // Delay revocation of previous blob URL so iframe finishes loading the new one
+  const prevBlobUrlRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    const prevUrl = prevBlobUrlRef.current;
+    prevBlobUrlRef.current = blobUrl;
+    if (prevUrl && prevUrl !== blobUrl) {
+      const timer = setTimeout(() => URL.revokeObjectURL(prevUrl), 200);
+      return () => clearTimeout(timer);
+    }
+  }, [blobUrl]);
+
+  // Cleanup on unmount
   useEffect(() => {
     return () => {
-      if (blobUrl) URL.revokeObjectURL(blobUrl);
+      if (prevBlobUrlRef.current) URL.revokeObjectURL(prevBlobUrlRef.current);
     };
-  }, [blobUrl]);
+  }, []);
 
   const hasPreview = !!blobUrl;
   const isGenerating = state === "generating";
@@ -76,7 +89,15 @@ export function PreviewPanel({ bundleHtml, state, error, deviceSize = "desktop" 
         </div>
       )}
 
-      {!hasPreview && !isGenerating && !isFailed && (
+      {!hasPreview && !isGenerating && !isFailed && state === "live" && (
+        <div className="flex flex-col items-center gap-3 text-amber-600">
+          <AlertCircle className="h-8 w-8" />
+          <p className="text-sm font-medium">Build could not produce a preview</p>
+          <p className="text-xs text-muted-foreground">Check the Code panel for your generated files</p>
+        </div>
+      )}
+
+      {!hasPreview && !isGenerating && !isFailed && state !== "live" && (
         <div className="flex flex-col items-center gap-3 text-muted-foreground">
           <Monitor className="h-12 w-12 opacity-20" />
           <p className="text-sm">Your app will appear here</p>
