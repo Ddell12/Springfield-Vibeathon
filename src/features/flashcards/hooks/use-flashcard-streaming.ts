@@ -14,6 +14,7 @@ interface UseFlashcardStreamingReturn {
   sessionId: Id<"sessions"> | null;
   activityMessage: string;
   generate: (query: string, sessionId?: Id<"sessions">) => Promise<void>;
+  reset: () => void;
 }
 
 
@@ -110,5 +111,12 @@ export function useFlashcardStreaming(): UseFlashcardStreamingReturn {
     [],
   );
 
-  return { status, sessionId, activityMessage, generate };
+  const reset = useCallback(() => {
+    abortRef.current?.abort();
+    setStatus("idle");
+    setSessionId(null);
+    setActivityMessage("");
+  }, []);
+
+  return { status, sessionId, activityMessage, generate, reset };
 }
