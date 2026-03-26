@@ -9,11 +9,11 @@ export const listTemplates = query({
       return await ctx.db
         .query("therapyTemplates")
         .withIndex("by_category", (q) => q.eq("category", args.category!))
-        .collect();
+        .take(100);
     }
     return await ctx.db
       .query("therapyTemplates")
       .withIndex("by_sortOrder")
-      .collect();
+      .take(100);
   },
 });

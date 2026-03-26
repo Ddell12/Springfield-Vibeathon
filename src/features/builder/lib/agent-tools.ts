@@ -140,7 +140,12 @@ export function createAgentTools(ctx: ToolContext) {
         path: z.string().describe("File path relative to project root"),
       }),
       run: async ({ path }) => {
+        // Path traversal guard (matches write_file)
         const fullPath = join(ctx.buildDir, path);
+        const resolved = resolve(fullPath);
+        if (!resolved.startsWith(resolve(ctx.buildDir))) {
+          throw new ToolError(`Path traversal blocked: ${path}`);
+        }
         if (!existsSync(fullPath)) {
           throw new ToolError(`Error: File not found: ${path}`);
         }

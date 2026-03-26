@@ -2,7 +2,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-import { SuggestionChips } from "../suggestion-chips";
+import { SuggestionChips } from "@/shared/components/suggestion-chips";
 
 describe("SuggestionChips", () => {
   it("renders suggestion buttons for each suggestion", () => {

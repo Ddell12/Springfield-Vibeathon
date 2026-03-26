@@ -7,6 +7,8 @@ export const create = mutation({
     title: v.string(),
     description: v.optional(v.string()),
     sessionId: v.id("sessions"),
+    // ⚠️ Pre-auth placeholder — do NOT use for authorization.
+    // Phase 6 will derive userId from ctx.auth.getUserIdentity()
     userId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
@@ -47,7 +49,7 @@ export const listBySession = query({
     return await ctx.db
       .query("flashcardDecks")
       .withIndex("by_session", (q) => q.eq("sessionId", args.sessionId))
-      .collect();
+      .take(100);
   },
 });
 

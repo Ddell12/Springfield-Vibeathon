@@ -147,13 +147,13 @@ describe("image_cache", () => {
     expect(result?.category).toBe("emotions");
   });
 
-  it("count via internal returns 0 when cache is empty", async () => {
+  it("hasAny returns false when cache is empty", async () => {
     const t = convexTest(schema, modules);
-    const result = await t.query(internal.image_cache.count, {});
-    expect(result).toBe(0);
+    const result = await t.query(internal.image_cache.hasAny, {});
+    expect(result).toBe(false);
   });
 
-  it("count via internal returns 1 after one save", async () => {
+  it("hasAny returns true after one save", async () => {
     const t = convexTest(schema, modules);
     const storageId = await t.run(async (ctx) => storeTestImage(ctx as any));
 
@@ -168,8 +168,8 @@ describe("image_cache", () => {
       createdAt: Date.now(),
     });
 
-    const result = await t.query(internal.image_cache.count, {});
-    expect(result).toBe(1);
+    const result = await t.query(internal.image_cache.hasAny, {});
+    expect(result).toBe(true);
   });
 
   it("count reflects inserted entries", async () => {

@@ -66,8 +66,8 @@ const SEED_IMAGES: Array<{ label: string; category: string }> = [
 export const seedImages = internalAction({
   args: {},
   handler: async (ctx) => {
-    const count = await ctx.runQuery(internal.image_cache.count);
-    if (count > 0) {
+    const hasAny = await ctx.runQuery(internal.image_cache.hasAny);
+    if (hasAny) {
       console.log("Image cache already seeded, skipping");
       return;
     }

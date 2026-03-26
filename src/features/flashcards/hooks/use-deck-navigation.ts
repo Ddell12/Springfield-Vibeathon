@@ -21,18 +21,21 @@ export function useDeckNavigation(totalCards: number): UseDeckNavigationReturn {
 
   const goTo = useCallback(
     (index: number) => {
+      if (totalCards === 0) return;
       setCurrentIndex(Math.max(0, Math.min(index, totalCards - 1)));
     },
     [totalCards],
   );
 
   const goNext = useCallback(() => {
+    if (totalCards === 0) return;
     setCurrentIndex((prev) => Math.min(prev + 1, totalCards - 1));
   }, [totalCards]);
 
   const goPrev = useCallback(() => {
+    if (totalCards === 0) return;
     setCurrentIndex((prev) => Math.max(prev - 1, 0));
-  }, []);
+  }, [totalCards]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

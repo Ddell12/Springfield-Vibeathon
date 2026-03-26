@@ -43,7 +43,7 @@ export const listByDeck = query({
     return await ctx.db
       .query("flashcards")
       .withIndex("by_deck_sortOrder", (q) => q.eq("deckId", args.deckId))
-      .collect();
+      .take(200);
   },
 });
 
@@ -56,7 +56,7 @@ export const deleteByDeck = mutation({
     const cards = await ctx.db
       .query("flashcards")
       .withIndex("by_deck", (q) => q.eq("deckId", args.deckId))
-      .collect();
+      .take(500);
 
     const toDelete = args.labels
       ? cards.filter((c) => args.labels!.includes(c.label))

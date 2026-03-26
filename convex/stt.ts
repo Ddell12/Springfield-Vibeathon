@@ -14,6 +14,12 @@ export const transcribeSpeech = action({
       throw new Error("ElevenLabs API key not configured");
     }
 
+    // Max 5MB base64 = ~3.75MB audio
+    const MAX_AUDIO_BASE64_LENGTH = 5 * 1024 * 1024;
+    if (args.audioBase64.length > MAX_AUDIO_BASE64_LENGTH) {
+      throw new Error("Audio too large. Maximum 5MB.");
+    }
+
     const audioBuffer = Buffer.from(args.audioBase64, "base64");
     const blob = new Blob([audioBuffer], { type: "audio/webm" });
 

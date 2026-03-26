@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 
-import { DeleteConfirmationDialog } from "@/features/builder/components/delete-confirmation-dialog";
+import { DeleteConfirmationDialog } from "@/shared/components/delete-confirmation-dialog";
 import { EmptyState } from "@/shared/components/empty-state";
 import { MaterialIcon } from "@/shared/components/material-icon";
 import { MobileNavDrawer } from "@/shared/components/mobile-nav-drawer";

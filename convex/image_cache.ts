@@ -28,10 +28,10 @@ export const save = internalMutation({
   },
 });
 
-export const count = internalQuery({
+export const hasAny = internalQuery({
   args: {},
   handler: async (ctx) => {
-    const entries = await ctx.db.query("imageCache").take(1);
-    return entries.length;
+    const entry = await ctx.db.query("imageCache").first();
+    return entry !== null;
   },
 });

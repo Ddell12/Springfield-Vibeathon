@@ -8,6 +8,8 @@ export const create = mutation({
   args: {
     title: v.string(),
     query: v.string(),
+    // ⚠️ Pre-auth placeholder — do NOT use for authorization.
+    // Phase 6 will derive userId from ctx.auth.getUserIdentity()
     userId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {

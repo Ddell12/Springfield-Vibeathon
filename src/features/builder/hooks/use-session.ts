@@ -2,7 +2,7 @@
 import { useQuery } from "convex/react";
 
 import { api } from "../../../../convex/_generated/api";
-import { Id } from "../../../../convex/_generated/dataModel";
+import type { Id } from "../../../../convex/_generated/dataModel";
 
 // Convex useQuery skip pattern: function ref is always provided, args can be "skip"
 export function useSession(sessionId: Id<"sessions"> | null) {

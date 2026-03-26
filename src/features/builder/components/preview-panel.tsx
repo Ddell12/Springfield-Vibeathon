@@ -42,6 +42,9 @@ export function PreviewPanel({ bundleHtml, state, error, deviceSize = "desktop" 
         <iframe
           title="App preview"
           src={blobUrl}
+          // allow-same-origin is required: blob: URLs need same-origin context for
+          // inline scripts to execute. CSP meta tag in bundle.html restricts capabilities
+          // (no fetch, no nested frames, no form submissions). See inline-bundle.cjs.
           sandbox="allow-scripts allow-same-origin"
           className={cn(
             "h-full border-0 bg-white transition-all duration-300",

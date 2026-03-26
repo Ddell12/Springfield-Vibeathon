@@ -4,11 +4,20 @@ import { useQuery } from "convex/react";
 
 import { MaterialIcon } from "@/shared/components/material-icon";
 
+import { SuggestionChips } from "@/shared/components/suggestion-chips";
+
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 import { DeckList } from "./deck-list";
 import { FlashcardSwiper } from "./flashcard-swiper";
-import { SuggestionChips } from "./suggestion-chips";
+
+const FLASHCARD_SUGGESTIONS = [
+  "Make flashcards for basic colors like red, blue, green, yellow",
+  "Create a farm animals flashcard deck with common animals",
+  "Make emotion flashcards for a 3-year-old: happy, sad, angry, scared",
+  "Create flashcards for common foods: apple, banana, milk, bread, cookie",
+  "Make flashcards for body parts: eyes, nose, mouth, hands, feet",
+];
 
 interface FlashcardPreviewPanelProps {
   activeDeckId: Id<"flashcardDecks"> | null;
@@ -42,7 +51,7 @@ export function FlashcardPreviewPanel({
             Describe the flashcards you want to create and AI will generate images and audio for each card.
           </p>
         </div>
-        <SuggestionChips onSelect={onSuggestionSelect} />
+        <SuggestionChips suggestions={FLASHCARD_SUGGESTIONS} onSelect={onSuggestionSelect} />
       </div>
     );
   }

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { parseSSEChunks } from "@/core/sse-utils";
 import { extractErrorMessage } from "@/core/utils";
 import { type TherapyBlueprint,TherapyBlueprintSchema } from "@/features/builder/lib/schemas";
 import { parseSSEEvent,type SSEEvent } from "@/features/builder/lib/sse-events";
@@ -49,31 +50,6 @@ export interface UseStreamingOptions {
   onBundle?: (html: string) => void;
 }
 
-function parseSSEEvents(text: string): Array<{ event: string; data: unknown }> {
-  const events: Array<{ event: string; data: unknown }> = [];
-  const chunks = text.split("\n\n");
-  for (const chunk of chunks) {
-    if (!chunk.trim()) continue;
-    const lines = chunk.split("\n");
-    let eventType = "";
-    let dataLine = "";
-    for (const line of lines) {
-      if (line.startsWith("event: ")) {
-        eventType = line.slice("event: ".length).trim();
-      } else if (line.startsWith("data: ")) {
-        dataLine = line.slice("data: ".length).trim();
-      }
-    }
-    if (eventType && dataLine) {
-      try {
-        events.push({ event: eventType, data: JSON.parse(dataLine) });
-      } catch {
-        // Ignore malformed JSON
-      }
-    }
-  }
-  return events;
-}
 
 export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn {
   const [status, setStatus] = useState<StreamingStatus>("idle");
@@ -163,7 +139,7 @@ export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn 
           break;
 
         case "file_complete": {
-          const { path, contents } = sseEvent;
+          const { path, contents = "" } = sseEvent;
           setFiles((prev) => {
             const idx = prev.findIndex((f) => f.path === path);
             const newFile: StreamingFile = { path, contents };
@@ -298,7 +274,7 @@ export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn 
           const toProcess = buffer.slice(0, lastDoubleNewline + 2);
           buffer = buffer.slice(lastDoubleNewline + 2);
 
-          const events = parseSSEEvents(toProcess);
+          const events = parseSSEChunks(toProcess);
           for (const { event, data } of events) {
             const typed = parseSSEEvent(event, data);
             if (typed) handleEvent(typed);
@@ -307,7 +283,7 @@ export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn 
 
         // Process remaining buffer
         if (buffer.trim()) {
-          const events = parseSSEEvents(buffer);
+          const events = parseSSEChunks(buffer);
           for (const { event, data } of events) {
             const typed = parseSSEEvent(event, data);
             if (typed) handleEvent(typed);
