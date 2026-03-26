@@ -1,6 +1,6 @@
 "use client";
 
-import { UserButton } from "@clerk/nextjs";
+import { Show, UserButton } from "@clerk/nextjs";
 import Link from "next/link";
 
 export function MobileTopBar() {
@@ -12,7 +12,17 @@ export function MobileTopBar() {
       >
         B
       </Link>
-      <UserButton />
+      <Show when="signed-in">
+        <UserButton />
+      </Show>
+      <Show when="signed-out">
+        <Link
+          href="/sign-in"
+          className="text-sm font-semibold text-primary"
+        >
+          Sign in
+        </Link>
+      </Show>
     </header>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { UserButton } from "@clerk/nextjs";
+import { Show, UserButton } from "@clerk/nextjs";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 
@@ -52,7 +52,17 @@ export function DashboardSidebar() {
 
       {/* Bottom: User menu */}
       <div className="mt-auto flex flex-col items-center gap-6">
-        <UserButton />
+        <Show when="signed-in">
+          <UserButton />
+        </Show>
+        <Show when="signed-out">
+          <Link
+            href="/sign-in"
+            className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary-container text-white shadow-sm transition-all hover:shadow-md active:scale-90"
+          >
+            <MaterialIcon icon="login" size="md" />
+          </Link>
+        </Show>
       </div>
     </aside>
   );
