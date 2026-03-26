@@ -94,7 +94,7 @@ export function ProjectCard({
                     e.preventDefault();
                     e.stopPropagation();
                   }}
-                  className="flex h-8 w-8 items-center justify-center rounded-full bg-surface-container-lowest/90 text-on-surface-variant shadow-sm backdrop-blur-sm transition-colors hover:bg-surface-container-lowest"
+                  className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full bg-surface-container-lowest/90 text-on-surface-variant shadow-sm backdrop-blur-sm transition-colors hover:bg-surface-container-lowest"
                   aria-label="App options"
                 >
                   <MaterialIcon icon="more_vert" size="sm" />

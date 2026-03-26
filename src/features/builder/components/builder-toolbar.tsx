@@ -63,7 +63,7 @@ export function BuilderToolbar({
         {/* Gradient back button */}
         <Link
           href="/dashboard"
-          className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded bg-gradient-to-br from-primary-container to-primary text-white transition-transform active:scale-90"
+          className="flex min-h-[44px] min-w-[44px] flex-shrink-0 items-center justify-center rounded bg-gradient-to-br from-primary-container to-primary text-white transition-transform active:scale-90"
           aria-label="Back to dashboard"
         >
           <MaterialIcon icon="arrow_back" size="xs" />
@@ -72,7 +72,7 @@ export function BuilderToolbar({
         {onNewChat && (
           <button
             onClick={onNewChat}
-            className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded bg-surface-container-high text-on-surface-variant transition-all hover:bg-surface-container-highest hover:text-primary active:scale-90"
+            className="flex min-h-[44px] min-w-[44px] flex-shrink-0 items-center justify-center rounded bg-surface-container-high text-on-surface-variant transition-all hover:bg-surface-container-highest hover:text-primary active:scale-90"
             aria-label="New chat"
             title="Start a new app"
           >
@@ -80,28 +80,30 @@ export function BuilderToolbar({
           </button>
         )}
 
-        {isEditingName ? (
-          <input
-            autoFocus
-            defaultValue={projectName}
-            maxLength={100}
-            aria-label="Project name"
-            className="w-[160px] truncate border-b border-primary/50 bg-transparent text-[13px] font-semibold tracking-tight text-primary outline-none"
-            onBlur={(e) => onNameEditEnd?.(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") onNameEditEnd?.((e.target as HTMLInputElement).value);
-              if (e.key === "Escape") onNameEditEnd?.(projectName);
-            }}
-          />
-        ) : (
-          <button
-            onClick={onNameEditStart}
-            className="truncate text-[13px] font-semibold tracking-tight text-primary transition-all hover:underline hover:underline-offset-2"
-            title="Click to rename"
-          >
-            {projectName}
-          </button>
-        )}
+        <h1 className="contents">
+          {isEditingName ? (
+            <input
+              autoFocus
+              defaultValue={projectName}
+              maxLength={100}
+              aria-label="Project name"
+              className="w-[160px] truncate border-b border-primary/50 bg-transparent text-[13px] font-semibold tracking-tight text-primary outline-none"
+              onBlur={(e) => onNameEditEnd?.(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") onNameEditEnd?.((e.target as HTMLInputElement).value);
+                if (e.key === "Escape") onNameEditEnd?.(projectName);
+              }}
+            />
+          ) : (
+            <button
+              onClick={onNameEditStart}
+              className="truncate text-[13px] font-semibold tracking-tight text-primary transition-all hover:underline hover:underline-offset-2"
+              title="Click to rename"
+            >
+              {projectName}
+            </button>
+          )}
+        </h1>
 
         {/* Status indicator pill */}
         {isGenerating && (
@@ -125,7 +127,7 @@ export function BuilderToolbar({
             aria-selected={mobilePanel === "chat"}
             onClick={() => onMobilePanelChange("chat")}
             className={cn(
-              "rounded-md px-3 py-1 text-[13px] font-semibold transition-colors duration-200",
+              "min-h-[44px] rounded-md px-3 py-1 text-[13px] font-semibold transition-colors duration-200",
               mobilePanel === "chat"
                 ? "bg-white text-primary shadow-sm dark:bg-surface-container-lowest"
                 : "text-on-surface-variant hover:text-primary"
@@ -138,7 +140,7 @@ export function BuilderToolbar({
             aria-selected={mobilePanel === "preview"}
             onClick={() => onMobilePanelChange("preview")}
             className={cn(
-              "rounded-md px-3 py-1 text-[13px] font-semibold transition-colors duration-200",
+              "min-h-[44px] rounded-md px-3 py-1 text-[13px] font-semibold transition-colors duration-200",
               mobilePanel === "preview"
                 ? "bg-white text-primary shadow-sm dark:bg-surface-container-lowest"
                 : "text-on-surface-variant hover:text-primary"
@@ -191,7 +193,7 @@ export function BuilderToolbar({
               key={key}
               onClick={() => onDeviceSizeChange(key)}
               className={cn(
-                "rounded-md p-1.5 transition-all active:scale-95",
+                "flex min-h-[44px] min-w-[44px] items-center justify-center rounded-md p-1.5 transition-all active:scale-95",
                 deviceSize === key
                   ? "bg-surface-container-high text-primary"
                   : "text-on-surface-variant hover:bg-surface-container-low hover:text-primary"
@@ -217,7 +219,7 @@ export function BuilderToolbar({
         <Button
           variant="ghost"
           size="sm"
-          className="h-8 gap-1.5 rounded-md px-3 text-xs font-semibold text-on-surface-variant transition-all active:scale-95"
+          className="min-h-[44px] gap-1.5 rounded-md px-3 text-xs font-semibold text-on-surface-variant transition-all active:scale-95"
           onClick={onShare}
         >
           <MaterialIcon icon="share" size="sm" />
@@ -225,7 +227,7 @@ export function BuilderToolbar({
         </Button>
         <Button
           size="sm"
-          className="h-8 rounded-lg bg-primary-container px-4 text-[13px] font-semibold text-white shadow-sm transition-all hover:bg-primary active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="min-h-[44px] rounded-lg bg-primary-container px-4 text-[13px] font-semibold text-white shadow-sm transition-all hover:bg-primary active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
           onClick={onPublish}
           disabled={!canPublish}
         >

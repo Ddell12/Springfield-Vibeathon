@@ -110,7 +110,7 @@ export function DashboardView() {
             <button
               key={chip}
               onClick={() => router.push(`/builder?prompt=${encodeURIComponent(`Build a ${chip} for a child`)}`)}
-              className="rounded-full bg-surface-container-low px-5 py-2 font-body text-sm text-on-surface-variant ring-1 ring-outline-variant/10 transition-colors hover:bg-surface-container-high"
+              className="min-h-[44px] rounded-full bg-surface-container-low px-5 py-2 font-body text-sm text-on-surface-variant ring-1 ring-outline-variant/10 transition-colors hover:bg-surface-container-high"
             >
               {chip}
             </button>
@@ -124,25 +124,25 @@ export function DashboardView() {
           <TabsList variant="line" className="mb-10 gap-10 border-b border-outline-variant/10">
             <TabsTrigger
               value="recent"
-              className="pb-4 font-body text-sm data-[state=active]:font-bold data-[state=active]:text-primary data-[state=active]:after:bg-primary"
+              className="min-h-[44px] pb-4 font-body text-sm data-[state=active]:font-bold data-[state=active]:text-primary data-[state=active]:after:bg-primary"
             >
               Recently viewed
             </TabsTrigger>
             <TabsTrigger
               value="my-projects"
-              className="pb-4 font-body text-sm text-on-surface-variant hover:text-primary-container"
+              className="min-h-[44px] pb-4 font-body text-sm text-on-surface-variant hover:text-primary-container"
             >
               My Apps
             </TabsTrigger>
             <TabsTrigger
               value="shared"
-              className="pb-4 font-body text-sm text-on-surface-variant hover:text-primary-container"
+              className="min-h-[44px] pb-4 font-body text-sm text-on-surface-variant hover:text-primary-container"
             >
               Shared with me
             </TabsTrigger>
             <TabsTrigger
               value="templates"
-              className="pb-4 font-body text-sm text-on-surface-variant hover:text-primary-container"
+              className="min-h-[44px] pb-4 font-body text-sm text-on-surface-variant hover:text-primary-container"
             >
               Templates
             </TabsTrigger>
