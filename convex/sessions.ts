@@ -158,7 +158,7 @@ export const getMostRecent = query({
 export const setBlueprint = mutation({
   args: {
     sessionId: v.id("sessions"),
-    blueprint: v.any(),
+    blueprint: v.any(), // Validated via TherapyBlueprintSchema (Zod) at app layer before persistence
   },
   handler: async (ctx, args) => {
     await ctx.db.patch(args.sessionId, {

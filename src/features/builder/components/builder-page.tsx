@@ -9,6 +9,7 @@ import { useIsMobile } from "@/core/hooks/use-mobile";
 import { extractErrorMessage } from "@/core/utils";
 import { ShareDialog } from "@/features/sharing/components/share-dialog";
 import { MaterialIcon } from "@/shared/components/material-icon";
+import { SuggestionChips } from "@/shared/components/suggestion-chips";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
 import {
@@ -26,7 +27,6 @@ import { ChatPanel } from "./chat-panel";
 import { CodePanel } from "./code-panel";
 import { PreviewPanel } from "./preview-panel";
 import { PublishSuccessModal } from "./publish-success-modal";
-import { SuggestionChips } from "@/shared/components/suggestion-chips";
 
 export function BuilderPage() {
   const searchParams = useSearchParams();

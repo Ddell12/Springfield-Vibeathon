@@ -21,7 +21,7 @@ export const set = mutation({
   args: {
     appId: v.string(),
     key: v.string(),
-    value: v.any(),
+    value: v.any(), // Generic KV store — value shape varies by key, validated in application code
   },
   handler: async (ctx, args) => {
     const existing = await ctx.db

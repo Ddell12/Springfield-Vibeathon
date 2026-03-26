@@ -6,6 +6,7 @@ import { toast } from "sonner";
 
 import { useIsMobile } from "@/core/hooks/use-mobile";
 import { MaterialIcon } from "@/shared/components/material-icon";
+import { SuggestionChips } from "@/shared/components/suggestion-chips";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
 import {
@@ -13,7 +14,6 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/shared/components/ui/resizable";
-import { SuggestionChips } from "@/shared/components/suggestion-chips";
 
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";

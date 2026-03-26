@@ -49,48 +49,56 @@ export const generateTherapyImage = action({
       throw new Error("GOOGLE_GENERATIVE_AI_API_KEY not configured");
     }
 
-    const genAI = new GoogleGenAI({ apiKey });
-    const response = await genAI.models.generateContent({
-      model: "gemini-3-pro-image-preview",
-      contents: prompt,
-      config: {
-        // responseModalities is optional for gemini-3-pro-image-preview (tested 2026-03-25)
-        imageConfig: {
-          aspectRatio: "1:1",
-          imageSize: "1K",
+    try {
+      const genAI = new GoogleGenAI({ apiKey });
+      const response = await genAI.models.generateContent({
+        model: "gemini-3-pro-image-preview",
+        contents: prompt,
+        config: {
+          // responseModalities is optional for gemini-3-pro-image-preview (tested 2026-03-25)
+          imageConfig: {
+            aspectRatio: "1:1",
+            imageSize: "1K",
+          },
         },
-      },
-    });
+      });
 
-    const part = response.candidates?.[0]?.content?.parts?.find(
-      (p) => p.inlineData,
-    );
-    if (!part?.inlineData?.data) {
-      throw new Error("No image generated");
+      const part = response.candidates?.[0]?.content?.parts?.find(
+        (p) => p.inlineData,
+      );
+      if (!part?.inlineData?.data) {
+        throw new Error("No image generated");
+      }
+
+      const imageBuffer = Buffer.from(part.inlineData.data, "base64");
+      const blob = new Blob([imageBuffer], { type: part.inlineData.mimeType ?? "image/png" });
+
+      // Store in Convex file storage
+      const storageId = await ctx.storage.store(blob);
+      const imageUrl = await ctx.storage.getUrl(storageId);
+      if (!imageUrl) {
+        throw new Error("Failed to get image storage URL");
+      }
+
+      // Cache
+      await ctx.runMutation(internal.image_cache.save, {
+        promptHash,
+        prompt,
+        label: args.label,
+        category: args.category,
+        storageId,
+        imageUrl,
+        model: "gemini-3-pro-image-preview",
+        createdAt: Date.now(),
+      });
+
+      return { imageUrl };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown error";
+      console.error("[image_gen] Failed:", message);
+      throw new Error(
+        message.includes("No image generated") ? message : "Image generation failed. Please try again.",
+      );
     }
-
-    const imageBuffer = Buffer.from(part.inlineData.data, "base64");
-    const blob = new Blob([imageBuffer], { type: part.inlineData.mimeType ?? "image/png" });
-
-    // Store in Convex file storage
-    const storageId = await ctx.storage.store(blob);
-    const imageUrl = await ctx.storage.getUrl(storageId);
-    if (!imageUrl) {
-      throw new Error("Failed to get image storage URL");
-    }
-
-    // Cache
-    await ctx.runMutation(internal.image_cache.save, {
-      promptHash,
-      prompt,
-      label: args.label,
-      category: args.category,
-      storageId,
-      imageUrl,
-      model: "gemini-3-pro-image-preview",
-      createdAt: Date.now(),
-    });
-
-    return { imageUrl };
   },
 });

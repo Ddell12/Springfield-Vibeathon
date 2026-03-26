@@ -36,50 +36,58 @@ export const publishApp = action({
       files.map((f) => ({ path: f.path, contents: f.contents }))
     );
 
-    // Deploy to Vercel
-    const deployUrl = `https://api.vercel.com/v13/deployments${teamId ? `?teamId=${teamId}` : ""}`;
-    const response = await fetch(deployUrl, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${vercelToken}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        name: "bridges-tool",
-        project: projectId,
-        files: vercelFiles,
-        projectSettings: {
-          framework: "vite",
-          buildCommand: "npm run build",
-          outputDirectory: "dist",
+    try {
+      // Deploy to Vercel
+      const deployUrl = `https://api.vercel.com/v13/deployments${teamId ? `?teamId=${teamId}` : ""}`;
+      const response = await fetch(deployUrl, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${vercelToken}`,
+          "Content-Type": "application/json",
         },
-      }),
-    });
-
-    if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`Vercel deploy failed: ${response.status} ${error}`);
-    }
-
-    const deployment = (await response.json()) as { url: string; id: string };
-    const deploymentUrl = `https://${deployment.url}`;
-
-    // Update the apps table
-    const existingApp = await ctx.runQuery(api.apps.getBySession, {
-      sessionId: args.sessionId,
-    });
-    if (existingApp) {
-      await ctx.runMutation(api.apps.update, {
-        appId: existingApp._id,
-        publishedUrl: deploymentUrl,
+        body: JSON.stringify({
+          name: "bridges-tool",
+          project: projectId,
+          files: vercelFiles,
+          projectSettings: {
+            framework: "vite",
+            buildCommand: "npm run build",
+            outputDirectory: "dist",
+          },
+        }),
       });
-    } else {
-      console.warn(
-        `[publish] No app record for session ${args.sessionId} — URL not persisted`,
+
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(`Vercel deploy failed: ${response.status} ${error}`);
+      }
+
+      const deployment = (await response.json()) as { url: string; id: string };
+      const deploymentUrl = `https://${deployment.url}`;
+
+      // Update the apps table
+      const existingApp = await ctx.runQuery(api.apps.getBySession, {
+        sessionId: args.sessionId,
+      });
+      if (existingApp) {
+        await ctx.runMutation(api.apps.update, {
+          appId: existingApp._id,
+          publishedUrl: deploymentUrl,
+        });
+      } else {
+        console.warn(
+          `[publish] No app record for session ${args.sessionId} — URL not persisted`,
+        );
+      }
+
+      return { deploymentUrl };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown error";
+      console.error("[publish] Failed:", message);
+      throw new Error(
+        message.includes("Vercel deploy failed") ? message : "Publishing failed. Please try again.",
       );
     }
-
-    return { deploymentUrl };
   },
 });
 

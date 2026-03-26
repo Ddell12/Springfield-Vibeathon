@@ -38,44 +38,52 @@ export const generateSpeech = action({
       throw new Error("ElevenLabs API key not configured");
     }
 
-    const response = await fetch(
-      `https://api.elevenlabs.io/v1/text-to-speech/${resolvedVoiceId}`,
-      {
-        method: "POST",
-        headers: {
-          "xi-api-key": elevenLabsApiKey,
-          "Content-Type": "application/json",
+    try {
+      const response = await fetch(
+        `https://api.elevenlabs.io/v1/text-to-speech/${resolvedVoiceId}`,
+        {
+          method: "POST",
+          headers: {
+            "xi-api-key": elevenLabsApiKey,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            text: args.text,
+            model_id: "eleven_flash_v2_5",
+            voice_settings: { stability: 0.5, similarity_boost: 0.75 },
+          }),
         },
-        body: JSON.stringify({
-          text: args.text,
-          model_id: "eleven_flash_v2_5",
-          voice_settings: { stability: 0.5, similarity_boost: 0.75 },
-        }),
-      },
-    );
+      );
 
-    if (!response.ok) {
-      const body = await response.text().catch(() => "");
-      console.error(`[TTS] ElevenLabs error ${response.status}:`, body);
-      throw new Error("Speech generation failed. Please try again.");
+      if (!response.ok) {
+        const body = await response.text().catch(() => "");
+        console.error(`[TTS] ElevenLabs error ${response.status}:`, body);
+        throw new Error("Speech generation failed. Please try again.");
+      }
+
+      const audioBuffer = await response.arrayBuffer();
+      const blob = new Blob([audioBuffer], { type: "audio/mpeg" });
+
+      const storageId = await ctx.storage.store(blob);
+      const audioUrl = await ctx.storage.getUrl(storageId);
+
+      if (!audioUrl) {
+        throw new Error("Failed to get storage URL");
+      }
+
+      await ctx.runMutation(anyApi.ai.saveTtsCache, {
+        text: args.text,
+        voiceId: resolvedVoiceId,
+        audioUrl,
+      });
+
+      return { audioUrl };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown error";
+      console.error("[TTS] Failed:", message);
+      throw new Error(
+        message.includes("Please try again") ? message : "Speech generation failed. Please try again.",
+      );
     }
-
-    const audioBuffer = await response.arrayBuffer();
-    const blob = new Blob([audioBuffer], { type: "audio/mpeg" });
-
-    const storageId = await ctx.storage.store(blob);
-    const audioUrl = await ctx.storage.getUrl(storageId);
-
-    if (!audioUrl) {
-      throw new Error("Failed to get storage URL");
-    }
-
-    await ctx.runMutation(anyApi.ai.saveTtsCache, {
-      text: args.text,
-      voiceId: resolvedVoiceId,
-      audioUrl,
-    });
-
-    return { audioUrl };
   },
 });

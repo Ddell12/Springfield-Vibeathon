@@ -93,7 +93,7 @@ Key files:
 ## Testing
 
 ```bash
-npm test              # Vitest unit tests (627 tests, 77 test files)
+npm test              # Vitest unit tests (625 tests, 77 test files)
 npx playwright test   # E2E tests
 ```
 

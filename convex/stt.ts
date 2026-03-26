@@ -23,28 +23,36 @@ export const transcribeSpeech = action({
     const audioBuffer = Buffer.from(args.audioBase64, "base64");
     const blob = new Blob([audioBuffer], { type: "audio/webm" });
 
-    const formData = new FormData();
-    formData.append("file", blob, "audio.webm");
-    formData.append("model_id", "scribe_v2");
+    try {
+      const formData = new FormData();
+      formData.append("file", blob, "audio.webm");
+      formData.append("model_id", "scribe_v2");
 
-    const response = await fetch(
-      "https://api.elevenlabs.io/v1/speech-to-text",
-      {
-        method: "POST",
-        headers: {
-          "xi-api-key": elevenLabsApiKey,
+      const response = await fetch(
+        "https://api.elevenlabs.io/v1/speech-to-text",
+        {
+          method: "POST",
+          headers: {
+            "xi-api-key": elevenLabsApiKey,
+          },
+          body: formData,
         },
-        body: formData,
-      },
-    );
+      );
 
-    if (!response.ok) {
-      const body = await response.text().catch(() => "");
-      console.error(`[STT] ElevenLabs error ${response.status}:`, body);
-      throw new Error("Speech recognition failed. Please try again.");
+      if (!response.ok) {
+        const body = await response.text().catch(() => "");
+        console.error(`[STT] ElevenLabs error ${response.status}:`, body);
+        throw new Error("Speech recognition failed. Please try again.");
+      }
+
+      const data = (await response.json()) as { text: string; language_code?: string };
+      return { transcript: data.text };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown error";
+      console.error("[STT] Failed:", message);
+      throw new Error(
+        message.includes("Please try again") ? message : "Speech recognition failed. Please try again.",
+      );
     }
-
-    const data = (await response.json()) as { text: string; language_code?: string };
-    return { transcript: data.text };
   },
 });

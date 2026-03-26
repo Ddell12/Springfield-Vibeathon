@@ -7,6 +7,7 @@ import rehypeSanitize from "rehype-sanitize";
 import remarkGfm from "remark-gfm";
 
 import { MaterialIcon } from "@/shared/components/material-icon";
+import { SuggestionChips } from "@/shared/components/suggestion-chips";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
 import { VoiceInput } from "@/shared/components/voice-input";
@@ -18,7 +19,6 @@ import { THERAPY_SUGGESTIONS } from "../lib/constants";
 import type { TherapyBlueprint } from "../lib/schemas";
 import { BlueprintCard } from "./blueprint-card";
 import { FileBadges } from "./file-badges";
-import { SuggestionChips } from "@/shared/components/suggestion-chips";
 
 function UserMessage({ content }: { content: string }) {
   return (

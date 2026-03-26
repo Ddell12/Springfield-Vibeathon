@@ -41,7 +41,7 @@ Bridges lets anyone describe a therapy tool in plain language and get a working,
 - Dark mode with therapy-optimized color palette
 - Responsive design — works on phones, tablets, and desktops
 - One-click publish to a permanent URL via Vercel
-- 627 tests across 77 test files
+- 625 tests across 77 test files
 
 ## Tech Stack
 
@@ -101,7 +101,7 @@ This loads 110 therapy knowledge entries into the vector store and creates start
 ### Run Tests
 
 ```bash
-npm test              # Vitest unit tests (627 tests, 77 test files)
+npm test              # Vitest unit tests (625 tests, 77 test files)
 npx playwright test   # E2E tests
 ```
 

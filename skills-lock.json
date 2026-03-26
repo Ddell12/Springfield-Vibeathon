@@ -1,6 +1,11 @@
 {
   "version": 1,
   "skills": {
+    "clerk-nextjs-patterns": {
+      "source": "clerk/skills",
+      "sourceType": "github",
+      "computedHash": "57b557ba9ee0578b4b8f9aa3ee07459e211422cb0abe53d9bfb97a27cf9b6d9c"
+    },
     "convex-create-component": {
       "source": "get-convex/agent-skills",
       "sourceType": "github",
