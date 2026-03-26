@@ -12,9 +12,9 @@ interface BlueprintCardProps {
 function BlueprintField({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <label className="text-[10px] font-bold uppercase tracking-wider text-outline block mb-1">
+      <span className="text-[10px] font-bold uppercase tracking-wider text-outline block mb-1">
         {label}
-      </label>
+      </span>
       <p className="text-sm font-medium text-on-surface">{value}</p>
     </div>
   );

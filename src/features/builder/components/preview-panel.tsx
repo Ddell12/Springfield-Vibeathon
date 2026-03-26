@@ -30,7 +30,7 @@ export function PreviewPanel({ previewUrl, state, wcStatus, error, deviceSize = 
       <div className="flex flex-1 items-center justify-center overflow-hidden bg-surface-container-low/30 p-4">
         {hasPreview ? (
           <div className={cn(
-            "h-full overflow-hidden rounded-2xl shadow-lg transition-all duration-300",
+            "h-full overflow-hidden rounded-2xl shadow-lg transition-[width] duration-300",
             deviceSize === "mobile" ? "w-[375px]" : "w-full"
           )}>
             <iframe
@@ -50,7 +50,7 @@ export function PreviewPanel({ previewUrl, state, wcStatus, error, deviceSize = 
         ) : wcStatus === "installing" || isGenerating ? (
           <div role="status" className="flex flex-col items-center gap-3 text-center">
             <MaterialIcon icon="progress_activity" size="md" className="animate-spin text-primary" />
-            <p className="text-sm text-on-surface-variant">Setting up your preview...</p>
+            <p className="text-sm text-on-surface-variant">Setting up your preview&#8230;</p>
           </div>
         ) : isFailed ? (
           <div className="text-center text-sm">

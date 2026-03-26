@@ -185,7 +185,7 @@ export function CodeDrawer({ files, onClose }: CodeDrawerProps) {
                 <Input
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search files..."
+                  placeholder="Search files&#8230;"
                   className="h-7 pl-7 text-xs"
                 />
               </div>
@@ -225,7 +225,7 @@ export function CodeDrawer({ files, onClose }: CodeDrawerProps) {
                 ))
               ) : (
                 <p className="px-3 py-4 text-xs text-on-surface-variant">
-                  Type to search files...
+                  Type to search files&#8230;
                 </p>
               )}
             </div>

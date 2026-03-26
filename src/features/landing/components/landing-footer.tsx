@@ -11,15 +11,15 @@ export function LandingFooter() {
           </span>
         </div>
         <div className="flex gap-8">
-          <span className="text-xs text-on-surface-variant">
+          <a href="#" className="text-xs text-on-surface-variant hover:text-on-surface transition-colors">
             Privacy Policy
-          </span>
-          <span className="text-xs text-on-surface-variant">
+          </a>
+          <a href="#" className="text-xs text-on-surface-variant hover:text-on-surface transition-colors">
             Terms of Service
-          </span>
-          <span className="text-xs text-on-surface-variant">
+          </a>
+          <a href="#" className="text-xs text-on-surface-variant hover:text-on-surface transition-colors">
             Accessibility
-          </span>
+          </a>
         </div>
       </div>
     </footer>

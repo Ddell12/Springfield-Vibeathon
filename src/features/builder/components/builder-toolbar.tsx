@@ -74,6 +74,7 @@ export function BuilderToolbar({
           <input
             autoFocus
             defaultValue={projectName}
+            aria-label="Project name"
             className="w-[160px] truncate border-b border-primary/50 bg-transparent text-[13px] font-semibold tracking-tight text-primary outline-none"
             onBlur={(e) => onNameEditEnd?.(e.target.value)}
             onKeyDown={(e) => {
@@ -99,7 +100,7 @@ export function BuilderToolbar({
               <span className="h-1.5 w-1.5 rounded-full bg-primary-container" />
             </span>
             <span className="text-xs font-medium text-on-surface-variant/70">
-              Loading Live Preview...
+              Loading Live Preview&#8230;
             </span>
           </div>
         )}
@@ -107,11 +108,13 @@ export function BuilderToolbar({
 
       {/* Center section: Mobile panel toggle (< lg) */}
       {isMobile && onMobilePanelChange && (
-        <div className="flex items-center rounded-lg bg-surface-container-high p-1">
+        <div className="flex items-center rounded-lg bg-surface-container-high p-1" role="tablist">
           <button
+            role="tab"
+            aria-selected={mobilePanel === "chat"}
             onClick={() => onMobilePanelChange("chat")}
             className={cn(
-              "rounded-md px-3 py-1 text-[13px] font-semibold transition-all duration-200",
+              "rounded-md px-3 py-1 text-[13px] font-semibold transition-colors duration-200",
               mobilePanel === "chat"
                 ? "bg-white text-primary shadow-sm dark:bg-surface-container-lowest"
                 : "text-on-surface-variant hover:text-primary"
@@ -120,9 +123,11 @@ export function BuilderToolbar({
             Chat
           </button>
           <button
+            role="tab"
+            aria-selected={mobilePanel === "preview"}
             onClick={() => onMobilePanelChange("preview")}
             className={cn(
-              "rounded-md px-3 py-1 text-[13px] font-semibold transition-all duration-200",
+              "rounded-md px-3 py-1 text-[13px] font-semibold transition-colors duration-200",
               mobilePanel === "preview"
                 ? "bg-white text-primary shadow-sm dark:bg-surface-container-lowest"
                 : "text-on-surface-variant hover:text-primary"
@@ -136,11 +141,13 @@ export function BuilderToolbar({
       {/* Center section: View toggle + Device sizes + URL bar (desktop) */}
       <div className="absolute left-1/2 -translate-x-1/2 hidden lg:flex items-center gap-3">
         {/* Segmented control */}
-        <div className="flex items-center rounded-lg bg-surface-container-high p-1">
+        <div className="flex items-center rounded-lg bg-surface-container-high p-1" role="tablist">
           <button
+            role="tab"
+            aria-selected={view === "preview"}
             onClick={() => onViewChange("preview")}
             className={cn(
-              "rounded-md px-3 py-1 text-[13px] font-semibold transition-all duration-200",
+              "rounded-md px-3 py-1 text-[13px] font-semibold transition-colors duration-200",
               view === "preview"
                 ? "bg-white text-primary shadow-sm"
                 : "text-on-surface-variant hover:text-primary"
@@ -149,9 +156,11 @@ export function BuilderToolbar({
             Preview
           </button>
           <button
+            role="tab"
+            aria-selected={view === "code"}
             onClick={() => onViewChange("code")}
             className={cn(
-              "rounded-md px-3 py-1 text-[13px] font-semibold transition-all duration-200",
+              "rounded-md px-3 py-1 text-[13px] font-semibold transition-colors duration-200",
               view === "code"
                 ? "bg-white text-primary shadow-sm"
                 : "text-on-surface-variant hover:text-primary"

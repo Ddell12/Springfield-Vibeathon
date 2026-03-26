@@ -1,9 +1,9 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 import { MaterialIcon } from "@/shared/components/material-icon";
-import { useState } from "react";
 
 export function MainPromptInput() {
   const [value, setValue] = useState("");
@@ -33,12 +33,15 @@ export function MainPromptInput() {
           value={value}
           onChange={(e) => setValue(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Describe a therapy tool..."
+          placeholder="Describe a therapy tool\u2026"
+          aria-label="Describe a therapy tool"
+          autoComplete="off"
           className="flex-1 border-none bg-transparent py-3 font-body text-lg text-on-surface placeholder:text-outline focus:outline-none focus:ring-0"
         />
         <button
           onClick={handleSubmit}
           disabled={!value.trim()}
+          aria-label="Submit prompt"
           className="ml-2 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-primary-container text-white transition-transform hover:scale-105 active:scale-95 disabled:opacity-40 disabled:hover:scale-100"
         >
           <MaterialIcon icon="send" size="sm" />

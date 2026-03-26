@@ -12,6 +12,7 @@ const sizeMap = { xs: "text-base", sm: "text-lg", md: "text-2xl", lg: "text-3xl"
 export function MaterialIcon({ icon, filled = false, className, size = "md" }: MaterialIconProps) {
   return (
     <span
+      aria-hidden="true"
       className={cn("material-symbols-outlined select-none", sizeMap[size], className)}
       style={{
         fontFamily: "'Material Symbols Outlined'",

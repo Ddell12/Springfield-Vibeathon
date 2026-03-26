@@ -287,7 +287,7 @@ export function ChatPanel({
             <div className="flex items-center gap-2 py-2">
               <MaterialIcon icon="progress_activity" size="xs" className="animate-spin text-primary" />
               <span className="text-sm text-on-surface-variant">
-                Starting generation...
+                Starting generation&#8230;
               </span>
             </div>
           )}
@@ -345,11 +345,12 @@ export function ChatPanel({
               onChange={(e) => setInput(e.target.value)}
               placeholder={
                 isLive
-                  ? "Request changes to your app..."
-                  : "Describe the therapy tool you want to build..."
+                  ? "Request changes to your app\u2026"
+                  : "Describe the therapy tool you want to build\u2026"
               }
               disabled={isGenerating}
               className="pl-10"
+              aria-label={isLive ? "Request changes to your app" : "Describe the therapy tool you want to build"}
             />
           </div>
           <Button
@@ -357,6 +358,7 @@ export function ChatPanel({
             disabled={!input.trim() || isGenerating}
             size="icon"
             className="shrink-0"
+            aria-label={isGenerating ? "Generating" : isLive ? "Send message" : "Generate app"}
           >
             {isGenerating ? (
               <MaterialIcon icon="progress_activity" size="xs" className="animate-spin" />

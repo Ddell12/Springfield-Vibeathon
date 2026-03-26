@@ -21,7 +21,7 @@ export function CtaSection() {
           </p>
           <Link
             href="/builder"
-            className="bg-white text-primary px-10 py-4 rounded-xl text-lg font-bold font-headline hover:bg-white/90 transition-colors active:scale-95 inline-flex items-center gap-2 group"
+            className="bg-white text-primary px-10 py-4 rounded-xl text-lg font-bold font-headline hover:bg-white/90 transition-colors active:scale-95 inline-flex items-center gap-2 group focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-primary"
           >
             Build Your First App
             <MaterialIcon

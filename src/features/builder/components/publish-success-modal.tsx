@@ -96,6 +96,7 @@ export function PublishSuccessModal({
           <button
             type="button"
             onClick={handleCopyUrl}
+            aria-label="Copy link"
             className="flex flex-col items-center gap-3 py-2 group"
           >
             <div className="w-12 h-12 rounded-full bg-surface-container-low flex items-center justify-center text-primary group-hover:bg-tertiary-fixed group-hover:text-on-tertiary-fixed transition-colors">
@@ -108,6 +109,7 @@ export function PublishSuccessModal({
           <button
             type="button"
             onClick={() => toast("QR code coming soon")}
+            aria-label="Generate QR code"
             className="flex flex-col items-center gap-3 py-2 group"
           >
             <div className="w-12 h-12 rounded-full bg-surface-container-low flex items-center justify-center text-primary group-hover:bg-tertiary-fixed group-hover:text-on-tertiary-fixed transition-colors">
@@ -119,6 +121,7 @@ export function PublishSuccessModal({
           </button>
           <button
             type="button"
+            aria-label="Share published tool"
             onClick={async () => {
               try {
                 if (navigator.share) {

@@ -14,16 +14,17 @@ export interface ProjectData {
   userColor: string;
 }
 
+const rtf = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
+
 function formatTimeAgo(timestamp: number): string {
   const seconds = Math.floor((Date.now() - timestamp) / 1000);
   if (seconds < 60) return "Just now";
   const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `Modified ${minutes}m ago`;
+  if (minutes < 60) return `Modified ${rtf.format(-minutes, "minute")}`.replace(/^Modified /, "Modified ");
   const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `Modified ${hours}h ago`;
+  if (hours < 24) return `Modified ${rtf.format(-hours, "hour")}`;
   const days = Math.floor(hours / 24);
-  if (days === 1) return "Modified yesterday";
-  return `Modified ${days}d ago`;
+  return `Modified ${rtf.format(-days, "day")}`;
 }
 
 const GRADIENTS = [
@@ -38,7 +39,7 @@ export function ProjectCard({ project, index = 0 }: { project: ProjectData; inde
 
   return (
     <Link
-      href={`/builder?session=${project.id}`}
+      href={`/builder?sessionId=${project.id}`}
       className="group cursor-pointer rounded-2xl bg-surface-container-lowest p-5 shadow-[0_12px_32px_rgba(25,28,32,0.06)] transition-all duration-300 hover:-translate-y-2"
     >
       {/* Thumbnail */}

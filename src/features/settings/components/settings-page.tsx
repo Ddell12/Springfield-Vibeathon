@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { MaterialIcon } from "@/shared/components/material-icon";
 import { Button } from "@/shared/components/ui/button";
@@ -22,6 +22,26 @@ const SECTION_LABELS: Record<SettingsSection, string> = {
 export function SettingsPage() {
   const [section, setSection] = useState<SettingsSection>("profile");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown on Escape or click outside
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") setMobileMenuOpen(false);
+    }
+    function handleClickOutside(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setMobileMenuOpen(false);
+      }
+    }
+    document.addEventListener("keydown", handleKeyDown);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [mobileMenuOpen]);
 
   return (
     <div className="flex h-full flex-col bg-surface md:flex-row">
@@ -34,22 +54,26 @@ export function SettingsPage() {
         >
           <MaterialIcon icon="arrow_back" size="xs" />
         </Link>
-        <div className="relative">
+        <div className="relative" ref={dropdownRef}>
           <Button
             variant="ghost"
             size="sm"
             className="h-8 gap-1 text-sm font-semibold font-headline"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-expanded={mobileMenuOpen}
+            aria-haspopup="listbox"
           >
             {SECTION_LABELS[section]}
             <MaterialIcon icon="expand_more" className="text-sm" />
           </Button>
           {mobileMenuOpen && (
-            <div className="absolute top-full left-0 z-50 mt-1 w-48 rounded-lg bg-surface-container-lowest p-1 shadow-lg">
+            <div className="absolute top-full left-0 z-50 mt-1 w-48 rounded-lg bg-surface-container-lowest p-1 shadow-lg" role="listbox">
               {(Object.entries(SECTION_LABELS) as [SettingsSection, string][]).map(
                 ([id, label]) => (
                   <button
                     key={id}
+                    role="option"
+                    aria-selected={section === id}
                     onClick={() => {
                       setSection(id);
                       setMobileMenuOpen(false);

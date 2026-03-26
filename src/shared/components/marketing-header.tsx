@@ -52,7 +52,7 @@ export function MarketingHeader() {
         <div className="flex items-center gap-4">
           <Link
             href="/builder"
-            className="hidden md:flex items-center gap-2 bg-primary-gradient text-on-primary px-6 py-2.5 rounded-lg font-semibold text-sm shadow-lg shadow-primary/10 hover:shadow-primary/20 transition-all active:scale-95"
+            className="hidden md:flex items-center gap-2 bg-primary-gradient text-on-primary px-6 py-2.5 rounded-lg font-semibold text-sm shadow-lg shadow-primary/10 hover:shadow-primary/20 transition-all active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
           >
             Start Building
           </Link>
@@ -83,7 +83,7 @@ export function MarketingHeader() {
                   ))}
                   <Link
                     href="/builder"
-                    className="mt-4 bg-primary-gradient text-on-primary px-6 py-3 rounded-lg font-semibold text-sm text-center"
+                    className="mt-4 bg-primary-gradient text-on-primary px-6 py-3 rounded-lg font-semibold text-sm text-center focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
                   >
                     Start Building
                   </Link>

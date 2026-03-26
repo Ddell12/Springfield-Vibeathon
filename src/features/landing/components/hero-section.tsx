@@ -26,7 +26,7 @@ export function HeroSection() {
           <div className="flex flex-wrap gap-4 mt-8">
             <Link
               href="/builder"
-              className="bg-primary-gradient text-white px-8 py-3.5 rounded-xl text-lg font-semibold font-headline inline-flex items-center gap-2 transition-all duration-300 active:scale-95 group"
+              className="bg-primary-gradient text-white px-8 py-3.5 rounded-xl text-lg font-semibold font-headline inline-flex items-center gap-2 transition-all duration-300 active:scale-95 group focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
             >
               Start Building — It&apos;s Free
               <MaterialIcon
@@ -37,7 +37,7 @@ export function HeroSection() {
             </Link>
             <Link
               href="/templates"
-              className="bg-surface-container-low text-on-surface px-8 py-3.5 rounded-xl text-lg font-semibold font-headline hover:bg-surface-container-high transition-colors duration-300"
+              className="bg-surface-container-low text-on-surface px-8 py-3.5 rounded-xl text-lg font-semibold font-headline hover:bg-surface-container-high transition-colors duration-300 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
             >
               View Templates
             </Link>
@@ -45,7 +45,7 @@ export function HeroSection() {
         </div>
 
         {/* Right Column — Decorative Preview */}
-        <div className="lg:col-span-6 relative">
+        <div className="lg:col-span-6 relative overflow-hidden">
           <div className="absolute -z-10 w-[120%] h-[120%] bg-surface-container-low rounded-[3rem] -top-[10%] -right-[10%] rotate-3" />
           <div className="bg-surface-container-lowest rounded-3xl p-8 relative overflow-hidden aspect-[4/3] sanctuary-shadow">
             {/* Mock tool preview illustration */}

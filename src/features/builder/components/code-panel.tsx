@@ -36,7 +36,7 @@ export function CodePanel({ files, status }: CodePanelProps) {
       <div className="flex h-full items-center justify-center bg-surface-container text-on-surface-variant">
         <div className="flex flex-col items-center gap-3 text-center">
           <MaterialIcon icon="progress_activity" size="md" className="animate-spin text-primary" />
-          <p className="text-sm">Generating your files...</p>
+          <p className="text-sm">Generating your files&#8230;</p>
         </div>
       </div>
     );
@@ -83,6 +83,7 @@ export function CodePanel({ files, status }: CodePanelProps) {
           <button
             className="rounded-md p-1.5 text-on-surface-variant transition-all hover:bg-white/50 active:scale-95"
             title="Copy Content"
+            aria-label="Copy file contents"
             onClick={async () => {
               if (selectedFile) {
                 await copyToClipboard(selectedFile.contents, "Copied to clipboard");
@@ -94,6 +95,7 @@ export function CodePanel({ files, status }: CodePanelProps) {
           <button
             className="rounded-md p-1.5 text-on-surface-variant transition-all hover:bg-white/50 active:scale-95"
             title="Download"
+            aria-label="Download file"
             onClick={() => {
               if (!selectedFile) return;
               const blob = new Blob([selectedFile.contents], { type: "text/plain" });

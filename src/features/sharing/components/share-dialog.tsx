@@ -10,6 +10,7 @@ import { Button } from "@/shared/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/shared/components/ui/dialog";
@@ -55,6 +56,9 @@ export function ShareDialog({
           <DialogTitle className="font-headline font-semibold text-lg text-on-surface">
             Share &apos;{appTitle}&apos;
           </DialogTitle>
+          <DialogDescription className="sr-only">
+            Share your app via link or QR code
+          </DialogDescription>
           <button
             type="button"
             onClick={() => onOpenChange(false)}
