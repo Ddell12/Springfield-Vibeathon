@@ -16,7 +16,8 @@ export default defineSchema({
     sandboxId: v.optional(v.string()), // DEPRECATED — remove in next migration
     previewUrl: v.optional(v.string()), // DEPRECATED — remove in next migration
     publishedUrl: v.optional(v.string()),
-  }).index("by_user", ["userId"]),
+  }).index("by_user", ["userId"])
+    .index("by_state", ["state"]),
 
   messages: defineTable({
     sessionId: v.id("sessions"),

@@ -86,6 +86,18 @@ export const updateTitle = mutation({
   },
 });
 
+export const getMostRecent = query({
+  args: {},
+  handler: async (ctx) => {
+    const session = await ctx.db
+      .query("sessions")
+      .withIndex("by_state", (q) => q.eq("state", "live"))
+      .order("desc")
+      .first();
+    return session;
+  },
+});
+
 export const setBlueprint = mutation({
   args: {
     sessionId: v.id("sessions"),
