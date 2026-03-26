@@ -47,7 +47,7 @@ export function PreviewPanel({ previewUrl, state, wcStatus, error, deviceSize = 
             <div className="h-48 w-72 animate-pulse rounded-2xl bg-surface-container-low" />
             <div className="h-4 w-40 animate-pulse rounded-full bg-surface-container-low" />
           </div>
-        ) : wcStatus === "installing" || isGenerating ? (
+        ) : isGenerating ? (
           <div role="status" className="flex flex-col items-center gap-3 text-center">
             <MaterialIcon icon="progress_activity" size="md" className="animate-spin text-primary" />
             <p className="text-sm text-on-surface-variant">Setting up your preview&#8230;</p>

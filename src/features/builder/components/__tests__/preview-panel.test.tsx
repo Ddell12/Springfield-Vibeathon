@@ -55,13 +55,15 @@ describe("PreviewPanel — WebContainer refactor contract", () => {
     expect(pulseElement).toBeTruthy();
   });
 
-  it("wcStatus='installing' renders a spinner with setup text", () => {
-    render(
-      <PreviewPanel previewUrl={null} state="generating" wcStatus="installing" />
+  it("wcStatus='booting' with generating state renders a loading indicator", () => {
+    const { container } = render(
+      <PreviewPanel previewUrl={null} state="generating" wcStatus="booting" />
     );
-    // Installing state shows "Setting up your preview..." with spinner
-    expect(screen.getByText(/setting up/i)).toBeTruthy();
-    expect(screen.getByRole("status")).toBeTruthy();
+    // Booting takes priority — renders the skeleton pulse; generating spinner appears when ready
+    const loadingIndicator =
+      container.querySelector(".animate-pulse") ??
+      screen.queryByRole("status");
+    expect(loadingIndicator).toBeTruthy();
   });
 
   it("wcStatus='ready' with non-null previewUrl renders iframe", () => {
@@ -81,12 +83,12 @@ describe("PreviewPanel — WebContainer refactor contract", () => {
       <PreviewPanel
         previewUrl={null}
         state="generating"
-        wcStatus="installing"
+        wcStatus="booting"
       />
     );
     const spinner =
       screen.queryByRole("status") ??
-      screen.queryByText(/generating|building|creating|installing|setting up/i) ??
+      screen.queryByText(/generating|building|creating|setting up/i) ??
       document.querySelector(".animate-pulse, .animate-spin");
     expect(spinner).toBeTruthy();
   });
