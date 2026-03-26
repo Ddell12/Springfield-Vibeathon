@@ -1,48 +1,62 @@
 # Bridges
 
-**AI-powered therapy tool builder for parents and therapists of autistic children.**
+**AI-powered therapy app builder for parents and therapists of autistic children.**
 
-Describe what you need in plain language — Bridges builds working, interactive therapy tools instantly. No coding required. The AI already speaks therapy language.
+Describe what you need in plain language — Bridges builds working, interactive therapy apps instantly. No coding required. The AI already speaks therapy language.
 
 > Built for the [Springfield Vibeathon](https://www.eventbrite.com/e/vibeathon-close-the-gap-tickets-1271227498179) "Close the Gap" challenge (March 23-27, 2026).
 
+## The Problem
+
+Parents of autistic children and therapists spend hours creating paper-based therapy materials — visual schedules, token boards, communication boards — that wear out, can't be customized on the fly, and don't travel well between home and clinic. Digital alternatives are expensive, rigid, and require technical skills to set up.
+
+## The Solution
+
+Bridges lets anyone describe a therapy tool in plain language and get a working, interactive app in seconds. The AI understands ABA terminology, speech therapy concepts, and developmental milestones — so users don't have to translate between therapy language and tech language.
+
 ## What It Does
 
-Parents and therapists describe a therapy tool in a chat interface. The AI interprets their description, asks 1-2 clarifying questions, then generates a working tool that renders instantly in the browser.
+1. **Chat with the AI** — Describe what you need: "I need a morning routine board for my 4-year-old with brushing teeth, getting dressed, and eating breakfast"
+2. **Watch it build** — The AI generates a complete React app with a live preview that updates in real-time
+3. **Use it immediately** — Interactive tools with drag-and-drop, animations, text-to-speech, and AI-generated picture cards
+4. **Share it** — Publish to a permanent URL or share a preview link
 
-**Tool types:**
-- **Visual Schedule** — step-by-step routines with drag-to-reorder (morning, bedtime, therapy sessions)
-- **Token Board** — reward systems with animated token earning and reinforcer selection
-- **Communication Board** — picture card grids with sentence building and text-to-speech
-- **Choice Board** — selection interfaces for making choices (stretch goal)
-- **First-Then Board** — motivational two-panel tools (stretch goal)
+### Built-in Capabilities
 
-**Key features:**
-- AI chat powered by Claude Sonnet via Convex Agent
-- Real-time tool preview that updates as the AI builds
-- 110-entry therapy knowledge base (RAG) for domain-aware responses
-- 6 pre-built templates across communication, rewards, and routines
-- Text-to-speech via ElevenLabs for communication boards
-- AI-generated picture cards via Google Imagen
-- Drag-and-drop for visual schedules and communication boards
-- Shareable tools via link and QR code
+- **Visual Schedules** — Step-by-step routines with drag-to-reorder and tap-to-complete
+- **Token Boards** — Reward systems with animated token earning and reinforcer selection
+- **Communication Boards** — Picture card grids with sentence building and text-to-speech
+- **Social Stories** — Illustrated narrative sequences for teaching social skills
+- **Flashcard Decks** — Spaced-repetition learning cards for vocabulary and concepts
+- **Custom Apps** — Any therapy tool you can describe, the AI can build
+
+### Key Features
+
+- AI chat powered by Claude Sonnet with a 110-entry therapy knowledge base (RAG)
+- Real-time streaming preview that updates as the AI writes code
+- AI-generated picture cards (Google Gemini) — no stock photos needed
+- Text-to-speech via ElevenLabs with child-friendly voices
+- Speech-to-text input for hands-free interaction
+- 4 curated starter templates (Communication Board, Morning Routine, Reward Board, Social Story)
+- Dark mode with therapy-optimized color palette
+- Responsive design — works on phones, tablets, and desktops
+- One-click publish to a permanent URL via Vercel
+- 627 tests across 77 test files
 
 ## Tech Stack
 
 | Layer | Technology |
 |-------|-----------|
 | Frontend | Next.js 16 (App Router) + Tailwind v4 + shadcn/ui |
-| Backend | Convex (real-time database, serverless functions, file storage) |
-| AI Chat | Convex Agent (`@convex-dev/agent`) — threads, streaming, tool calling |
-| LLM | Claude Sonnet via `@ai-sdk/anthropic` |
-| RAG | `@convex-dev/rag` + Google `gemini-embedding-001` (768-dim) |
-| TTS | ElevenLabs (`eleven_turbo_v2`) |
-| Image Gen | Google Imagen via Generative AI API |
-| Interaction | `@dnd-kit/react` (drag & drop), `motion` (animations), `zustand` (state) |
-| Chat UI | `@assistant-ui/react` with ExternalStoreRuntime |
+| Backend | Convex (real-time database, serverless functions) |
+| AI Code Generation | Claude Sonnet via `@anthropic-ai/sdk` (streaming SSE) |
+| Knowledge Base | `@convex-dev/rag` + Google Gemini embeddings (768-dim) |
+| Image Generation | Google Gemini (`gemini-3-pro-image-preview`) with prompt caching |
+| Text-to-Speech | ElevenLabs (`eleven_flash_v2_5`) with voice caching |
+| Speech-to-Text | ElevenLabs Scribe v2 |
+| Interactions | `@dnd-kit/react` (drag & drop), `motion` (animations), `zustand` (state) |
 | Testing | Vitest + React Testing Library + `convex-test` + Playwright |
-| Auth | Clerk (Phase 6) |
-| Deploy | Vercel + Convex Cloud |
+| Deploy | Vercel (app) + Vercel Deploy API (published apps) |
 
 ## Getting Started
 
@@ -76,18 +90,18 @@ npm run dev
 
 ### Seed the Knowledge Base
 
-On first run, seed the RAG knowledge base and templates:
+On first run, seed the therapy knowledge base and templates:
 
 ```bash
 npx convex run init:init '{}'
 ```
 
-This loads 110 therapy knowledge entries into the vector store and creates 6 starter templates.
+This loads 110 therapy knowledge entries into the vector store and creates starter templates.
 
 ### Run Tests
 
 ```bash
-npm test              # Vitest unit tests (252 tests, 37 test files)
+npm test              # Vitest unit tests (627 tests, 77 test files)
 npx playwright test   # E2E tests
 ```
 
@@ -95,56 +109,61 @@ npx playwright test   # E2E tests
 
 ```
 src/
-  app/                    # Next.js App Router pages (thin wrappers)
-    (app)/builder/        # AI builder page
-    (marketing)/          # Landing, templates, my-tools pages
-    tool/[toolId]/        # Shared tool view
-  core/                   # Universal infrastructure (providers, utils)
-  shared/components/      # Shared UI (shadcn/ui, header, tool-card)
+  app/                      # Next.js App Router pages
+    (app)/builder/           # AI builder — chat + live preview
+    (app)/dashboard/         # User dashboard
+    (app)/flashcards/        # Flashcard deck viewer
+    (app)/settings/          # User settings
+    (marketing)/             # Landing page, templates, my apps
+    tool/[toolId]/           # Shared app viewer
+  core/                      # Providers, utilities, theme
+  shared/components/         # Shared UI (shadcn/ui, header)
   features/
-    builder/              # Chat interface + tool preview
-    therapy-tools/        # Tool components, types, stores, tests
-    templates/            # Template gallery page
-    landing/              # Landing page components
-    my-tools/             # My Tools page
-    shared-tool/          # Shared tool view
+    builder/                 # Streaming AI builder (chat, preview, hooks)
+    landing/                 # Landing page components
+    templates/               # Template gallery
+    flashcards/              # Flashcard system
+    dashboard/               # Dashboard components
+    sharing/                 # Share/publish flow
+    my-tools/                # My Apps page
+    shared-tool/             # Shared app viewer
 
 convex/
-  agents/bridges.ts       # AI agent definition (system prompt, tools)
-  chat/                   # Streaming actions for chat
-  knowledge/              # RAG knowledge base (data, seed, search)
-  templates/              # Template seed + queries
-  tools.ts                # Tool CRUD operations
-  aiActions.ts            # TTS + image generation actions
-  schema.ts               # Database schema
-  init.ts                 # Seed orchestration
+  schema.ts                  # Database schema (sessions, apps, messages, knowledge)
+  sessions.ts                # Session state machine
+  apps.ts                    # App CRUD operations
+  messages.ts                # Chat message persistence
+  aiActions.ts               # TTS + AI actions
+  image_generation.ts        # Therapy image generation with caching
+  stt.ts                     # Speech-to-text
+  publish.ts                 # Vercel publish pipeline
+  knowledge/                 # RAG knowledge base (110 entries)
+  templates/                 # Starter template data + queries
+  seeds/                     # Database seed scripts
 ```
 
 ## Architecture
 
-**Config-based tool generation** — the AI generates JSON configurations, not code. Pre-built React components render the configs.
+**Streaming code generation** — the AI generates complete React applications through a streaming SSE pipeline:
 
 ```
-User describes tool → Claude interprets → generates ToolConfig JSON → React component renders
+User describes app
+  → Claude streams React code with tool calls (images, TTS, STT)
+  → Live preview updates in real-time via WebContainer
+  → Generated app is persisted and publishable
 ```
 
 **Three-layer design:**
-1. **Visual Layer** — Google Stitch generates all UI components
-2. **Behavior Layer** — Open-source libraries handle interactivity (dnd-kit, motion, zustand)
-3. **Data Layer** — Convex + AI handles real-time data, chat, RAG, and tool storage
+1. **AI Layer** — Claude Sonnet generates therapy-aware React code with 110-entry RAG knowledge base
+2. **Runtime Layer** — WebContainer provides instant in-browser preview with hot module replacement
+3. **Data Layer** — Convex handles real-time state, chat persistence, and file storage
 
-## Build Progress
+## Built With AI
 
-| Phase | Status | Description |
-|-------|--------|-------------|
-| Phase 0 | Done | Foundation, dependencies, layout, testing infra, CI/CD |
-| Phase 1 | Done | AI chat + tool generation (Convex Agent, streaming, tool renderer) |
-| Phase 2 | Done | Therapy tool components (visual schedule, token board, communication board) |
-| Phase 3 | Done | RAG knowledge base (110 entries), templates (6), agent integration |
-| Phase 4 | Done | Builder Agent Enhancement (streaming SSE pipeline, blueprint approval, phasic code gen) |
-| Phase 5 | Current | Landing page & final polish |
-| Phase 6 | — | Auth (Clerk) + production deploy |
+This entire project was built using [Claude Code](https://claude.ai/code) over 5 days for the Springfield Vibeathon. The AI coding agent handled architecture decisions, implementation, testing, and code review — demonstrating how AI can accelerate development of tools that serve underrepresented communities.
 
 ## License
+
+MIT License. See [LICENSE](LICENSE) for details.
 
 Built for the Springfield Vibeathon "Close the Gap" challenge.

@@ -1,281 +1,115 @@
-# Bridges — AI Coding Agent Instructions
+# Bridges — Contributing Guide
 
 ## What Is This Project?
 
-Bridges is an AI-powered vibe-coding platform where ABA therapists, speech therapists, and parents of autistic children describe therapy tools in plain language and get working, interactive tools built by AI. Think "Replit for therapy tools" — except the AI already speaks therapy language.
+Bridges is an AI-powered therapy app builder where ABA therapists, speech therapists, and parents of autistic children describe therapy tools in plain language and get working, interactive apps built by AI. Think "Replit for therapy tools" — except the AI already speaks therapy language.
 
 ## Stack
 
-- **Frontend:** Next.js (App Router) + shadcn/ui + Tailwind v4
+- **Frontend:** Next.js 16 (App Router) + shadcn/ui + Tailwind v4
 - **Backend:** Convex (real-time, TypeScript, built-in vector search)
-- **AI Pipeline:** Custom phasic state machine in Convex internalActions + `@anthropic-ai/sdk` for LLM calls
-- **LLM:** Claude Sonnet via `@anthropic-ai/sdk` (direct Anthropic SDK, not Vercel AI SDK wrapper)
-- **Pipeline:** Convex scheduler chains pipeline steps. Frontend subscribes to Convex queries for real-time progress.
-- **Embeddings:** Google gemini-embedding-001 (768-dim) via `@ai-sdk/google` → Convex RAG vector search
-- **TTS:** ElevenLabs for communication boards
-- **Sandbox:** E2B Code Interpreter with custom `vite-therapy` template (Vite + React 19 + Tailwind v4 + therapy-ui.css design system)
-- **Auth:** Clerk (deferred to final phase)
-- **Deploy:** Vercel (app) + Vercel Deploy API (published tools via `/api/publish`)
+- **AI Code Generation:** Claude Sonnet via `@anthropic-ai/sdk` — streaming SSE pipeline
+- **Knowledge Base:** Google Gemini embeddings (768-dim) via `@convex-dev/rag`
+- **Image Generation:** Google Gemini (`gemini-3-pro-image-preview`) with prompt caching
+- **TTS:** ElevenLabs (`eleven_flash_v2_5`) with child-friendly voices
+- **STT:** ElevenLabs Scribe v2
+- **Preview:** WebContainer (in-browser Vite + React)
+- **Deploy:** Vercel (app) + Vercel Deploy API (published apps)
 
-## How to Work in This Repo
+## Architecture
 
-### Current Status
-- **Phases 0–3 complete** (foundation, AI chat, tool components, RAG + templates)
-- **UX Overhaul complete** — Vite sandbox, therapy design system, persistence tiers, dark mode, responsive preview, undo, publish, confetti
-- **Builder Agent Enhancement complete** — Image gen, TTS/STT, 12 therapy components, multi-turn tool loop, 4 templates, Vercel publish
-- **Current Phase: Phase 5** — Landing Page & Final Polish
-- **252 tests passing** (Vitest, 37 test files), all Convex functions deployed, RAG seeded with 110 entries
-- **E2B template registered:** `vite-therapy` (ID: `wsjspn0oy5ygip6y8rjr`)
+### Vertical Slice Architecture (VSA)
 
-### Start here
-1. Read `docs/product-roadmap.md` — find the current phase (first unchecked task)
-2. Read ONLY the Reference sections listed for that phase from `docs/prd.md` and `docs/product-vision.md`
-3. Work through tasks sequentially, marking `- [x]` after each one
-4. Don't load entire docs — each phase tells you exactly which sections to read
-
-### Doc map — load only what you need
-
-**Always read first:**
-| File | Purpose |
-|------|---------|
-| `docs/product-roadmap.md` | Your task list — find current phase, work through tasks |
-
-**Architecture (load per-task):**
-| File | Purpose |
-|------|---------|
-| `docs/architecture/vsa-guide.md` | VSA rules: core vs shared vs features, decision flowchart |
-| `docs/architecture/tech-stack.md` | Stack choices, env vars, setup, costs |
-| `docs/architecture/data-models.md` | Convex schema, tool config types, indexes |
-| `docs/architecture/api-spec.md` | Convex queries/mutations/actions, chat route |
-| `docs/architecture/project-structure.md` | File tree and directory layout |
-| `docs/architecture/user-stories.md` | User stories with acceptance criteria |
-| `docs/architecture/dependencies.md` | All packages, why each is chosen, install commands |
-| `docs/architecture/hosting-deployment.md` | Service URLs, env vars, CI/CD pipeline, cost tracking |
-
-**Design (load per-task):**
-| File | Purpose |
-|------|---------|
-| `docs/design/design-tokens.md` | Colors, typography, spacing, component styles — copy-pasteable CSS |
-| `docs/design/ux-screens.md` | Page-by-page layout, states, interactions |
-
-**AI (load for Phase 1 & 3):**
-| File | Purpose |
-|------|---------|
-| `docs/ai/prompt-library.md` | System prompt, tool schemas, RAG config, TTS config, model settings |
-
-**Living documents (update as you work):**
-| File | Purpose |
-|------|---------|
-| `CHANGELOG.md` | What changed, when, why — updated after each phase |
-| `docs/demo.md` | Demo video script, flow, checklist — reference when recording |
-
-**Strategy (rarely needed):**
-| File | Purpose |
-|------|---------|
-| `docs/product-vision.md` | Brand voice, audience personas, strategy — for copy and tone decisions |
-| `docs/prd.md` | Full PRD (monolithic reference) — use sharded files above instead when possible |
-| `docs/gtm.md` | Go-to-market — only for landing page copy (Phase 5) |
-
-### Architecture: VSA + Phasic Code Generation Pipeline
-
-**This project uses Vertical Slice Architecture (VSA).** Read `docs/architecture/vsa-guide.md` for the full guide. Quick rules:
-
-- `src/core/` — universal infrastructure (providers, utils). Exists before features.
-- `src/shared/` — code used by **3+ features**. shadcn/ui primitives live here. Don't extract until the third use.
-- `src/features/{name}/` — self-contained feature slices. All components, hooks, types, and logic for a feature in one directory.
+- `src/core/` — Universal infrastructure (providers, utils). Shared across all features.
+- `src/shared/` — Code used by **3+ features**. shadcn/ui primitives live here.
+- `src/features/{name}/` — Self-contained feature slices. All components, hooks, types, and logic for a feature in one directory.
 - `src/app/` pages are **thin wrappers** (< 20 lines) that import from features.
-- `convex/schema.ts` is core (single file). `convex/{feature}.ts` files organize functions by domain.
+- `convex/schema.ts` is the single schema file. `convex/{domain}.ts` files organize functions by domain.
 
-**Phasic Code Generation Pipeline:** Bridges generates full React code (not JSON configs) through a deterministic state machine:
+### Streaming Code Generation Pipeline
+
+Bridges generates complete React applications through a streaming SSE pipeline:
 
 ```
-User describes app → Blueprint (LLM) → User approves → Template selection → Phase loop:
-  Phase planning (LLM) → Code generation (LLM) → Deploy to E2B → Validate → Version snapshot
-→ Finalize → Complete
+User describes app → Claude streams React code with tool calls (images, TTS, STT)
+  → Live preview updates in real-time via WebContainer
+  → Generated app is persisted and publishable
 ```
 
-Pipeline orchestration: `convex/pipeline.ts` (internalAction)
-Pipeline tools: `convex/pipeline_tools.ts` (betaZodTool definitions)
-Pipeline prompts: `convex/pipeline_prompts.ts`
-Session state machine: `convex/sessions.ts`
-E2B sandbox: `convex/e2b.ts`
-Zod schemas: `src/features/builder/lib/schemas/index.ts`
+Key files:
+- `src/app/api/generate/route.ts` — SSE streaming endpoint with multi-turn tool loop
+- `src/features/builder/lib/agent-prompt.ts` — Agent system prompt with component library and design rules
+- `src/features/builder/hooks/use-postmessage-bridge.ts` — TTS/STT bridge between parent and iframe
+- `convex/sessions.ts` — Session state machine
+- `convex/image_generation.ts` — Therapy image generation with caching
+- `convex/aiActions.ts` — TTS action with voice caching
+- `convex/publish.ts` — Vercel publish pipeline
 
 ## Code Conventions
 
 ### Convex
 - All functions must be named exports (never default export)
-- Use `v` validators on all args — no unvalidated `any` on args
-- Config objects stored as `v.any()` but validated in application code via TypeScript
-- Actions (`"use node";`) for external API calls (Claude, Google Embeddings, ElevenLabs)
-- Queries for reads, mutations for writes — actions are not transactional
+- Use `v` validators on all args
+- Actions need `"use node";` for external API calls — keep them in separate files from queries/mutations
+- Queries use `.withIndex()` — never `.filter()`
 - Index naming: `by_fieldName`
-- **Component config at `convex/convex.config.ts`** — NOT at project root
-- **File organization:** domain-grouped — `convex/knowledge/`, `convex/templates/`, `convex/pipeline.ts`, `convex/sessions.ts`, `convex/e2b.ts`
-- **Seed functions:** use `internalMutation` for DB seeds, `internalAction` for seeds needing external APIs (embeddings)
-- **`anyApi`** from `convex/server` for cross-file action references in agent tool `execute` functions
-- **Pipeline actions:** `convex/pipeline.ts` uses `"use node";` and `@anthropic-ai/sdk`. Each state handler is a separate async function dispatched by the `executeStep` switch.
-- **Session mutations:** `sessions.ts` has helper mutations (setTemplate, setSandbox, advancePhase, setMvpGenerated) for pipeline steps to update session fields.
-- **Cross-boundary imports:** `"use node"` actions can import from `src/` via relative paths (esbuild bundles them). Queries/mutations cannot.
+- Config at `convex/convex.config.ts` (inside `convex/`, not project root)
 
 ### Next.js
 - App Router only (`src/app/`)
 - Server Components by default — `"use client"` only for hooks/interactivity
-- Metadata via `export const metadata` or `generateMetadata`, never JSX `<title>`
-- Use `<Link>` from next/link, `<Image>` from next/image
+- Metadata via `export const metadata`, never JSX `<title>`
 
 ### Tailwind v4
 - Config via `@theme` in `src/app/globals.css` — no `tailwind.config.js`
-- Use design tokens from `docs/design/design-tokens.md`
 - Use `cn()` from `src/core/utils.ts` for class merging
 - Mobile-first: base styles for mobile, `md:` / `lg:` for larger screens
-- Class sorting via `prettier-plugin-tailwindcss`
 
 ### shadcn/ui
-- Components in `src/shared/components/ui/` — add via `npx shadcn@latest add <name>`
-- Use sub-components (CardHeader, CardContent, etc.) — not raw divs
+- Components in `src/shared/components/ui/`
+- Add via `npx shadcn@latest add <name>`
 - Use semantic tokens: `bg-background`, `text-foreground`, `border-border`
 
-### AI / Pipeline
-- **Anthropic SDK:** `@anthropic-ai/sdk` for direct LLM calls in `route.ts` (Next.js API route)
-- **Multi-turn tool loop:** `src/app/api/generate/route.ts` streams from Claude with 4 tools (`write_file`, `generate_image`, `generate_speech`, `enable_speech_input`). When Claude calls tools, the handler executes them, sends results back, and Claude continues generating. Loop capped at `MAX_TOOL_TURNS = 10`.
-- **Agent prompt:** `src/features/builder/lib/agent-prompt.ts` — documents tools, 17 pre-built components, design rules, generation workflow
-- **PostMessage bridge:** `src/features/builder/hooks/use-postmessage-bridge.ts` — parent-side handler for runtime TTS/STT between iframe and Convex actions. Validates `event.source` to prevent cross-origin abuse.
-- RAG still via `@convex-dev/rag` component with Gemini embeddings
-- State machine in `convex/sessions.ts` — scheduler auto-chains non-blocking states
-
-### Image Generation
-- **Action:** `convex/image_generation.ts` — `generateTherapyImage` public action (called from `route.ts` via `ConvexHttpClient`)
-- Uses **Nano Banana Pro** via `@google/genai` SDK (`gemini-3-pro-image-preview` model, `generateContent()` not `generateImages()`)
-- Cached in `imageCache` table by SHA-256 prompt hash — cache hit skips API call
-- Category-aware prompts with Kawaii style modifiers per category (emotions, daily-activities, animals, food, objects, people, places)
-- Pre-seeding script: `convex/seeds/image_seeds.ts` — ~50 common therapy images, guarded by cache count check
-
-### TTS / STT
-- **TTS action:** `convex/aiActions.ts` — `generateSpeech` with friendly voice names (`warm-female`, `calm-male`, `child-friendly`) mapped to ElevenLabs voice IDs. Model: `eleven_flash_v2_5`. Cached in `ttsCache` table.
-- **STT action:** `convex/stt.ts` — `transcribeSpeech` using ElevenLabs `scribe_v2` model
-- **Runtime TTS/STT:** PostMessage bridge handles dynamic speech at runtime (e.g., sentence strip composing new sentences). Build-time audio uses pre-generated CDN URLs.
-
-### Publish Pipeline
-- **Action:** `convex/publish.ts` — `publishApp` collects generated files + template files, deploys to Vercel Deploy API
-- **Template files:** `src/features/builder/lib/template-files.ts` — flattens WebContainer template tree for Vercel format (single source of truth shared with `webcontainer-files.ts`)
-- **Env vars needed:** `VERCEL_TOKEN`, `VERCEL_PROJECT_ID`, optional `VERCEL_TEAM_ID` (in Convex env vars)
-
-### Key Library Choices
-- **Drag & drop:** `@dnd-kit/react` (touch-safe, not pragmatic-drag-and-drop which has iPad issues)
-- **Animation:** `motion` (formerly framer-motion) — for token celebrations, card selections
-- **Audio:** `use-sound` — handles iOS Safari autoplay restrictions for TTS
-- **State:** `zustand` — for tool interaction state (token counts, selections)
-- **Convex helpers:** `convex-helpers` — relationships, pagination, rate limiting
-- Full list: `docs/architecture/dependencies.md`
-
-### Testing
-
-- **Unit tests:** Vitest + React Testing Library. Colocated in `__tests__/` within feature dirs.
-- **Convex backend tests:** Vitest + `convex-test` (official mock runtime). Test queries/mutations without a real backend.
-- **E2E tests:** Playwright (chromium + webkit). Lives in `tests/e2e/`.
-- **Auth E2E:** `@clerk/testing` — `clerk.signIn()` bypasses UI in Playwright tests.
-- **API mocking:** `msw` (Mock Service Worker) — intercept Claude, Google, ElevenLabs calls in tests.
-- **Test data:** `@faker-js/faker` for generating realistic test fixtures.
-- **Env validation:** `@t3-oss/env-nextjs` — type-safe env var validation at build time.
-
-### Google Stitch Design System
-- All UI components are designed in Google Stitch, then exported as React components
-- Design system doc: `.stitch/DESIGN.md` — "The Digital Sanctuary" creative direction
-- Dual fonts: **Manrope** (headlines, 600/700) + **Inter** (body, 400/500/600)
-- **No-Line Rule:** 1px borders are banned for sectioning — use tonal background shifts instead
-- Surface hierarchy: `surface` (page bg) → `surface-container-low` (sections) → `surface-container-lowest` (interactive cards)
-- Primary CTA: gradient from `primary` (#00595c) to `primary-container` (#0d7377) at 135deg
-- All animations use `cubic-bezier(0.4, 0, 0.2, 1)` and must be >= 300ms
-- Stitch screens in `.stitch/designs/` — 8 screens (landing, builder, tools, templates, etc.)
-
-## What NOT to Do
-
-- Don't add auth until Phase 6 — it blocks E2E testing
-- Don't expose developer jargon in the UI (no "component", "API", "deploy", "database")
-- Don't use `style={{}}` when Tailwind has an equivalent
-- Don't skip tasks in the roadmap — they're ordered for dependency resolution
-- Don't load entire doc files — read only the sections referenced by the current phase
-
-## Keeping Docs Current
-
-**After every phase or significant change, update these files:**
-
-1. **This file (`CLAUDE.md`)** — If you add a new convention, discover a gotcha, change the stack, add a new pattern, or learn something that would help future agents or Desha — add it here. This is the single source of truth for how to work in this repo.
-
-2. **`CHANGELOG.md`** — After completing each phase, add an entry with: what changed, decisions made, gotchas discovered, and any breaking changes. Use the template at the bottom of the file.
-
-3. **`docs/product-roadmap.md`** — Mark tasks `[x]` as completed. Update the status line and current phase.
-
-**What's worth adding to CLAUDE.md:**
-- New code conventions or patterns discovered during implementation
-- Gotchas that wasted time (e.g., "Convex actions need `"use node";` for external API calls")
-- Library-specific quirks (e.g., "dnd-kit needs `touch-action: none` on drag handles for iPad")
-- Environment or deployment discoveries
-- Architectural decisions made during implementation that deviate from the original plan
-
-**What does NOT belong in CLAUDE.md:**
-- Temporary debugging notes
-- Task-specific implementation details (those go in the code or roadmap)
-- Information already in the sharded docs (don't duplicate)
-
-## Gotchas Discovered (Phase 0–3 + UX Overhaul)
-
-- **Tailwind v4 CSS import order:** `@import url()` for external fonts MUST precede `@import "tailwindcss"` — Tailwind expands into CSS rules, and CSS spec forbids `@import` after rules.
-- **Convex + Next.js prerender:** `ConvexReactClient` throws "not an absolute URL" during SSR/prerender when `NEXT_PUBLIC_CONVEX_URL` isn't set. Fix: defer client creation to `useEffect` (see `src/core/providers.tsx`).
-- **shadcn Resizable prop name:** The correct prop is `orientation="horizontal"`, NOT `direction="horizontal"` (react-resizable-panels v4 API).
-- **shadcn Toaster + next-themes:** `Toaster` from sonner calls `useTheme()` — requires `ThemeProvider` in the provider tree or you get context warnings.
-- **Vitest + Claude worktrees:** `.claude/worktrees/` can contain test files from other agent sessions. Always exclude `.claude/**` in vitest.config.ts.
-- **`@t3-oss/env-nextjs` in CI:** Env validation crashes the build in CI where secrets aren't available. Use `skipValidation: !!process.env.CI` in `src/env.ts`.
-- **Bitwarden "More than one result":** When multiple items share a name prefix (e.g., "ElevenLabs" and "ElevenLabs Phone Number ID"), `bw get item` fails silently. Use `bw list items --search` with a `jq` filter for exact name + type match.
-- **`"use node";` file separation:** Never put `"use node";` in a file that also exports queries or mutations. Actions needing Node.js must be in separate files.
-- **Convex `filter` is banned:** Always use `.withIndex()` instead of `.filter()` in Convex queries.
-- **Convex `ctx.db` not available in actions:** Actions cannot access the database directly — use `ctx.runQuery` or `ctx.runMutation`.
-- **`convex.config.ts` must be inside `convex/`:** The file must live at `convex/convex.config.ts`, NOT at the project root. If placed at root, the Convex CLI silently ignores it and components (agent, rag, workpool) are never installed — causing "Child component not found" errors at runtime.
-- **`@ai-sdk/google` env var name:** The Google AI SDK expects `GOOGLE_GENERATIVE_AI_API_KEY`, not `GOOGLE_API_KEY`. Set both in Convex env vars if using `@ai-sdk/google` for embeddings.
-- **RAG `rag.search()` needs action context:** `rag.search()` calls the embedding API internally, so it requires `ctx` with `runAction`. Agent tool `execute` functions can use `ctx.runAction(internal.knowledge.search.searchKnowledgeAction, args)` as a wrapper.
-- **`"use node";` is only for `action`/`internalAction`:** Never add `"use node";` to files defining `httpAction`, `query`, or `mutation`. HTTP actions run in the Convex V8 runtime, not Node.js. Adding it causes a 400 "InvalidModules" deploy error.
-- **Convex file names cannot contain hyphens:** Module paths only allow alphanumeric characters, underscores, or periods. Use `snake_case` for all files in `convex/` (e.g., `therapy_seeds.ts` not `therapy-seeds.ts`). Hyphens cause a 400 "InvalidConfig" error on `convex dev`.
-- **Convex V8 runtime does not support dynamic `import()`:** Never use `await import("nanoid")` or similar in queries/mutations. Use static top-level imports or inline implementations. Dynamic imports crash with `TypeError: dynamic module import unsupported`.
-- **Next.js route group collision:** `(app)/page.tsx` and `(marketing)/page.tsx` both resolve to `/`. Only one route group can own a given path. The marketing landing page owns `/`; do not add a `page.tsx` to `(app)/` root.
-- **React StrictMode double-fires effects:** In dev mode, `useEffect` runs twice before state updates commit. If guarding a side effect (API call, auto-submit) with `useState`, the guard fails on the second fire because the setter is async. Use `useRef` for synchronous guards in fire-once effects.
-- **E2B `sandbox.files.write()` path resolution:** Paths are relative to `/home/user/`, NOT the Docker `WORKDIR`. The `vite-therapy` template lives at `/home/user/app/`, so writing `src/App.tsx` goes to the wrong place. Must use absolute path: `/home/user/app/src/App.tsx`. See `e2b.ts` for the path prepend logic.
-- **E2B sandbox Vite HMR timing:** The template's Docker CMD starts Vite automatically. After `files.write()`, Vite's HMR needs ~2s to hot-reload the new code. Without waiting, the iframe shows the template's default placeholder. The `ensureViteRunning()` helper in `e2b.ts` handles this with a `sleep 2`.
-- **Vite 6+ `allowedHosts`:** E2B proxies sandbox traffic through dynamic `*.e2b.app` subdomains. Vite 6's host security check blocks these by default. Fix: `server.allowedHosts: true` in `e2b-templates/vite-therapy/vite.config.ts`.
-- **E2B `commands.run` with long-running processes:** `commands.run` blocks until the command exits. For dev servers that run forever, use `{ background: true }` which returns a `CommandHandle` immediately. Without this, the sandbox API times out.
-- **`userEvent.setup()` overrides clipboard mock:** In Vitest, `userEvent.setup()` replaces `navigator.clipboard` (set via `Object.defineProperty`) with its own internal stub. For clipboard tests, use `fireEvent.click` instead of `userEvent.click`.
-- **React purity violations in render:** `Math.random()` in JSX render and `Date.now()` in `useRef()` initializer trigger `react-hooks/purity` lint errors. Move random values into a generator function called once, and set ref values inside `useEffect`.
-- **`ConvexHttpClient` casing:** The class is `ConvexHttpClient` (lowercase "ttp"), NOT `ConvexHTTPClient`. The `convex/browser` export uses this casing.
-- **`betaZodTool` import path:** Must be `@anthropic-ai/sdk/helpers/beta/zod`, NOT `@anthropic-ai/sdk/resources/beta/messages`.
-- **Operator precedence with `??`:** `a ?? 0 + b` means `a ?? (0 + b)`, not `(a ?? 0) + b`. Always use explicit parentheses.
-- **`convex-test` scheduler limitation:** `ctx.scheduler.runAfter()` in mutations causes "Write outside of transaction" unhandled rejections in convex-test. Tests still pass — this is a framework limitation.
-- **Cross-boundary imports in Convex:** `"use node"` actions can import from `src/` via relative paths because esbuild bundles them. Regular queries/mutations cannot.
-- **Multi-turn tool loop max turns:** The while loop in `route.ts` is capped at `MAX_TOOL_TURNS = 10`. If Claude keeps calling tools beyond this, the loop exits gracefully. Without this guard, a single request could trigger dozens of API calls.
-- **PostMessage bridge origin validation:** Always check `event.source === iframe.contentWindow` before processing messages. Without this, any page can trigger TTS/STT API calls (which cost money).
-- **iframe `sandbox` attribute:** Use `allow-scripts` only, NOT `allow-scripts allow-same-origin`. The combination neutralizes the sandbox entirely (iframe can remove its own sandbox attribute).
-- **write_file tool result must be inside the guard:** The `toolResults.push("File written successfully")` must be inside the `if (path && contents)` block. If outside, Claude thinks the file was written when it wasn't, causing downstream import errors.
-- **`Promise.allSettled` for file mutations:** Use `allSettled` not `all` for persisting generated files — one Convex mutation failure shouldn't kill the entire generation.
-- **Google GenAI `generateContent` vs `generateImages`:** For Nano Banana Pro image generation, use `genAI.models.generateContent()` with model `gemini-3-pro-image-preview`. Do NOT use `generateImages()` which is the Imagen API (different product).
-- **ElevenLabs error responses include useful JSON:** Always `await response.text()` before throwing on non-OK responses. The body contains quota/rate-limit details that are invisible if you only log the status code.
+### Design System
+- Dual fonts: **Manrope** (headlines) + **Inter** (body)
+- No 1px borders for sectioning — use tonal background shifts instead
+- Primary CTA: gradient from `#00595c` to `#0d7377` at 135deg
+- All animations use `cubic-bezier(0.4, 0, 0.2, 1)`, minimum 300ms duration
 
 ## Terminology
 
-- **app** replaces **tool** everywhere (UI, code, database, URLs)
-- **session** replaces **project** — represents a build session with state machine
-- **blueprint** — structured therapy-specific PRD generated by LLM, approved by user
-- **phase** — one deployable milestone in the build process
-- **pipeline** — the state machine that orchestrates the build: blueprinting → template → phases → deploy → validate → complete
+- **app** — what users build (never "tool" or "component" in the UI)
+- **session** — a build session with state machine (not "project")
+- **blueprint** — structured therapy-specific PRD generated by the AI, approved by the user before building
 
-## E2B Sandbox (vite-therapy template)
+## What NOT to Do
 
-The `vite-therapy` E2B template provides a pre-configured Vite + React sandbox with a therapy-focused design system.
+- Don't expose developer jargon in the UI (no "component", "API", "deploy", "database")
+- Don't use `style={{}}` when Tailwind has an equivalent
+- Don't put `"use node";` in files that export queries or mutations
 
-- **Template source:** `e2b-templates/vite-therapy/` (registered with E2B, ID: `wsjspn0oy5ygip6y8rjr`)
-- **AI writes only `src/App.tsx`** — everything else (main.tsx, therapy-ui.css, hooks) is pre-built
-- **Design system CSS classes:** `.card-interactive`, `.tap-target`, `.token-star`, `.schedule-step`, `.board-cell`, `.celebration-burst`, `.btn-primary`, `.btn-secondary`, `.tool-container`, `.tool-grid`, `.tool-title`, `.tool-instruction`
-- **Persistence hooks:** `useLocalStorage` (device), `useConvexData` (cloud placeholder)
-- **Fonts:** Nunito (headings) + Inter (body) — loaded via Google Fonts in `index.html`
-- **To rebuild template after changes:** `cd e2b-templates/vite-therapy && e2b template build --name vite-therapy`
+## Testing
+
+```bash
+npm test              # Vitest unit tests (627 tests, 77 test files)
+npx playwright test   # E2E tests
+```
+
+- **Unit tests:** Vitest + React Testing Library, colocated in `__tests__/` within feature dirs
+- **Convex backend tests:** `convex-test` mock runtime
+- **E2E tests:** Playwright (chromium + webkit) in `tests/e2e/`
+
+## Environment Variables
+
+### `.env.local` (Next.js)
+- `NEXT_PUBLIC_CONVEX_URL` — Convex deployment URL
+- `ANTHROPIC_API_KEY` — Claude API key (for streaming route)
+
+### Convex Dashboard
+- `ANTHROPIC_API_KEY`
+- `GOOGLE_GENERATIVE_AI_API_KEY` — for RAG embeddings and image generation
+- `ELEVENLABS_API_KEY` — for TTS and STT
+- `VERCEL_TOKEN`, `VERCEL_PROJECT_ID` — for publish pipeline
 
 ## Convex Backend
 
@@ -287,40 +121,13 @@ When working on Convex code, **always read `convex/_generated/ai/guidelines.md` 
 Convex agent skills for common tasks can be installed by running `npx convex ai-files install`.
 <!-- convex-ai-end -->
 
-### Convex Quick Reference (from `convex/_generated/ai/guidelines.md`)
+## Documentation
 
-- **Function types:** `query` (read-only, cached, reactive), `mutation` (transactional read+write), `action` (external APIs, non-transactional)
-- **Internal functions:** Use `internalQuery`/`internalMutation`/`internalAction` for private functions (not exposed to client)
-- **Function references:** `api.module.functionName` for public, `internal.module.functionName` for private
-- **Cross-function calls:** `ctx.runQuery`, `ctx.runMutation`, `ctx.runAction` — always use `FunctionReference`, never pass the function directly
-- **Type annotations:** When calling same-file functions via `ctx.runQuery`, add explicit return type annotation to avoid TypeScript circularity
-- **Queries:** Never use `.filter()` — always use `.withIndex()`. Use `.take(n)` instead of `.collect()` unless explicitly need all results. Never use `.collect().length` for counting.
-- **Mutations:** `ctx.db.patch` for partial update, `ctx.db.replace` for full replace. Both throw if doc doesn't exist.
-- **Actions:** Add `"use node";` at top of file for Node.js built-ins. `fetch()` works without it. Never use `ctx.db` in actions.
-- **Scheduling:** `ctx.scheduler.runAfter(ms, functionRef, args)` for delayed execution. Crons in `convex/crons.ts` using `cronJobs()`.
-- **Schema:** System fields `_id` and `_creationTime` are auto-added. Index names should include all fields (e.g., `by_field1_and_field2`).
-- **Auth:** Use `ctx.auth.getUserIdentity()` server-side. Never accept userId as a function argument. Use `tokenIdentifier` as the canonical user key.
-- **File storage:** `ctx.storage.getUrl()` for signed URLs. Query `_storage` system table for metadata. Store as `Blob`.
-- **Pagination:** Use `paginationOptsValidator` from `convex/server`. Returns `{ page, isDone, continueCursor }`.
-
-## Available Skills & Capabilities
-
-This project is built with Claude Code which has access to specialized skills. Key skills for this project:
-
-| Skill | Trigger | Purpose |
-|-------|---------|---------|
-| `convex-dev` | Creating tables, CRUD, backend features | Generates Convex functions with validation, auth, indexes |
-| `ai-action-builder` | Adding AI to Convex | Creates Convex actions with AI SDK for text gen, embeddings |
-| `plan-mode` | Complex multi-file tasks | Research-first planning before implementation |
-| `agent-team-implement` | Features touching 4+ files | Parallel multi-agent TDD implementation |
-| `agent-team-code-review` | PR review, code review | 4-agent parallel review (security, perf, correctness, maintainability) |
-| `frontend-design` | UI components, pages | Production-grade frontend with high design quality |
-| `web-design-guidelines` | UI audit, accessibility | Checks accessibility, layout, typography, interaction patterns |
-| `vitest-testing` | Writing tests | Modern TS/JS testing with Vitest |
-| `new-app` | (already used) | Scaffold Next.js + Convex + shadcn projects |
-| `bitwarden` | API keys, secrets | Retrieve/manage credentials from Bitwarden vault |
-| `env-setup` | Environment config | Wire up .env files from vault |
-| `commit` | Git commits | Structured commit workflow |
-| `check-pr` | PR readiness | Checks review comments, failing checks, PR descriptions |
-| `visual-explainer` | Architecture diagrams | Generate HTML visual explanations of systems |
-| `project-xray` | Codebase overview | Interactive HTML visualization of project state |
+| File | Purpose |
+|------|---------|
+| `docs/product-roadmap.md` | Task list with phase-by-phase progress |
+| `docs/architecture/` | Tech stack, data models, API spec, project structure |
+| `docs/design/` | Design tokens, UX screen specs |
+| `docs/ai/prompt-library.md` | System prompts, tool schemas, RAG config |
+| `docs/product-vision.md` | Brand voice, audience personas, strategy |
+| `docs/prd.md` | Full product requirements document |
