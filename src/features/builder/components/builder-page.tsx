@@ -78,6 +78,9 @@ export function BuilderPage() {
     sessionIdFromUrl ? { sessionId: sessionIdFromUrl as Id<"sessions"> } : "skip"
   );
 
+  const mostRecent = useQuery(api.sessions.getMostRecent);
+  const autoResumed = useRef(false);
+
   // Resume an existing session when navigating from My Apps
   const sessionResumed = useRef(false);
   useEffect(() => {
@@ -143,12 +146,38 @@ export function BuilderPage() {
     }
   }, [promptFromUrl, status, generate, router]);
 
-  // Update URL when sessionId is set from streaming
+  // Auto-resume: redirect to most recent session if no sessionId in URL
   useEffect(() => {
-    if (sessionId && !sessionIdFromUrl) {
-      router.replace(`?sessionId=${sessionId}`);
+    if (
+      !sessionIdFromUrl &&
+      mostRecent &&
+      status === "idle" &&
+      wcStatus === "ready" &&
+      !autoResumed.current
+    ) {
+      autoResumed.current = true;
+      router.replace(`?sessionId=${mostRecent._id}`);
+    }
+  }, [sessionIdFromUrl, mostRecent, status, wcStatus, router]);
+
+  // Update URL when sessionId is set from streaming, and persist to localStorage
+  useEffect(() => {
+    if (sessionId) {
+      localStorage.setItem("bridges_last_session", sessionId);
+      if (!sessionIdFromUrl) {
+        router.replace(`?sessionId=${sessionId}`);
+      }
     }
   }, [sessionId, sessionIdFromUrl, router]);
+
+  // Clear stale localStorage if session doesn't exist in Convex
+  useEffect(() => {
+    if (sessionIdFromUrl && resumeSessionData === null && resumeFiles !== undefined) {
+      localStorage.removeItem("bridges_last_session");
+      autoResumed.current = false;
+      router.replace("/builder");
+    }
+  }, [sessionIdFromUrl, resumeSessionData, resumeFiles, router]);
 
   // Derive an app name from blueprint or default
   const appName = typeof blueprint?.title === "string" ? blueprint.title : "Untitled App";
