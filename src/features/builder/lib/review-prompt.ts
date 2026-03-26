@@ -6,15 +6,19 @@ Your job is to review the generated app code and flag visual design issues that 
 
 Check the generated files for these common problems:
 
-1. **Plain white backgrounds** — avoid plain white (#fff or bg-white) as the primary page background. Use the therapy design system's surface colors (--color-surface, --color-primary-bg) or subtle gradients.
+1. **Plain white backgrounds** — avoid plain white (#fff or bg-white) as the primary page background. Use shadcn semantic tokens (bg-background, bg-primary/10) or subtle gradients like "bg-gradient-to-b from-primary/10 to-white".
 
-2. **Unstyled buttons** — raw <button> elements without any className are unacceptable. All interactive buttons must use the .btn-primary or .btn-secondary classes, or Tailwind utility classes that give them a visual style (rounded corners, background color, padding).
+2. **Unstyled buttons** — raw <button> elements without any className are unacceptable. All interactive buttons must use the Button component from @/components/ui/button with a variant prop (variant="default", variant="outline", variant="secondary"), giving them rounded corners, background color, and padding.
 
-3. **Raw div cards** — plain <div> containers used as cards without any visual treatment. Use the Card shadcn component (shadcn/ui Card with CardHeader, CardContent) or the .card-interactive CSS class from the therapy design system.
+3. **Raw div cards** — plain <div> containers used as cards without any visual treatment. Use the Card component from @/components/ui/card (with CardHeader, CardContent sub-components) with shadow and rounded corners classes (shadow-md rounded-xl).
 
 4. **Missing animations or transitions** — interactive elements (buttons, cards, tokens) should have transition or animation. Add transition classes or use the motion library for tap feedback and state changes.
 
-5. **Flat typography** — all text the same size and weight is unpolished. Headings should use .tool-title, body text .tool-instruction, and labels .tool-label from the design system.
+5. **Flat typography** — all text the same size and weight is unpolished. Headings should use font-[Nunito] font-bold text-foreground, body text should use text-muted-foreground, and form labels should use the Label component from @/components/ui/label.
+
+6. **Old CSS custom property references** — do not use var(--color-surface), var(--color-primary-bg), var(--color-primary), var(--color-text), var(--color-border), or other therapy-ui.css variables. Use shadcn semantic tokens instead: bg-background, bg-primary/10, text-primary, text-foreground, border-border.
+
+7. **Old relative import paths** — imports from "./ui", "./components", "./lib/utils", "./hooks/useLocalStorage" are incorrect. Use @/ alias paths: @/components/ui/[component], @/components/[TherapyComponent], @/lib/utils, @/hooks/useLocalStorage.
 
 ## How to respond
 

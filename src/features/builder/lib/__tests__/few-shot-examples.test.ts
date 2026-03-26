@@ -43,20 +43,45 @@ describe("getFewShotExamples", () => {
     expect(secondExample).toContain("BoardGrid");
   });
 
-  it("both examples import from ./ui (shadcn)", () => {
+  it("both examples use @/ alias imports for shadcn components", () => {
     const examples = getFewShotExamples();
-    const importCount = (examples.match(/from "\.\/ui"/g) ?? []).length;
+    const importCount = (examples.match(/from "@\/components\/ui\//g) ?? []).length;
     expect(importCount).toBeGreaterThanOrEqual(2);
   });
 
-  it("both examples import from ./components (therapy components)", () => {
+  it("both examples use @/ alias imports for therapy components", () => {
     const examples = getFewShotExamples();
-    const importCount = (examples.match(/from "\.\/components"/g) ?? []).length;
+    const importCount = (examples.match(/from "@\/components\//g) ?? []).length;
     expect(importCount).toBeGreaterThanOrEqual(2);
   });
 
   it("examples use useLocalStorage for persistence", () => {
     const examples = getFewShotExamples();
     expect(examples).toContain("useLocalStorage");
+  });
+
+  it("examples import useLocalStorage from @/hooks/useLocalStorage", () => {
+    const examples = getFewShotExamples();
+    expect(examples).toContain('from "@/hooks/useLocalStorage"');
+  });
+
+  it("examples import cn from @/lib/utils", () => {
+    const examples = getFewShotExamples();
+    expect(examples).toContain('from "@/lib/utils"');
+  });
+
+  it("examples do not use old relative imports from ./ui or ./components", () => {
+    const examples = getFewShotExamples();
+    expect(examples).not.toContain('from "./ui"');
+    expect(examples).not.toContain('from "./components"');
+    expect(examples).not.toContain('from "./lib/utils"');
+    expect(examples).not.toContain('from "./hooks/useLocalStorage"');
+  });
+
+  it("examples use shadcn tokens instead of CSS custom properties", () => {
+    const examples = getFewShotExamples();
+    expect(examples).not.toContain("var(--color-primary)");
+    expect(examples).not.toContain("var(--color-text)");
+    expect(examples).not.toContain("var(--color-border)");
   });
 });

@@ -1,6 +1,6 @@
 // Golden reference examples for the therapy app builder LLM agent.
-// These demonstrate how to combine shadcn UI components (from "./ui")
-// with pre-built therapy components (from "./components").
+// These demonstrate how to combine shadcn UI components (from "@/components/ui/...")
+// with pre-built therapy components (from "@/components/...").
 
 export function getFewShotExamples(): string {
   return `
@@ -13,11 +13,12 @@ When the goal is reached, a celebration overlay triggers.
 import { useState, useCallback } from "react";
 import { Star, RotateCcw, Trophy } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
-import { Card, CardHeader, CardContent, CardTitle } from "./ui";
-import { Button } from "./ui";
-import { TokenBoard, CelebrationOverlay } from "./components";
-import { useLocalStorage } from "./hooks/useLocalStorage";
-import { cn } from "./lib/utils";
+import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { TokenBoard } from "@/components/TokenBoard";
+import { CelebrationOverlay } from "@/components/CelebrationOverlay";
+import { useLocalStorage } from "@/hooks/useLocalStorage";
+import { cn } from "@/lib/utils";
 
 const TASKS = [
   { id: "1", label: "Morning Routine", done: false },
@@ -54,15 +55,15 @@ export default function App() {
   }, [setTasks]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[var(--color-primary-bg)] to-white p-4 md:p-8">
+    <div className="min-h-screen bg-gradient-to-b from-primary/10 to-white p-4 md:p-8">
       <CelebrationOverlay trigger={showCelebration} variant="stars" />
 
       <div className="mx-auto max-w-lg">
         <Card className="mb-6 border-0 shadow-xl">
-          <CardHeader className="rounded-t-2xl bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-primary-light)] text-center">
+          <CardHeader className="rounded-t-2xl bg-gradient-to-r from-primary to-primary/80 text-center">
             <div className="flex items-center justify-center gap-3 pb-2">
               <div className="rounded-full bg-white/20 p-2">
-                <Trophy className="h-8 w-8 text-[var(--color-celebration)]" />
+                <Trophy className="h-8 w-8 text-yellow-500" />
               </div>
             </div>
             <CardTitle className="text-3xl font-bold font-[Nunito] text-white">
@@ -96,21 +97,21 @@ export default function App() {
                     className={cn(
                       "flex h-10 w-10 items-center justify-center rounded-full transition-all duration-300",
                       task.done
-                        ? "bg-gradient-to-br from-[var(--color-success)] to-emerald-600"
-                        : "bg-[var(--color-primary-bg)]"
+                        ? "bg-gradient-to-br from-green-500 to-emerald-600"
+                        : "bg-primary/10"
                     )}
                   >
                     <Star
                       className={cn(
                         "h-5 w-5",
-                        task.done ? "fill-white text-white" : "text-[var(--color-primary)]"
+                        task.done ? "fill-white text-white" : "text-primary"
                       )}
                     />
                   </div>
                   <span
                     className={cn(
                       "text-base font-semibold",
-                      task.done ? "text-[var(--color-success)] line-through" : "text-[var(--color-text)]"
+                      task.done ? "text-green-500 line-through" : "text-foreground"
                     )}
                   >
                     {task.label}
@@ -125,7 +126,7 @@ export default function App() {
           <Button
             variant="outline"
             onClick={handleReset}
-            className="gap-2 border-2 border-[var(--color-primary)]/20 text-[var(--color-primary)]"
+            className="gap-2 border-2 border-primary/20 text-primary"
           >
             <RotateCcw className="h-4 w-4" />
             Start Over
@@ -147,10 +148,12 @@ Uses a responsive grid of tappable picture cards with a sentence strip at the bo
 import { useState } from "react";
 import { X, Volume2 } from "lucide-react";
 import { motion } from "motion/react";
-import { Badge } from "./ui";
-import { BoardGrid, TapCard, SentenceStrip } from "./components";
-import { useLocalStorage } from "./hooks/useLocalStorage";
-import { cn } from "./lib/utils";
+import { Badge } from "@/components/ui/badge";
+import { BoardGrid } from "@/components/BoardGrid";
+import { TapCard } from "@/components/TapCard";
+import { SentenceStrip } from "@/components/SentenceStrip";
+import { useLocalStorage } from "@/hooks/useLocalStorage";
+import { cn } from "@/lib/utils";
 
 const SNACK_ITEMS = [
   { id: "apple",   label: "Apple",   emoji: "🍎", category: "fruit" },
@@ -182,8 +185,8 @@ export default function App() {
   const words = sentence.map((w) => ({ label: w }));
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[var(--color-primary-bg)] to-white flex flex-col">
-      <header className="bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-primary-light)] px-4 py-5 text-center shadow-lg">
+    <div className="min-h-screen bg-gradient-to-b from-primary/10 to-white flex flex-col">
+      <header className="bg-gradient-to-r from-primary to-primary/80 px-4 py-5 text-center shadow-lg">
         <h1 className="text-2xl font-bold font-[Nunito] text-white">Snack Time!</h1>
         <p className="mt-1 text-sm text-white/80">Tap what you want</p>
       </header>
@@ -195,7 +198,7 @@ export default function App() {
               variant={filter === cat ? "default" : "outline"}
               className={cn(
                 "cursor-pointer px-3 py-1 text-sm capitalize transition-all duration-200",
-                filter === cat && "bg-[var(--color-primary)] text-white border-transparent"
+                filter === cat && "bg-primary text-white border-transparent"
               )}
               onClick={() => setFilter(cat)}
             >
@@ -225,7 +228,7 @@ export default function App() {
         </BoardGrid>
       </div>
 
-      <div className="sticky bottom-0 border-t border-[var(--color-border)] bg-white/95 backdrop-blur-sm p-3">
+      <div className="sticky bottom-0 border-t border-border bg-white/95 backdrop-blur-sm p-3">
         <SentenceStrip
           words={words}
           onPlay={() => {}}
