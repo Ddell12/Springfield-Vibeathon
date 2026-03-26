@@ -11,22 +11,22 @@ import schema from "../schema";
 const modules = import.meta.glob("../**/*.*s"); // REQUIRED for convex-test
 
 // Patch SubtleCrypto.digest for jsdom CI compatibility.
-// jsdom's Blob.arrayBuffer() returns a polyfilled ArrayBuffer that
-// crypto.subtle.digest() rejects on Ubuntu CI. This wrapper converts
-// the data to a real Uint8Array before hashing.
-beforeAll(() => {
-  const originalDigest = crypto.subtle.digest.bind(crypto.subtle);
+// jsdom's Blob.arrayBuffer() returns a polyfilled ArrayBuffer that Node's
+// crypto.subtle.digest() rejects. Fallback to Node's crypto.createHash
+// which accepts any Buffer-like input without type checking.
+beforeAll(async () => {
+  const nodeCrypto = await import("node:crypto");
   vi.stubGlobal("crypto", {
     ...crypto,
     subtle: {
       ...crypto.subtle,
-      digest: async (algo: AlgorithmIdentifier, data: BufferSource) => {
-        const buf = data instanceof ArrayBuffer
-          ? data
-          : ArrayBuffer.isView(data)
-            ? data.buffer
-            : new Uint8Array(data as unknown as ArrayLike<number>).buffer;
-        return originalDigest(algo, buf);
+      digest: async (algo: string | Algorithm, data: BufferSource) => {
+        const algoName = typeof algo === "string" ? algo : algo.name;
+        const hashName = algoName.replace("-", "").toLowerCase(); // SHA-256 → sha256
+        const hash = nodeCrypto.createHash(hashName);
+        hash.update(Buffer.from(data as never));
+        const result = hash.digest();
+        return result.buffer.slice(result.byteOffset, result.byteOffset + result.byteLength);
       },
     },
   });
