@@ -12,6 +12,8 @@ import type * as ai from "../ai.js";
 import type * as aiActions from "../aiActions.js";
 import type * as app_state from "../app_state.js";
 import type * as apps from "../apps.js";
+import type * as flashcard_cards from "../flashcard_cards.js";
+import type * as flashcard_decks from "../flashcard_decks.js";
 import type * as generated_files from "../generated_files.js";
 import type * as http from "../http.js";
 import type * as image_cache from "../image_cache.js";
@@ -42,6 +44,8 @@ declare const fullApi: ApiFromModules<{
   aiActions: typeof aiActions;
   app_state: typeof app_state;
   apps: typeof apps;
+  flashcard_cards: typeof flashcard_cards;
+  flashcard_decks: typeof flashcard_decks;
   generated_files: typeof generated_files;
   http: typeof http;
   image_cache: typeof image_cache;

@@ -9,6 +9,8 @@ import { MaterialIcon } from "@/shared/components/material-icon";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
 
+import { VoiceInput } from "@/shared/components/voice-input";
+
 import { api } from "../../../../convex/_generated/api";
 import { Id } from "../../../../convex/_generated/dataModel";
 import type { Activity, StreamingStatus } from "../hooks/use-streaming";
@@ -229,7 +231,11 @@ export function ChatPanel({
         onSubmit={handleSubmit}
         className="border-t border-border/40 bg-surface-container-lowest px-4 pt-3 pb-4"
       >
-        <div className="flex gap-2">
+        <div className="flex items-center gap-2">
+          <VoiceInput
+            onTranscript={(text) => setInput((prev) => (prev ? `${prev} ${text}` : text))}
+            disabled={isGenerating}
+          />
           <div className="relative flex-1">
             <MaterialIcon icon="chat" size="xs" className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant/50" />
             <Input
@@ -237,8 +243,8 @@ export function ChatPanel({
               onChange={(e) => setInput(e.target.value)}
               placeholder={
                 isLive
-                  ? "Request changes to your app…"
-                  : "Describe the therapy tool you want to build…"
+                  ? "Request changes to your app\u2026"
+                  : "Describe the therapy tool you want to build\u2026"
               }
               disabled={isGenerating}
               className="pl-10"

@@ -16,6 +16,7 @@ export default defineSchema({
     sandboxId: v.optional(v.string()), // DEPRECATED — remove in next migration
     previewUrl: v.optional(v.string()), // DEPRECATED — remove in next migration
     publishedUrl: v.optional(v.string()),
+    type: v.optional(v.union(v.literal("builder"), v.literal("flashcards"))),
   }).index("by_user", ["userId"])
     .index("by_state", ["state"]),
 
@@ -104,4 +105,25 @@ export default defineSchema({
   })
     .index("by_category", ["category"])
     .index("by_sortOrder", ["sortOrder"]),
+
+  flashcardDecks: defineTable({
+    userId: v.optional(v.string()),
+    title: v.string(),
+    description: v.optional(v.string()),
+    sessionId: v.id("sessions"),
+    cardCount: v.number(),
+    coverImageUrl: v.optional(v.string()),
+  }).index("by_user", ["userId"])
+    .index("by_session", ["sessionId"]),
+
+  flashcards: defineTable({
+    deckId: v.id("flashcardDecks"),
+    label: v.string(),
+    imageUrl: v.optional(v.string()),
+    imageStorageId: v.optional(v.id("_storage")),
+    audioUrl: v.optional(v.string()),
+    sortOrder: v.number(),
+    category: v.optional(v.string()),
+  }).index("by_deck", ["deckId"])
+    .index("by_deck_sortOrder", ["deckId", "sortOrder"]),
 });
