@@ -55,15 +55,13 @@ describe("PreviewPanel — WebContainer refactor contract", () => {
     expect(pulseElement).toBeTruthy();
   });
 
-  it("wcStatus='booting' with generating state renders a loading indicator", () => {
+  it("wcStatus='booting' with generating state renders skeleton, not spinner", () => {
     const { container } = render(
       <PreviewPanel previewUrl={null} state="generating" wcStatus="booting" />
     );
-    // Booting takes priority — renders the skeleton pulse; generating spinner appears when ready
-    const loadingIndicator =
-      container.querySelector(".animate-pulse") ??
-      screen.queryByRole("status");
-    expect(loadingIndicator).toBeTruthy();
+    // Booting takes priority — renders the skeleton pulse, NOT the generating spinner
+    expect(container.querySelector(".animate-pulse")).toBeTruthy();
+    expect(screen.queryByRole("status")).toBeNull();
   });
 
   it("wcStatus='ready' with non-null previewUrl renders iframe", () => {

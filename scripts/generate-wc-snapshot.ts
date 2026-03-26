@@ -3,7 +3,7 @@
  * Run: npx tsx scripts/generate-wc-snapshot.ts
  * Output: public/wc-snapshot.bin
  */
-import { writeFileSync, mkdirSync, existsSync } from "node:fs";
+import { writeFileSync, mkdirSync, existsSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { execSync } from "node:child_process";
 import { snapshot } from "@webcontainer/snapshot";
@@ -53,6 +53,10 @@ async function main() {
 
   const sizeMB = (snapshotBuffer.length / 1024 / 1024).toFixed(1);
   console.log(`Snapshot written to ${OUTPUT_PATH} (${sizeMB} MB)`);
+
+  // Clean up temp directory (~200MB node_modules)
+  rmSync(TEMPLATE_DIR, { recursive: true, force: true });
+  console.log("Cleaned up temp directory.");
 }
 
 main().catch((err) => {

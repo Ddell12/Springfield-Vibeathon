@@ -60,8 +60,23 @@ export function useWebContainer(): UseWebContainerReturn {
         await wc.mount(templateFiles);
 
         if (!snapshotMounted) {
-          // No snapshot — need npm install
+          // No snapshot — need npm install (fallback path)
           const installProcess = await wc.spawn("npm", ["install"]);
+
+          // Capture output for error diagnostics (capped to prevent unbounded growth)
+          const MAX_OUTPUT_CHARS = 50_000;
+          let installOutput = "";
+          installProcess.output.pipeTo(
+            new WritableStream({
+              write(chunk) {
+                installOutput += chunk;
+                if (installOutput.length > MAX_OUTPUT_CHARS) {
+                  installOutput = installOutput.slice(-MAX_OUTPUT_CHARS);
+                }
+              },
+            })
+          ).catch(() => {/* stream may close early */});
+
           const exitCode = await Promise.race([
             installProcess.exit,
             new Promise<number>((_, reject) =>
@@ -69,8 +84,9 @@ export function useWebContainer(): UseWebContainerReturn {
             ),
           ]);
           if (exitCode !== 0) {
+            const lastLines = installOutput.trim().split("\n").slice(-5).join("\n");
             setStatus("error");
-            setError("npm install failed");
+            setError(`npm install failed:\n${lastLines || "Unknown error"}`);
             return;
           }
         }
