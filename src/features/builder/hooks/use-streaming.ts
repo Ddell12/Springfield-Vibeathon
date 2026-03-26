@@ -39,10 +39,12 @@ export interface UseStreamingReturn {
   sessionId: string | null;
   streamingText: string;
   activities: Activity[];
+  bundleHtml: string | null;
 }
 
 export interface UseStreamingOptions {
   onFileComplete?: (path: string, contents: string) => Promise<void>;
+  onBundle?: (html: string) => void;
 }
 
 function parseSSEEvents(text: string): Array<{ event: string; data: unknown }> {
@@ -80,9 +82,11 @@ export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn 
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [streamingText, setStreamingText] = useState("");
   const [activities, setActivities] = useState<Activity[]>([]);
+  const [bundleHtml, setBundleHtml] = useState<string | null>(null);
 
   const abortRef = useRef<AbortController | null>(null);
   const onFileCompleteRef = useRef(options?.onFileComplete);
+  const onBundleRef = useRef(options?.onBundle);
   const activityCounterRef = useRef(0);
   const tokenBufferRef = useRef("");
   const rafIdRef = useRef<number | undefined>(undefined);
@@ -91,6 +95,10 @@ export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn 
   useEffect(() => {
     onFileCompleteRef.current = options?.onFileComplete;
   }, [options?.onFileComplete]);
+
+  useEffect(() => {
+    onBundleRef.current = options?.onBundle;
+  }, [options?.onBundle]);
 
   useEffect(() => {
     sessionIdRef.current = sessionId;
@@ -115,8 +123,14 @@ export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn 
           break;
 
         case "status":
-          if (sseEvent.status === "live") setStatus("live");
-          else if (sseEvent.status === "generating") setStatus("generating");
+          if (sseEvent.status === "bundling") {
+            // Keep showing generating state to user during bundling
+            setStatus("generating");
+          } else if (sseEvent.status === "live") {
+            setStatus("live");
+          } else if (sseEvent.status === "generating") {
+            setStatus("generating");
+          }
           break;
 
         case "token":
@@ -174,6 +188,11 @@ export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn 
           addActivity("complete", "Speech input enabled");
           break;
 
+        case "bundle":
+          setBundleHtml(sseEvent.html);
+          onBundleRef.current?.(sseEvent.html);
+          break;
+
         case "done":
           // Flush any buffered tokens before marking as live
           if (rafIdRef.current) {
@@ -215,6 +234,7 @@ export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn 
       setActivities([]);
       setFiles([]);
       setAppName(null);
+      setBundleHtml(null);
 
       try {
         const response = await fetch("/api/generate", {
@@ -326,5 +346,6 @@ export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn 
     sessionId,
     streamingText,
     activities,
+    bundleHtml,
   };
 }

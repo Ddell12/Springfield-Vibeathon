@@ -586,6 +586,130 @@ describe("useStreaming — streaming hook contract", () => {
     expect(result.current.blueprint).toBeNull();
   });
 
+  it("bundleHtml is null initially", () => {
+    const { result } = renderHook(() => useStreaming());
+    expect(result.current.bundleHtml).toBeNull();
+  });
+
+  it("bundle event sets bundleHtml state", async () => {
+    const html = "<!DOCTYPE html><html><body><div id='app'></div></body></html>";
+    const stream = new ReadableStream({
+      start(controller) {
+        const encoder = new TextEncoder();
+        controller.enqueue(
+          encoder.encode(
+            `event: bundle\ndata: ${JSON.stringify({ html })}\n\n`
+          )
+        );
+        controller.close();
+      },
+    });
+    mockFetch.mockResolvedValueOnce({ ok: true, body: stream });
+
+    const { result } = renderHook(() => useStreaming());
+    await act(async () => {
+      await result.current.generate("Build a token board");
+    });
+
+    expect(result.current.bundleHtml).toBe(html);
+  });
+
+  it("bundleHtml resets to null on new generation", async () => {
+    // First generation: sets bundleHtml
+    const html = "<html><body>First</body></html>";
+    const stream1 = new ReadableStream({
+      start(controller) {
+        const encoder = new TextEncoder();
+        controller.enqueue(
+          encoder.encode(`event: bundle\ndata: ${JSON.stringify({ html })}\n\n`)
+        );
+        controller.close();
+      },
+    });
+    mockFetch.mockResolvedValueOnce({ ok: true, body: stream1 });
+
+    const { result } = renderHook(() => useStreaming());
+    await act(async () => {
+      await result.current.generate("First prompt");
+    });
+    expect(result.current.bundleHtml).toBe(html);
+
+    // Second generation: bundleHtml should reset to null (stream hangs)
+    mockFetch.mockReturnValueOnce(new Promise(() => {}));
+    act(() => {
+      result.current.generate("Second prompt");
+    });
+
+    expect(result.current.bundleHtml).toBeNull();
+  });
+
+  it("onBundle callback is called when bundle event received", async () => {
+    const html = "<!DOCTYPE html><html><body></body></html>";
+    const onBundle = vi.fn();
+
+    const stream = new ReadableStream({
+      start(controller) {
+        const encoder = new TextEncoder();
+        controller.enqueue(
+          encoder.encode(`event: bundle\ndata: ${JSON.stringify({ html })}\n\n`)
+        );
+        controller.close();
+      },
+    });
+    mockFetch.mockResolvedValueOnce({ ok: true, body: stream });
+
+    const { result } = renderHook(() => useStreaming({ onBundle }));
+    await act(async () => {
+      await result.current.generate("Build a token board");
+    });
+
+    expect(onBundle).toHaveBeenCalledTimes(1);
+    expect(onBundle).toHaveBeenCalledWith(html);
+  });
+
+  it("onBundle is not called for other event types", async () => {
+    const onBundle = vi.fn();
+
+    const stream = new ReadableStream({
+      start(controller) {
+        const encoder = new TextEncoder();
+        controller.enqueue(
+          encoder.encode('event: done\ndata: {"sessionId":"sess_abc"}\n\n')
+        );
+        controller.close();
+      },
+    });
+    mockFetch.mockResolvedValueOnce({ ok: true, body: stream });
+
+    const { result } = renderHook(() => useStreaming({ onBundle }));
+    await act(async () => {
+      await result.current.generate("Build a token board");
+    });
+
+    expect(onBundle).not.toHaveBeenCalled();
+  });
+
+  it("bundling status keeps displaying as 'generating'", async () => {
+    const stream = new ReadableStream({
+      start(controller) {
+        const encoder = new TextEncoder();
+        controller.enqueue(
+          encoder.encode('event: status\ndata: {"status":"bundling"}\n\n')
+        );
+        controller.close();
+      },
+    });
+    mockFetch.mockResolvedValueOnce({ ok: true, body: stream });
+
+    const { result } = renderHook(() => useStreaming());
+    await act(async () => {
+      await result.current.generate("Build a token board");
+    });
+
+    // "bundling" should map to "generating" in the UI
+    expect(result.current.status).toBe("generating");
+  });
+
   it("file_complete updates existing file by path", async () => {
     const firstContents = "version 1";
     const secondContents = "version 2";
