@@ -251,38 +251,41 @@ export async function POST(request: Request): Promise<Response> {
               // Read the bundled JS
               const jsBundle = readFileSync(join(buildDir!, "dist", "main.js"), "utf-8");
 
-              // Read the scaffold CSS and split into variable defs vs Tailwind directives
+              // Read the scaffold CSS — strip build-time directives, keep everything as regular CSS
               const cssPath = join(buildDir!, "src", "index.css");
               const rawCss = existsSync(cssPath) ? readFileSync(cssPath, "utf-8") : "";
-              // Strip @tailwind directives (CDN handles them)
-              const strippedCss = rawCss
+              const processedCss = rawCss
+                // Strip @tailwind directives (CDN handles base/components/utilities)
                 .replace(/@tailwind\s+(?:base|components|utilities)\s*;/g, "")
+                // Convert @apply directives to equivalent regular CSS
+                // (CDN can't process @apply — it's a build-time Tailwind feature)
+                .replace(/@apply\s+border-border\s*;/g, "border-color: hsl(var(--border));")
+                .replace(/@apply\s+bg-background\s+text-foreground\s*;/g,
+                  "background-color: hsl(var(--background)); color: hsl(var(--foreground));")
+                // Strip any remaining @apply (fallback — expand common patterns)
+                .replace(/@apply\s+[^;]+;/g, "/* @apply stripped */")
                 .trim();
-              // Split: lines with @apply go to tailwindcss style block, rest to regular style
-              const lines = strippedCss.split("\n");
-              const regularCssLines: string[] = [];
-              const tailwindCssLines: string[] = [];
-              let inLayerBlock = false;
-              let braceDepth = 0;
-              for (const line of lines) {
-                if (line.includes("@layer")) inLayerBlock = true;
-                if (inLayerBlock) {
-                  braceDepth += (line.match(/\{/g) || []).length - (line.match(/\}/g) || []).length;
-                  tailwindCssLines.push(line);
-                  if (braceDepth <= 0) { inLayerBlock = false; braceDepth = 0; }
-                } else {
-                  regularCssLines.push(line);
-                }
-              }
-              const regularCss = regularCssLines.join("\n").trim();
-              const tailwindCss = tailwindCssLines.join("\n").trim();
 
               // Read tailwind.config.js for CDN inline config
               const twConfigPath = join(buildDir!, "tailwind.config.js");
               const twConfigRaw = existsSync(twConfigPath) ? readFileSync(twConfigPath, "utf-8") : "";
-              // Extract the theme.extend object for inline CDN config
-              const twExtendMatch = twConfigRaw.match(/extend:\s*(\{[\s\S]*?\n\s{2}\})/);
-              const twExtend = twExtendMatch ? twExtendMatch[1] : "{}";
+              // Extract the full theme.extend object with balanced brace matching
+              let twExtend = "{}";
+              const extendIdx = twConfigRaw.indexOf("extend:");
+              if (extendIdx !== -1) {
+                let start = -1;
+                let depth = 0;
+                for (let i = extendIdx + 7; i < twConfigRaw.length; i++) {
+                  if (twConfigRaw[i] === "{") { if (start === -1) start = i; depth++; }
+                  else if (twConfigRaw[i] === "}") {
+                    depth--;
+                    if (depth === 0 && start !== -1) {
+                      twExtend = twConfigRaw.slice(start, i + 1);
+                      break;
+                    }
+                  }
+                }
+              }
 
               // Assemble self-contained HTML
               const bundleHtml = `<!DOCTYPE html>
@@ -293,8 +296,7 @@ export async function POST(request: Request): Promise<Response> {
   <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' blob: data: https://fonts.googleapis.com https://fonts.gstatic.com https://cdn.tailwindcss.com;" />
   <script src="https://cdn.tailwindcss.com"></script>
   <script>tailwindcss.config = { darkMode: ["class"], theme: { extend: ${twExtend} } };</script>
-  <style>${regularCss}</style>
-  <style type="text/tailwindcss">${tailwindCss}</style>
+  <style>${processedCss}</style>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap" />
   <title>Bridges App</title>
 </head>
@@ -304,7 +306,7 @@ export async function POST(request: Request): Promise<Response> {
 </body>
 </html>`;
 
-              console.log(`[generate] esbuild bundle assembled: ${jsBundle.length} chars JS, ${regularCss.length + tailwindCss.length} chars CSS, ${bundleHtml.length} chars total HTML`);
+              console.log(`[generate] esbuild bundle assembled: ${jsBundle.length} chars JS, ${processedCss.length} chars CSS, ${bundleHtml.length} chars total HTML`);
               if (bundleHtml.length < 200) throw new Error("bundle HTML is suspiciously small");
               send("bundle", { html: bundleHtml });
               buildSucceeded = true;
