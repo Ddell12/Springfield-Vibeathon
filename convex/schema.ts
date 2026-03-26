@@ -6,7 +6,9 @@ export default defineSchema({
     userId: v.optional(v.string()),
     title: v.string(),
     query: v.string(),
-    state: v.union(v.literal("idle"), v.literal("generating"), v.literal("live"), v.literal("failed")),
+    // Active states: idle, generating, live, failed
+    // Legacy pipeline states also exist in DB (blueprinting, planning, phase_implementing, etc.)
+    state: v.string(),
     stateMessage: v.optional(v.string()),
     error: v.optional(v.string()),
     blueprint: v.optional(v.any()), // Validated via Zod at app layer
