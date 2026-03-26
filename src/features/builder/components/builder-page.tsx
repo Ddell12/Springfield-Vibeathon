@@ -61,6 +61,15 @@ export function BuilderPage() {
     reset,
   } = useStreaming();
 
+  // Auto-switch to preview when bundle is ready (perceived speed boost)
+  useEffect(() => {
+    if (bundleHtml && viewMode !== "preview") setViewMode("preview");
+  }, [bundleHtml, viewMode]);
+
+  useEffect(() => {
+    if (bundleHtml && mobilePanel !== "preview") setMobilePanel("preview");
+  }, [bundleHtml, mobilePanel]);
+
   // Session resume: fetch session + files when ?sessionId is in URL
   const resumeSessionData = useQuery(
     api.sessions.get,

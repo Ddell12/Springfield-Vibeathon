@@ -10,7 +10,7 @@ import { join } from "path";
 import { extractErrorMessage, settleInBatches } from "@/core/utils";
 import { buildSystemPrompt } from "@/features/builder/lib/agent-prompt";
 import { createAgentTools } from "@/features/builder/lib/agent-tools";
-import { buildReviewMessages, DESIGN_REVIEW_PROMPT } from "@/features/builder/lib/review-prompt";
+// Design review pass removed — main prompt has extensive design rules already
 import { GenerateInputSchema } from "@/features/builder/lib/schemas/generate";
 import { buildFlashcardSystemPrompt } from "@/features/flashcards/lib/flashcard-prompt";
 import { createFlashcardTools } from "@/features/flashcards/lib/flashcard-tools";
@@ -129,7 +129,6 @@ export async function POST(request: Request): Promise<Response> {
           : buildSystemPrompt();
 
         const collectedFiles = new Map<string, string>();
-        let assistantText = "";
 
         if (!isFlashcardMode) {
           // Copy WAB scaffold to temp dir for this build
@@ -158,39 +157,13 @@ export async function POST(request: Request): Promise<Response> {
               event.type === "content_block_delta" &&
               event.delta.type === "text_delta"
             ) {
-              assistantText += event.delta.text;
               send("token", { token: event.delta.text });
             }
           }
         }
 
         if (!isFlashcardMode) {
-          // Design review pass — re-check generated files for visual polish
-          if (collectedFiles.size > 0) {
-            send("activity", { type: "thinking", message: "Polishing design..." });
-            const reviewTools = tools.filter(t => t.name === "write_file");
-            const reviewRunner = anthropic.beta.messages.toolRunner({
-              model: "claude-sonnet-4-6",
-              max_tokens: 8192,
-              system: DESIGN_REVIEW_PROMPT,
-              tools: reviewTools,
-              messages: buildReviewMessages(collectedFiles),
-              stream: true,
-              max_iterations: 3,
-            });
-            for await (const messageStream of reviewRunner) {
-              for await (const event of messageStream) {
-                if (
-                  event.type === "content_block_delta" &&
-                  event.delta.type === "text_delta"
-                ) {
-                  send("token", { token: event.delta.text });
-                }
-              }
-            }
-          }
-
-          // Bundle with Parcel (builder mode only — flashcards don't need bundling)
+          // Bundle with esbuild (builder mode only — flashcards don't need bundling)
           if (buildDir && collectedFiles.size > 0) {
             send("status", { status: "bundling" });
             send("activity", { type: "thinking", message: "Bundling your app..." });
@@ -247,6 +220,7 @@ export async function POST(request: Request): Promise<Response> {
               if (result.errors.length > 0) {
                 throw new Error(`esbuild errors: ${result.errors.map(e => e.text).join("; ")}`);
               }
+              send("activity", { type: "thinking", message: "Compiled successfully, assembling preview..." });
 
               // Read the bundled JS
               const jsBundle = readFileSync(join(buildDir!, "dist", "main.js"), "utf-8");
@@ -271,6 +245,7 @@ export async function POST(request: Request): Promise<Response> {
                 .replace(/@layer\s+base\s*\{[\s\S]*?\}/g, (match) =>
                   match.replace(/\/\*[^*]*\*\//g, "").replace(/\s/g, "").length <= "@layerbase{}".length ? "" : match)
                 .trim();
+              send("activity", { type: "thinking", message: "Processing styles..." });
 
               // Read tailwind.config.js for CDN inline config
               const twConfigPath = join(buildDir!, "tailwind.config.js");
@@ -351,6 +326,7 @@ export async function POST(request: Request): Promise<Response> {
 
               console.log(`[generate] esbuild bundle assembled: ${jsBundle.length} chars JS, ${processedCss.length} chars CSS, ${bundleHtml.length} chars total HTML`);
               if (bundleHtml.length < 200) throw new Error("bundle HTML is suspiciously small");
+              send("activity", { type: "thinking", message: "Almost ready..." });
               send("bundle", { html: bundleHtml });
               buildSucceeded = true;
               console.log("[generate] bundle SSE event sent, buildSucceeded=true");
@@ -401,12 +377,14 @@ export async function POST(request: Request): Promise<Response> {
 
         const postLlmPromises: Promise<unknown>[] = [];
 
-        if (assistantText.trim()) {
+        // Persist a friendly summary instead of raw Claude reasoning text
+        if (fileArray.length > 0) {
+          const friendlyMsg = `I built your app with ${fileArray.length} file${fileArray.length > 1 ? "s" : ""}. ${buildSucceeded ? "It's ready to use!" : "Check the preview for details."}`;
           postLlmPromises.push(
             convex.mutation(api.messages.create, {
               sessionId,
               role: "assistant",
-              content: assistantText.trim(),
+              content: friendlyMsg,
               timestamp: Date.now(),
             }),
           );

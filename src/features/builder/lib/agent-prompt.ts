@@ -530,7 +530,9 @@ export default function App() {
 - Test mentally: would this look professional on an iPad in a therapy session?
 - Prefer pre-built components when they fit; write custom components when they don't
 - Import motion from "motion/react", NOT "framer-motion"
-- Always use individual shadcn imports: \`from "@/components/ui/button"\` — NEVER barrel imports like \`from "@/components/ui"\``;
+- Always use individual shadcn imports: \`from "@/components/ui/button"\` — NEVER barrel imports like \`from "@/components/ui"\`
+- Keep text output MINIMAL. One short, friendly sentence per file at most (e.g., "Creating the main app layout"). Do NOT explain code, describe React patterns, or mention technical details. The user is a therapist or parent, not a developer.
+- NEVER output a technical summary, file listing, or explanation after generating files. Just write the files silently.`;
 
 /**
  * Builds the system prompt for the streaming LLM agent.

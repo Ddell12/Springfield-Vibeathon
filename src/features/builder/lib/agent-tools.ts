@@ -126,8 +126,9 @@ export function createAgentTools(ctx: ToolContext) {
         writeFileSync(fullPath, contents, "utf-8");
         ctx.collectedFiles.set(path, contents);
 
-        ctx.send("file_complete", { path }); // path only, no contents
-        ctx.send("activity", { type: "file_written", message: `Wrote ${path}`, path });
+        ctx.send("file_complete", { path, contents });
+        const fileCount = ctx.collectedFiles.size;
+        ctx.send("activity", { type: "file_written", message: `Built ${path} (${fileCount} file${fileCount > 1 ? "s" : ""})`, path });
         return "File written successfully";
       },
     });

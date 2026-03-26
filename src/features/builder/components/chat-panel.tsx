@@ -148,14 +148,6 @@ export function ChatPanel({
           {/* Blueprint card */}
           {blueprint && <BlueprintCard blueprint={blueprint} />}
 
-          {/* Thinking indicator */}
-          {isGenerating && activities.some((a) => a.type === "thinking") && (
-            <div className="flex items-center gap-2 py-1">
-              <MaterialIcon icon="progress_activity" size="xs" className="animate-spin text-primary" />
-              <span className="text-sm text-on-surface-variant">Thinking...</span>
-            </div>
-          )}
-
           {/* Lovable-style file badges — only during generation to avoid stale display */}
           {isGenerating && activities.length > 0 && (
             <FileBadges
@@ -165,9 +157,14 @@ export function ChatPanel({
             />
           )}
 
-          {/* Streaming assistant text */}
-          {isGenerating && streamingText && (
-            <AssistantBubble content={streamingText} isStreaming />
+          {/* Activity-based progress — no raw Claude text for non-technical users */}
+          {isGenerating && activities.length > 0 && (
+            <div className="flex items-center gap-2 rounded-xl bg-primary/5 px-4 py-3">
+              <MaterialIcon icon="progress_activity" size="xs" className="animate-spin text-primary" />
+              <span className="text-sm text-on-surface-variant">
+                {activities[activities.length - 1]?.message ?? "Building your app..."}
+              </span>
+            </div>
           )}
 
           {/* Generating indicator when no streaming text yet */}
