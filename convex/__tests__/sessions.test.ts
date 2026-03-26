@@ -130,6 +130,20 @@ describe("sessions — streaming builder mutations", () => {
     expect(session?.state).toBe("generating");
   });
 
+  it("updateTitle changes the session title", async () => {
+    const t = convexTest(schema, modules);
+    const id = await t.mutation(api.sessions.create, {
+      title: "Original Title",
+      query: "test",
+    });
+    await t.mutation(api.sessions.updateTitle, {
+      sessionId: id,
+      title: "New Title",
+    });
+    const session = await t.query(api.sessions.get, { sessionId: id });
+    expect(session?.title).toBe("New Title");
+  });
+
   describe("getMostRecent", () => {
     it("returns null when no live sessions exist", async () => {
       const t = convexTest(schema, modules);

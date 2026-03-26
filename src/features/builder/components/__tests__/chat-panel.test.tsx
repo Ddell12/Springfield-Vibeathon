@@ -124,4 +124,97 @@ describe("ChatPanel — streaming builder contract", () => {
     const indicator = screen.queryByText(/live|ready|done/i);
     expect(indicator).toBeTruthy();
   });
+
+  it("shows Retry button when error is set and onRetry is provided", () => {
+    render(
+      <ChatPanel
+        {...defaultProps}
+        status="failed"
+        error="Something went wrong"
+        onRetry={vi.fn()}
+      />
+    );
+    expect(screen.getByRole("button", { name: /retry/i })).toBeTruthy();
+  });
+
+  it("does not show Retry button when onRetry is not provided", () => {
+    render(
+      <ChatPanel
+        {...defaultProps}
+        status="failed"
+        error="Something went wrong"
+      />
+    );
+    expect(screen.queryByRole("button", { name: /retry/i })).toBeNull();
+  });
+
+  it("shows system messages", () => {
+    mockUseQuery.mockReturnValue([
+      { _id: "msg1", role: "system", content: "Session started", timestamp: 1 },
+    ]);
+    render(<ChatPanel {...defaultProps} sessionId="session_123" />);
+    expect(screen.getByText("Session started")).toBeTruthy();
+    mockUseQuery.mockReturnValue([]);
+  });
+
+  it("shows streaming text when isGenerating and streamingText is provided", () => {
+    render(
+      <ChatPanel
+        {...defaultProps}
+        status="generating"
+        streamingText="Generating your app..."
+      />
+    );
+    expect(screen.getByText(/Generating your app/)).toBeTruthy();
+  });
+
+  it("shows activity cards for file_written activities during generation", () => {
+    render(
+      <ChatPanel
+        {...defaultProps}
+        status="generating"
+        activities={[
+          {
+            id: "a1",
+            type: "file_written",
+            message: "Wrote App.tsx",
+            path: "src/App.tsx",
+            timestamp: Date.now(),
+          },
+        ]}
+      />
+    );
+    expect(screen.getByText("Wrote App.tsx")).toBeTruthy();
+  });
+
+  it("shows progress steps during generation when activities present", () => {
+    render(
+      <ChatPanel
+        {...defaultProps}
+        status="generating"
+        activities={[
+          {
+            id: "a1",
+            type: "thinking",
+            message: "Understanding request",
+            timestamp: Date.now(),
+          },
+        ]}
+      />
+    );
+    // ProgressSteps renders step labels
+    expect(screen.getByText(/Understanding request/i)).toBeTruthy();
+  });
+
+  it("shows input placeholder for live status", () => {
+    render(<ChatPanel {...defaultProps} status="live" />);
+    const input = screen.getByRole("textbox");
+    expect((input as HTMLInputElement).placeholder).toMatch(/changes/i);
+  });
+
+  it("shows input placeholder for idle status", () => {
+    render(<ChatPanel {...defaultProps} status="idle" />);
+    const input = screen.getByRole("textbox");
+    expect((input as HTMLInputElement).placeholder).toMatch(/describe|build/i);
+  });
 });

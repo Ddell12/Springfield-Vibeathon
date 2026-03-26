@@ -150,6 +150,53 @@ describe("generated_files — version-tracked file operations", () => {
     expect(file?.version).toBe(3);
   });
 
+  it("upsertAutoVersion creates a new file with auto version 1", async () => {
+    const t = convexTest(schema, modules);
+    const sessionId = await t.mutation(api.sessions.create, {
+      title: "Test",
+      query: "test",
+    });
+    const result = await t.mutation(api.generated_files.upsertAutoVersion, {
+      sessionId,
+      path: "src/App.tsx",
+      contents: "// version auto",
+    });
+    expect(result.version).toBe(1);
+    const file = await t.query(api.generated_files.getByPath, {
+      sessionId,
+      path: "src/App.tsx",
+    });
+    expect(file?.contents).toBe("// version auto");
+    expect(file?.version).toBe(1);
+  });
+
+  it("upsertAutoVersion increments version on existing file", async () => {
+    const t = convexTest(schema, modules);
+    const sessionId = await t.mutation(api.sessions.create, {
+      title: "Test",
+      query: "test",
+    });
+    // Create version 1
+    await t.mutation(api.generated_files.upsertAutoVersion, {
+      sessionId,
+      path: "src/App.tsx",
+      contents: "// version 1",
+    });
+    // Update — should become version 2
+    const result = await t.mutation(api.generated_files.upsertAutoVersion, {
+      sessionId,
+      path: "src/App.tsx",
+      contents: "// version 2",
+    });
+    expect(result.version).toBe(2);
+    const file = await t.query(api.generated_files.getByPath, {
+      sessionId,
+      path: "src/App.tsx",
+    });
+    expect(file?.contents).toBe("// version 2");
+    expect(file?.version).toBe(2);
+  });
+
   it("upsert stores sessionId on the file", async () => {
     const t = convexTest(schema, modules);
     const sessionId = await t.mutation(api.sessions.create, {

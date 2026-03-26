@@ -1,7 +1,11 @@
 // src/features/builder/components/__tests__/code-panel.test.tsx
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+vi.mock("@/core/clipboard", () => ({
+  copyToClipboard: vi.fn().mockResolvedValue(undefined),
+}));
 
 import { CodePanel } from "../code-panel";
 
@@ -97,5 +101,60 @@ describe("CodePanel — streaming builder contract", () => {
     rerender(<CodePanel files={sampleFiles} status="live" />);
     // Should end up showing final state without errors
     expect(screen.getByText("App.tsx")).toBeTruthy();
+  });
+
+  it("shows copy button when files are provided", () => {
+    render(<CodePanel files={sampleFiles} status="live" />);
+    const copyBtn = screen.getByTitle("Copy Content");
+    expect(copyBtn).toBeTruthy();
+  });
+
+  it("shows download button when files are provided", () => {
+    render(<CodePanel files={sampleFiles} status="live" />);
+    const downloadBtn = screen.getByTitle("Download");
+    expect(downloadBtn).toBeTruthy();
+  });
+
+  it("clicking copy button calls copyToClipboard", async () => {
+    const { copyToClipboard } = await import("@/core/clipboard");
+    render(<CodePanel files={sampleFiles} status="live" />);
+    const user = userEvent.setup();
+    await user.click(screen.getByTitle("Copy Content"));
+    expect(copyToClipboard).toHaveBeenCalledWith(
+      sampleFiles[0].contents,
+      "Copied to clipboard"
+    );
+  });
+
+  it("clicking download button creates a link element", async () => {
+    // Mock URL.createObjectURL and URL.revokeObjectURL
+    const createObjectURL = vi.fn().mockReturnValue("blob:test-url");
+    const revokeObjectURL = vi.fn();
+    vi.stubGlobal("URL", { createObjectURL, revokeObjectURL });
+
+    // Mock document.createElement to capture anchor creation
+    const mockAnchor = { href: "", download: "", click: vi.fn() };
+    const origCreateElement = document.createElement.bind(document);
+    vi.spyOn(document, "createElement").mockImplementation((tag) => {
+      if (tag === "a") return mockAnchor as unknown as HTMLElement;
+      return origCreateElement(tag);
+    });
+
+    render(<CodePanel files={sampleFiles} status="live" />);
+    const user = userEvent.setup();
+    await user.click(screen.getByTitle("Download"));
+
+    expect(mockAnchor.click).toHaveBeenCalled();
+    expect(mockAnchor.download).toBe("App.tsx");
+
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
+
+  it("shows line numbers in gutter", () => {
+    render(<CodePanel files={sampleFiles} status="live" />);
+    // File has 5 lines, should show line numbers 1-5
+    expect(screen.getByText("1")).toBeTruthy();
+    expect(screen.getByText("5")).toBeTruthy();
   });
 });

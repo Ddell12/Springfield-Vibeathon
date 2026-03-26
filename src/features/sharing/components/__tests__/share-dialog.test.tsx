@@ -184,4 +184,72 @@ describe("ShareDialog", () => {
     // Now the Vercel URL should be displayed
     expect(screen.getByText(/vercel\.app/)).toBeInTheDocument();
   });
+
+  test("handleShare is called and navigator.share succeeds", async () => {
+    const mockShare = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "share", {
+      value: mockShare,
+      writable: true,
+      configurable: true,
+    });
+
+    const user = userEvent.setup();
+    render(<ShareDialog {...defaultProps} />);
+
+    const shareButton = screen.getByRole("button", { name: /^share$/i });
+    await user.click(shareButton);
+
+    expect(mockShare).toHaveBeenCalledWith({
+      title: "Morning Routine",
+      url: "http://localhost:3000/tool/abc1234567",
+    });
+  });
+
+  test("handleShare silently handles user cancellation", async () => {
+    const mockShare = vi.fn().mockRejectedValue(new Error("AbortError"));
+    Object.defineProperty(navigator, "share", {
+      value: mockShare,
+      writable: true,
+      configurable: true,
+    });
+
+    const user = userEvent.setup();
+    render(<ShareDialog {...defaultProps} />);
+
+    const shareButton = screen.getByRole("button", { name: /^share$/i });
+    // Should not throw
+    await expect(user.click(shareButton)).resolves.not.toThrow();
+  });
+
+  test("clicking 'Preview Link' tab sets activeTab to preview", async () => {
+    const user = userEvent.setup();
+    render(
+      <ShareDialog
+        {...defaultProps}
+        publishedUrl="https://bridges-morning-routine.vercel.app"
+      />
+    );
+
+    // Switch to published first
+    const publishedTab = screen.getByText(/published link/i);
+    await user.click(publishedTab);
+
+    // Now click preview tab to switch back
+    const previewTab = screen.getByText(/preview link/i);
+    await user.click(previewTab);
+
+    // URL should revert back to slug URL
+    expect(screen.getByText(/\/tool\/abc1234567/)).toBeInTheDocument();
+  });
+
+  test("Close button in header calls onOpenChange(false)", async () => {
+    const onOpenChange = vi.fn();
+    const user = userEvent.setup();
+    render(<ShareDialog {...defaultProps} onOpenChange={onOpenChange} />);
+
+    const closeButtons = screen.getAllByRole("button", { name: /close/i });
+    // Click the first close button (the 'X' in header)
+    await user.click(closeButtons[0]);
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
 });

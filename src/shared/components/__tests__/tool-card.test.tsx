@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 
 import { ToolCard } from "../tool-card";
 
@@ -92,5 +92,37 @@ describe("ToolCard", () => {
       />
     );
     expect(screen.queryByText("March 20, 2026")).not.toBeInTheDocument();
+  });
+
+  it("calls onDelete when delete button clicked and user confirms", () => {
+    const onDelete = vi.fn();
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    render(
+      <ToolCard title="My Board" toolType="token-board" variant="tool" onDelete={onDelete} />
+    );
+    fireEvent.click(screen.getByTitle("Delete"));
+    expect(window.confirm).toHaveBeenCalledWith('Delete "My Board"? This cannot be undone.');
+    expect(onDelete).toHaveBeenCalledTimes(1);
+    vi.restoreAllMocks();
+  });
+
+  it("does not call onDelete when user cancels confirm dialog", () => {
+    const onDelete = vi.fn();
+    vi.spyOn(window, "confirm").mockReturnValue(false);
+    render(
+      <ToolCard title="My Board" toolType="token-board" variant="tool" onDelete={onDelete} />
+    );
+    fireEvent.click(screen.getByTitle("Delete"));
+    expect(onDelete).not.toHaveBeenCalled();
+    vi.restoreAllMocks();
+  });
+
+  it("calls onShare when share button is clicked", () => {
+    const onShare = vi.fn();
+    render(
+      <ToolCard title="My Board" toolType="token-board" variant="tool" onShare={onShare} />
+    );
+    fireEvent.click(screen.getByTitle("Share"));
+    expect(onShare).toHaveBeenCalledTimes(1);
   });
 });

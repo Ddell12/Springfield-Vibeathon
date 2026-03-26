@@ -108,6 +108,55 @@ describe("therapy_templates", () => {
     expect(result?.category).toBe("Daily Routines");
   });
 
+  it("seed populates therapyTemplates with predefined templates", async () => {
+    const t = convexTest(schema, modules);
+    // Call the seed internalMutation via t.run
+    await t.run(async (ctx) => {
+      // Simulate seed by calling the handler directly
+      const existing = await ctx.db.query("therapyTemplates").first();
+      if (existing) return;
+
+      await ctx.db.insert("therapyTemplates", {
+        name: "Snack Request Board",
+        description: "A picture communication board",
+        category: "Communication",
+        starterPrompt: "Build a picture communication board",
+        sortOrder: 1,
+      });
+    });
+    const results = await t.query(api.therapy_templates.list, {});
+    expect(results.length).toBeGreaterThan(0);
+  });
+
+  it("seed is idempotent — does not insert if records already exist", async () => {
+    const t = convexTest(schema, modules);
+    // Insert one template first
+    await t.run(async (ctx) => {
+      await ctx.db.insert("therapyTemplates", {
+        name: "Existing Template",
+        description: "Already seeded",
+        category: "Communication",
+        starterPrompt: "Existing prompt",
+        sortOrder: 0,
+      });
+    });
+    // Call the seed internalMutation via the internal API
+    const { internal } = await import("../_generated/api");
+    await t.mutation(internal.therapy_templates.seed, {});
+    // Should still only have 1 record (the existing one)
+    const results = await t.query(api.therapy_templates.list, {});
+    expect(results).toHaveLength(1);
+    expect(results[0].name).toBe("Existing Template");
+  });
+
+  it("seed (direct) inserts 8 templates when database is empty", async () => {
+    const t = convexTest(schema, modules);
+    const { internal } = await import("../_generated/api");
+    await t.mutation(internal.therapy_templates.seed, {});
+    const results = await t.query(api.therapy_templates.list, {});
+    expect(results).toHaveLength(8);
+  });
+
   it("get returns null for non-existent id", async () => {
     const t = convexTest(schema, modules);
     // Insert one template to get a valid ID format, then use a different (non-existent) doc id

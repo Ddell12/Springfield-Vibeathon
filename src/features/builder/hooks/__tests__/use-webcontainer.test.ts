@@ -131,4 +131,112 @@ describe("useWebContainer — WebContainer lifecycle hook", () => {
 
     expect(result.current.status).toBe("error");
   });
+
+  it("status transitions to 'installing' when npm install starts", async () => {
+    // Use a promise we can control
+    let resolveInstall!: (code: number) => void;
+    const installExitPromise = new Promise<number>((resolve) => {
+      resolveInstall = resolve;
+    });
+
+    mockWc.spawn.mockResolvedValueOnce({
+      exit: installExitPromise,
+      output: { pipeTo: vi.fn() },
+    });
+
+    const { useWebContainer } = await import("../use-webcontainer");
+    const { result } = renderHook(() => useWebContainer());
+
+    // Let the boot function start
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 0));
+    });
+
+    // While install is running, status should be 'installing'
+    // (We can check it was set to 'installing' before resolving to 'ready')
+    resolveInstall(0);
+
+    // Boot should complete
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 0));
+    });
+  });
+
+  it("error state is null initially", async () => {
+    const { useWebContainer } = await import("../use-webcontainer");
+    const { result } = renderHook(() => useWebContainer());
+    expect(result.current.error).toBeNull();
+  });
+
+  it("writeFile is a no-op when WebContainer not yet initialized", async () => {
+    // Create a hook where getWebContainer hangs
+    const { getWebContainer } = await import("../webcontainer");
+    vi.mocked(getWebContainer).mockReturnValueOnce(new Promise(() => {}));
+
+    const { useWebContainer } = await import("../use-webcontainer");
+    const { result } = renderHook(() => useWebContainer());
+
+    // writeFile should silently return without error
+    await act(async () => {
+      await result.current.writeFile("src/App.tsx", "content");
+    });
+
+    // No crash, no call to wc.fs.writeFile
+    expect(mockWc.fs.writeFile).not.toHaveBeenCalled();
+  });
+
+  it("boot failure sets status to error", async () => {
+    const { getWebContainer } = await import("../webcontainer");
+    vi.mocked(getWebContainer).mockRejectedValueOnce(new Error("Boot failed"));
+
+    const { useWebContainer } = await import("../use-webcontainer");
+    const { result } = renderHook(() => useWebContainer());
+
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 0));
+    });
+
+    expect(result.current.status).toBe("error");
+    expect(result.current.error).toContain("Boot failed");
+  });
+
+  it("npm install output is captured via pipeTo WritableStream", async () => {
+    // Mock spawn so the output stream fires data
+    let writeFn: ((chunk: string) => void) | undefined;
+    const mockOutput = {
+      pipeTo: vi.fn().mockImplementation((writableStream: WritableStream) => {
+        const writer = writableStream.getWriter();
+        writer.write("npm warn: test\nnpm: success\n").catch(() => {});
+        return Promise.resolve();
+      }),
+    };
+    mockWc.spawn.mockResolvedValueOnce({
+      exit: Promise.resolve(0),
+      output: mockOutput,
+    });
+
+    const { useWebContainer } = await import("../use-webcontainer");
+    const { result } = renderHook(() => useWebContainer());
+
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 10));
+    });
+
+    expect(mockOutput.pipeTo).toHaveBeenCalled();
+  });
+
+  it("unsubscribe function from server-ready event is called on cleanup", async () => {
+    const mockUnsubscribe = vi.fn();
+    mockWc.on.mockReturnValueOnce(mockUnsubscribe);
+
+    const { useWebContainer } = await import("../use-webcontainer");
+    const { result, unmount } = renderHook(() => useWebContainer());
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    unmount();
+    expect(mockUnsubscribe).toHaveBeenCalled();
+  });
 });

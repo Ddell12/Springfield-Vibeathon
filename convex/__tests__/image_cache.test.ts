@@ -5,6 +5,7 @@
 import { convexTest } from "convex-test";
 import { describe, expect, it } from "vitest";
 
+import { internal } from "../_generated/api";
 import schema from "../schema";
 
 const modules = import.meta.glob("../**/*.*s"); // REQUIRED for convex-test
@@ -92,6 +93,62 @@ describe("image_cache", () => {
       return entries.length;
     });
     expect(result).toBe(0);
+  });
+
+  it("getByHash via internal returns null for unknown hash", async () => {
+    const t = convexTest(schema, modules);
+    const result = await t.query(internal.image_cache.getByHash, {
+      promptHash: "nonexistent_hash_abc",
+    });
+    expect(result).toBeNull();
+  });
+
+  it("save via internal then getByHash returns the saved entry", async () => {
+    const t = convexTest(schema, modules);
+    const storageId = await t.run(async (ctx) => storeTestImage(ctx as any));
+
+    await t.mutation(internal.image_cache.save, {
+      promptHash: "test_hash_save",
+      prompt: "a happy emoji",
+      label: "happy",
+      category: "emotions",
+      storageId: storageId as any,
+      imageUrl: "https://example.com/happy.png",
+      model: "gemini-test",
+      createdAt: Date.now(),
+    });
+
+    const result = await t.query(internal.image_cache.getByHash, {
+      promptHash: "test_hash_save",
+    });
+    expect(result).not.toBeNull();
+    expect(result?.label).toBe("happy");
+    expect(result?.category).toBe("emotions");
+  });
+
+  it("count via internal returns 0 when cache is empty", async () => {
+    const t = convexTest(schema, modules);
+    const result = await t.query(internal.image_cache.count, {});
+    expect(result).toBe(0);
+  });
+
+  it("count via internal returns 1 after one save", async () => {
+    const t = convexTest(schema, modules);
+    const storageId = await t.run(async (ctx) => storeTestImage(ctx as any));
+
+    await t.mutation(internal.image_cache.save, {
+      promptHash: "count_test_hash",
+      prompt: "a counting test",
+      label: "count_label",
+      category: "objects",
+      storageId: storageId as any,
+      imageUrl: "https://example.com/count.png",
+      model: "gemini-test",
+      createdAt: Date.now(),
+    });
+
+    const result = await t.query(internal.image_cache.count, {});
+    expect(result).toBe(1);
   });
 
   it("count reflects inserted entries", async () => {
