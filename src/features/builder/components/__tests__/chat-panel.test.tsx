@@ -9,6 +9,7 @@ const mockUseMutation = vi.fn().mockReturnValue(vi.fn());
 vi.mock("convex/react", () => ({
   useQuery: mockUseQuery,
   useMutation: mockUseMutation,
+  useAction: vi.fn().mockReturnValue(vi.fn()),
 }));
 
 vi.mock("../../hooks/use-streaming", () => ({
