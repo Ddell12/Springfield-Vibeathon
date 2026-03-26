@@ -11,6 +11,8 @@ import { buildSystemPrompt } from "@/features/builder/lib/agent-prompt";
 import { createAgentTools } from "@/features/builder/lib/agent-tools";
 import { buildReviewMessages, DESIGN_REVIEW_PROMPT } from "@/features/builder/lib/review-prompt";
 import { GenerateInputSchema } from "@/features/builder/lib/schemas/generate";
+import { createFlashcardTools } from "@/features/flashcards/lib/flashcard-tools";
+import { buildFlashcardSystemPrompt } from "@/features/flashcards/lib/flashcard-prompt";
 
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
@@ -63,6 +65,7 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   const query = parsed.data.query ?? parsed.data.prompt!;
+  const mode = parsed.data.mode;
   const providedSessionId = parsed.data.sessionId as Id<"sessions"> | undefined;
 
   const sessionId: Id<"sessions"> =
@@ -97,21 +100,28 @@ export async function POST(request: Request): Promise<Response> {
         send("status", { status: "generating" });
         send("activity", { type: "thinking", message: "Understanding your request..." });
 
-        const systemPrompt = buildSystemPrompt();
+        const isFlashcardMode = mode === "flashcards";
+        const systemPrompt = isFlashcardMode
+          ? buildFlashcardSystemPrompt()
+          : buildSystemPrompt();
 
         const collectedFiles = new Map<string, string>();
         let assistantText = "";
 
-        // Copy WAB scaffold to temp dir for this build
-        buildDir = mkdtempSync(join(tmpdir(), "bridges-build-"));
-        cpSync(join(process.cwd(), "artifacts/wab-scaffold"), buildDir, { recursive: true });
+        if (!isFlashcardMode) {
+          // Copy WAB scaffold to temp dir for this build
+          buildDir = mkdtempSync(join(tmpdir(), "bridges-build-"));
+          cpSync(join(process.cwd(), "artifacts/wab-scaffold"), buildDir, { recursive: true });
+        }
 
-        const tools = createAgentTools({ send, sessionId, collectedFiles, convex, buildDir });
+        const tools = isFlashcardMode
+          ? createFlashcardTools({ send, sessionId, convex })
+          : createAgentTools({ send, sessionId, collectedFiles, convex, buildDir: buildDir! });
 
         // Generation pass — tool runner handles the multi-turn loop automatically
         const runner = anthropic.beta.messages.toolRunner({
           model: "claude-sonnet-4-6",
-          max_tokens: 32768,
+          max_tokens: isFlashcardMode ? 4096 : 32768,
           system: systemPrompt,
           tools,
           messages: [{ role: "user", content: query }],
@@ -131,57 +141,59 @@ export async function POST(request: Request): Promise<Response> {
           }
         }
 
-        // Design review pass — re-check generated files for visual polish
-        if (collectedFiles.size > 0) {
-          send("activity", { type: "thinking", message: "Polishing design..." });
-          const reviewTools = [tools[1]]; // write_file only
-          const reviewRunner = anthropic.beta.messages.toolRunner({
-            model: "claude-sonnet-4-6",
-            max_tokens: 8192,
-            system: DESIGN_REVIEW_PROMPT,
-            tools: reviewTools,
-            messages: buildReviewMessages(collectedFiles),
-            stream: true,
-            max_iterations: 3,
-          });
-          for await (const messageStream of reviewRunner) {
-            for await (const event of messageStream) {
-              if (
-                event.type === "content_block_delta" &&
-                event.delta.type === "text_delta"
-              ) {
-                send("token", { token: event.delta.text });
+        if (!isFlashcardMode) {
+          // Design review pass — re-check generated files for visual polish
+          if (collectedFiles.size > 0) {
+            send("activity", { type: "thinking", message: "Polishing design..." });
+            const reviewTools = [tools[1]]; // write_file only
+            const reviewRunner = anthropic.beta.messages.toolRunner({
+              model: "claude-sonnet-4-6",
+              max_tokens: 8192,
+              system: DESIGN_REVIEW_PROMPT,
+              tools: reviewTools,
+              messages: buildReviewMessages(collectedFiles),
+              stream: true,
+              max_iterations: 3,
+            });
+            for await (const messageStream of reviewRunner) {
+              for await (const event of messageStream) {
+                if (
+                  event.type === "content_block_delta" &&
+                  event.delta.type === "text_delta"
+                ) {
+                  send("token", { token: event.delta.text });
+                }
               }
             }
           }
-        }
 
-        // Bundle with Parcel
-        if (collectedFiles.size > 0) {
-          send("status", { status: "bundling" });
-          send("activity", { type: "thinking", message: "Bundling your app..." });
+          // Bundle with Parcel
+          if (collectedFiles.size > 0) {
+            send("status", { status: "bundling" });
+            send("activity", { type: "thinking", message: "Bundling your app..." });
 
-          try {
-            // Parcel build + custom inliner (html-inline breaks on external URLs)
-            await execAsync(
-              "pnpm exec parcel build index.html --no-source-maps --dist-dir dist && node scripts/inline-bundle.cjs dist/index.html bundle.html",
-              { cwd: buildDir, timeout: 30000 },
-            );
-            const bundlePath = join(buildDir, "bundle.html");
-            if (!existsSync(bundlePath)) throw new Error("Parcel produced no bundle.html");
-            const bundleHtml = readFileSync(bundlePath, "utf-8");
-            if (bundleHtml.length < 100) throw new Error("bundle.html is suspiciously small");
-            send("bundle", { html: bundleHtml });
-            // Persist bundle for session resume — fire-and-forget to avoid blocking SSE
-            convex.mutation(api.generated_files.upsertAutoVersion, {
-              sessionId,
-              path: "_bundle.html",
-              contents: bundleHtml,
-            }).catch((err) => console.error("[generate] Failed to persist bundle:", err));
-          } catch (buildError) {
-            console.error("[generate] Parcel build failed:", buildError);
-            send("activity", { type: "thinking", message: "Build failed — showing raw files instead" });
-            // Don't throw — still persist files and send done event
+            try {
+              // Parcel build + custom inliner (html-inline breaks on external URLs)
+              await execAsync(
+                "pnpm exec parcel build index.html --no-source-maps --dist-dir dist && node scripts/inline-bundle.cjs dist/index.html bundle.html",
+                { cwd: buildDir, timeout: 30000 },
+              );
+              const bundlePath = join(buildDir!, "bundle.html");
+              if (!existsSync(bundlePath)) throw new Error("Parcel produced no bundle.html");
+              const bundleHtml = readFileSync(bundlePath, "utf-8");
+              if (bundleHtml.length < 100) throw new Error("bundle.html is suspiciously small");
+              send("bundle", { html: bundleHtml });
+              // Persist bundle for session resume — fire-and-forget to avoid blocking SSE
+              convex.mutation(api.generated_files.upsertAutoVersion, {
+                sessionId,
+                path: "_bundle.html",
+                contents: bundleHtml,
+              }).catch((err) => console.error("[generate] Failed to persist bundle:", err));
+            } catch (buildError) {
+              console.error("[generate] Parcel build failed:", buildError);
+              send("activity", { type: "thinking", message: "Build failed — showing raw files instead" });
+              // Don't throw — still persist files and send done event
+            }
           }
         }
 
