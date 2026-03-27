@@ -43,11 +43,15 @@ export const create = mutation({
 export const get = query({
   args: { deckId: v.id("flashcardDecks") },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) return null;
     const deck = await ctx.db.get(args.deckId);
     if (!deck) return null;
-    if (deck.userId && deck.userId !== userId) return null;
+
+    // Legacy decks (no userId) are accessible to everyone
+    if (!deck.userId) return deck;
+
+    // Owned decks require matching auth
+    const userId = await getAuthUserId(ctx);
+    if (!userId || deck.userId !== userId) return null;
     return deck;
   },
 });
