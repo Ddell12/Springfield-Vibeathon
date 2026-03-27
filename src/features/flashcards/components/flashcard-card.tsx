@@ -44,7 +44,7 @@ export function FlashcardCard({ label, imageUrl, audioUrl, index, total }: Flash
         </div>
 
         <div className="flex items-center justify-between px-6 py-4">
-          <span className="font-manrope text-5xl font-extrabold tracking-tight text-on-surface">
+          <span className="break-words font-manrope text-2xl font-extrabold tracking-tight text-on-surface md:text-3xl">
             {label}
           </span>
           {audioUrl && (

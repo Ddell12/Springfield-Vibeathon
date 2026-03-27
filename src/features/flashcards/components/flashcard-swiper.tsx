@@ -57,14 +57,14 @@ export function FlashcardSwiper({ cards }: FlashcardSwiperProps) {
   if (cards.length === 0) return null;
 
   return (
-    <div className="flex flex-col items-center gap-4">
+    <div className="flex h-full flex-col items-center justify-center gap-4">
       <div
         ref={scrollRef}
         className="flex w-full snap-x snap-mandatory overflow-x-auto scroll-smooth"
         style={{ scrollbarWidth: "none" }}
       >
         {cards.map((card, i) => (
-          <div key={card._id} className="w-full flex-none snap-center px-4">
+          <div key={card._id} className="mx-auto w-full max-w-md flex-none snap-center px-4">
             <FlashcardCard
               label={card.label}
               imageUrl={card.imageUrl}

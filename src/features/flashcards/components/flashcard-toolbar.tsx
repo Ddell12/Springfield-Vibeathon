@@ -16,6 +16,7 @@ interface FlashcardToolbarProps {
   onNameEditEnd?: (name: string) => void;
   onShare?: () => void;
   onNewChat?: () => void;
+  onOpenDeckSheet?: () => void;
   isMobile?: boolean;
   mobilePanel?: "chat" | "preview";
   onMobilePanelChange?: (panel: "chat" | "preview") => void;
@@ -29,6 +30,7 @@ export function FlashcardToolbar({
   onNameEditEnd,
   onShare,
   onNewChat,
+  onOpenDeckSheet,
   isMobile,
   mobilePanel,
   onMobilePanelChange,
@@ -128,8 +130,19 @@ export function FlashcardToolbar({
         </div>
       )}
 
-      {/* Right section: Share */}
-      <div className="flex items-center gap-2">
+      {/* Right section: Decks + Share */}
+      <div className="flex items-center gap-1">
+        {onOpenDeckSheet && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="min-h-[44px] gap-1.5 rounded-md px-3 text-xs font-semibold text-on-surface-variant transition-all active:scale-95"
+            onClick={onOpenDeckSheet}
+          >
+            <MaterialIcon icon="collections_bookmark" size="sm" />
+            <span className="hidden sm:inline">Decks</span>
+          </Button>
+        )}
         <Button
           variant="ghost"
           size="sm"
