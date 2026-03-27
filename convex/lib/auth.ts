@@ -21,20 +21,23 @@ export async function assertSessionOwner(
   sessionId: Id<"sessions">,
   opts?: { soft?: boolean },
 ) {
-  const userId = await getAuthUserId(ctx);
-  if (!userId) {
-    if (opts?.soft) return null;
-    throw new Error("Not authenticated");
-  }
   const session = await ctx.db.get(sessionId);
   if (!session) {
     if (opts?.soft) return null;
     throw new Error("Session not found");
   }
-  // Legacy sessions without userId remain accessible to any authenticated user
-  if (session.userId && session.userId !== userId) {
-    if (opts?.soft) return null;
-    throw new Error("Not authorized");
+
+  // Legacy/demo sessions (no owner) are accessible to everyone
+  if (!session.userId) {
+    return session;
   }
+
+  // Owned sessions require matching auth
+  const userId = await getAuthUserId(ctx);
+  if (!userId || session.userId !== userId) {
+    if (opts?.soft) return null;
+    throw new Error(userId ? "Not authorized" : "Not authenticated");
+  }
+
   return session;
 }
