@@ -1,9 +1,10 @@
-import Anthropic from "@anthropic-ai/sdk";
-import { auth } from "@clerk/nextjs/server";
-import { ConvexHttpClient } from "convex/browser";
 // Force esbuild into this function's file trace — the bundle-worker.mjs child
 // process requires it at runtime but Next.js can't trace child process imports.
 import "esbuild";
+
+import Anthropic from "@anthropic-ai/sdk";
+import { auth } from "@clerk/nextjs/server";
+import { ConvexHttpClient } from "convex/browser";
 import { existsSync, mkdtempSync, rmSync } from "fs";
 import { cp } from "fs/promises";
 import { tmpdir } from "os";
