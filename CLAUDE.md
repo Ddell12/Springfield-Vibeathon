@@ -96,7 +96,7 @@ Key files:
 ## Testing
 
 ```bash
-npm test              # Vitest unit tests (625 tests, 77 test files)
+npm test              # Vitest unit tests (636 tests, 77 test files)
 npx playwright test   # E2E tests
 ```
 
@@ -113,6 +113,41 @@ Clerk v7 handles all user authentication. The integration spans three layers:
 - **Backend:** `convex/auth.config.ts` verifies Clerk JWTs using the issuer domain.
 
 Unauthenticated users can explore templates and use the builder. Protected routes (like My Apps) require sign-in.
+
+### Test User Sign-In (Headless Browsers)
+
+Password auth fails in headless browsers (Clerk flags new devices). Use the **email code flow**:
+
+1. Go to `/sign-in`, enter `e2e+clerk_test@bridges.ai`, click Continue
+2. Click **"Use another method"** → **"Email code"**
+3. Enter code **`424242`** (always works for `+clerk_test` emails in dev mode)
+
+The `+clerk_test` suffix is a Clerk dev feature: no real email sent, code is always `424242`.
+
+## Deployment Verification
+
+### Vercel CLI
+```bash
+npx vercel ls                              # List deployments — confirm "Ready"
+npx vercel inspect <deploy-url>            # Check aliases, builds, regions
+npx vercel logs bridgeai-iota.vercel.app   # Stream production runtime logs
+```
+
+### GitHub Actions CI
+```bash
+gh api repos/Ddell12/Springfield-Vibeathon/commits/<sha>/check-runs \
+  --jq '.check_runs[] | {name, status, conclusion}'
+```
+
+### End-to-End with agent-browser
+```bash
+agent-browser open https://bridgeai-iota.vercel.app/sign-in
+# Sign in via email code flow (see above)
+agent-browser open https://bridgeai-iota.vercel.app/builder?new=1
+# Generate an app, then:
+agent-browser errors              # Should be empty (zero console errors)
+agent-browser screenshot out.png  # Visual confirmation of styled preview
+```
 
 ## Environment Variables
 
