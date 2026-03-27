@@ -47,7 +47,8 @@ export const list = query({
 export const startGeneration = mutation({
   args: { sessionId: v.id("sessions") },
   handler: async (ctx, args) => {
-    const session = await assertSessionOwner(ctx, args.sessionId);
+    // Hard mode: throws on failure, so session is guaranteed non-null
+    const session = (await assertSessionOwner(ctx, args.sessionId))!;
     const allowed = VALID_TRANSITIONS[session.state as SessionState];
     if (!allowed?.includes("generating")) {
       throw new Error(
@@ -66,7 +67,7 @@ export const setLive = mutation({
     sessionId: v.id("sessions"),
   },
   handler: async (ctx, args) => {
-    const session = await assertSessionOwner(ctx, args.sessionId);
+    const session = (await assertSessionOwner(ctx, args.sessionId))!;
     const allowed = VALID_TRANSITIONS[session.state as SessionState];
     if (!allowed?.includes("live")) {
       throw new Error(`Cannot set live from state "${session.state}"`);
@@ -84,7 +85,7 @@ export const setFailed = mutation({
     error: v.string(),
   },
   handler: async (ctx, args) => {
-    const session = await assertSessionOwner(ctx, args.sessionId);
+    const session = (await assertSessionOwner(ctx, args.sessionId))!;
     const allowed = VALID_TRANSITIONS[session.state as SessionState];
     if (!allowed?.includes("failed")) {
       throw new Error(`Cannot set failed from state "${session.state}"`);
