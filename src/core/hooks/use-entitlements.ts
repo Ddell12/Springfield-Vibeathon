@@ -8,7 +8,7 @@ export const FREE_PLAN = {
 };
 
 export function useEntitlements() {
-  const entitlements = useQuery(api.subscriptions.getEntitlements);
+  const entitlements = useQuery(api.entitlements.getEntitlements);
 
   const result = entitlements ?? FREE_PLAN;
 
