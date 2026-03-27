@@ -8,6 +8,7 @@ import schema from "../schema";
 const modules = import.meta.glob("../**/*.*s"); // REQUIRED for convex-test
 
 const TEST_IDENTITY = { subject: "test-user-123", issuer: "clerk" };
+const OTHER_IDENTITY = { subject: "other-user-456", issuer: "clerk" };
 
 describe("messages", () => {
   it("create and list roundtrip", async () => {
@@ -102,5 +103,51 @@ describe("messages", () => {
     expect(messagesA[0].content).toBe("Message for A");
     expect(messagesB).toHaveLength(1);
     expect(messagesB[0].content).toBe("Message for B");
+  });
+
+  describe("authorization — cross-user rejection", () => {
+    it("create rejects cross-user access", async () => {
+      const t = convexTest(schema, modules);
+      const sessionId = await t.withIdentity(TEST_IDENTITY).mutation(api.sessions.create, {
+        title: "Test",
+        query: "test",
+      });
+      await expect(
+        t.withIdentity(OTHER_IDENTITY).mutation(api.messages.create, {
+          sessionId,
+          role: "user",
+          content: "Injected message",
+          timestamp: 1000,
+        }),
+      ).rejects.toThrow("Not authorized");
+    });
+
+    it("list returns empty for another user's session", async () => {
+      const t = convexTest(schema, modules);
+      const sessionId = await t.withIdentity(TEST_IDENTITY).mutation(api.sessions.create, {
+        title: "Test",
+        query: "test",
+      });
+      await t.withIdentity(TEST_IDENTITY).mutation(api.messages.addUserMessage, {
+        sessionId,
+        content: "Private message",
+      });
+      const messages = await t.withIdentity(OTHER_IDENTITY).query(api.messages.list, { sessionId });
+      expect(messages).toEqual([]);
+    });
+
+    it("addUserMessage rejects cross-user access", async () => {
+      const t = convexTest(schema, modules);
+      const sessionId = await t.withIdentity(TEST_IDENTITY).mutation(api.sessions.create, {
+        title: "Test",
+        query: "test",
+      });
+      await expect(
+        t.withIdentity(OTHER_IDENTITY).mutation(api.messages.addUserMessage, {
+          sessionId,
+          content: "Injected",
+        }),
+      ).rejects.toThrow("Not authorized");
+    });
   });
 });

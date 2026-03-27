@@ -8,6 +8,7 @@ import schema from "../schema";
 const modules = import.meta.glob("../**/*.*s"); // REQUIRED for convex-test
 
 const TEST_IDENTITY = { subject: "test-user-123", issuer: "clerk" };
+const OTHER_IDENTITY = { subject: "other-user-456", issuer: "clerk" };
 
 describe("generated_files — version-tracked file operations", () => {
   it("upsert creates a new file with version", async () => {
@@ -216,5 +217,58 @@ describe("generated_files — version-tracked file operations", () => {
       path: "src/App.tsx",
     });
     expect(file?.sessionId).toBe(sessionId);
+  });
+
+  describe("authorization — cross-user rejection", () => {
+    it("upsert rejects cross-user access", async () => {
+      const t = convexTest(schema, modules);
+      const sessionId = await t.withIdentity(TEST_IDENTITY).mutation(api.sessions.create, {
+        title: "Test",
+        query: "test",
+      });
+      await expect(
+        t.withIdentity(OTHER_IDENTITY).mutation(api.generated_files.upsert, {
+          sessionId,
+          path: "src/malicious.tsx",
+          contents: "// injected",
+          version: 1,
+        }),
+      ).rejects.toThrow("Not authorized");
+    });
+
+    it("list returns empty for another user's session", async () => {
+      const t = convexTest(schema, modules);
+      const sessionId = await t.withIdentity(TEST_IDENTITY).mutation(api.sessions.create, {
+        title: "Test",
+        query: "test",
+      });
+      await t.withIdentity(TEST_IDENTITY).mutation(api.generated_files.upsert, {
+        sessionId,
+        path: "src/App.tsx",
+        contents: "// private",
+        version: 1,
+      });
+      const files = await t.withIdentity(OTHER_IDENTITY).query(api.generated_files.list, { sessionId });
+      expect(files).toEqual([]);
+    });
+
+    it("getByPath returns null for another user's session", async () => {
+      const t = convexTest(schema, modules);
+      const sessionId = await t.withIdentity(TEST_IDENTITY).mutation(api.sessions.create, {
+        title: "Test",
+        query: "test",
+      });
+      await t.withIdentity(TEST_IDENTITY).mutation(api.generated_files.upsert, {
+        sessionId,
+        path: "src/App.tsx",
+        contents: "// private",
+        version: 1,
+      });
+      const file = await t.withIdentity(OTHER_IDENTITY).query(api.generated_files.getByPath, {
+        sessionId,
+        path: "src/App.tsx",
+      });
+      expect(file).toBeNull();
+    });
   });
 });

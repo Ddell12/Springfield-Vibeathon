@@ -36,14 +36,13 @@ describe("sessions — streaming builder mutations", () => {
     expect(session?.state).toBe("generating");
   });
 
-  it("setLive only requires sessionId and sets state to 'live'", async () => {
+  it("setLive sets state to 'live' from generating", async () => {
     const t = convexTest(schema, modules).withIdentity(TEST_IDENTITY);
     const id = await t.mutation(api.sessions.create, {
       title: "Test",
       query: "test",
     });
-    // After WebContainer refactor: setLive takes only sessionId
-    // previewUrl and sandboxId are no longer server-side concerns
+    await t.mutation(api.sessions.startGeneration, { sessionId: id });
     await t.mutation(api.sessions.setLive, {
       sessionId: id,
     });
@@ -57,7 +56,8 @@ describe("sessions — streaming builder mutations", () => {
       title: "Test",
       query: "test",
     });
-    // Must not throw when called with only sessionId
+    await t.mutation(api.sessions.startGeneration, { sessionId: id });
+    // Must not throw when called with only sessionId (from generating state)
     await expect(
       t.mutation(api.sessions.setLive, { sessionId: id })
     ).resolves.not.toThrow();
@@ -69,6 +69,7 @@ describe("sessions — streaming builder mutations", () => {
       title: "Test",
       query: "test",
     });
+    await t.mutation(api.sessions.startGeneration, { sessionId: id });
     await t.mutation(api.sessions.setFailed, {
       sessionId: id,
       error: "Claude API returned 529",
@@ -121,16 +122,16 @@ describe("sessions — streaming builder mutations", () => {
     expect(sessions[0].title).toBe("Third");
   });
 
-  it("state transitions are idempotent — re-setting same state is safe", async () => {
+  it("state transition validation rejects invalid re-generation from generating", async () => {
     const t = convexTest(schema, modules).withIdentity(TEST_IDENTITY);
     const id = await t.mutation(api.sessions.create, {
       title: "Test",
       query: "test",
     });
     await t.mutation(api.sessions.startGeneration, { sessionId: id });
-    await t.mutation(api.sessions.startGeneration, { sessionId: id });
-    const session = await t.query(api.sessions.get, { sessionId: id });
-    expect(session?.state).toBe("generating");
+    await expect(
+      t.mutation(api.sessions.startGeneration, { sessionId: id }),
+    ).rejects.toThrow('Cannot start generation from state "generating"');
   });
 
   it("updateTitle changes the session title", async () => {
@@ -171,6 +172,7 @@ describe("sessions — streaming builder mutations", () => {
         title: "Live App",
         query: "Build a token board",
       });
+      await t.mutation(api.sessions.startGeneration, { sessionId: id });
       await t.mutation(api.sessions.setLive, { sessionId: id });
       const result = await t.query(api.sessions.getMostRecent, {});
       expect(result).not.toBeNull();
@@ -185,11 +187,13 @@ describe("sessions — streaming builder mutations", () => {
         title: "First Live",
         query: "first",
       });
+      await t.mutation(api.sessions.startGeneration, { sessionId: id1 });
       await t.mutation(api.sessions.setLive, { sessionId: id1 });
       const id2 = await t.mutation(api.sessions.create, {
         title: "Second Live",
         query: "second",
       });
+      await t.mutation(api.sessions.startGeneration, { sessionId: id2 });
       await t.mutation(api.sessions.setLive, { sessionId: id2 });
       const result = await t.query(api.sessions.getMostRecent, {});
       expect(result?._id).toBe(id2);
@@ -202,6 +206,7 @@ describe("sessions — streaming builder mutations", () => {
         title: "Failed Session",
         query: "failed",
       });
+      await t.mutation(api.sessions.startGeneration, { sessionId: idFailed });
       await t.mutation(api.sessions.setFailed, {
         sessionId: idFailed,
         error: "Something went wrong",
@@ -219,47 +224,57 @@ describe("sessions — streaming builder mutations", () => {
   });
 
   describe("authorization — cross-user rejection", () => {
-    // Auth relaxed for demo — sessions are accessible without ownership checks
-    it("get returns session even for another user (auth relaxed)", async () => {
+    it("get returns null for another user's session", async () => {
       const t = convexTest(schema, modules);
       const id = await t.withIdentity(TEST_IDENTITY).mutation(api.sessions.create, {
         title: "Private",
         query: "test",
       });
       const session = await t.withIdentity(OTHER_IDENTITY).query(api.sessions.get, { sessionId: id });
-      expect(session).not.toBeNull();
+      expect(session).toBeNull();
     });
 
-    it("get returns session when not authenticated (auth relaxed)", async () => {
+    it("get returns null when not authenticated", async () => {
       const t = convexTest(schema, modules);
       const id = await t.withIdentity(TEST_IDENTITY).mutation(api.sessions.create, {
         title: "Test",
         query: "test",
       });
       const session = await t.query(api.sessions.get, { sessionId: id });
-      expect(session).not.toBeNull();
+      expect(session).toBeNull();
     });
 
-    it("startGeneration works for any user (auth relaxed)", async () => {
+    it("startGeneration rejects cross-user access", async () => {
       const t = convexTest(schema, modules);
       const id = await t.withIdentity(TEST_IDENTITY).mutation(api.sessions.create, {
         title: "Test",
         query: "test",
       });
-      await t.withIdentity(OTHER_IDENTITY).mutation(api.sessions.startGeneration, { sessionId: id });
-      const session = await t.query(api.sessions.get, { sessionId: id });
-      expect((session as { state: string }).state).toBe("generating");
+      await expect(
+        t.withIdentity(OTHER_IDENTITY).mutation(api.sessions.startGeneration, { sessionId: id }),
+      ).rejects.toThrow("Not authorized");
     });
 
-    it("updateTitle works for any user (auth relaxed)", async () => {
+    it("updateTitle rejects cross-user access", async () => {
       const t = convexTest(schema, modules);
       const id = await t.withIdentity(TEST_IDENTITY).mutation(api.sessions.create, {
         title: "Test",
         query: "test",
       });
-      await t.withIdentity(OTHER_IDENTITY).mutation(api.sessions.updateTitle, { sessionId: id, title: "Updated" });
-      const session = await t.query(api.sessions.get, { sessionId: id });
-      expect((session as { title: string }).title).toBe("Updated");
+      await expect(
+        t.withIdentity(OTHER_IDENTITY).mutation(api.sessions.updateTitle, { sessionId: id, title: "Hacked" }),
+      ).rejects.toThrow("Not authorized");
+    });
+
+    it("setBlueprint rejects cross-user access", async () => {
+      const t = convexTest(schema, modules);
+      const id = await t.withIdentity(TEST_IDENTITY).mutation(api.sessions.create, {
+        title: "Test",
+        query: "test",
+      });
+      await expect(
+        t.withIdentity(OTHER_IDENTITY).mutation(api.sessions.setBlueprint, { sessionId: id, blueprint: {} }),
+      ).rejects.toThrow("Not authorized");
     });
 
     it("listByState only returns caller's sessions", async () => {
@@ -268,6 +283,7 @@ describe("sessions — streaming builder mutations", () => {
         title: "User1 Live",
         query: "test",
       });
+      await t.withIdentity(TEST_IDENTITY).mutation(api.sessions.startGeneration, { sessionId: id });
       await t.withIdentity(TEST_IDENTITY).mutation(api.sessions.setLive, { sessionId: id });
       const results = await t.withIdentity(OTHER_IDENTITY).query(api.sessions.listByState, { state: "live" });
       expect(results).toEqual([]);
@@ -279,9 +295,56 @@ describe("sessions — streaming builder mutations", () => {
         title: "User1 Live",
         query: "test",
       });
+      await t.withIdentity(TEST_IDENTITY).mutation(api.sessions.startGeneration, { sessionId: id });
       await t.withIdentity(TEST_IDENTITY).mutation(api.sessions.setLive, { sessionId: id });
       const result = await t.withIdentity(OTHER_IDENTITY).query(api.sessions.getMostRecent, {});
       expect(result).toBeNull();
+    });
+  });
+
+  describe("state transition validation", () => {
+    it("rejects idle → live (must go through generating)", async () => {
+      const t = convexTest(schema, modules).withIdentity(TEST_IDENTITY);
+      const id = await t.mutation(api.sessions.create, { title: "Test", query: "test" });
+      await expect(
+        t.mutation(api.sessions.setLive, { sessionId: id }),
+      ).rejects.toThrow('Cannot set live from state "idle"');
+    });
+
+    it("rejects idle → failed (must go through generating)", async () => {
+      const t = convexTest(schema, modules).withIdentity(TEST_IDENTITY);
+      const id = await t.mutation(api.sessions.create, { title: "Test", query: "test" });
+      await expect(
+        t.mutation(api.sessions.setFailed, { sessionId: id, error: "test" }),
+      ).rejects.toThrow('Cannot set failed from state "idle"');
+    });
+
+    it("allows idle → generating → live", async () => {
+      const t = convexTest(schema, modules).withIdentity(TEST_IDENTITY);
+      const id = await t.mutation(api.sessions.create, { title: "Test", query: "test" });
+      await t.mutation(api.sessions.startGeneration, { sessionId: id });
+      await t.mutation(api.sessions.setLive, { sessionId: id });
+      const session = await t.query(api.sessions.get, { sessionId: id });
+      expect((session as { state: string }).state).toBe("live");
+    });
+
+    it("allows idle → generating → failed", async () => {
+      const t = convexTest(schema, modules).withIdentity(TEST_IDENTITY);
+      const id = await t.mutation(api.sessions.create, { title: "Test", query: "test" });
+      await t.mutation(api.sessions.startGeneration, { sessionId: id });
+      await t.mutation(api.sessions.setFailed, { sessionId: id, error: "build error" });
+      const session = await t.query(api.sessions.get, { sessionId: id });
+      expect((session as { state: string }).state).toBe("failed");
+    });
+
+    it("allows re-generation from live state", async () => {
+      const t = convexTest(schema, modules).withIdentity(TEST_IDENTITY);
+      const id = await t.mutation(api.sessions.create, { title: "Test", query: "test" });
+      await t.mutation(api.sessions.startGeneration, { sessionId: id });
+      await t.mutation(api.sessions.setLive, { sessionId: id });
+      await t.mutation(api.sessions.startGeneration, { sessionId: id });
+      const session = await t.query(api.sessions.get, { sessionId: id });
+      expect((session as { state: string }).state).toBe("generating");
     });
   });
 });

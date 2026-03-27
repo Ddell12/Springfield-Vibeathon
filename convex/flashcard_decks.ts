@@ -83,3 +83,28 @@ export const update = mutation({
     await ctx.db.patch(deckId, updates);
   },
 });
+
+export const remove = mutation({
+  args: { deckId: v.id("flashcardDecks") },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Not authenticated");
+    const deck = await ctx.db.get(args.deckId);
+    if (!deck) throw new Error("Deck not found");
+    if (deck.userId && deck.userId !== identity.subject) throw new Error("Not authorized");
+
+    // Cascade delete all cards in this deck
+    while (true) {
+      const batch = await ctx.db
+        .query("flashcards")
+        .withIndex("by_deck", (q) => q.eq("deckId", args.deckId))
+        .take(200);
+      if (batch.length === 0) break;
+      for (const card of batch) {
+        await ctx.db.delete(card._id);
+      }
+    }
+
+    await ctx.db.delete(args.deckId);
+  },
+});
