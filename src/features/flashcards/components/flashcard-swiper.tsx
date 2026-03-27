@@ -30,30 +30,6 @@ export function FlashcardSwiper({ cards }: FlashcardSwiperProps) {
     target?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
   }, [currentIndex]);
 
-  useEffect(() => {
-    const container = scrollRef.current;
-    if (!container) return;
-
-    let timeout: ReturnType<typeof setTimeout>;
-    const handleScroll = () => {
-      clearTimeout(timeout);
-      timeout = setTimeout(() => {
-        const scrollLeft = container.scrollLeft;
-        const cardWidth = container.clientWidth;
-        const newIndex = Math.round(scrollLeft / cardWidth);
-        if (newIndex !== currentIndex && newIndex >= 0 && newIndex < cards.length) {
-          goTo(newIndex);
-        }
-      }, 100);
-    };
-
-    container.addEventListener("scroll", handleScroll, { passive: true });
-    return () => {
-      container.removeEventListener("scroll", handleScroll);
-      clearTimeout(timeout);
-    };
-  }, [currentIndex, cards.length, goTo]);
-
   if (cards.length === 0) return null;
 
   return (

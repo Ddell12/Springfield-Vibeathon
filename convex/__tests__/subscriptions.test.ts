@@ -12,7 +12,7 @@ describe("subscriptions.getEntitlements", () => {
     const result = await t.query(api.entitlements.getEntitlements, {});
     expect(result.plan).toBe("free");
     expect(result.limits.maxApps).toBe(5);
-    expect(result.limits.maxDecks).toBe(3);
+    expect(result.limits.maxDecks).toBe(10);
   });
 
   // Skipped: convex-test cannot mock component queries (components.stripe.public.*)
