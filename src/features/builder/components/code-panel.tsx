@@ -36,7 +36,7 @@ export function CodePanel({ files, status }: CodePanelProps) {
       <div className="flex h-full items-center justify-center bg-surface-container text-on-surface-variant">
         <div className="flex flex-col items-center gap-3 text-center">
           <MaterialIcon icon="progress_activity" size="md" className="animate-spin text-primary" />
-          <p className="text-sm">Generating your files&#8230;</p>
+          <p className="text-sm">Building&#8230;</p>
         </div>
       </div>
     );
