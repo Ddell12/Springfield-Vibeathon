@@ -88,7 +88,7 @@ export function MyToolsPage() {
             </p>
             <div className="flex gap-2">
               <Link
-                href={`/builder?sessionId=${session._id}`}
+                href={`/builder/${session._id}`}
                 className="flex items-center gap-1 text-primary font-semibold text-sm hover:underline"
               >
                 <MaterialIcon icon="open_in_new" size="sm" />

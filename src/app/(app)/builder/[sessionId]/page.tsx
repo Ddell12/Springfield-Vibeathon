@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense } from "react";
+import { use } from "react";
 import { ErrorBoundary } from "react-error-boundary";
 
 import { BuilderPage } from "@/features/builder/components/builder-page";
@@ -17,12 +17,11 @@ function BuilderErrorFallback({ resetErrorBoundary }: { resetErrorBoundary: () =
   );
 }
 
-export default function Page() {
+export default function Page({ params }: { params: Promise<{ sessionId: string }> }) {
+  const { sessionId } = use(params);
   return (
     <ErrorBoundary FallbackComponent={BuilderErrorFallback}>
-      <Suspense fallback={null}>
-        <BuilderPage initialSessionId={null} />
-      </Suspense>
+      <BuilderPage initialSessionId={sessionId} />
     </ErrorBoundary>
   );
 }

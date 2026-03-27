@@ -10,10 +10,11 @@ beforeAll(() => {
 // Mock Next.js navigation before imports
 const mockGet = vi.fn().mockReturnValue(null);
 const mockReplace = vi.fn();
+const mockPush = vi.fn();
 
 vi.mock("next/navigation", () => ({
   useSearchParams: () => ({ get: mockGet }),
-  useRouter: () => ({ replace: mockReplace }),
+  useRouter: () => ({ replace: mockReplace, push: mockPush }),
 }));
 
 // Mock Convex hooks — return undefined (not null) to match real convex behavior for skipped/loading queries
@@ -51,56 +52,45 @@ import { BuilderPage } from "../builder-page";
 
 describe("BuilderPage — three-panel layout", () => {
   it("renders without crashing", () => {
-    render(<BuilderPage />);
+    render(<BuilderPage initialSessionId={null} />);
   });
 
   it("renders at least 2 resizable panels when a session is active", () => {
-    // When sessionId is present, showPromptScreen is false and panels are rendered
-    mockGet.mockReturnValueOnce("active_session_123");
-    render(<BuilderPage />);
+    render(<BuilderPage initialSessionId="active_session_123" />);
     // Default viewMode is "preview" which shows chat + preview (2 panels)
     const panels = document.querySelectorAll("[data-panel]");
     expect(panels.length).toBeGreaterThanOrEqual(2);
-    mockGet.mockReturnValue(null);
   });
 
   it("renders the chat panel area with a text input", () => {
-    render(<BuilderPage />);
+    render(<BuilderPage initialSessionId={null} />);
     const input = screen.queryByRole("textbox") ?? screen.queryByPlaceholderText(/describe|tell|build/i);
     expect(input).toBeTruthy();
   });
 
   it("does not render PhaseTimeline component", () => {
-    render(<BuilderPage />);
+    render(<BuilderPage initialSessionId={null} />);
     // The old phasic pipeline showed a phase timeline — streaming builder removes it
     const timeline = screen.queryByTestId("phase-timeline");
     expect(timeline).toBeNull();
   });
 
   it("shows preview panel area when a session is active", () => {
-    // When sessionId is present, the split-panel layout is shown
-    mockGet.mockReturnValueOnce("active_session_123");
-    const { container } = render(<BuilderPage />);
+    const { container } = render(<BuilderPage initialSessionId="active_session_123" />);
     // Preview panel shows a monitor icon placeholder when no bundleHtml
     const panelGroup = container.querySelector("[data-panel-group]");
     expect(panelGroup).toBeTruthy();
-    mockGet.mockReturnValue(null);
   });
 
-  it("renders without crashing when sessionId is in URL", () => {
-    mockGet.mockReturnValue("test_session_123");
-    render(<BuilderPage />);
+  it("renders without crashing when initialSessionId is provided", () => {
+    render(<BuilderPage initialSessionId="test_session_123" />);
     // Should not crash when a sessionId is provided
-    mockGet.mockReturnValue(null);
   });
 
   it("renders the builder toolbar when a session is active", () => {
-    // Toolbar only renders when showPromptScreen is false (session exists)
-    mockGet.mockReturnValueOnce("active_session_123");
-    render(<BuilderPage />);
+    render(<BuilderPage initialSessionId="active_session_123" />);
     // Toolbar should show the project name (may appear in multiple spots)
     expect(screen.getAllByText("Untitled App").length).toBeGreaterThan(0);
-    mockGet.mockReturnValue(null);
   });
 
   it("renders code panel when viewMode is code (via initial state override)", async () => {
@@ -119,7 +109,7 @@ describe("BuilderPage — three-panel layout", () => {
       activities: [],
       bundleHtml: null,
     });
-    render(<BuilderPage />);
+    render(<BuilderPage initialSessionId={null} />);
     // Default viewMode is "preview" — at least chat panel should render
     expect(screen.queryByRole("textbox")).toBeTruthy();
   });
@@ -128,7 +118,7 @@ describe("BuilderPage — three-panel layout", () => {
     const { useIsMobile } = await import("@/core/hooks/use-mobile");
     vi.mocked(useIsMobile).mockReturnValueOnce(true);
 
-    render(<BuilderPage />);
+    render(<BuilderPage initialSessionId={null} />);
     // Mobile view should still render the chat panel by default (mobilePanel = "chat")
     expect(screen.queryByRole("textbox")).toBeTruthy();
   });
@@ -149,7 +139,7 @@ describe("BuilderPage — three-panel layout", () => {
       bundleHtml: null,
     });
 
-    render(<BuilderPage />);
+    render(<BuilderPage initialSessionId={null} />);
     expect(screen.getAllByText(/Generation failed/i).length).toBeGreaterThan(0);
   });
 
@@ -169,7 +159,7 @@ describe("BuilderPage — three-panel layout", () => {
       bundleHtml: null,
     });
 
-    render(<BuilderPage />);
+    render(<BuilderPage initialSessionId={null} />);
     expect(screen.getAllByText("My Therapy Tool").length).toBeGreaterThan(0);
   });
 
@@ -190,17 +180,11 @@ describe("BuilderPage — three-panel layout", () => {
     });
 
     // Render with default viewMode (preview), test still renders
-    render(<BuilderPage />);
+    render(<BuilderPage initialSessionId={null} />);
     expect(screen.queryByRole("textbox")).toBeTruthy();
   });
 
-  it("calls resumeSession when sessionId is in URL and data is loaded", async () => {
-    // Simulate ?sessionId=test_session_123
-    mockGet.mockImplementation((key: string) => {
-      if (key === "sessionId") return "test_session_123";
-      return null;
-    });
-
+  it("calls resumeSession when initialSessionId is provided and data is loaded", async () => {
     // Mock useQuery to return session data and files
     const { useQuery } = await import("convex/react");
 
@@ -232,7 +216,7 @@ describe("BuilderPage — three-panel layout", () => {
       bundleHtml: null,
     });
 
-    render(<BuilderPage />);
+    render(<BuilderPage initialSessionId="test_session_123" />);
 
     await waitFor(() => {
       expect(mockResumeSession).toHaveBeenCalledWith({
@@ -244,13 +228,12 @@ describe("BuilderPage — three-panel layout", () => {
     });
 
     // Reset mocks
-    mockGet.mockReturnValue(null);
     vi.mocked(useQuery).mockReturnValue(null);
   });
 
   it("passes bundleHtml from streaming hook to PreviewPanel", async () => {
     const { useStreaming } = await import("../../hooks/use-streaming");
-    vi.mocked(useStreaming).mockReturnValueOnce({
+    vi.mocked(useStreaming).mockReturnValue({
       status: "live",
       files: [],
       generate: vi.fn(),
@@ -264,12 +247,10 @@ describe("BuilderPage — three-panel layout", () => {
       bundleHtml: "<html><body><h1>Hello</h1></body></html>",
     });
 
-    mockGet.mockReturnValueOnce("session_123");
-    render(<BuilderPage />);
+    render(<BuilderPage initialSessionId="session_123" />);
 
     // When bundleHtml is present, the preview panel renders an iframe
     const iframe = document.querySelector("iframe[title='App preview']");
     expect(iframe).toBeTruthy();
-    mockGet.mockReturnValue(null);
   });
 });

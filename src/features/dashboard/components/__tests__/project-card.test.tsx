@@ -34,11 +34,11 @@ describe("ProjectCard", () => {
     expect(screen.getByText("Token Board App")).toBeInTheDocument();
   });
 
-  it("navigates to /builder?sessionId={id} on click", () => {
+  it("navigates to /builder/{id} on click", () => {
     render(<ProjectCard project={baseProject} />);
     const card = screen.getByRole("link");
     card.click();
-    expect(mockPush).toHaveBeenCalledWith("/builder?sessionId=session123");
+    expect(mockPush).toHaveBeenCalledWith("/builder/session123");
   });
 
   it("shows first letter as fallback when no thumbnail", () => {

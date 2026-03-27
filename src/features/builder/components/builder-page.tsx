@@ -1,7 +1,7 @@
 "use client";
 
 import { useAction, useMutation, useQuery } from "convex/react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -25,12 +25,17 @@ import { THERAPY_SUGGESTIONS } from "../lib/constants";
 import { BuilderToolbar, type DeviceSize, type ViewMode } from "./builder-toolbar";
 import { ChatPanel } from "./chat-panel";
 import { CodePanel } from "./code-panel";
+import { ContinueCard } from "./continue-card";
 import { PreviewPanel } from "./preview-panel";
 import { PublishSuccessModal } from "./publish-success-modal";
 
-export function BuilderPage() {
+interface BuilderPageProps {
+  initialSessionId: string | null;
+}
+
+export function BuilderPage({ initialSessionId }: BuilderPageProps) {
+  const router = useRouter();
   const searchParams = useSearchParams();
-  const sessionIdFromUrl = searchParams.get("sessionId");
 
   const isMobile = useIsMobile();
   const [viewMode, setViewMode] = useState<ViewMode>("preview");
@@ -40,6 +45,7 @@ export function BuilderPage() {
   const [publishModalOpen, setPublishModalOpen] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
   const [publishedUrl, setPublishedUrl] = useState<string | null>(null);
+  const [continueDismissed, setContinueDismissed] = useState(false);
   const publishApp = useAction(api.publish.publishApp);
   const updateTitle = useMutation(api.sessions.updateTitle);
   const ensureApp = useMutation(api.apps.ensureForSession);
@@ -70,17 +76,17 @@ export function BuilderPage() {
     if (bundleHtml && mobilePanel !== "preview") setMobilePanel("preview");
   }, [bundleHtml, mobilePanel]);
 
-  // Session resume: fetch session + files when ?sessionId is in URL
+  // Session resume: fetch session + files when initialSessionId is provided (path-based URL)
   const resumeSessionData = useQuery(
     api.sessions.get,
-    sessionIdFromUrl ? { sessionId: sessionIdFromUrl as Id<"sessions"> } : "skip"
+    initialSessionId ? { sessionId: initialSessionId as Id<"sessions"> } : "skip"
   );
   const resumeFiles = useQuery(
     api.generated_files.list,
-    sessionIdFromUrl ? { sessionId: sessionIdFromUrl as Id<"sessions"> } : "skip"
+    initialSessionId ? { sessionId: initialSessionId as Id<"sessions"> } : "skip"
   );
 
-  const activeSessionId = sessionId ?? sessionIdFromUrl;
+  const activeSessionId = sessionId ?? initialSessionId;
   const currentSession = useQuery(
     api.sessions.get,
     activeSessionId ? { sessionId: activeSessionId as Id<"sessions"> } : "skip"
@@ -89,21 +95,14 @@ export function BuilderPage() {
     api.apps.getBySession,
     activeSessionId ? { sessionId: activeSessionId as Id<"sessions"> } : "skip"
   );
-  const mostRecent = useQuery(api.sessions.getMostRecent, sessionIdFromUrl ? "skip" : {});
-  const autoResumed = useRef(false);
+  // Used for the "Continue where you left off" card on the prompt screen
+  const mostRecent = useQuery(api.sessions.getMostRecent, initialSessionId ? "skip" : {});
 
-  // Resume an existing session when navigating from My Apps
+  // Resume an existing session when navigating from My Apps or refreshing /builder/{id}
   const sessionResumed = useRef(false);
   useEffect(() => {
-    console.log("[resume] check:", {
-      sessionIdFromUrl: !!sessionIdFromUrl,
-      resumeSessionData: !!resumeSessionData,
-      resumeFiles: resumeFiles ? resumeFiles.length : "undefined",
-      status,
-      alreadyResumed: sessionResumed.current,
-    });
     if (
-      sessionIdFromUrl &&
+      initialSessionId &&
       resumeSessionData &&
       resumeFiles &&
       status === "idle" &&
@@ -115,17 +114,15 @@ export function BuilderPage() {
       const bundleFile = resumeFiles.find((f) => f.path === "_bundle.html");
       const appFiles = resumeFiles.filter((f) => f.path !== "_bundle.html");
 
-      console.log("[resume] found bundle:", !!bundleFile, "bundleLength:", bundleFile?.contents?.length ?? 0, "files:", appFiles.length);
-
       // Restore streaming hook state
       resumeSession({
-        sessionId: sessionIdFromUrl,
+        sessionId: initialSessionId,
         files: appFiles.map((f) => ({ path: f.path, contents: f.contents })),
         blueprint: resumeSessionData.blueprint ?? null,
         bundleHtml: bundleFile?.contents ?? null,
       });
     }
-  }, [sessionIdFromUrl, resumeSessionData, resumeFiles, status, resumeSession]);
+  }, [initialSessionId, resumeSessionData, resumeFiles, status, resumeSession]);
 
   // Auto-submit prompt from URL query param (e.g., from template chips)
   const promptSubmitted = useRef(false);
@@ -156,50 +153,25 @@ export function BuilderPage() {
   const promptFromUrl = searchParams.get("prompt");
 
   useEffect(() => {
-    if (promptFromUrl && status === "idle" && !promptSubmitted.current && !sessionIdFromUrl) {
+    if (promptFromUrl && status === "idle" && !promptSubmitted.current && !initialSessionId) {
       promptSubmitted.current = true;
       handleGenerate(decodeURIComponent(promptFromUrl));
-      // Don't clear ?prompt= here — line 165-172 will replace it with ?sessionId=
-      // once the session is created, which naturally strips the prompt param.
-      // Clearing here prematurely causes the prompt to be lost on HMR reload.
     }
-  }, [promptFromUrl, status, handleGenerate, sessionIdFromUrl]);
+  }, [promptFromUrl, status, handleGenerate, initialSessionId]);
 
-  // Auto-resume: redirect to most recent session if no sessionId in URL
-  // Skip when ?new=1 is present (user explicitly wants a fresh session)
-  // Skip when a prompt is being submitted from URL params
+  // Navigate to path-based URL when SSE creates a new session mid-generation
   useEffect(() => {
-    if (
-      !sessionIdFromUrl &&
-      !searchParams.get("new") &&
-      !promptFromUrl &&
-      mostRecent &&
-      status === "idle" &&
-      !autoResumed.current
-    ) {
-      autoResumed.current = true;
-      window.history.replaceState(null, '', `?sessionId=${mostRecent._id}`);
+    if (sessionId && !initialSessionId) {
+      router.replace(`/builder/${sessionId}`);
     }
-  }, [sessionIdFromUrl, searchParams, promptFromUrl, mostRecent, status]);
+  }, [sessionId, initialSessionId, router]);
 
-  // Update URL when sessionId is set from streaming, and persist to localStorage
+  // Redirect to /builder if the session doesn't exist in Convex (deleted or invalid ID)
   useEffect(() => {
-    if (sessionId) {
-      localStorage.setItem("bridges_last_session", sessionId);
-      if (!sessionIdFromUrl) {
-        window.history.replaceState(null, '', `?sessionId=${sessionId}`);
-      }
+    if (initialSessionId && resumeSessionData === null && resumeFiles !== undefined) {
+      router.replace("/builder");
     }
-  }, [sessionId, sessionIdFromUrl]);
-
-  // Clear stale localStorage if session doesn't exist in Convex
-  useEffect(() => {
-    if (sessionIdFromUrl && resumeSessionData === null && resumeFiles !== undefined) {
-      localStorage.removeItem("bridges_last_session");
-      autoResumed.current = false;
-      window.history.replaceState(null, '', '/builder');
-    }
-  }, [sessionIdFromUrl, resumeSessionData, resumeFiles]);
+  }, [initialSessionId, resumeSessionData, resumeFiles, router]);
 
   // Derive app name: prefer Convex session title (reactive) > blueprint > default
   const appName = currentSession?.title
@@ -238,7 +210,7 @@ export function BuilderPage() {
     setShareDialogOpen(true);
   }
 
-  const showPromptScreen = !sessionId && status === "idle" && !sessionIdFromUrl;
+  const showPromptScreen = !sessionId && status === "idle" && !initialSessionId;
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
@@ -287,6 +259,13 @@ export function BuilderPage() {
               handleGenerate(suggestion);
             }}
           />
+          {mostRecent && !continueDismissed && (
+            <ContinueCard
+              sessionId={mostRecent._id}
+              title={mostRecent.title}
+              onDismiss={() => setContinueDismissed(true)}
+            />
+          )}
         </div>
       ) : (
         /* Phase 2+: Split-panel layout with toolbar */
@@ -307,8 +286,7 @@ export function BuilderPage() {
             onNewChat={() => {
               reset();
               sessionResumed.current = false;
-              autoResumed.current = false;
-              window.location.href = "/builder?new=1";
+              router.push("/builder");
             }}
             isMobile={isMobile}
             mobilePanel={mobilePanel}

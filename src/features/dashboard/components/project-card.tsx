@@ -57,8 +57,8 @@ export function ProjectCard({
     <div
       role="link"
       tabIndex={0}
-      onClick={() => router.push(`/builder?sessionId=${project.id}`)}
-      onKeyDown={(e) => { if (e.key === "Enter") router.push(`/builder?sessionId=${project.id}`); }}
+      onClick={() => router.push(`/builder/${project.id}`)}
+      onKeyDown={(e) => { if (e.key === "Enter") router.push(`/builder/${project.id}`); }}
       className="group cursor-pointer rounded-2xl bg-surface-container-lowest p-5 shadow-[0_12px_32px_rgba(25,28,32,0.06)] transition-all duration-300 hover:-translate-y-2"
     >
       {/* Thumbnail */}

@@ -160,12 +160,14 @@ export const getMostRecent = query({
   handler: async (ctx) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) return null;
-    const userSessions = await ctx.db
+    const sessions = await ctx.db
       .query("sessions")
-      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .withIndex("by_state_user", (q) =>
+        q.eq("state", SESSION_STATES.LIVE).eq("userId", userId)
+      )
       .order("desc")
-      .take(100);
-    return userSessions.find((s) => s.state === SESSION_STATES.LIVE) ?? null;
+      .take(1);
+    return sessions[0] ?? null;
   },
 });
 
