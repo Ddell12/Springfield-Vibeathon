@@ -18,7 +18,6 @@ import type { Activity, StreamingStatus } from "../hooks/use-streaming";
 import { THERAPY_SUGGESTIONS } from "../lib/constants";
 import type { TherapyBlueprint } from "../lib/schemas";
 import { BlueprintCard } from "./blueprint-card";
-import { FileBadges } from "./file-badges";
 
 function UserMessage({ content }: { content: string }) {
   return (
@@ -67,6 +66,7 @@ interface ChatPanelProps {
   activities: Activity[];
   pendingPrompt?: string | null;
   onPendingPromptClear?: () => void;
+  narrationMessage?: string | null;
 }
 
 export function ChatPanel({
@@ -80,6 +80,7 @@ export function ChatPanel({
   activities,
   pendingPrompt,
   onPendingPromptClear,
+  narrationMessage,
 }: ChatPanelProps) {
   const [input, setInput] = useState("");
   const scrollEndRef = useRef<HTMLDivElement>(null);
@@ -164,31 +165,16 @@ export function ChatPanel({
           {/* Blueprint card */}
           {blueprint && <BlueprintCard blueprint={blueprint} />}
 
-          {/* Lovable-style file badges — only during generation to avoid stale display */}
-          {isGenerating && activities.length > 0 && (
-            <FileBadges
-              files={activities
-                .filter((a) => a.type === "file_written" && a.path)
-                .map((a) => ({ path: a.path!, action: "Edited" as const }))}
-            />
-          )}
-
-          {/* Activity-based progress — no raw Claude text for non-technical users */}
-          {isGenerating && activities.length > 0 && (
-            <div className="flex items-center gap-2 rounded-xl bg-primary/5 px-4 py-3">
+          {/* Warm progress narration during generation */}
+          {isGenerating && narrationMessage && (
+            <div
+              className="flex items-center gap-2 rounded-xl bg-primary/5 px-4 py-3"
+              role="status"
+              aria-live="polite"
+            >
               <MaterialIcon icon="progress_activity" size="xs" className="animate-spin text-primary" />
               <span className="text-sm text-on-surface-variant">
-                {activities[activities.length - 1]?.message ?? "Building your app..."}
-              </span>
-            </div>
-          )}
-
-          {/* Generating indicator when no streaming text yet */}
-          {isGenerating && !streamingText && activities.length === 0 && (
-            <div className="flex items-center gap-2 py-2">
-              <MaterialIcon icon="progress_activity" size="xs" className="animate-spin text-primary" />
-              <span className="text-sm text-on-surface-variant">
-                Starting generation&#8230;
+                {narrationMessage}
               </span>
             </div>
           )}
@@ -199,10 +185,10 @@ export function ChatPanel({
               <MaterialIcon icon="check_circle" size="sm" className="text-primary" filled />
               <div>
                 <p className="text-sm font-medium text-primary dark:text-primary-fixed-dim">
-                  App is live and ready!
+                  Your app is ready!
                 </p>
                 <p className="text-xs text-primary/70 dark:text-primary-fixed-dim/70">
-                  Check the preview panel. Send a message to request changes.
+                  Try it out! Tell me if you&apos;d like any changes.
                 </p>
               </div>
             </div>
@@ -212,9 +198,9 @@ export function ChatPanel({
           {error && (
             <div className="rounded-xl bg-destructive/10 p-4">
               <p className="text-sm font-medium text-destructive">
-                Something went wrong
+                We hit a small bump
               </p>
-              <p className="mt-1 text-xs text-destructive/80">{error}</p>
+              <p className="mt-1 text-xs text-destructive/80">Want to try again?</p>
               {onRetry && (
                 <Button
                   variant="ghost"
@@ -222,7 +208,7 @@ export function ChatPanel({
                   className="mt-2 text-destructive hover:text-destructive"
                   onClick={onRetry}
                 >
-                  Retry
+                  Try again
                 </Button>
               )}
             </div>

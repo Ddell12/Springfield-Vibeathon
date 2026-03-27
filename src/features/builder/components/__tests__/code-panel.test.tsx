@@ -43,7 +43,7 @@ describe("CodePanel — streaming builder contract", () => {
   it("shows generating indicator when status is generating and no files yet", () => {
     render(<CodePanel files={[]} status="generating" />);
     const indicator =
-      screen.queryByText(/generating/i) ??
+      screen.queryByText(/building/i) ??
       document.querySelector(".animate-pulse, .animate-spin");
     expect(indicator).toBeTruthy();
   });

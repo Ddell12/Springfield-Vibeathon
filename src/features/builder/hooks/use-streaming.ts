@@ -43,6 +43,7 @@ export interface UseStreamingReturn {
   activities: Activity[];
   bundleHtml: string | null;
   buildFailed: boolean;
+  notableMessage: string | null;
   reset: () => void;
 }
 
@@ -64,6 +65,7 @@ interface StreamingState {
   activities: Activity[];
   bundleHtml: string | null;
   buildFailed: boolean;
+  notableMessage: string | null;
 }
 
 type StreamingAction =
@@ -78,6 +80,7 @@ type StreamingAction =
   | { type: "UPSERT_FILE"; file: StreamingFile }
   | { type: "SET_BUNDLE"; html: string }
   | { type: "SET_BUILD_FAILED"; failed: boolean }
+  | { type: "SET_NOTABLE_MESSAGE"; message: string | null }
   | { type: "START_GENERATION" }
   | { type: "DONE"; sessionId?: string; buildFailed?: boolean }
   | { type: "RESUME_SESSION"; args: ResumeSessionArgs }
@@ -94,6 +97,7 @@ const initialState: StreamingState = {
   activities: [],
   bundleHtml: null,
   buildFailed: false,
+  notableMessage: null,
 };
 
 function streamingReducer(state: StreamingState, action: StreamingAction): StreamingState {
@@ -138,6 +142,9 @@ function streamingReducer(state: StreamingState, action: StreamingAction): Strea
     case "SET_BUILD_FAILED":
       return { ...state, buildFailed: action.failed };
 
+    case "SET_NOTABLE_MESSAGE":
+      return { ...state, notableMessage: action.message };
+
     case "START_GENERATION":
       return {
         ...state,
@@ -149,6 +156,7 @@ function streamingReducer(state: StreamingState, action: StreamingAction): Strea
         appName: null,
         bundleHtml: null,
         buildFailed: false,
+        notableMessage: null,
       };
 
     case "DONE":
@@ -243,6 +251,7 @@ export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn 
         case "status":
           if (sseEvent.status === "bundling") {
             dispatch({ type: "SET_STATUS", status: "generating" });
+            dispatch({ type: "SET_NOTABLE_MESSAGE", message: "Putting everything together..." });
           } else if (sseEvent.status === "live") {
             dispatch({ type: "SET_STATUS", status: "live" });
           } else if (sseEvent.status === "generating") {
@@ -288,14 +297,17 @@ export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn 
 
         case "image_generated":
           addActivity("file_written", `Generated image: ${sseEvent.label}`);
+          dispatch({ type: "SET_NOTABLE_MESSAGE", message: "Creating pictures for your app..." });
           break;
 
         case "speech_generated":
           addActivity("file_written", `Generated audio: "${sseEvent.text}"`);
+          dispatch({ type: "SET_NOTABLE_MESSAGE", message: "Recording friendly voices..." });
           break;
 
         case "stt_enabled":
           addActivity("complete", "Speech input enabled");
+          dispatch({ type: "SET_NOTABLE_MESSAGE", message: "Voice input is ready!" });
           break;
 
         case "bundle":
@@ -446,6 +458,7 @@ export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn 
     activities: state.activities,
     bundleHtml: state.bundleHtml,
     buildFailed: state.buildFailed,
+    notableMessage: state.notableMessage,
     reset,
   };
 }

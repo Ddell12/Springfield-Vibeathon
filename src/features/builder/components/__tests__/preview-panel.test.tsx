@@ -22,9 +22,9 @@ describe("PreviewPanel — blob URL iframe", () => {
     expect((iframe as HTMLIFrameElement).src).toBeTruthy();
   });
 
-  it("shows 'Building your app...' spinner when generating and no preview", () => {
+  it("shows 'Creating your app...' spinner when generating and no preview", () => {
     render(<PreviewPanel bundleHtml={null} state="generating" />);
-    expect(screen.getByText(/building your app/i)).toBeTruthy();
+    expect(screen.getByText(/creating your app/i)).toBeTruthy();
   });
 
   it("shows 'Updating...' overlay when generating with existing preview", () => {
@@ -34,14 +34,15 @@ describe("PreviewPanel — blob URL iframe", () => {
     expect(screen.getByTitle(/app preview/i)).toBeTruthy();
   });
 
-  it("shows error message when state is failed", () => {
+  it("shows soft error message when state is failed", () => {
     render(<PreviewPanel bundleHtml={null} state="failed" error="Build crashed" />);
-    expect(screen.getByText(/build crashed/i)).toBeTruthy();
+    expect(screen.getByText(/something didn.t look right/i)).toBeTruthy();
+    expect(screen.queryByText(/build crashed/i)).toBeNull();
   });
 
   it("shows default error message when failed without error prop", () => {
     render(<PreviewPanel bundleHtml={null} state="failed" />);
-    expect(screen.getByText(/something went wrong/i)).toBeTruthy();
+    expect(screen.getByText(/something didn.t look right/i)).toBeTruthy();
   });
 
   it("shows placeholder when idle with no preview", () => {
@@ -69,5 +70,13 @@ describe("PreviewPanel — blob URL iframe", () => {
   it("does not show retry button — errors are handled upstream", () => {
     render(<PreviewPanel bundleHtml={null} state="failed" />);
     expect(screen.queryByRole("button", { name: /retry/i })).toBeNull();
+  });
+
+  it("shows warm build-failed message without technical jargon", () => {
+    render(<PreviewPanel bundleHtml={null} state="live" buildFailed={true} onRetry={vi.fn()} />);
+    expect(screen.getByText(/something didn.t look right/i)).toBeTruthy();
+    expect(screen.getByText(/want to try again/i)).toBeTruthy();
+    expect(screen.queryByText(/build error/i)).toBeNull();
+    expect(screen.queryByText(/code panel/i)).toBeNull();
   });
 });

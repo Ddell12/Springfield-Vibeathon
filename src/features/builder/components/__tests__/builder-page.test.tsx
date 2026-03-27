@@ -45,6 +45,8 @@ vi.mock("../../hooks/use-streaming", () => ({
     streamingText: "",
     activities: [],
     bundleHtml: null,
+    buildFailed: false,
+    notableMessage: null,
   }),
 }));
 
@@ -108,6 +110,8 @@ describe("BuilderPage — three-panel layout", () => {
       streamingText: "",
       activities: [],
       bundleHtml: null,
+      buildFailed: false,
+      notableMessage: null,
     });
     render(<BuilderPage initialSessionId={null} />);
     // Default viewMode is "preview" — at least chat panel should render
@@ -137,10 +141,12 @@ describe("BuilderPage — three-panel layout", () => {
       streamingText: "",
       activities: [],
       bundleHtml: null,
+      buildFailed: false,
+      notableMessage: null,
     });
 
     render(<BuilderPage initialSessionId={null} />);
-    expect(screen.getAllByText(/Generation failed/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/We hit a small bump/i).length).toBeGreaterThan(0);
   });
 
   it("shows project name from blueprint title", async () => {
@@ -157,6 +163,8 @@ describe("BuilderPage — three-panel layout", () => {
       streamingText: "",
       activities: [],
       bundleHtml: null,
+      buildFailed: false,
+      notableMessage: null,
     });
 
     render(<BuilderPage initialSessionId={null} />);
@@ -177,6 +185,8 @@ describe("BuilderPage — three-panel layout", () => {
       streamingText: "",
       activities: [],
       bundleHtml: null,
+      buildFailed: false,
+      notableMessage: null,
     });
 
     // Render with default viewMode (preview), test still renders
@@ -214,6 +224,8 @@ describe("BuilderPage — three-panel layout", () => {
       streamingText: "",
       activities: [],
       bundleHtml: null,
+      buildFailed: false,
+      notableMessage: null,
     });
 
     render(<BuilderPage initialSessionId="test_session_123" />);
@@ -245,6 +257,8 @@ describe("BuilderPage — three-panel layout", () => {
       streamingText: "",
       activities: [],
       bundleHtml: "<html><body><h1>Hello</h1></body></html>",
+      buildFailed: false,
+      notableMessage: null,
     });
 
     render(<BuilderPage initialSessionId="session_123" />);

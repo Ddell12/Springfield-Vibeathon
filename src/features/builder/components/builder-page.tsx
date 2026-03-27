@@ -19,6 +19,7 @@ import {
 
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
+import { useProgressNarration } from "../hooks/use-progress-narration";
 import { usePublishing } from "../hooks/use-publishing";
 import { useSessionResume } from "../hooks/use-session-resume";
 import { useStreaming } from "../hooks/use-streaming";
@@ -67,8 +68,11 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
     activities,
     bundleHtml,
     buildFailed,
+    notableMessage,
     reset,
   } = useStreaming();
+
+  const narrationMessage = useProgressNarration(status, notableMessage ?? undefined);
 
   // Fallback: recover bundle from Convex if SSE event was lost
   const activeSessionId_forQuery = sessionId ?? initialSessionId;
@@ -288,6 +292,7 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
             isMobile={isMobile}
             mobilePanel={mobilePanel}
             onMobilePanelChange={setMobilePanel}
+            hasFiles={files.length > 0}
           />
 
           <div className="min-h-0 flex-1 bg-surface-container-low p-2">
@@ -307,6 +312,7 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
                       activities={activities}
                       pendingPrompt={pendingPrompt}
                       onPendingPromptClear={() => setPendingPrompt(null)}
+                      narrationMessage={narrationMessage}
                     />
                   </div>
                 ) : (
@@ -317,7 +323,7 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
                       error={error ?? undefined}
                       deviceSize="mobile"
                       buildFailed={buildFailed}
-                      activityMessage={activities[activities.length - 1]?.message}
+                      activityMessage={narrationMessage ?? undefined}
                       onRetry={handleRetry}
                     />
                   </div>
@@ -339,6 +345,7 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
                       activities={activities}
                       pendingPrompt={pendingPrompt}
                       onPendingPromptClear={() => setPendingPrompt(null)}
+                      narrationMessage={narrationMessage}
                     />
                   </div>
                 </ResizablePanel>
@@ -365,7 +372,7 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
                         error={error ?? undefined}
                         deviceSize={deviceSize}
                         buildFailed={buildFailed}
-                        activityMessage={activities[activities.length - 1]?.message}
+                        activityMessage={narrationMessage ?? undefined}
                         onRetry={handleRetry}
                       />
                     </div>

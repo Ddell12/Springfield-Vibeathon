@@ -92,7 +92,7 @@ export function PreviewPanel({ bundleHtml, state, error, deviceSize = "desktop",
         <div className="flex flex-col items-center gap-5 text-muted-foreground max-w-xs text-center">
           <Loader2 className="h-8 w-8 animate-spin text-primary/50" />
           <div>
-            <p className="text-sm font-medium">Building your app...</p>
+            <p className="text-sm font-medium">Creating your app...</p>
             {activityMessage && (
               <p className="mt-1.5 text-xs text-muted-foreground/60 animate-pulse">
                 {activityMessage}
@@ -124,20 +124,16 @@ export function PreviewPanel({ bundleHtml, state, error, deviceSize = "desktop",
       {isFailed && (
         <div className="flex flex-col items-center gap-3 text-destructive">
           <AlertCircle className="h-8 w-8" />
-          <p className="text-sm font-medium">{error ?? "Something went wrong"}</p>
+          <p className="text-sm font-medium">Something didn&apos;t look right</p>
         </div>
       )}
 
       {!hasPreview && !isGenerating && !isFailed && state === "live" && (
         <div className="flex flex-col items-center gap-3 text-amber-600">
           <AlertCircle className="h-8 w-8" />
-          <p className="text-sm font-medium">
-            {buildFailed ? "Preview build failed" : "Build could not produce a preview"}
-          </p>
+          <p className="text-sm font-medium">Something didn&apos;t look right</p>
           <p className="max-w-sm text-center text-xs text-muted-foreground">
-            {buildFailed
-              ? "The generated code had build errors. Try sending a follow-up message like \"fix the build errors\" to resolve."
-              : "Check the Code panel for your generated files."}
+            Want to try again? Just tap the button below.
           </p>
           {onRetry && (
             <button

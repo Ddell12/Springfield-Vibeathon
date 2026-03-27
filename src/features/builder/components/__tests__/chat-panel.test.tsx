@@ -38,6 +38,7 @@ const defaultProps = {
   onGenerate: vi.fn(),
   streamingText: "",
   activities: [] as { id: string; type: "thinking" | "writing_file" | "file_written" | "complete"; message: string; path?: string; timestamp: number }[],
+  narrationMessage: null as string | null,
 };
 
 describe("ChatPanel — streaming builder contract", () => {
@@ -102,15 +103,10 @@ describe("ChatPanel — streaming builder contract", () => {
     expect(indicator).toBeTruthy();
   });
 
-  it("shows error message when error is set", () => {
-    render(
-      <ChatPanel
-        {...defaultProps}
-        status="failed"
-        error="Claude API unavailable"
-      />
-    );
-    expect(screen.getByText(/Claude API unavailable/i)).toBeTruthy();
+  it("shows soft error message when error is set", () => {
+    render(<ChatPanel {...defaultProps} status="failed" error="Claude API unavailable" />);
+    expect(screen.getByText(/we hit a small bump/i)).toBeTruthy();
+    expect(screen.queryByText(/Claude API unavailable/i)).toBeNull();
   });
 
   it("input is disabled when status is 'generating'", () => {
@@ -140,7 +136,7 @@ describe("ChatPanel — streaming builder contract", () => {
         onRetry={vi.fn()}
       />
     );
-    expect(screen.getByRole("button", { name: /retry/i })).toBeTruthy();
+    expect(screen.getByRole("button", { name: /try again/i })).toBeTruthy();
   });
 
   it("does not show Retry button when onRetry is not provided", () => {
@@ -151,7 +147,7 @@ describe("ChatPanel — streaming builder contract", () => {
         error="Something went wrong"
       />
     );
-    expect(screen.queryByRole("button", { name: /retry/i })).toBeNull();
+    expect(screen.queryByRole("button", { name: /try again/i })).toBeNull();
   });
 
   it("shows system messages", () => {
@@ -163,54 +159,45 @@ describe("ChatPanel — streaming builder contract", () => {
     mockUseQuery.mockReturnValue([]);
   });
 
-  it("shows starting indicator when generating with no activities or streaming text", () => {
+  it("shows narration pill when generating with no activities", () => {
     render(
       <ChatPanel
         {...defaultProps}
         status="generating"
+        narrationMessage="Reading your description..."
       />
     );
-    expect(screen.getByText(/Starting generation/)).toBeTruthy();
+    expect(screen.getByRole("status")).toBeTruthy();
+    expect(screen.getByText(/reading your description/i)).toBeTruthy();
   });
 
-  it("shows activity cards for file_written activities during generation", () => {
+  it("does NOT show raw file paths or activity messages during generation", () => {
     render(
       <ChatPanel
         {...defaultProps}
         status="generating"
+        narrationMessage="Designing the layout..."
         activities={[
-          {
-            id: "a1",
-            type: "file_written",
-            message: "Wrote App.tsx",
-            path: "src/App.tsx",
-            timestamp: Date.now(),
-          },
+          { id: "a1", type: "file_written", message: "Wrote App.tsx", path: "src/App.tsx", timestamp: Date.now() },
         ]}
       />
     );
-    // FileBadges renders action and filename in separate spans
-    expect(screen.getByText("Edited")).toBeTruthy();
-    expect(screen.getByText("App.tsx")).toBeTruthy();
+    expect(screen.queryByText(/App\.tsx/)).toBeNull();
+    expect(screen.queryByText(/Edited/)).toBeNull();
+    expect(screen.getByText(/designing the layout/i)).toBeTruthy();
   });
 
-  it("shows activity message during generation when activities present", () => {
-    render(
-      <ChatPanel
-        {...defaultProps}
-        status="generating"
-        activities={[
-          {
-            id: "a1",
-            type: "thinking",
-            message: "Understanding request",
-            timestamp: Date.now(),
-          },
-        ]}
-      />
-    );
-    // Activity message is shown directly (no type-based labels)
-    expect(screen.getByText("Understanding request")).toBeTruthy();
+  it("shows warm success message when live", () => {
+    render(<ChatPanel {...defaultProps} sessionId="session_123" status="live" activities={[]} />);
+    expect(screen.getByText(/your app is ready/i)).toBeTruthy();
+    expect(screen.getByText(/try it out/i)).toBeTruthy();
+  });
+
+  it("shows soft error without raw error text", () => {
+    render(<ChatPanel {...defaultProps} error="esbuild: Unexpected token at line 42" />);
+    expect(screen.getByText(/we hit a small bump/i)).toBeTruthy();
+    expect(screen.getByText(/want to try again/i)).toBeTruthy();
+    expect(screen.queryByText(/esbuild/i)).toBeNull();
   });
 
   it("shows input placeholder for live status", () => {
