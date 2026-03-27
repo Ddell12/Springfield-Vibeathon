@@ -17,13 +17,11 @@ interface BuilderToolbarProps {
   deviceSize: DeviceSize;
   onDeviceSizeChange: (size: DeviceSize) => void;
   status: StreamingStatus;
-  isPublishing: boolean;
   projectName: string;
   isEditingName?: boolean;
   onNameEditStart?: () => void;
   onNameEditEnd?: (name: string) => void;
   onShare?: () => void;
-  onPublish?: () => void;
   onNewChat?: () => void;
   isMobile?: boolean;
   mobilePanel?: "chat" | "preview";
@@ -42,13 +40,11 @@ export function BuilderToolbar({
   deviceSize,
   onDeviceSizeChange,
   status,
-  isPublishing,
   projectName,
   isEditingName,
   onNameEditStart,
   onNameEditEnd,
   onShare,
-  onPublish,
   onNewChat,
   isMobile,
   mobilePanel,
@@ -56,7 +52,6 @@ export function BuilderToolbar({
   hasFiles,
 }: BuilderToolbarProps) {
   const isGenerating = status === "generating";
-  const canPublish = !isGenerating && !isPublishing;
 
   return (
     <header className="flex h-12 flex-shrink-0 items-center justify-between bg-surface-container-lowest px-3 shadow-sm">
@@ -205,7 +200,7 @@ export function BuilderToolbar({
         </div>
       </div>
 
-      {/* Right section: View Source + Share + Publish */}
+      {/* Right section: View Source + Share */}
       <div className="flex flex-shrink-0 items-center gap-2">
         {!isGenerating && hasFiles && (
           <Button
@@ -228,14 +223,6 @@ export function BuilderToolbar({
         >
           <MaterialIcon icon="share" size="sm" />
           Share
-        </Button>
-        <Button
-          size="sm"
-          className="min-h-[44px] rounded-lg bg-primary-container px-4 text-[13px] font-semibold text-white shadow-sm transition-all hover:bg-primary active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-          onClick={onPublish}
-          disabled={!canPublish}
-        >
-          {isPublishing ? <MaterialIcon icon="progress_activity" size="xs" className="animate-spin" /> : "Publish"}
         </Button>
       </div>
     </header>
