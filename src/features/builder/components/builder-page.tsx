@@ -175,6 +175,16 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
     }
   }, [initialSessionId, resumeSessionData, resumeFiles, router]);
 
+  // Warn before leaving during active generation
+  useEffect(() => {
+    if (status !== "generating") return;
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [status]);
+
   // Derive app name: prefer Convex session title (reactive) > blueprint > default
   const appName = currentSession?.title
     ?? (typeof blueprint?.title === "string" ? blueprint.title : "Untitled App");

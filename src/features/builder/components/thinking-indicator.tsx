@@ -24,7 +24,6 @@ export function ThinkingIndicator({ isThinking, startTime }: ThinkingIndicatorPr
 
     return () => {
       clearInterval(interval);
-      setElapsed(0);
     };
   }, [isThinking, startTime]);
 
