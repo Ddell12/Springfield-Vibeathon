@@ -85,12 +85,15 @@ export function useSessionResume(
     [status, handleGenerate, initialSessionId]
   );
 
-  // Navigate to path-based URL when SSE creates a new session mid-generation
+  // Navigate to path-based URL AFTER generation completes (status "live").
+  // Navigating earlier (when sessionId first arrives) would abort the SSE stream
+  // mid-generation, causing the bundle to be lost in a race condition: the server
+  // is still bundling when the new page instance tries to resume from Convex.
   useEffect(() => {
-    if (sessionId && !initialSessionId) {
+    if (sessionId && !initialSessionId && status === "live") {
       router.replace(`/builder/${sessionId}`);
     }
-  }, [sessionId, initialSessionId, router]);
+  }, [sessionId, initialSessionId, status, router]);
 
   // Redirect to /builder if the session doesn't exist in Convex (deleted or invalid ID)
   useEffect(() => {
