@@ -115,9 +115,9 @@ The `value` fields map directly to `TherapyBlueprintSchema` enum values (e.g., `
 ### Example: Token/Reward Board
 
 **Essential:**
-1. "Who will use this app?" — same age chips
-2. "How many tokens to earn a reward?" — chips: `["3 (quick)", "5 (standard)", "10 (challenge)"]`
-3. "What kind of rewards?" — chips: `["Child picks from options", "Stickers & praise", "Screen time", "Custom"]`
+1. "Who will use this app?" — same age chips as Communication Board
+2. "How many tokens to earn a reward?" — chips: `[{label: "3 (quick)", value: "3"}, {label: "5 (standard)", value: "5"}, {label: "10 (challenge)", value: "10"}]`
+3. "What kind of rewards?" — chips: `[{label: "Child picks from options", value: "child-choice"}, {label: "Stickers & praise", value: "stickers"}, {label: "Screen time", value: "screen-time"}, {label: "Custom", value: "custom"}]`
 
 **Extended:** Same extended questions as Communication Board (shared across categories).
 
@@ -145,7 +145,11 @@ The `value` fields map directly to `TherapyBlueprintSchema` enum values (e.g., `
       "id": "color_coding",
       "text": "Should words be organized by color category (like Fitzgerald Key) or in a simple grid?",
       "type": "chips",
-      "options": ["Fitzgerald Key colors", "Simple grid", "Let AI decide"]
+      "options": [
+        { "label": "Fitzgerald Key colors", "value": "fitzgerald" },
+        { "label": "Simple grid", "value": "simple-grid" },
+        { "label": "Let AI decide", "value": "auto" }
+      ]
     }
   ],
   "blueprint": { /* draft TherapyBlueprint */ }
@@ -154,7 +158,7 @@ The `value` fields map directly to `TherapyBlueprintSchema` enum values (e.g., `
 
 **Model:** `claude-haiku-4-5-20251001` — this is a lightweight structuring task (not code gen), so Haiku is sufficient and keeps latency under 2s. The main generation pipeline uses `claude-sonnet-4-6` for code generation; this is intentionally a cheaper, faster model.
 
-**System prompt focus:** "Given therapy app requirements, return 1-2 smart follow-up questions that would meaningfully improve the app, and a complete TherapyBlueprint conforming to the schema."
+**System prompt focus:** "Given therapy app requirements, return 1-2 smart follow-up questions that would meaningfully improve the app, and a complete TherapyBlueprint conforming to the schema. Each follow-up question must use `QuestionOption[]` format with `{label, value}` pairs so values can be mapped to blueprint schema fields."
 
 ### Error Handling
 
@@ -242,7 +246,7 @@ src/app/api/interview-followup/
 | `use-streaming.ts` | `generate()` accepts an optional second parameter `blueprint?: TherapyBlueprint`. Pass it in the fetch body to `POST /api/generate`. |
 | `chat-panel.tsx` | When idle + no session, render `InterviewController` instead of empty state. New `onBlueprintReady` prop threaded up to `builder-page.tsx`. |
 | `constants.ts` | `THERAPY_SUGGESTIONS` kept as fallback chips for the escape hatch free-text input. |
-| `schemas/generate.ts` | Add optional `blueprint` field to `GenerateInputSchema`. |
+| `schemas/generate.ts` | Add optional `blueprint` field to `GenerateInputSchema` using `z.any().optional()` (matches the `v.any()` pattern in Convex schema — the blueprint is validated via `TherapyBlueprintSchema` at the application layer, not at the transport schema level). |
 | `route.ts` (generate) | If `blueprint` present in request body, prepend as structured context block in user message: `"## Pre-Approved Blueprint\n\n{JSON}\n\n## User Request\n\n{prompt}"`. |
 
 ### Unchanged Files
