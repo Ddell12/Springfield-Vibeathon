@@ -4,6 +4,11 @@ import { beforeAll,describe, expect, it, vi } from "vitest";
 
 import { PreviewPanel } from "../preview-panel";
 
+// Mock the TTS bridge — it requires ConvexProvider which isn't available in unit tests
+vi.mock("../../hooks/use-tts-bridge", () => ({
+  useTtsBridge: vi.fn(),
+}));
+
 beforeAll(() => {
   global.URL.createObjectURL = vi.fn(() => "blob:test-url");
   global.URL.revokeObjectURL = vi.fn();

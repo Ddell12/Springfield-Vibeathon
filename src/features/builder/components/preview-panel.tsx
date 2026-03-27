@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { cn } from "@/core/utils";
 
 import type { StreamingStatus } from "../hooks/use-streaming";
+import { useTtsBridge } from "../hooks/use-tts-bridge";
 
 type DeviceSize = "desktop" | "mobile";
 
@@ -23,6 +24,10 @@ export function PreviewPanel({ bundleHtml, state, error, deviceSize = "desktop",
   const [refreshKey, setRefreshKey] = useState(0);
   // Track which blobUrl the iframe has finished loading — null means "not yet loaded"
   const [loadedBlobUrl, setLoadedBlobUrl] = useState<string | null>(null);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+
+  // Bridge TTS requests from iframe to ElevenLabs via Convex
+  useTtsBridge(iframeRef);
 
   const blobUrl = useMemo(() => {
     if (!bundleHtml) return null;
@@ -62,6 +67,7 @@ export function PreviewPanel({ bundleHtml, state, error, deviceSize = "desktop",
       {hasPreview && (
         <>
           <iframe
+            ref={iframeRef}
             title="App preview"
             src={blobUrl}
             onLoad={() => setLoadedBlobUrl(blobUrl)}

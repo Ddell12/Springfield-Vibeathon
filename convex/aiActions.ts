@@ -21,7 +21,7 @@ export const generateSpeech = action({
     // Resolve voice: friendly name -> ID, or default. voiceId arg removed to prevent raw ID passthrough.
     const resolvedVoiceId =
       (args.voice ? VOICE_MAP[args.voice] : undefined) ??
-      VOICE_MAP["warm-female"];
+      VOICE_MAP["child-friendly"];
 
     // Check cache first
     const cached = await ctx.runQuery(anyApi.ai.getTtsCache, {
