@@ -6,17 +6,19 @@ import { useEffect, useRef, useState } from "react";
 import { MaterialIcon } from "@/shared/components/material-icon";
 import { Button } from "@/shared/components/ui/button";
 
+import { BillingSection } from "../../billing/components/billing-section";
 import { AccountSection } from "./account-section";
 import { AppearanceSection } from "./appearance-section";
 import { ProfileSection } from "./profile-section";
 import { SettingsSidebar } from "./settings-sidebar";
 
-export type SettingsSection = "profile" | "account" | "appearance";
+export type SettingsSection = "profile" | "account" | "appearance" | "billing";
 
 const SECTION_LABELS: Record<SettingsSection, string> = {
   profile: "Profile",
   account: "Account",
   appearance: "Appearance",
+  billing: "Billing",
 };
 
 export function SettingsPage() {
@@ -100,6 +102,7 @@ export function SettingsPage() {
           {section === "profile" && <ProfileSection />}
           {section === "account" && <AccountSection />}
           {section === "appearance" && <AppearanceSection />}
+          {section === "billing" && <BillingSection />}
         </div>
       </main>
     </div>

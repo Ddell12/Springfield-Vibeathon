@@ -39,11 +39,16 @@ vi.mock("../appearance-section", () => ({
   AppearanceSection: () => <div data-testid="appearance-section" />,
 }));
 
+vi.mock("../../../billing/components/billing-section", () => ({
+  BillingSection: () => <div data-testid="billing-section" />,
+}));
+
 vi.mock("../settings-sidebar", () => ({
   SettingsSidebar: ({ onSectionChange }: any) => (
     <div data-testid="settings-sidebar">
       <button onClick={() => onSectionChange("account")}>Account</button>
       <button onClick={() => onSectionChange("appearance")}>Appearance</button>
+      <button onClick={() => onSectionChange("billing")}>Billing</button>
     </div>
   ),
 }));
@@ -107,5 +112,12 @@ describe("SettingsPage", () => {
     // Click outside the dropdown
     fireEvent.mouseDown(document.body);
     expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+  });
+
+  it("clicking sidebar option switches to billing section", () => {
+    render(<SettingsPage />);
+    fireEvent.click(screen.getByRole("button", { name: "Billing" }));
+    expect(screen.getByTestId("billing-section")).toBeInTheDocument();
+    expect(screen.queryByTestId("profile-section")).not.toBeInTheDocument();
   });
 });

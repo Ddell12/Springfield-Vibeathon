@@ -11,6 +11,7 @@ const SECTIONS: { id: SettingsSection; label: string; icon: string }[] = [
   { id: "profile", label: "Profile", icon: "person" },
   { id: "account", label: "Account", icon: "shield" },
   { id: "appearance", label: "Appearance", icon: "palette" },
+  { id: "billing", label: "Billing", icon: "payments" },
 ];
 
 export function SettingsSidebar({
