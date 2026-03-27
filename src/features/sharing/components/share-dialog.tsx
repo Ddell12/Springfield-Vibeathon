@@ -4,7 +4,6 @@ import { useState } from "react";
 import QRCode from "react-qr-code";
 
 import { copyToClipboard } from "@/core/clipboard";
-import { cn } from "@/core/utils";
 import { MaterialIcon } from "@/shared/components/material-icon";
 import { Button } from "@/shared/components/ui/button";
 import {
@@ -20,7 +19,6 @@ type ShareDialogProps = {
   onOpenChange: (open: boolean) => void;
   shareSlug: string;
   appTitle: string;
-  publishedUrl?: string;
 };
 
 export function ShareDialog({
@@ -28,25 +26,22 @@ export function ShareDialog({
   onOpenChange,
   shareSlug,
   appTitle,
-  publishedUrl,
 }: ShareDialogProps) {
-  const [activeTab, setActiveTab] = useState<"preview" | "published">("preview");
   const [copied, setCopied] = useState(false);
 
   const origin = typeof window !== "undefined" ? window.location.origin : "";
-  const previewUrl = shareSlug ? `${origin}/tool/${shareSlug}` : "";
-  const activeUrl = activeTab === "published" && publishedUrl ? publishedUrl : previewUrl;
-  const isLoading = !activeUrl;
+  const shareUrl = shareSlug ? `${origin}/tool/${shareSlug}` : "";
+  const isLoading = !shareUrl;
 
   async function handleCopy() {
-    await copyToClipboard(activeUrl, "Link copied!");
+    await copyToClipboard(shareUrl, "Link copied!");
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }
 
   async function handleShare() {
     try {
-      await navigator.share({ title: appTitle, url: activeUrl });
+      await navigator.share({ title: appTitle, url: shareUrl });
     } catch {
       // User cancelled or share not supported — no-op
     }
@@ -73,43 +68,13 @@ export function ShareDialog({
           </button>
         </DialogHeader>
 
-        {/* Segmented Tab Toggle */}
-        <div className="bg-surface-container-low p-1 rounded-lg flex">
-          <button
-            type="button"
-            onClick={() => setActiveTab("preview")}
-            className={cn(
-              "flex-1 py-1.5 text-sm font-medium rounded-md transition-all",
-              activeTab === "preview"
-                ? "bg-surface-container-lowest text-primary shadow-sm font-semibold"
-                : "text-on-surface-variant hover:text-on-surface"
-            )}
-          >
-            Preview Link
-          </button>
-          {publishedUrl && (
-            <button
-              type="button"
-              onClick={() => setActiveTab("published")}
-              className={cn(
-                "flex-1 py-1.5 text-sm font-medium rounded-md transition-all",
-                activeTab === "published"
-                  ? "bg-surface-container-lowest text-primary shadow-sm font-semibold"
-                  : "text-on-surface-variant hover:text-on-surface"
-              )}
-            >
-              Published Link
-            </button>
-          )}
-        </div>
-
         {/* QR Code */}
         <div className="flex justify-center">
           <div className="w-40 h-40 border border-surface-container-low rounded-xl p-2 flex items-center justify-center">
             {isLoading ? (
               <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
             ) : (
-              <QRCode value={activeUrl} size={140} />
+              <QRCode value={shareUrl} size={140} />
             )}
           </div>
         </div>
@@ -118,7 +83,7 @@ export function ShareDialog({
         <div className="flex gap-2">
           <div className="flex-1 bg-surface-container-low px-4 py-2.5 rounded-lg flex items-center">
             <span className="text-sm text-on-surface truncate">
-              {isLoading ? "Creating share link..." : activeUrl}
+              {isLoading ? "Creating share link..." : shareUrl}
             </span>
           </div>
           <button
