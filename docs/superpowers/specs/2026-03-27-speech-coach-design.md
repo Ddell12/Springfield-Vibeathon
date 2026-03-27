@@ -127,27 +127,14 @@ speechCoachProgress: defineTable({
   .index("by_sessionId", ["sessionId"]),
 ```
 
-### `speechCoachExercises`
+### ~~`speechCoachExercises`~~ — Deferred
 
-Curriculum content (seeded, not user-generated).
+Originally planned as a Convex table for curriculum data. **Deferred from v1** because:
+- The ElevenLabs agent reads from its own knowledge base at runtime, not Convex
+- The seed script reads from `curriculum-data.ts` directly
+- No v1 feature queries this table
 
-```typescript
-speechCoachExercises: defineTable({
-  sound: v.string(),
-  ageRange: v.union(v.literal("2-4"), v.literal("5-7")),
-  difficulty: v.union(
-    v.literal("beginner"),
-    v.literal("intermediate"),
-    v.literal("advanced")
-  ),
-  words: v.array(v.string()),
-  phrases: v.optional(v.array(v.string())),
-  articulationCue: v.string(),
-  modelingScript: v.string(),
-})
-  .index("by_sound", ["sound"])
-  .index("by_ageRange", ["ageRange"]),
-```
+The curriculum source of truth is `curriculum-data.ts` → uploaded to ElevenLabs knowledge base. If a future version needs parent-viewable or therapist-editable curriculum, this table can be added then.
 
 ## 3. Feature Architecture
 
@@ -369,9 +356,10 @@ The `getSignedUrl` action in `convex/speechCoachActions.ts`:
 
 ### Environment Variables
 
-- `ELEVENLABS_AGENT_ID` — the speech coach agent ID (server-side only, used in `getSignedUrl`)
-- Existing `ELEVENLABS_API_KEY` — used server-side for signed URL generation and transcript retrieval
+- `ELEVENLABS_AGENT_ID` — the speech coach agent ID, set in **Convex Dashboard** (not `.env.local`), used by `getSignedUrl` action
+- Existing `ELEVENLABS_API_KEY` — already in Convex Dashboard, used for signed URL generation and transcript retrieval
 - No `NEXT_PUBLIC_*` variables needed — agent ID stays server-side
+- The seed script (`scripts/seed-speech-curriculum.ts`) runs locally and reads `ELEVENLABS_API_KEY` from `.env.local`
 
 ### Auth Guard
 
@@ -384,7 +372,7 @@ The `/speech-coach` route requires authentication. All Convex mutations and quer
 - Knowledge base with 8 sound groups, two age ranges
 - Session configuration, live coaching, post-session analysis
 - Parent dashboard with history and progress overview
-- Sidebar navigation entry (icon: `AudioLines` from Lucide, label: "Speech Coach", positioned after "Templates" in `NAV_ITEMS`)
+- Sidebar navigation entry (icon: `"record_voice_over"` Material icon, label: "Speech Coach", positioned after "Templates" in `NAV_ITEMS`, add `SPEECH_COACH: "/speech-coach"` to `ROUTES` in `src/core/routes.ts`)
 - New dependency: `@elevenlabs/react`
 
 ### Out of Scope (v1)
