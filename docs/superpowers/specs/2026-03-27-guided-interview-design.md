@@ -24,11 +24,11 @@ Add a guided interview to the builder chat panel that helps ABA therapists, SLPs
 ## Categories (10)
 
 **Top 5 — Visual Cards:**
-1. Communication Board (AAC) — icon: `message_square`
-2. Visual Schedule / Routine — icon: `calendar_clock`
+1. Communication Board (AAC) — icon: `forum`
+2. Visual Schedule / Routine — icon: `schedule`
 3. Token/Reward Board — icon: `star`
-4. Social Story — icon: `book_open`
-5. Feelings Check-In — icon: `heart`
+4. Social Story — icon: `menu_book`
+5. Feelings Check-In — icon: `favorite`
 
 **Expandable "More options" — Chips:**
 6. Flashcards / Matching Game
@@ -41,9 +41,11 @@ Add a guided interview to the builder chat panel that helps ABA therapists, SLPs
 
 ## Interview Flow
 
+**Integration point:** The `showPromptScreen` branch in `builder-page.tsx` (the full-width centered prompt, rendered when there's no session) is where the interview lives. This is the primary entry point — the `ChatPanel` empty state is never reached because `builder-page.tsx` renders the prompt screen before ever mounting `ChatPanel`.
+
 ```
 User lands on builder (no session)
-  → Category Picker replaces current THERAPY_SUGGESTIONS chips
+  → builder-page.tsx showPromptScreen renders CategoryPicker (replaces current prompt input + THERAPY_SUGGESTIONS)
   → User taps a category card/chip
   → System message: "Let's build a Communication Board!"
   → Essential Questions (2-3, hardcoded per category)
@@ -68,11 +70,16 @@ User lands on builder (no session)
 ### Question Schema
 
 ```typescript
+interface QuestionOption {
+  label: string;          // user-facing text (e.g., "Toddler (1-3)")
+  value: string;          // schema-compatible value (e.g., "toddler")
+}
+
 interface InterviewQuestion {
   id: string;
   text: string;
   type: "chips" | "select" | "text";
-  options?: string[];
+  options?: QuestionOption[];   // label/value pairs — labels shown to user, values stored + mapped to schema enums
   defaultValue?: string;
   required: boolean;
   phase: "essential" | "extended";
@@ -81,26 +88,29 @@ interface InterviewQuestion {
 interface CategoryConfig {
   id: string;
   label: string;
-  icon: string;           // Material icon name
+  icon: string;           // Material Symbols icon name (e.g., "forum", "schedule", "star")
   description: string;    // user-facing subtitle
   questions: InterviewQuestion[];
   defaults: Partial<TherapyBlueprint>;
   promptTemplate: (answers: Record<string, string | string[]>) => string;
+  // Produces the natural-language prompt only. Blueprint is assembled separately by blueprint-assembler.ts.
 }
 ```
 
 ### Example: Communication Board
 
 **Essential:**
-1. "Who will use this app?" — chips: `["Toddler (1-3)", "Preschool (3-5)", "School-age (6-12)", "Teen/Adult"]`
-2. "How many words on the board?" — chips: `["6 (simple)", "9 (standard)", "12+ (advanced)"]`
-3. "What kind of words?" — chips: `["Core words (want, help, more...)", "Food & drink", "Feelings", "Activities", "Custom — I'll type them"]`
+1. "Who will use this app?" — chips: `[{label: "Toddler (1-3)", value: "toddler"}, {label: "Preschool (3-5)", value: "preschool"}, {label: "School-age (6-12)", value: "school-age"}, {label: "Teen/Adult", value: "adolescent"}]`
+2. "How many words on the board?" — chips: `[{label: "6 (simple)", value: "6"}, {label: "9 (standard)", value: "9"}, {label: "12+ (advanced)", value: "12"}]`
+3. "What kind of words?" — chips: `[{label: "Core words (want, help, more...)", value: "core"}, {label: "Food & drink", value: "food"}, {label: "Feelings", value: "feelings"}, {label: "Activities", value: "activities"}, {label: "Custom — I'll type them", value: "custom"}]`
 
-**Extended:**
-- Interaction style — chips: `["Tap to select", "Drag and drop", "Sequence/order", "Free-form"]`
-- Reinforcement — chips: `["Stars/tokens", "Animations", "Sounds", "Points", "Just a checkmark"]`
-- Accessibility — multi-select chips: `["High contrast", "Large touch targets", "No sound required", "Simple animations only", "None of these"]`
-- Color preference — chips: `["Calm/cool tones", "Warm/cheerful", "High contrast", "Let AI decide"]`
+**Extended (shared across categories):**
+- Interaction style — chips: `[{label: "Tap to select", value: "tap"}, {label: "Drag and drop", value: "drag"}, {label: "Sequence/order", value: "sequence"}, {label: "Free-form", value: "free-form"}]`
+- Reinforcement — chips: `[{label: "Stars/tokens", value: "tokens"}, {label: "Animations", value: "animation"}, {label: "Sounds", value: "sound"}, {label: "Points", value: "points"}, {label: "Just a checkmark", value: "completion"}]`
+- Accessibility — multi-select chips: `[{label: "High contrast", value: "high-contrast"}, {label: "Large touch targets", value: "large-targets"}, {label: "No sound required", value: "no-sound"}, {label: "Simple animations only", value: "simple-animations"}, {label: "None of these", value: "none"}]`
+- Color preference — chips: `[{label: "Calm/cool tones", value: "cool"}, {label: "Warm/cheerful", value: "warm"}, {label: "High contrast", value: "high-contrast"}, {label: "Let AI decide", value: "auto"}]`
+
+The `value` fields map directly to `TherapyBlueprintSchema` enum values (e.g., `ageRange`, `interactionModel`, `reinforcementStrategy.type`). The `blueprint-assembler.ts` module reads `value` fields, not labels.
 
 ### Example: Token/Reward Board
 
@@ -142,9 +152,16 @@ interface CategoryConfig {
 }
 ```
 
-**Model:** Claude Haiku (fast, cheap — this is a structuring task, not code gen).
+**Model:** `claude-haiku-4-5-20251001` — this is a lightweight structuring task (not code gen), so Haiku is sufficient and keeps latency under 2s. The main generation pipeline uses `claude-sonnet-4-6` for code generation; this is intentionally a cheaper, faster model.
 
 **System prompt focus:** "Given therapy app requirements, return 1-2 smart follow-up questions that would meaningfully improve the app, and a complete TherapyBlueprint conforming to the schema."
+
+### Error Handling
+
+If the follow-up call fails, times out (>5s), or returns malformed JSON:
+- Skip follow-ups entirely and proceed to blueprint assembly using only category defaults + user answers
+- Show a subtle toast: "Couldn't load suggestions, building with your answers."
+- The user can still approve or modify the blueprint via the BlueprintCard
 
 ## Blueprint Assembly
 
@@ -166,10 +183,20 @@ This prompt is posted as the user message in chat history.
 
 ## Blueprint Approval
 
-The existing `BlueprintCard` component renders in the chat after assembly. Two buttons below it:
+A new `BlueprintApprovalCard` component wraps the existing read-only `BlueprintCard` and adds action buttons below it. The existing `BlueprintCard` remains unchanged (it's also used during/after generation to display the blueprint).
 
-- **"Build this!"** (primary gradient) — fires `onGenerate(richPrompt)` + `onBlueprintReady(blueprint)`, generation begins
-- **"Change something"** (ghost) — re-enters interview at gate phase, user can re-answer or type freeform adjustments
+`BlueprintApprovalCard` renders:
+- The existing `BlueprintCard` (displays title, therapy goal, target skill, age range, interaction model, description)
+- **"Build this!"** (primary gradient button) — fires `onApprove()`, which triggers generation
+- **"Change something"** (ghost button) — fires `onEdit()`, which re-enters the interview
+
+### "Change something" Re-Entry
+
+Re-entering preserves all previous answers. The user sees the adaptive gate again and can:
+- Scroll up and re-select any previous answer (chips re-render as interactive)
+- Type freeform adjustments in the text input (e.g., "Actually, make it 12 words instead of 9")
+- Freeform changes get folded into the next LLM follow-up call to re-generate the blueprint
+- A new BlueprintApprovalCard appears for re-approval
 
 ## Generation Handoff
 
@@ -198,7 +225,8 @@ src/features/builder/
   components/interview/
     category-picker.tsx      — visual cards + expandable "More options" + escape hatch
     interview-question.tsx   — single question as chat bubble + chips/select/text
-    interview-controller.tsx — orchestrates flow, calls follow-up endpoint, shows BlueprintCard
+    interview-controller.tsx — orchestrates flow, calls follow-up endpoint, shows BlueprintApprovalCard
+    blueprint-approval-card.tsx — wraps read-only BlueprintCard + "Build this!" / "Change something" buttons
   hooks/
     use-interview.ts         — useReducer wrapper, exposes answer/advance/reset
 
@@ -210,15 +238,16 @@ src/app/api/interview-followup/
 
 | File | Change |
 |------|--------|
-| `chat-panel.tsx` | When idle + no session, render `InterviewController` instead of empty state. New `onBlueprintReady` prop. |
-| `builder-page.tsx` | Thread blueprint from chat panel to generate call. Minimal wiring. |
-| `constants.ts` | `THERAPY_SUGGESTIONS` replaced or kept as fallback for escape hatch. |
+| `builder-page.tsx` | The `showPromptScreen` branch (full-width centered prompt) renders `CategoryPicker` + `InterviewController` instead of the current prompt input + suggestion chips. Wire `onBlueprintReady` from `InterviewController` to store blueprint in local state. Pass blueprint into `useStreaming.generate(prompt, blueprint)`. |
+| `use-streaming.ts` | `generate()` accepts an optional second parameter `blueprint?: TherapyBlueprint`. Pass it in the fetch body to `POST /api/generate`. |
+| `chat-panel.tsx` | When idle + no session, render `InterviewController` instead of empty state. New `onBlueprintReady` prop threaded up to `builder-page.tsx`. |
+| `constants.ts` | `THERAPY_SUGGESTIONS` kept as fallback chips for the escape hatch free-text input. |
 | `schemas/generate.ts` | Add optional `blueprint` field to `GenerateInputSchema`. |
-| `route.ts` (generate) | If `blueprint` present, prepend as structured context in user message. |
+| `route.ts` (generate) | If `blueprint` present in request body, prepend as structured context block in user message: `"## Pre-Approved Blueprint\n\n{JSON}\n\n## User Request\n\n{prompt}"`. |
 
 ### Unchanged Files
 
-- `blueprint-card.tsx` — used as-is
+- `blueprint-card.tsx` — used as-is (read-only display, composed inside new `BlueprintApprovalCard`)
 - `agent-prompt.ts` — system prompt unchanged
 - `convex/schema.ts` — `blueprint` field already `v.any()`
 - `convex/sessions.ts` — no changes
