@@ -187,29 +187,45 @@ export async function POST(request: Request): Promise<Response> {
 
             const release = await acquireBuildSlot();
             try {
-              const bundleHtml = await runBundleWorker(buildDir!);
-              if (bundleHtml.length < 200) throw new Error("bundle HTML is suspiciously small");
-
-              send("activity", { type: "thinking", message: "Almost ready..." });
-              send("bundle", { html: bundleHtml });
-              buildSucceeded = true;
-
-              // Persist bundle for session resume
+              let bundleHtml: string;
               try {
-                await convex.mutation(api.generated_files.upsertAutoVersion, {
-                  sessionId,
-                  path: "_bundle.html",
-                  contents: bundleHtml,
-                });
-              } catch (err) {
-                console.error("[generate] Failed to persist bundle:", err);
-                send("activity", { type: "thinking", message: "Warning: app may not load on resume" });
+                bundleHtml = await runBundleWorker(buildDir!);
+                if (bundleHtml.length < 200) throw new Error("bundle HTML is suspiciously small");
+              } catch (firstError) {
+                // First failure — retry silently after 1s
+                const firstMsg = firstError instanceof Error ? firstError.message : String(firstError);
+                console.error("[generate] Bundle worker failed (attempt 1):", firstMsg.slice(0, 500));
+
+                await new Promise((r) => setTimeout(r, 1000));
+
+                try {
+                  bundleHtml = await runBundleWorker(buildDir!);
+                  if (bundleHtml.length < 200) throw new Error("bundle HTML is suspiciously small");
+                } catch (secondError) {
+                  // Second failure — give up gracefully
+                  const secondMsg = secondError instanceof Error ? secondError.message : String(secondError);
+                  console.error("[generate] Bundle worker failed (attempt 2):", secondMsg.slice(0, 500));
+                  send("activity", { type: "complete", message: "We're having a little trouble — your app may need a small tweak" });
+                  bundleHtml = ""; // signal no bundle
+                }
               }
-            } catch (buildError) {
-              const errMsg = buildError instanceof Error ? buildError.message : String(buildError);
-              console.error("[generate] Bundle worker failed:", errMsg.slice(0, 1000));
-              send("activity", { type: "complete", message: `Build failed: ${errMsg.slice(0, 200)}` });
-              // buildSucceeded stays false — done event will carry buildFailed: true
+
+              if (bundleHtml && bundleHtml.length >= 200) {
+                send("activity", { type: "thinking", message: "Almost ready..." });
+                send("bundle", { html: bundleHtml });
+                buildSucceeded = true;
+
+                // Persist bundle for session resume
+                try {
+                  await convex.mutation(api.generated_files.upsertAutoVersion, {
+                    sessionId,
+                    path: "_bundle.html",
+                    contents: bundleHtml,
+                  });
+                } catch (err) {
+                  console.error("[generate] Failed to persist bundle:", err);
+                }
+              }
             } finally {
               release();
             }
@@ -245,24 +261,14 @@ export async function POST(request: Request): Promise<Response> {
 
         // Persist a friendly summary instead of raw Claude reasoning text
         if (fileArray.length > 0) {
-          const friendlyMsg = `I built your app with ${fileArray.length} file${fileArray.length > 1 ? "s" : ""}. ${buildSucceeded ? "It's ready to use!" : "Check the preview for details."}`;
+          const friendlyMsg = buildSucceeded
+            ? "Your app is ready! Try it out and let me know if you'd like any changes."
+            : "I created your app but the preview needs a small fix. Try sending a follow-up message.";
           postLlmPromises.push(
             convex.mutation(api.messages.create, {
               sessionId,
               role: "assistant",
               content: friendlyMsg,
-              timestamp: Date.now(),
-            }),
-          );
-        }
-
-        if (fileArray.length > 0) {
-          const fileList = fileArray.map((f) => f.path).join(", ");
-          postLlmPromises.push(
-            convex.mutation(api.messages.create, {
-              sessionId,
-              role: "system",
-              content: `Built ${fileArray.length} file${fileArray.length > 1 ? "s" : ""}: ${fileList}`,
               timestamp: Date.now(),
             }),
           );
