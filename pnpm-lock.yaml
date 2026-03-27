@@ -23,6 +23,9 @@ importers:
       '@convex-dev/rate-limiter':
         specifier: ^0.3.2
         version: 0.3.2(convex@1.34.0(react@19.2.4))(react@19.2.4)
+      '@convex-dev/stripe':
+        specifier: ^0.1.4
+        version: 0.1.4(@types/node@20.19.37)(convex@1.34.0(react@19.2.4))(react@19.2.4)
       '@dnd-kit/react':
         specifier: ^0.3.2
         version: 0.3.2(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -104,6 +107,9 @@ importers:
       sonner:
         specifier: ^2.0.7
         version: 2.0.7(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      stripe:
+        specifier: ^21.0.1
+        version: 21.0.1(@types/node@20.19.37)
       tailwind-merge:
         specifier: ^3.5.0
         version: 3.5.0
@@ -387,6 +393,12 @@ packages:
     peerDependenciesMeta:
       react:
         optional: true
+
+  '@convex-dev/stripe@0.1.4':
+    resolution: {integrity: sha512-HnINm3K2QHGvP0X4YV7KruCjQ1Ni0HE1qpJ5rZYjfdUbMcqJsX4ZYTmOo7tL83qtokS3EahKVkhXLCH/9Ms/og==}
+    peerDependencies:
+      convex: ^1.29.3
+      react: ^18.3.1 || ^19.0.0
 
   '@convex-dev/workpool@0.3.2':
     resolution: {integrity: sha512-jNPBHLCmZQXaztbBntZgIoM8JhKDmGwaIezZS/zPmX74PzON0Fgysgd9u+NOjJ04Dx2pN8ppBH9ElpsKxCOBpA==}
@@ -4585,6 +4597,24 @@ packages:
     resolution: {integrity: sha512-6fPc+R4ihwqP6N/aIv2f1gMH8lOVtWQHoqC4yK6oSDVVocumAsfCqjkXnqiYMhmMwS/mEHLp7Vehlt3ql6lEig==}
     engines: {node: '>=8'}
 
+  stripe@20.4.1:
+    resolution: {integrity: sha512-axCguHItc8Sxt0HC6aSkdVRPffjYPV7EQqZRb2GkIa8FzWDycE7nHJM19C6xAIynH1Qp1/BHiopSi96jGBxT0w==}
+    engines: {node: '>=16'}
+    peerDependencies:
+      '@types/node': '>=16'
+    peerDependenciesMeta:
+      '@types/node':
+        optional: true
+
+  stripe@21.0.1:
+    resolution: {integrity: sha512-ocv0j7dWttswDWV2XL/kb6+yiLpDXNXL3RQAOB5OB2kr49z0cEatdQc12+zP/j5nrXk6rAsT4N3y/NUvBbK7Pw==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      '@types/node': '>=18'
+    peerDependenciesMeta:
+      '@types/node':
+        optional: true
+
   style-to-js@1.1.21:
     resolution: {integrity: sha512-RjQetxJrrUJLQPHbLku6U/ocGtzyjbJMP9lCNK7Ag0CNh690nSH8woqWH9u16nMjYBAok+i7JO1NP2pOy8IsPQ==}
 
@@ -5284,6 +5314,14 @@ snapshots:
       convex: 1.34.0(react@19.2.4)
     optionalDependencies:
       react: 19.2.4
+
+  '@convex-dev/stripe@0.1.4(@types/node@20.19.37)(convex@1.34.0(react@19.2.4))(react@19.2.4)':
+    dependencies:
+      convex: 1.34.0(react@19.2.4)
+      react: 19.2.4
+      stripe: 20.4.1(@types/node@20.19.37)
+    transitivePeerDependencies:
+      - '@types/node'
 
   '@convex-dev/workpool@0.3.2(convex-helpers@0.1.114(@standard-schema/spec@1.1.0)(convex@1.34.0(react@19.2.4))(react@19.2.4)(typescript@5.9.3)(zod@4.3.6))(convex@1.34.0(react@19.2.4))':
     dependencies:
@@ -9743,6 +9781,14 @@ snapshots:
       min-indent: 1.0.1
 
   strip-json-comments@3.1.1: {}
+
+  stripe@20.4.1(@types/node@20.19.37):
+    optionalDependencies:
+      '@types/node': 20.19.37
+
+  stripe@21.0.1(@types/node@20.19.37):
+    optionalDependencies:
+      '@types/node': 20.19.37
 
   style-to-js@1.1.21:
     dependencies:
