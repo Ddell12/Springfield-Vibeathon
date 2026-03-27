@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -69,6 +69,37 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
     buildFailed,
     reset,
   } = useStreaming();
+
+  // Fallback: recover bundle from Convex if SSE event was lost
+  const activeSessionId_forQuery = sessionId ?? initialSessionId;
+  const shouldRecoverBundle = status === "live" && !bundleHtml && !buildFailed && !!activeSessionId_forQuery;
+  const recoveredBundle = useQuery(
+    api.generated_files.getByPath,
+    shouldRecoverBundle
+      ? { sessionId: activeSessionId_forQuery as Id<"sessions">, path: "_bundle.html" }
+      : "skip"
+  );
+
+  const bundleRecoveredRef = useRef(false);
+
+  useEffect(() => {
+    if (recoveredBundle?.contents && !bundleHtml && !bundleRecoveredRef.current) {
+      bundleRecoveredRef.current = true;
+      resumeSession({
+        sessionId: activeSessionId_forQuery!,
+        files: files,
+        blueprint: blueprint ?? null,
+        bundleHtml: recoveredBundle.contents,
+      });
+    }
+  }, [recoveredBundle, bundleHtml, activeSessionId_forQuery, files, blueprint, resumeSession]);
+
+  // Reset recovery guard when generation restarts
+  useEffect(() => {
+    if (status === "generating") {
+      bundleRecoveredRef.current = false;
+    }
+  }, [status]);
 
   // Auto-switch to preview when bundle is ready (perceived speed boost)
   useEffect(() => {
