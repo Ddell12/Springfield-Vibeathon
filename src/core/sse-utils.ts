@@ -20,8 +20,11 @@ export function parseSSEChunks(text: string): Array<{ event: string; data: unkno
     if (eventType && dataLine) {
       try {
         events.push({ event: eventType, data: JSON.parse(dataLine) });
-      } catch {
-        // Ignore malformed JSON
+      } catch (err) {
+        console.warn(
+          `[SSE] Failed to parse "${eventType}" event (${dataLine.length} chars):`,
+          err instanceof Error ? err.message : err,
+        );
       }
     }
   }
