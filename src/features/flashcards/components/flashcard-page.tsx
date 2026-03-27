@@ -14,6 +14,13 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/shared/components/ui/resizable";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/shared/components/ui/sheet";
+import { DeleteConfirmationDialog } from "@/shared/components/delete-confirmation-dialog";
 
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
@@ -23,6 +30,7 @@ import { DeckList } from "./deck-list";
 import { FlashcardChatPanel } from "./flashcard-chat-panel";
 import { FlashcardPreviewPanel } from "./flashcard-preview-panel";
 import { FlashcardToolbar } from "./flashcard-toolbar";
+import { RenameDeckDialog } from "./rename-deck-dialog";
 
 export function FlashcardPage() {
   const isMobile = useIsMobile();
@@ -31,7 +39,19 @@ export function FlashcardPage() {
   const [mobilePanel, setMobilePanel] = useState<"chat" | "preview">("chat");
   const [isEditingName, setIsEditingName] = useState(false);
   const [promptInput, setPromptInput] = useState("");
+
+  // Deck sheet state
+  const [deckSheetOpen, setDeckSheetOpen] = useState(false);
+
+  // Deck management dialog state
+  const [renameDeckId, setRenameDeckId] = useState<Id<"flashcardDecks"> | null>(null);
+  const [renameDeckTitle, setRenameDeckTitle] = useState("");
+  const [deleteDeckId, setDeleteDeckId] = useState<Id<"flashcardDecks"> | null>(null);
+  const [deleteDeckTitle, setDeleteDeckTitle] = useState("");
+
   const updateTitle = useMutation(api.sessions.updateTitle);
+  const updateDeck = useMutation(api.flashcard_decks.update);
+  const removeDeck = useMutation(api.flashcard_decks.remove);
 
   const currentSession = useQuery(
     api.sessions.get,
@@ -82,6 +102,42 @@ export function FlashcardPage() {
     reset();
     setActiveDeckId(null);
     window.location.href = "/flashcards?new=1";
+  };
+
+  // Deck management handlers
+  const handleRenameDeck = (deckId: Id<"flashcardDecks">, title: string) => {
+    setRenameDeckId(deckId);
+    setRenameDeckTitle(title);
+  };
+
+  const handleConfirmRename = async (newName: string) => {
+    if (!renameDeckId) return;
+    try {
+      await updateDeck({ deckId: renameDeckId, title: newName });
+      toast.success("Deck renamed");
+    } catch {
+      toast.error("Failed to rename deck");
+    }
+    setRenameDeckId(null);
+  };
+
+  const handleDeleteDeck = (deckId: Id<"flashcardDecks">, title: string) => {
+    setDeleteDeckId(deckId);
+    setDeleteDeckTitle(title);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteDeckId) return;
+    try {
+      await removeDeck({ deckId: deleteDeckId });
+      if (activeDeckId === deleteDeckId) {
+        setActiveDeckId(null);
+      }
+      toast.success("Deck deleted");
+    } catch {
+      toast.error("Failed to delete deck");
+    }
+    setDeleteDeckId(null);
   };
 
   const showPromptScreen = !sessionId && status === "idle";
@@ -135,7 +191,7 @@ export function FlashcardPage() {
           />
         </div>
       ) : (
-        /* Phase 2: Toolbar + split-panel layout */
+        /* Phase 2: Toolbar + 2-panel layout */
         <>
           <FlashcardToolbar
             status={status}
@@ -144,6 +200,7 @@ export function FlashcardPage() {
             onNameEditStart={() => setIsEditingName(true)}
             onNameEditEnd={handleNameEditEnd}
             onNewChat={handleNewChat}
+            onOpenDeckSheet={() => setDeckSheetOpen(true)}
             isMobile={isMobile}
             mobilePanel={mobilePanel}
             onMobilePanelChange={setMobilePanel}
@@ -164,14 +221,17 @@ export function FlashcardPage() {
                   </div>
                 ) : (
                   <div className="h-full overflow-hidden rounded-2xl bg-surface-container-lowest">
-                    <FlashcardPreviewPanel activeDeckId={activeDeckId} />
+                    <FlashcardPreviewPanel
+                      activeDeckId={activeDeckId}
+                      onOpenDeckSheet={() => setDeckSheetOpen(true)}
+                    />
                   </div>
                 )}
               </div>
             ) : (
-              /* Desktop: 3-panel resizable layout */
+              /* Desktop: 2-panel resizable layout (matching builder pattern) */
               <ResizablePanelGroup orientation="horizontal" className="h-full">
-                <ResizablePanel defaultSize={25} minSize={20}>
+                <ResizablePanel defaultSize={30} minSize={20}>
                   <div className="h-full overflow-hidden rounded-2xl bg-surface-container-lowest">
                     <FlashcardChatPanel
                       sessionId={sessionId}
@@ -184,17 +244,12 @@ export function FlashcardPage() {
 
                 <ResizableHandle withHandle />
 
-                <ResizablePanel defaultSize={50} minSize={30}>
+                <ResizablePanel defaultSize={70} minSize={30}>
                   <div className="h-full overflow-hidden rounded-2xl bg-surface-container-lowest">
-                    <FlashcardPreviewPanel activeDeckId={activeDeckId} />
-                  </div>
-                </ResizablePanel>
-
-                <ResizableHandle withHandle />
-
-                <ResizablePanel defaultSize={25} minSize={15} maxSize={30}>
-                  <div className="h-full overflow-hidden rounded-2xl bg-surface-container-lowest p-4">
-                    <DeckList activeDeckId={activeDeckId} onSelectDeck={setActiveDeckId} />
+                    <FlashcardPreviewPanel
+                      activeDeckId={activeDeckId}
+                      onOpenDeckSheet={() => setDeckSheetOpen(true)}
+                    />
                   </div>
                 </ResizablePanel>
               </ResizablePanelGroup>
@@ -202,6 +257,40 @@ export function FlashcardPage() {
           </div>
         </>
       )}
+
+      {/* Deck management sheet */}
+      <Sheet open={deckSheetOpen} onOpenChange={setDeckSheetOpen}>
+        <SheetContent side="right" className="w-80 sm:w-96">
+          <SheetHeader>
+            <SheetTitle className="font-headline">Your Decks</SheetTitle>
+          </SheetHeader>
+          <div className="mt-4 overflow-y-auto">
+            <DeckList
+              activeDeckId={activeDeckId}
+              onSelectDeck={setActiveDeckId}
+              onRenameDeck={handleRenameDeck}
+              onDeleteDeck={handleDeleteDeck}
+              onClose={() => setDeckSheetOpen(false)}
+            />
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* Rename deck dialog */}
+      <RenameDeckDialog
+        open={renameDeckId !== null}
+        onOpenChange={(open) => { if (!open) setRenameDeckId(null); }}
+        currentName={renameDeckTitle}
+        onConfirm={handleConfirmRename}
+      />
+
+      {/* Delete deck confirmation */}
+      <DeleteConfirmationDialog
+        open={deleteDeckId !== null}
+        onOpenChange={(open) => { if (!open) setDeleteDeckId(null); }}
+        projectName={deleteDeckTitle}
+        onConfirmDelete={handleConfirmDelete}
+      />
     </div>
   );
 }
