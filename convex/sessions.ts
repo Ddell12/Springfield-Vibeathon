@@ -4,8 +4,8 @@ import { mutation, query } from "./_generated/server";
 import { assertSessionOwner, getAuthUserId } from "./lib/auth";
 import {
   SESSION_STATES,
-  VALID_TRANSITIONS,
   type SessionState,
+  VALID_TRANSITIONS,
 } from "./lib/session_states";
 
 export const create = mutation({
