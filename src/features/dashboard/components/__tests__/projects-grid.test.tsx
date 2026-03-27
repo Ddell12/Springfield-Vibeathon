@@ -1,9 +1,9 @@
 import { render, screen } from "@testing-library/react";
 
-import type { ProjectData } from "../project-card";
+import type { ProjectData } from "@/shared/components/project-card";
 import { ProjectsGrid } from "../projects-grid";
 
-vi.mock("../project-card", () => ({
+vi.mock("@/shared/components/project-card", () => ({
   ProjectCard: ({ project, index }: any) => (
     <div data-testid="project-card" data-index={index}>
       {project.title}

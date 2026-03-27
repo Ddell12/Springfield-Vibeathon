@@ -15,7 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/components/ui
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 import { MainPromptInput } from "./main-prompt-input";
-import { ProjectCard } from "./project-card";
+import { ProjectCard } from "@/shared/components/project-card";
 import { TemplatesTab } from "./templates-tab";
 
 const TEMPLATE_CHIPS = [

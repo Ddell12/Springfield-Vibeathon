@@ -71,7 +71,7 @@ vi.mock("../main-prompt-input", () => ({
   MainPromptInput: () => <div data-testid="prompt-input" />,
 }));
 
-vi.mock("../project-card", () => ({
+vi.mock("@/shared/components/project-card", () => ({
   ProjectCard: ({ project }: any) => (
     <div data-testid="project-card">{project.title}</div>
   ),

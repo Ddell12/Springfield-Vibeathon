@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 
-import { ProjectCard, type ProjectData } from "../project-card";
+import { ProjectCard, type ProjectData } from "@/shared/components/project-card";
 
 const mockPush = vi.fn();
 vi.mock("next/navigation", () => ({

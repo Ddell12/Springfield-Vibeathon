@@ -4,7 +4,7 @@ import { useMutation, useQuery } from "convex/react";
 import Link from "next/link";
 import { useState } from "react";
 
-import { ProjectCard } from "@/features/dashboard/components/project-card";
+import { ProjectCard } from "@/shared/components/project-card";
 import { DeleteConfirmationDialog } from "@/shared/components/delete-confirmation-dialog";
 import { MaterialIcon } from "@/shared/components/material-icon";
 

@@ -5,7 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { parseSSEChunks } from "@/core/sse-utils";
 import { extractErrorMessage } from "@/core/utils";
 import { type TherapyBlueprint,TherapyBlueprintSchema } from "@/features/builder/lib/schemas";
-import { parseSSEEvent,type SSEEvent } from "@/features/builder/lib/sse-events";
+import { parseSSEEvent,type SSEEvent } from "@/core/sse-events";
 
 export type StreamingStatus = "idle" | "generating" | "live" | "failed";
 

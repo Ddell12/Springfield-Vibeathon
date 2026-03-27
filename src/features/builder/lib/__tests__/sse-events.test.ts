@@ -1,4 +1,4 @@
-import { parseSSEEvent } from "../sse-events";
+import { parseSSEEvent } from "@/core/sse-events";
 
 describe("parseSSEEvent", () => {
   it("parses session event", () => {
