@@ -1,6 +1,7 @@
+import { registerRoutes } from "@convex-dev/stripe";
 import { httpRouter } from "convex/server";
 
-import { internal } from "./_generated/api";
+import { components, internal } from "./_generated/api";
 import { httpAction } from "./_generated/server";
 
 // Hardcoded: Convex httpAction runs in V8 runtime — no process.env access. Update on domain change.
@@ -63,6 +64,11 @@ http.route({
       },
     });
   }),
+});
+
+// Stripe webhook — @convex-dev/stripe handles signature verification and event dispatch
+registerRoutes(http, components.stripe, {
+  webhookPath: "/stripe/webhook",
 });
 
 export default http;

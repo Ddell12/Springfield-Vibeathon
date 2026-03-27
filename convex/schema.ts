@@ -49,7 +49,8 @@ export default defineSchema({
   })
     .index("by_share_slug", ["shareSlug"])
     .index("by_session", ["sessionId"])
-    .index("by_created", ["createdAt"]),
+    .index("by_created", ["createdAt"])
+    .index("by_user", ["userId"]),
 
   appState: defineTable({
     appId: v.string(),
