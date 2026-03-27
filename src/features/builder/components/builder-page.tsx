@@ -20,7 +20,6 @@ import {
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 import { useProgressNarration } from "../hooks/use-progress-narration";
-import { usePublishing } from "../hooks/use-publishing";
 import { useSessionResume } from "../hooks/use-session-resume";
 import { useStreaming } from "../hooks/use-streaming";
 import { THERAPY_SUGGESTIONS } from "../lib/constants";
@@ -31,7 +30,6 @@ import { CodePanel } from "./code-panel";
 import { ContinueCard } from "./continue-card";
 import { InterviewController } from "./interview/interview-controller";
 import { PreviewPanel } from "./preview-panel";
-import { PublishSuccessModal } from "./publish-success-modal";
 
 interface BuilderPageProps {
   initialSessionId: string | null;
@@ -141,16 +139,6 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
   // Derive app name: prefer Convex session title (reactive) > blueprint > default
   const appName = currentSession?.title
     ?? (typeof blueprint?.title === "string" ? blueprint.title : "Untitled App");
-
-  // Publishing
-  const {
-    isPublishing,
-    publishedUrl,
-    publishModalOpen,
-    setPublishModalOpen,
-    handlePublish,
-    setPublishedUrl,
-  } = usePublishing(sessionId, appName);
 
   // Auto-submit prompt from URL
   const promptFromUrl = searchParams.get("prompt");
@@ -281,13 +269,11 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
             deviceSize={deviceSize}
             onDeviceSizeChange={setDeviceSize}
             status={status}
-            isPublishing={isPublishing}
             projectName={appName}
             isEditingName={isEditingName}
             onNameEditStart={() => setIsEditingName(true)}
             onNameEditEnd={handleNameEditEnd}
             onShare={handleShare}
-            onPublish={handlePublish}
             onNewChat={() => {
               reset();
               router.push("/builder");
@@ -392,18 +378,6 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
         onOpenChange={setShareDialogOpen}
         shareSlug={appRecord?.shareSlug ?? ""}
         appTitle={appName}
-        publishedUrl={appRecord?.publishedUrl ?? publishedUrl ?? undefined}
-      />
-
-      <PublishSuccessModal
-        open={publishModalOpen}
-        onOpenChange={setPublishModalOpen}
-        projectName={appName}
-        publishedUrl={publishedUrl ?? ""}
-        onBackToBuilder={() => {
-          setPublishModalOpen(false);
-          setPublishedUrl(null);
-        }}
       />
     </div>
   );

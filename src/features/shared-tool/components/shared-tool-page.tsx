@@ -8,15 +8,6 @@ import { MaterialIcon } from "@/shared/components/material-icon";
 
 import { api } from "../../../../convex/_generated/api";
 
-function isValidPreviewUrl(url: string): boolean {
-  try {
-    const parsed = new URL(url);
-    return parsed.protocol === "https:" || parsed.protocol === "http:";
-  } catch {
-    return false;
-  }
-}
-
 export function SharedToolPage() {
   const params = useParams();
   const slug = typeof params?.toolId === "string" ? params.toolId : "";
@@ -53,8 +44,7 @@ export function SharedToolPage() {
     );
   }
 
-  const rawUrl = app.publishedUrl ?? app.previewUrl;
-  const previewUrl = rawUrl && isValidPreviewUrl(rawUrl) ? rawUrl : null;
+  const bundleUrl = app.sessionId ? `/api/tool/${slug}` : null;
 
   return (
     <div className="bg-surface font-body text-on-surface min-h-screen flex flex-col">
@@ -70,10 +60,10 @@ export function SharedToolPage() {
       </header>
 
       <main className="flex-1 flex flex-col items-center px-4 py-6">
-        {previewUrl ? (
+        {bundleUrl ? (
           <div className="w-full max-w-5xl flex-1">
             <iframe
-              src={previewUrl}
+              src={bundleUrl}
               title={app.title}
               className="w-full h-[70vh] rounded-xl border border-outline-variant/20 shadow-lg"
               sandbox="allow-scripts"

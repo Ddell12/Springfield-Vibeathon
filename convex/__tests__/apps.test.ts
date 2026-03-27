@@ -60,22 +60,6 @@ describe("apps", () => {
     expect(app?.description).toBe("New description");
   });
 
-  it("update patches publishedUrl without touching title", async () => {
-    const t = convexTest(schema, modules).withIdentity(TEST_IDENTITY);
-    const appId = await t.mutation(api.apps.create, {
-      title: "Stable Title",
-      description: "Stable description",
-      shareSlug: "publish-test-slug",
-    });
-    await t.mutation(api.apps.update, {
-      appId,
-      publishedUrl: "https://vercel.app/my-app",
-    });
-    const app = await t.query(api.apps.get, { appId });
-    expect(app?.title).toBe("Stable Title");
-    expect(app?.publishedUrl).toBe("https://vercel.app/my-app");
-  });
-
   it("list returns created apps ordered by creation time descending", async () => {
     const t = convexTest(schema, modules).withIdentity(TEST_IDENTITY);
     await t.mutation(api.apps.create, {

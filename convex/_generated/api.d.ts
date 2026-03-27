@@ -27,7 +27,6 @@ import type * as lib_auth from "../lib/auth.js";
 import type * as lib_billing from "../lib/billing.js";
 import type * as lib_session_states from "../lib/session_states.js";
 import type * as messages from "../messages.js";
-import type * as publish from "../publish.js";
 import type * as rate_limit_check from "../rate_limit_check.js";
 import type * as rate_limits from "../rate_limits.js";
 import type * as seeds_image_seeds from "../seeds/image_seeds.js";
@@ -65,7 +64,6 @@ declare const fullApi: ApiFromModules<{
   "lib/billing": typeof lib_billing;
   "lib/session_states": typeof lib_session_states;
   messages: typeof messages;
-  publish: typeof publish;
   rate_limit_check: typeof rate_limit_check;
   rate_limits: typeof rate_limits;
   "seeds/image_seeds": typeof seeds_image_seeds;

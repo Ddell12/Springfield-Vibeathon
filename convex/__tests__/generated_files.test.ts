@@ -272,3 +272,68 @@ describe("generated_files — version-tracked file operations", () => {
     });
   });
 });
+
+describe("getPublicBundle — public bundle serving via share slug", () => {
+  it("returns bundle HTML when app and _bundle.html exist", async () => {
+    const t = convexTest(schema, modules).withIdentity(TEST_IDENTITY);
+    const sessionId = await t.mutation(api.sessions.create, {
+      title: "Test",
+      query: "test",
+    });
+    await t.mutation(api.apps.create, {
+      title: "Shared App",
+      description: "Test app",
+      shareSlug: "bundle-test-slug",
+      sessionId,
+    });
+    await t.mutation(api.generated_files.upsert, {
+      sessionId,
+      path: "_bundle.html",
+      contents: "<html><body>Hello World</body></html>",
+      version: 1,
+    });
+    const html = await t.query(api.generated_files.getPublicBundle, {
+      shareSlug: "bundle-test-slug",
+    });
+    expect(html).toBe("<html><body>Hello World</body></html>");
+  });
+
+  it("returns null when share slug does not exist", async () => {
+    const t = convexTest(schema, modules);
+    const html = await t.query(api.generated_files.getPublicBundle, {
+      shareSlug: "nonexistent-slug",
+    });
+    expect(html).toBeNull();
+  });
+
+  it("returns null when app has no sessionId", async () => {
+    const t = convexTest(schema, modules).withIdentity(TEST_IDENTITY);
+    await t.mutation(api.apps.create, {
+      title: "No Session App",
+      description: "Missing session",
+      shareSlug: "no-session-slug",
+    });
+    const html = await t.query(api.generated_files.getPublicBundle, {
+      shareSlug: "no-session-slug",
+    });
+    expect(html).toBeNull();
+  });
+
+  it("returns null when _bundle.html does not exist for session", async () => {
+    const t = convexTest(schema, modules).withIdentity(TEST_IDENTITY);
+    const sessionId = await t.mutation(api.sessions.create, {
+      title: "Test",
+      query: "test",
+    });
+    await t.mutation(api.apps.create, {
+      title: "No Bundle App",
+      description: "No bundle yet",
+      shareSlug: "no-bundle-slug",
+      sessionId,
+    });
+    const html = await t.query(api.generated_files.getPublicBundle, {
+      shareSlug: "no-bundle-slug",
+    });
+    expect(html).toBeNull();
+  });
+});

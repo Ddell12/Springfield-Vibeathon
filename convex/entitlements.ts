@@ -16,7 +16,7 @@ export const getEntitlements = query({
     );
 
     const hasActive = subscriptions.some(
-      (sub) => sub.status === "active" || sub.status === "trialing",
+      (sub: { status: string }) => sub.status === "active" || sub.status === "trialing",
     );
 
     if (hasActive) {

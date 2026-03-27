@@ -132,59 +132,6 @@ describe("ShareDialog", () => {
     expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 
-  test("renders 'Preview Link' tab when no publishedUrl is provided", () => {
-    render(<ShareDialog {...defaultProps} />);
-    // Should show preview link tab (the share-slug based link)
-    expect(screen.getByText(/preview link/i)).toBeInTheDocument();
-  });
-
-  test("renders 'Published Link' tab when publishedUrl is provided", () => {
-    render(
-      <ShareDialog
-        {...defaultProps}
-        publishedUrl="https://bridges-morning-routine.vercel.app"
-      />
-    );
-    expect(screen.getByText(/published link/i)).toBeInTheDocument();
-  });
-
-  test("'Published Link' tab displays the Vercel URL when clicked", async () => {
-    const user = userEvent.setup();
-    render(
-      <ShareDialog
-        {...defaultProps}
-        publishedUrl="https://bridges-morning-routine.vercel.app"
-      />
-    );
-
-    // Click the Published Link tab
-    const publishedTab = screen.getByText(/published link/i);
-    await user.click(publishedTab);
-
-    // URL is displayed as text in a span
-    expect(screen.getByText(/vercel\.app/)).toBeInTheDocument();
-  });
-
-  test("switching tabs changes the displayed URL", async () => {
-    const user = userEvent.setup();
-    render(
-      <ShareDialog
-        {...defaultProps}
-        publishedUrl="https://bridges-morning-routine.vercel.app"
-      />
-    );
-
-    // Preview link tab shows the slug URL by default
-    expect(screen.getByText(/\/tool\/abc1234567/)).toBeInTheDocument();
-
-    // Switch to Published Link tab
-    const publishedTab = screen.getByText(/published link/i);
-    await user.click(publishedTab);
-
-    // Now the Vercel URL should be displayed
-    expect(screen.getByText(/vercel\.app/)).toBeInTheDocument();
-  });
-
   test("handleShare is called and navigator.share succeeds", async () => {
     const mockShare = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(navigator, "share", {
@@ -219,27 +166,6 @@ describe("ShareDialog", () => {
     const shareButton = screen.getByRole("button", { name: /^share$/i });
     // Should not throw
     await expect(user.click(shareButton)).resolves.not.toThrow();
-  });
-
-  test("clicking 'Preview Link' tab sets activeTab to preview", async () => {
-    const user = userEvent.setup();
-    render(
-      <ShareDialog
-        {...defaultProps}
-        publishedUrl="https://bridges-morning-routine.vercel.app"
-      />
-    );
-
-    // Switch to published first
-    const publishedTab = screen.getByText(/published link/i);
-    await user.click(publishedTab);
-
-    // Now click preview tab to switch back
-    const previewTab = screen.getByText(/preview link/i);
-    await user.click(previewTab);
-
-    // URL should revert back to slug URL
-    expect(screen.getByText(/\/tool\/abc1234567/)).toBeInTheDocument();
   });
 
   test("Close button in header calls onOpenChange(false)", async () => {

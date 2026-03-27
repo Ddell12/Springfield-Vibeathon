@@ -23,7 +23,6 @@ const baseProps = {
   deviceSize: "desktop" as const,
   onDeviceSizeChange: vi.fn(),
   status: "idle" as const,
-  isPublishing: false,
   projectName: "My Cool App",
 };
 
@@ -93,39 +92,6 @@ describe("BuilderToolbar", () => {
     render(<BuilderToolbar {...baseProps} onShare={onShare} />);
     fireEvent.click(screen.getByRole("button", { name: /Share/i }));
     expect(onShare).toHaveBeenCalled();
-  });
-
-  it("Publish button is enabled when not generating and not publishing", () => {
-    render(
-      <BuilderToolbar
-        {...baseProps}
-        status="idle"
-        isPublishing={false}
-      />
-    );
-    const publishBtn = screen.getByRole("button", { name: /Publish/i });
-    expect(publishBtn).not.toBeDisabled();
-  });
-
-  it("Publish button is disabled when isPublishing=true", () => {
-    render(
-      <BuilderToolbar
-        {...baseProps}
-        status="idle"
-        isPublishing={true}
-      />
-    );
-    // isPublishing shows spinner, no "Publish" text, find by button with icon
-    const buttons = screen.getAllByRole("button");
-    // The rightmost button (Publish/spinner) should be disabled
-    const publishBtn = buttons[buttons.length - 1];
-    expect(publishBtn).toBeDisabled();
-  });
-
-  it("isPublishing=true shows spinner icon instead of 'Publish' text", () => {
-    render(<BuilderToolbar {...baseProps} isPublishing={true} />);
-    expect(screen.queryByText("Publish")).not.toBeInTheDocument();
-    expect(screen.getByText("progress_activity")).toBeInTheDocument();
   });
 
   it("status='generating' shows 'Building your app' indicator", () => {

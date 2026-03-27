@@ -101,3 +101,23 @@ export const getByPath = query({
     return result ?? null;
   },
 });
+
+/** Public query — serves bundle HTML for shared apps. No auth required. */
+export const getPublicBundle = query({
+  args: { shareSlug: v.string() },
+  handler: async (ctx, args) => {
+    const app = await ctx.db
+      .query("apps")
+      .withIndex("by_share_slug", (q) => q.eq("shareSlug", args.shareSlug))
+      .first();
+    const sessionId = app?.sessionId;
+    if (!sessionId) return null;
+    const file = await ctx.db
+      .query("files")
+      .withIndex("by_session_path", (q) =>
+        q.eq("sessionId", sessionId).eq("path", "_bundle.html")
+      )
+      .first();
+    return file?.contents ?? null;
+  },
+});

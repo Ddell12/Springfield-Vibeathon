@@ -39,6 +39,7 @@ const mockProject = {
   title: "Emma's Feelings Board",
   description: "Tap an emoji to express how you're feeling today",
   shareSlug: "abc123",
+  sessionId: "session123",
   fragment: {
     title: "Emma's Feelings Board",
     description: "Feelings board",
@@ -95,5 +96,18 @@ describe("SharedToolPage", () => {
     const ctaLinks = screen.getAllByRole("link", { name: /build your own|create|builder/i });
     expect(ctaLinks.length).toBeGreaterThanOrEqual(1);
     expect(ctaLinks[0]).toHaveAttribute("href", "/builder");
+  });
+
+  test("renders iframe with /api/tool/{slug} src when app exists", () => {
+    vi.mocked(convexReact.useQuery).mockReturnValue({
+      ...mockProject,
+      sessionId: "session123",
+    });
+
+    render(<SharedToolPage />);
+
+    const iframe = document.querySelector("iframe");
+    expect(iframe).not.toBeNull();
+    expect(iframe?.getAttribute("src")).toBe("/api/tool/abc123");
   });
 });
