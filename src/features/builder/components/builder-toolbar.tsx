@@ -28,6 +28,7 @@ interface BuilderToolbarProps {
   isMobile?: boolean;
   mobilePanel?: "chat" | "preview";
   onMobilePanelChange?: (panel: "chat" | "preview") => void;
+  hasFiles?: boolean;
 }
 
 const DEVICE_OPTIONS: { key: DeviceSize; icon: string; label: string }[] = [
@@ -52,6 +53,7 @@ export function BuilderToolbar({
   isMobile,
   mobilePanel,
   onMobilePanelChange,
+  hasFiles,
 }: BuilderToolbarProps) {
   const isGenerating = status === "generating";
   const canPublish = !isGenerating && !isPublishing;
@@ -114,7 +116,7 @@ export function BuilderToolbar({
               <span className="h-1.5 w-1.5 rounded-full bg-primary-container" />
             </span>
             <span className="text-xs font-medium text-on-surface-variant/70">
-              Loading Live Preview&#8230;
+              Building your app&#8230;
             </span>
           </div>
         )}
@@ -169,19 +171,6 @@ export function BuilderToolbar({
           >
             Preview
           </button>
-          <button
-            role="tab"
-            aria-selected={view === "code"}
-            onClick={() => onViewChange("code")}
-            className={cn(
-              "rounded-md px-3 py-1 text-[13px] font-semibold transition-colors duration-200",
-              view === "code"
-                ? "bg-white text-primary shadow-sm"
-                : "text-on-surface-variant hover:text-primary"
-            )}
-          >
-            Code
-          </button>
         </div>
 
         {/* Separator */}
@@ -216,8 +205,21 @@ export function BuilderToolbar({
         </div>
       </div>
 
-      {/* Right section: Share + Publish */}
+      {/* Right section: View Source + Share + Publish */}
       <div className="flex flex-shrink-0 items-center gap-2">
+        {!isGenerating && hasFiles && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="min-h-[44px] gap-1.5 rounded-md px-3 text-xs font-semibold text-on-surface-variant transition-all active:scale-95"
+            onClick={() => onViewChange("code")}
+            aria-label="View source"
+            title="View source code"
+          >
+            <MaterialIcon icon="code" size="sm" />
+            <span className="hidden sm:inline">Source</span>
+          </Button>
+        )}
         <Button
           variant="ghost"
           size="sm"

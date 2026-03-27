@@ -128,9 +128,9 @@ describe("BuilderToolbar", () => {
     expect(screen.getByText("progress_activity")).toBeInTheDocument();
   });
 
-  it("status='generating' shows 'Loading Live Preview' indicator", () => {
+  it("status='generating' shows 'Building your app' indicator", () => {
     render(<BuilderToolbar {...baseProps} status="generating" />);
-    expect(screen.getByText(/Loading Live Preview/)).toBeInTheDocument();
+    expect(screen.getByText(/building your app/i)).toBeInTheDocument();
   });
 
   it("isMobile + onMobilePanelChange shows Chat/Preview toggle", () => {
@@ -161,11 +161,25 @@ describe("BuilderToolbar", () => {
     expect(onDeviceSizeChange).toHaveBeenCalledWith("mobile");
   });
 
-  it("view toggle Preview/Code calls onViewChange", () => {
+  it("'View source' button calls onViewChange('code')", () => {
     const onViewChange = vi.fn();
-    render(<BuilderToolbar {...baseProps} onViewChange={onViewChange} view="preview" />);
-    const codeTabs = screen.getAllByRole("tab", { name: "Code" });
-    fireEvent.click(codeTabs[0]);
+    render(<BuilderToolbar {...baseProps} onViewChange={onViewChange} status="live" hasFiles={true} />);
+    fireEvent.click(screen.getByRole("button", { name: /view source/i }));
     expect(onViewChange).toHaveBeenCalledWith("code");
+  });
+
+  it("does not render 'Code' tab in segmented control", () => {
+    render(<BuilderToolbar {...baseProps} />);
+    expect(screen.queryByRole("tab", { name: /code/i })).not.toBeInTheDocument();
+  });
+
+  it("shows 'View source' button when live with files", () => {
+    render(<BuilderToolbar {...baseProps} status="live" hasFiles={true} />);
+    expect(screen.getByRole("button", { name: /view source/i })).toBeInTheDocument();
+  });
+
+  it("hides 'View source' button when generating", () => {
+    render(<BuilderToolbar {...baseProps} status="generating" hasFiles={true} />);
+    expect(screen.queryByRole("button", { name: /view source/i })).not.toBeInTheDocument();
   });
 });
