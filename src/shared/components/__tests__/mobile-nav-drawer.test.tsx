@@ -1,6 +1,16 @@
-import { fireEvent,render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 
 import { MobileNavDrawer } from "../mobile-nav-drawer";
+
+vi.mock("@clerk/nextjs", () => ({
+  useUser: () => ({
+    user: {
+      firstName: "Test",
+      fullName: "Test User",
+      primaryEmailAddress: { emailAddress: "test@example.com" },
+    },
+  }),
+}));
 
 vi.mock("next/link", () => ({
   default: ({ href, children, ...props }: any) => <a href={href} {...props}>{children}</a>,
@@ -33,7 +43,7 @@ vi.mock("next/navigation", () => ({
 
 vi.mock("@/shared/lib/navigation", () => ({
   NAV_ITEMS: [
-    { icon: "home", label: "Home", href: "/" },
+    { icon: "home", label: "Home", href: "/dashboard" },
     { icon: "auto_awesome", label: "Builder", href: "/builder" },
   ],
   isNavActive: vi.fn().mockReturnValue(false),

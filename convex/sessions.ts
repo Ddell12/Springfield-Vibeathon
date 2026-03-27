@@ -12,6 +12,7 @@ export const create = mutation({
   args: {
     title: v.string(),
     query: v.string(),
+    type: v.optional(v.union(v.literal("builder"), v.literal("flashcards"))),
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
@@ -20,6 +21,7 @@ export const create = mutation({
       title: args.title,
       query: args.query,
       state: SESSION_STATES.IDLE,
+      type: args.type,
     });
   },
 });

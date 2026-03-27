@@ -1,6 +1,20 @@
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 
 import { ProfileSection } from "../profile-section";
+
+const mockUpdate = vi.fn().mockResolvedValue({});
+
+vi.mock("@clerk/nextjs", () => ({
+  useUser: () => ({
+    isLoaded: true,
+    user: {
+      firstName: "Desha",
+      fullName: "Desha Dell",
+      primaryEmailAddress: { emailAddress: "desha@bridges.ai" },
+      update: mockUpdate,
+    },
+  }),
+}));
 
 vi.mock("@/shared/components/material-icon", () => ({
   MaterialIcon: ({ icon }: { icon: string }) => (
@@ -26,11 +40,7 @@ vi.mock("@/shared/components/ui/label", () => ({
 
 describe("ProfileSection", () => {
   beforeEach(() => {
-    vi.useFakeTimers();
-  });
-
-  afterEach(() => {
-    vi.useRealTimers();
+    mockUpdate.mockClear();
   });
 
   it("renders the Profile heading", () => {
@@ -38,32 +48,21 @@ describe("ProfileSection", () => {
     expect(screen.getByRole("heading", { name: /Profile/i })).toBeInTheDocument();
   });
 
-  it("renders avatar showing first letter of the default name", () => {
+  it("renders avatar showing first letter of user name from Clerk", () => {
     render(<ProfileSection />);
-    // Default name is "Desha", first letter is "D"
     expect(screen.getByText("D")).toBeInTheDocument();
   });
 
-  it("renders the display name input with default value", () => {
+  it("renders the display name input with Clerk user name", () => {
     render(<ProfileSection />);
     const input = screen.getByDisplayValue("Desha");
     expect(input).toBeInTheDocument();
   });
 
-  it("renders the email input as disabled", () => {
+  it("renders the email input as disabled with Clerk email", () => {
     render(<ProfileSection />);
-    const emailInput = screen.getByDisplayValue("user@bridges.ai");
+    const emailInput = screen.getByDisplayValue("desha@bridges.ai");
     expect(emailInput).toBeDisabled();
-  });
-
-  it("renders the role select with expected options", () => {
-    render(<ProfileSection />);
-    const select = screen.getByRole("combobox");
-    expect(select).toBeInTheDocument();
-    expect(screen.getByRole("option", { name: "Parent" })).toBeInTheDocument();
-    expect(screen.getByRole("option", { name: "ABA Therapist" })).toBeInTheDocument();
-    expect(screen.getByRole("option", { name: "Speech Therapist" })).toBeInTheDocument();
-    expect(screen.getByRole("option", { name: "Teacher" })).toBeInTheDocument();
   });
 
   it("save button shows 'Save changes' initially", () => {
@@ -71,15 +70,14 @@ describe("ProfileSection", () => {
     expect(screen.getByRole("button", { name: /Save changes/i })).toBeInTheDocument();
   });
 
-  it("save button shows 'Saved!' after click and resets after 2000ms", () => {
+  it("calls Clerk user.update on save", async () => {
     render(<ProfileSection />);
     const saveBtn = screen.getByRole("button", { name: /Save changes/i });
     fireEvent.click(saveBtn);
-    expect(screen.getByRole("button", { name: /Saved!/i })).toBeInTheDocument();
-    act(() => {
-      vi.advanceTimersByTime(2000);
+    // Wait for the async update
+    await vi.waitFor(() => {
+      expect(mockUpdate).toHaveBeenCalledWith({ firstName: "Desha" });
     });
-    expect(screen.getByRole("button", { name: /Save changes/i })).toBeInTheDocument();
   });
 
   it("avatar updates when display name changes", () => {

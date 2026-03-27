@@ -78,11 +78,11 @@ describe("SettingsSidebar", () => {
     expect(accountBtn.className).not.toContain("bg-primary-container");
   });
 
-  it("renders the back link to /", () => {
+  it("renders the back link to /dashboard", () => {
     render(
       <SettingsSidebar activeSection="profile" onSectionChange={onSectionChange} />
     );
     const backLink = screen.getByRole("link", { name: /Back/i });
-    expect(backLink).toHaveAttribute("href", "/");
+    expect(backLink).toHaveAttribute("href", "/dashboard");
   });
 });

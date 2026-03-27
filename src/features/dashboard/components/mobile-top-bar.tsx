@@ -7,7 +7,7 @@ export function MobileTopBar() {
   return (
     <header className="flex items-center justify-between px-4 py-3 md:hidden bg-surface-container">
       <Link
-        href="/"
+        href="/dashboard"
         className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary-container text-sm font-bold text-white"
       >
         B

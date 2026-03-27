@@ -22,6 +22,16 @@ vi.mock("@/shared/components/type-badge", () => ({
   ),
 }));
 
+vi.mock("@/shared/components/delete-confirmation-dialog", () => ({
+  DeleteConfirmationDialog: ({ open, onConfirmDelete, projectName }: any) =>
+    open ? (
+      <div data-testid="delete-dialog">
+        <span>Delete {projectName}?</span>
+        <button onClick={onConfirmDelete}>Confirm Delete</button>
+      </div>
+    ) : null,
+}));
+
 describe("ToolCard", () => {
   it("renders the title", () => {
     render(
@@ -82,6 +92,22 @@ describe("ToolCard", () => {
     expect(link.closest("a")).toHaveAttribute("href", "/builder");
   });
 
+  it("shows Use Template link with prompt param when prompt is provided", () => {
+    render(
+      <ToolCard
+        title="Starter Template"
+        toolType="choice-board"
+        variant="template"
+        prompt="Build a token board"
+      />
+    );
+    const link = screen.getByText("Use Template");
+    expect(link.closest("a")).toHaveAttribute(
+      "href",
+      `/builder?prompt=${encodeURIComponent("Build a token board")}`
+    );
+  });
+
   it("does not show date for template variant", () => {
     render(
       <ToolCard
@@ -94,27 +120,19 @@ describe("ToolCard", () => {
     expect(screen.queryByText("March 20, 2026")).not.toBeInTheDocument();
   });
 
-  it("calls onDelete when delete button clicked and user confirms", () => {
+  it("opens delete dialog and calls onDelete when confirmed", () => {
     const onDelete = vi.fn();
-    vi.spyOn(window, "confirm").mockReturnValue(true);
     render(
       <ToolCard title="My Board" toolType="token-board" variant="tool" onDelete={onDelete} />
     );
+    // Click delete button to open dialog
     fireEvent.click(screen.getByTitle("Delete"));
-    expect(window.confirm).toHaveBeenCalledWith('Delete "My Board"? This cannot be undone.');
+    // Dialog should appear
+    expect(screen.getByTestId("delete-dialog")).toBeInTheDocument();
+    expect(screen.getByText("Delete My Board?")).toBeInTheDocument();
+    // Confirm deletion
+    fireEvent.click(screen.getByText("Confirm Delete"));
     expect(onDelete).toHaveBeenCalledTimes(1);
-    vi.restoreAllMocks();
-  });
-
-  it("does not call onDelete when user cancels confirm dialog", () => {
-    const onDelete = vi.fn();
-    vi.spyOn(window, "confirm").mockReturnValue(false);
-    render(
-      <ToolCard title="My Board" toolType="token-board" variant="tool" onDelete={onDelete} />
-    );
-    fireEvent.click(screen.getByTitle("Delete"));
-    expect(onDelete).not.toHaveBeenCalled();
-    vi.restoreAllMocks();
   });
 
   it("calls onShare when share button is clicked", () => {

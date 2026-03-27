@@ -62,7 +62,7 @@ export function BuilderToolbar({
       <div className="flex min-w-0 flex-shrink items-center gap-3">
         {/* Gradient back button */}
         <Link
-          href="/"
+          href="/dashboard"
           className="flex min-h-[44px] min-w-[44px] flex-shrink-0 items-center justify-center rounded bg-gradient-to-br from-primary-container to-primary text-white transition-transform active:scale-90"
           aria-label="Back to dashboard"
         >

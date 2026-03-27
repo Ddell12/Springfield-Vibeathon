@@ -1,5 +1,6 @@
 "use client";
 
+import { useUser } from "@clerk/nextjs";
 import { useState } from "react";
 
 import { MaterialIcon } from "@/shared/components/material-icon";
@@ -8,14 +9,36 @@ import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
 
 export function ProfileSection() {
-  const [displayName, setDisplayName] = useState("Desha");
-  const [role, setRole] = useState("ABA Therapist");
+  const { user, isLoaded } = useUser();
+  const [displayName, setDisplayName] = useState("");
+  const [nameInitialized, setNameInitialized] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleSave = () => {
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+  // Initialize from Clerk user data once loaded
+  if (isLoaded && user && !nameInitialized) {
+    setDisplayName(user.firstName ?? user.fullName ?? "");
+    setNameInitialized(true);
+  }
+
+  const handleSave = async () => {
+    if (!user || !displayName.trim()) return;
+    setSaving(true);
+    setError("");
+    try {
+      await user.update({ firstName: displayName.trim() });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch {
+      setError("Failed to save. Please try again.");
+    } finally {
+      setSaving(false);
+    }
   };
+
+  const initial = displayName.charAt(0)?.toUpperCase() || "?";
+  const email = user?.primaryEmailAddress?.emailAddress ?? "";
 
   return (
     <div className="flex flex-col gap-12">
@@ -27,11 +50,8 @@ export function ProfileSection() {
       {/* Avatar */}
       <div className="flex flex-col items-start gap-6">
         <div className="w-20 h-20 rounded-full bg-tertiary flex items-center justify-center text-on-tertiary text-3xl font-bold font-headline shadow-inner">
-          {displayName.charAt(0).toUpperCase()}
+          {initial}
         </div>
-        <button className="px-4 py-2 rounded-lg text-sm font-medium text-primary hover:bg-surface-container-high transition-colors outline outline-1 outline-outline-variant/15">
-          Change avatar
-        </button>
       </div>
 
       {/* Form fields */}
@@ -64,7 +84,7 @@ export function ProfileSection() {
           <Input
             id="email"
             type="email"
-            value="user@bridges.ai"
+            value={email}
             disabled
             className="w-full h-12 px-4 bg-surface-container-high border-none rounded-lg text-on-surface-variant cursor-not-allowed font-medium"
           />
@@ -73,37 +93,22 @@ export function ProfileSection() {
           </p>
         </div>
 
-        {/* Role */}
-        <div className="space-y-2">
-          <Label
-            htmlFor="role"
-            className="block text-sm font-semibold text-on-surface-variant ml-1"
-          >
-            Role
-          </Label>
-          <div className="relative">
-            <select
-              id="role"
-              value={role}
-              onChange={(e) => setRole(e.target.value)}
-              className="w-full h-12 px-4 pr-10 bg-surface-container-high border-none rounded-lg focus:ring-2 focus:ring-primary/20 appearance-none transition-all text-on-surface font-medium"
-            >
-              <option>Parent</option>
-              <option>ABA Therapist</option>
-              <option>Speech Therapist</option>
-              <option>Teacher</option>
-            </select>
-            <MaterialIcon icon="expand_more" size="xs" className="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none" />
+        {/* Error message */}
+        {error && (
+          <div className="flex items-center gap-2 text-error text-sm">
+            <MaterialIcon icon="error" size="xs" />
+            <span>{error}</span>
           </div>
-        </div>
+        )}
 
         {/* Save button */}
         <div className="pt-6 flex justify-end">
           <Button
             onClick={handleSave}
-            className="bg-gradient-to-br from-primary to-primary-container text-white px-8 py-3 rounded-lg font-semibold text-sm hover:opacity-90 active:scale-95 transition-all h-auto"
+            disabled={saving || !displayName.trim()}
+            className="bg-gradient-to-br from-primary to-primary-container text-white px-8 py-3 rounded-lg font-semibold text-sm hover:opacity-90 active:scale-95 transition-all h-auto disabled:opacity-50"
           >
-            {saved ? "Saved!" : "Save changes"}
+            {saving ? "Saving..." : saved ? "Saved!" : "Save changes"}
           </Button>
         </div>
       </div>

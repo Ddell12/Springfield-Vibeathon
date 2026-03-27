@@ -1,24 +1,25 @@
 import { isNavActive, NAV_ITEMS } from "../navigation";
 
 describe("NAV_ITEMS", () => {
-  it("exports an array with 5 items", () => {
-    expect(NAV_ITEMS).toHaveLength(5);
-    expect(NAV_ITEMS[0].href).toBe("/");
+  it("exports an array with 6 items", () => {
+    expect(NAV_ITEMS).toHaveLength(6);
+    expect(NAV_ITEMS[0].href).toBe("/dashboard");
     expect(NAV_ITEMS[1].href).toBe("/builder");
     expect(NAV_ITEMS[2].href).toBe("/flashcards");
     expect(NAV_ITEMS[3].href).toBe("/templates");
     expect(NAV_ITEMS[4].href).toBe("/my-tools");
+    expect(NAV_ITEMS[5].href).toBe("/settings");
   });
 });
 
 describe("isNavActive", () => {
-  describe("home branch (/)", () => {
-    it("returns true when on /", () => {
-      expect(isNavActive("/", "/", null)).toBe(true);
+  describe("home branch (/dashboard)", () => {
+    it("returns true when on /dashboard", () => {
+      expect(isNavActive("/dashboard", "/dashboard", null)).toBe(true);
     });
 
-    it("returns false when pathname is not /", () => {
-      expect(isNavActive("/", "/builder", null)).toBe(false);
+    it("returns false when pathname is not /dashboard", () => {
+      expect(isNavActive("/dashboard", "/builder", null)).toBe(false);
     });
   });
 

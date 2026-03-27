@@ -15,6 +15,7 @@ import {
 
 const navLinks = [
   { href: "/builder", label: "Builder" },
+  { href: "/flashcards", label: "Flashcards" },
   { href: "/templates", label: "Templates" },
   { href: "/my-tools", label: "My Apps" },
 ];

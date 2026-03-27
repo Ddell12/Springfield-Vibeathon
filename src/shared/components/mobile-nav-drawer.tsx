@@ -1,5 +1,6 @@
 "use client";
 
+import { useUser } from "@clerk/nextjs";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 
@@ -12,7 +13,7 @@ import {
   SheetDescription,
   SheetTitle,
 } from "@/shared/components/ui/sheet";
-import { isNavActive,NAV_ITEMS } from "@/shared/lib/navigation";
+import { isNavActive, NAV_ITEMS } from "@/shared/lib/navigation";
 
 interface MobileNavDrawerProps {
   readonly open: boolean;
@@ -23,6 +24,10 @@ export function MobileNavDrawer({ open, onOpenChange }: MobileNavDrawerProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const tab = searchParams.get("tab");
+  const { user } = useUser();
+  const userName = user?.firstName ?? user?.fullName ?? "User";
+  const userEmail = user?.primaryEmailAddress?.emailAddress ?? "";
+  const userInitial = userName.charAt(0).toUpperCase();
 
   function handleNavClick() {
     onOpenChange(false);
@@ -59,15 +64,17 @@ export function MobileNavDrawer({ open, onOpenChange }: MobileNavDrawerProps) {
           {/* Profile area */}
           <div className="flex items-center gap-4 p-2">
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-tertiary text-lg font-bold text-on-tertiary">
-              D
+              {userInitial}
             </div>
             <div className="flex flex-col">
               <span className="font-headline font-bold text-on-surface">
-                Desha
+                {userName}
               </span>
-              <span className="text-xs text-on-surface-variant">
-                desha@email.com
-              </span>
+              {userEmail && (
+                <span className="text-xs text-on-surface-variant">
+                  {userEmail}
+                </span>
+              )}
             </div>
           </div>
         </div>

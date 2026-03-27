@@ -36,6 +36,9 @@ export function AccountSection() {
         >
           Delete account
         </Button>
+        <p className="text-xs text-on-surface-variant italic text-center">
+          Account deletion is not yet available. Contact support for assistance.
+        </p>
       </div>
     </div>
   );

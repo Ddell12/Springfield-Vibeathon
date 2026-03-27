@@ -24,7 +24,7 @@ export function SettingsSidebar({
     <aside className="hidden md:flex w-64 flex-shrink-0 flex-col bg-surface-container-low px-4 py-8 h-[calc(100vh-64px)] sticky top-16 overflow-y-auto">
       {/* Back to dashboard */}
       <Link
-        href="/"
+        href="/dashboard"
         className="mb-4 flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors"
       >
         <MaterialIcon icon="arrow_back" className="text-sm" />

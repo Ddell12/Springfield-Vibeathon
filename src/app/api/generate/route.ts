@@ -86,11 +86,13 @@ export async function POST(request: Request): Promise<Response> {
   const mode = parsed.data.mode;
   const providedSessionId = parsed.data.sessionId as Id<"sessions"> | undefined;
 
+  const isFlashcardMode = mode === "flashcards";
   const sessionId: Id<"sessions"> =
     providedSessionId ??
     (await convex.mutation(api.sessions.create, {
       title: query.slice(0, 60),
       query,
+      type: isFlashcardMode ? "flashcards" as const : "builder" as const,
     }));
 
   const encoder = new TextEncoder();
@@ -123,7 +125,6 @@ export async function POST(request: Request): Promise<Response> {
         send("status", { status: "generating" });
         send("activity", { type: "thinking", message: "Understanding your request..." });
 
-        const isFlashcardMode = mode === "flashcards";
         const systemPrompt = isFlashcardMode
           ? buildFlashcardSystemPrompt()
           : buildSystemPrompt();
@@ -172,7 +173,7 @@ export async function POST(request: Request): Promise<Response> {
               // esbuild bundles JS/TSX; Tailwind CDN handles CSS at runtime in the browser.
               // This replaces the Parcel+html-inline pipeline which was too large for Vercel (367MB).
               const entryPoint = join(buildDir!, "src", "main.tsx");
-              console.log(`[generate] esbuild: entryPoint=${entryPoint} exists=${existsSync(entryPoint)} buildDir=${buildDir}`);
+              // Debug logging removed — esbuild errors are reported via SSE
               if (!existsSync(entryPoint)) throw new Error("Scaffold entry point src/main.tsx not found");
 
               // Resolve from scaffold's prod deps AND root node_modules (for shared packages)
@@ -324,12 +325,12 @@ export async function POST(request: Request): Promise<Response> {
 </body>
 </html>`;
 
-              console.log(`[generate] esbuild bundle assembled: ${jsBundle.length} chars JS, ${processedCss.length} chars CSS, ${bundleHtml.length} chars total HTML`);
+              // Bundle assembled — sizes tracked via SSE activity events
               if (bundleHtml.length < 200) throw new Error("bundle HTML is suspiciously small");
               send("activity", { type: "thinking", message: "Almost ready..." });
               send("bundle", { html: bundleHtml });
               buildSucceeded = true;
-              console.log("[generate] bundle SSE event sent, buildSucceeded=true");
+              // Bundle sent to client
               // Persist bundle for session resume
               try {
                 await convex.mutation(api.generated_files.upsertAutoVersion, {

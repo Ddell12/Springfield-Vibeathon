@@ -32,10 +32,10 @@ vi.mock("@/core/utils", () => ({
 
 vi.mock("@/shared/lib/navigation", () => ({
   NAV_ITEMS: [
-    { icon: "home", label: "Home", href: "/" },
+    { icon: "home", label: "Home", href: "/dashboard" },
     { icon: "auto_awesome", label: "Builder", href: "/builder" },
   ],
-  isNavActive: vi.fn((href: string) => href === "/"),
+  isNavActive: vi.fn((href: string) => href === "/dashboard"),
 }));
 
 describe("DashboardSidebar", () => {
@@ -44,14 +44,14 @@ describe("DashboardSidebar", () => {
     // 2 nav item links + 1 logo link = 3 total
     const links = screen.getAllByRole("link");
     const hrefs = links.map((l) => l.getAttribute("href"));
-    expect(hrefs).toContain("/");
+    expect(hrefs).toContain("/dashboard");
     expect(hrefs).toContain("/builder");
   });
 
-  it("logo 'B' links to /", () => {
+  it("logo 'B' links to /dashboard", () => {
     render(<DashboardSidebar />);
     const logoLink = screen.getByText("B").closest("a");
-    expect(logoLink).toHaveAttribute("href", "/");
+    expect(logoLink).toHaveAttribute("href", "/dashboard");
   });
 
   it("shows user button", () => {
