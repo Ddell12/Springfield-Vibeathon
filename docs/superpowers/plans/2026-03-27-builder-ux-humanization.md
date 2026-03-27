@@ -824,28 +824,19 @@ git commit -m "feat: soften CodePanel string for power-user view"
 
 - [ ] **Step 1: Modify builder-page.tsx**
 
-1. **Add imports:**
+1. **Add import:**
 ```ts
-import { mapActivityToUserMessage } from "../lib/activity-messages";
 import { useProgressNarration } from "../hooks/use-progress-narration";
 ```
 
-2. **Compute the override message from the latest activity** (after the `useStreaming()` call, around line 71). This translates notable SSE events (image_generated → "Creating pictures...", etc.) at the point where we still have access to the original event identity via the `handleEvent` path in `use-streaming.ts`:
+2. **Wire the narration hook** using `notableMessage` from `useStreaming` (after the `useStreaming()` call, around line 71):
 ```ts
-// Translate latest activity for notable event overrides (images, audio, bundling)
-const latestActivity = activities[activities.length - 1];
-const overrideMessage = latestActivity
-  ? mapActivityToUserMessage({ event: "activity", type: latestActivity.type, message: latestActivity.message })
-  : undefined;
-
-const narrationMessage = useProgressNarration(status, overrideMessage ?? undefined);
+const narrationMessage = useProgressNarration(status, notableMessage ?? undefined);
 ```
 
-Note: For `image_generated` and `speech_generated`, `use-streaming.ts` stores the translated message directly in `Activity.message` (e.g., `"Generated image: reward star"`). The `mapActivityToUserMessage` function will return `null` for `file_written` type, so the override won't fire for plain file writes — only for `thinking` type activities. To handle image/speech overrides properly, we also need to check the raw `handleEvent` path. **Alternative simpler approach:** In `use-streaming.ts`, the `image_generated` handler (line 290) already creates a message `"Generated image: ${label}"`. Instead of trying to re-translate, add a `useRef` in `builder-page.tsx` that captures SSE-level notable events:
+The `notableMessage` field is added to `useStreaming` in Step 2 below. It captures warm translations for notable SSE events (`image_generated`, `speech_generated`, `stt_enabled`, `status:bundling`) at the event handling level — before they're flattened into generic `Activity` objects.
 
-Actually, the simplest correct fix: translate at the SSE event level in `use-streaming.ts`'s `handleEvent`. When `image_generated`, `speech_generated`, or `stt_enabled` events arrive, also call `mapActivityToUserMessage` and store the result in a new state field `notableMessage`:
-
-**Revised approach — add `notableMessage` state to `useStreaming`:**
+**Why not re-translate from activities?** `use-streaming.ts` converts `image_generated` and `speech_generated` into `Activity` objects with `type: "file_written"`, losing the original event identity. The translation layer returns `null` for `file_written`, so re-translating from activities can never detect these events. Storing the warm message at dispatch time solves this cleanly.
 
 In `src/features/builder/hooks/use-streaming.ts`, add a new field to the state and expose it:
 
@@ -870,12 +861,11 @@ i. For the `status` event when `bundling` (line 244):
 ```ts
 dispatch({ type: "SET_NOTABLE_MESSAGE", message: "Putting everything together..." });
 ```
-j. Return `notableMessage` from the hook.
+j. Return `notableMessage` from the hook's return object.
 
-Then in `builder-page.tsx`:
+Then back in `builder-page.tsx`, update the `useStreaming()` destructure to include `notableMessage`:
 ```ts
-const { ..., notableMessage } = useStreaming();
-const narrationMessage = useProgressNarration(status, notableMessage ?? undefined);
+const { status, files, generate, ..., notableMessage } = useStreaming();
 ```
 
 3. **Pass `hasFiles` to `BuilderToolbar`** (around line 271). Add this prop:
