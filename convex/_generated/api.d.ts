@@ -12,6 +12,7 @@ import type * as ai from "../ai.js";
 import type * as aiActions from "../aiActions.js";
 import type * as app_state from "../app_state.js";
 import type * as apps from "../apps.js";
+import type * as entitlements from "../entitlements.js";
 import type * as flashcard_cards from "../flashcard_cards.js";
 import type * as flashcard_decks from "../flashcard_decks.js";
 import type * as generated_files from "../generated_files.js";
@@ -23,6 +24,7 @@ import type * as knowledge_data from "../knowledge/data.js";
 import type * as knowledge_search from "../knowledge/search.js";
 import type * as knowledge_seed from "../knowledge/seed.js";
 import type * as lib_auth from "../lib/auth.js";
+import type * as lib_billing from "../lib/billing.js";
 import type * as lib_session_states from "../lib/session_states.js";
 import type * as messages from "../messages.js";
 import type * as publish from "../publish.js";
@@ -31,6 +33,7 @@ import type * as rate_limits from "../rate_limits.js";
 import type * as seeds_image_seeds from "../seeds/image_seeds.js";
 import type * as sessions from "../sessions.js";
 import type * as stt from "../stt.js";
+import type * as subscriptions from "../subscriptions.js";
 import type * as templates_queries from "../templates/queries.js";
 import type * as templates_seed from "../templates/seed.js";
 import type * as templates_therapy_seeds from "../templates/therapy_seeds.js";
@@ -47,6 +50,7 @@ declare const fullApi: ApiFromModules<{
   aiActions: typeof aiActions;
   app_state: typeof app_state;
   apps: typeof apps;
+  entitlements: typeof entitlements;
   flashcard_cards: typeof flashcard_cards;
   flashcard_decks: typeof flashcard_decks;
   generated_files: typeof generated_files;
@@ -58,6 +62,7 @@ declare const fullApi: ApiFromModules<{
   "knowledge/search": typeof knowledge_search;
   "knowledge/seed": typeof knowledge_seed;
   "lib/auth": typeof lib_auth;
+  "lib/billing": typeof lib_billing;
   "lib/session_states": typeof lib_session_states;
   messages: typeof messages;
   publish: typeof publish;
@@ -66,6 +71,7 @@ declare const fullApi: ApiFromModules<{
   "seeds/image_seeds": typeof seeds_image_seeds;
   sessions: typeof sessions;
   stt: typeof stt;
+  subscriptions: typeof subscriptions;
   "templates/queries": typeof templates_queries;
   "templates/seed": typeof templates_seed;
   "templates/therapy_seeds": typeof templates_therapy_seeds;
@@ -632,6 +638,440 @@ export declare const components: {
     };
     time: {
       getServerTime: FunctionReference<"mutation", "internal", {}, number>;
+    };
+  };
+  stripe: {
+    private: {
+      handleCheckoutSessionCompleted: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          metadata?: any;
+          mode: string;
+          stripeCheckoutSessionId: string;
+          stripeCustomerId?: string;
+        },
+        null
+      >;
+      handleCustomerCreated: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          email?: string;
+          metadata?: any;
+          name?: string;
+          stripeCustomerId: string;
+        },
+        null
+      >;
+      handleCustomerUpdated: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          email?: string;
+          metadata?: any;
+          name?: string;
+          stripeCustomerId: string;
+        },
+        null
+      >;
+      handleInvoiceCreated: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          amountDue: number;
+          amountPaid: number;
+          created: number;
+          status: string;
+          stripeCustomerId: string;
+          stripeInvoiceId: string;
+          stripeSubscriptionId?: string;
+        },
+        null
+      >;
+      handleInvoicePaid: FunctionReference<
+        "mutation",
+        "internal",
+        { amountPaid: number; stripeInvoiceId: string },
+        null
+      >;
+      handleInvoicePaymentFailed: FunctionReference<
+        "mutation",
+        "internal",
+        { stripeInvoiceId: string },
+        null
+      >;
+      handlePaymentIntentSucceeded: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          amount: number;
+          created: number;
+          currency: string;
+          metadata?: any;
+          status: string;
+          stripeCustomerId?: string;
+          stripePaymentIntentId: string;
+        },
+        null
+      >;
+      handleSubscriptionCreated: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          cancelAt?: number;
+          cancelAtPeriodEnd: boolean;
+          currentPeriodEnd: number;
+          metadata?: any;
+          priceId: string;
+          quantity?: number;
+          status: string;
+          stripeCustomerId: string;
+          stripeSubscriptionId: string;
+        },
+        null
+      >;
+      handleSubscriptionDeleted: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          cancelAt?: number;
+          cancelAtPeriodEnd?: boolean;
+          currentPeriodEnd?: number;
+          stripeSubscriptionId: string;
+        },
+        null
+      >;
+      handleSubscriptionUpdated: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          cancelAt?: number;
+          cancelAtPeriodEnd: boolean;
+          currentPeriodEnd: number;
+          metadata?: any;
+          priceId?: string;
+          quantity?: number;
+          status: string;
+          stripeSubscriptionId: string;
+        },
+        null
+      >;
+      listSubscriptionsWithCreationTime: FunctionReference<
+        "query",
+        "internal",
+        { stripeCustomerId: string },
+        Array<{
+          _creationTime: number;
+          status: string;
+          stripeCustomerId: string;
+          stripeSubscriptionId: string;
+        }>
+      >;
+      updatePaymentCustomer: FunctionReference<
+        "mutation",
+        "internal",
+        { stripeCustomerId: string; stripePaymentIntentId: string },
+        null
+      >;
+      updateSubscriptionQuantityInternal: FunctionReference<
+        "mutation",
+        "internal",
+        { quantity: number; stripeSubscriptionId: string },
+        null
+      >;
+    };
+    public: {
+      createOrUpdateCustomer: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          email?: string;
+          metadata?: any;
+          name?: string;
+          stripeCustomerId: string;
+        },
+        string
+      >;
+      getCheckoutSession: FunctionReference<
+        "query",
+        "internal",
+        { stripeCheckoutSessionId: string },
+        {
+          metadata?: any;
+          mode: string;
+          status: string;
+          stripeCheckoutSessionId: string;
+          stripeCustomerId?: string;
+        } | null
+      >;
+      getCustomer: FunctionReference<
+        "query",
+        "internal",
+        { stripeCustomerId: string },
+        {
+          email?: string;
+          metadata?: any;
+          name?: string;
+          stripeCustomerId: string;
+          userId?: string;
+        } | null
+      >;
+      getCustomerByEmail: FunctionReference<
+        "query",
+        "internal",
+        { email: string },
+        {
+          email?: string;
+          metadata?: any;
+          name?: string;
+          stripeCustomerId: string;
+          userId?: string;
+        } | null
+      >;
+      getCustomerByUserId: FunctionReference<
+        "query",
+        "internal",
+        { userId: string },
+        {
+          email?: string;
+          metadata?: any;
+          name?: string;
+          stripeCustomerId: string;
+          userId?: string;
+        } | null
+      >;
+      getPayment: FunctionReference<
+        "query",
+        "internal",
+        { stripePaymentIntentId: string },
+        {
+          amount: number;
+          created: number;
+          currency: string;
+          metadata?: any;
+          orgId?: string;
+          status: string;
+          stripeCustomerId?: string;
+          stripePaymentIntentId: string;
+          userId?: string;
+        } | null
+      >;
+      getSubscription: FunctionReference<
+        "query",
+        "internal",
+        { stripeSubscriptionId: string },
+        {
+          cancelAt?: number;
+          cancelAtPeriodEnd: boolean;
+          currentPeriodEnd: number;
+          metadata?: any;
+          orgId?: string;
+          priceId: string;
+          quantity?: number;
+          status: string;
+          stripeCustomerId: string;
+          stripeSubscriptionId: string;
+          userId?: string;
+        } | null
+      >;
+      getSubscriptionByOrgId: FunctionReference<
+        "query",
+        "internal",
+        { orgId: string },
+        {
+          cancelAt?: number;
+          cancelAtPeriodEnd: boolean;
+          currentPeriodEnd: number;
+          metadata?: any;
+          orgId?: string;
+          priceId: string;
+          quantity?: number;
+          status: string;
+          stripeCustomerId: string;
+          stripeSubscriptionId: string;
+          userId?: string;
+        } | null
+      >;
+      listCheckoutSessions: FunctionReference<
+        "query",
+        "internal",
+        { stripeCustomerId: string },
+        Array<{
+          metadata?: any;
+          mode: string;
+          status: string;
+          stripeCheckoutSessionId: string;
+          stripeCustomerId?: string;
+        }>
+      >;
+      listInvoices: FunctionReference<
+        "query",
+        "internal",
+        { stripeCustomerId: string },
+        Array<{
+          amountDue: number;
+          amountPaid: number;
+          created: number;
+          orgId?: string;
+          status: string;
+          stripeCustomerId: string;
+          stripeInvoiceId: string;
+          stripeSubscriptionId?: string;
+          userId?: string;
+        }>
+      >;
+      listInvoicesByOrgId: FunctionReference<
+        "query",
+        "internal",
+        { orgId: string },
+        Array<{
+          amountDue: number;
+          amountPaid: number;
+          created: number;
+          orgId?: string;
+          status: string;
+          stripeCustomerId: string;
+          stripeInvoiceId: string;
+          stripeSubscriptionId?: string;
+          userId?: string;
+        }>
+      >;
+      listInvoicesByUserId: FunctionReference<
+        "query",
+        "internal",
+        { userId: string },
+        Array<{
+          amountDue: number;
+          amountPaid: number;
+          created: number;
+          orgId?: string;
+          status: string;
+          stripeCustomerId: string;
+          stripeInvoiceId: string;
+          stripeSubscriptionId?: string;
+          userId?: string;
+        }>
+      >;
+      listPayments: FunctionReference<
+        "query",
+        "internal",
+        { stripeCustomerId: string },
+        Array<{
+          amount: number;
+          created: number;
+          currency: string;
+          metadata?: any;
+          orgId?: string;
+          status: string;
+          stripeCustomerId?: string;
+          stripePaymentIntentId: string;
+          userId?: string;
+        }>
+      >;
+      listPaymentsByOrgId: FunctionReference<
+        "query",
+        "internal",
+        { orgId: string },
+        Array<{
+          amount: number;
+          created: number;
+          currency: string;
+          metadata?: any;
+          orgId?: string;
+          status: string;
+          stripeCustomerId?: string;
+          stripePaymentIntentId: string;
+          userId?: string;
+        }>
+      >;
+      listPaymentsByUserId: FunctionReference<
+        "query",
+        "internal",
+        { userId: string },
+        Array<{
+          amount: number;
+          created: number;
+          currency: string;
+          metadata?: any;
+          orgId?: string;
+          status: string;
+          stripeCustomerId?: string;
+          stripePaymentIntentId: string;
+          userId?: string;
+        }>
+      >;
+      listSubscriptions: FunctionReference<
+        "query",
+        "internal",
+        { stripeCustomerId: string },
+        Array<{
+          cancelAt?: number;
+          cancelAtPeriodEnd: boolean;
+          currentPeriodEnd: number;
+          metadata?: any;
+          orgId?: string;
+          priceId: string;
+          quantity?: number;
+          status: string;
+          stripeCustomerId: string;
+          stripeSubscriptionId: string;
+          userId?: string;
+        }>
+      >;
+      listSubscriptionsByOrgId: FunctionReference<
+        "query",
+        "internal",
+        { orgId: string },
+        Array<{
+          cancelAt?: number;
+          cancelAtPeriodEnd: boolean;
+          currentPeriodEnd: number;
+          metadata?: any;
+          orgId?: string;
+          priceId: string;
+          quantity?: number;
+          status: string;
+          stripeCustomerId: string;
+          stripeSubscriptionId: string;
+          userId?: string;
+        }>
+      >;
+      listSubscriptionsByUserId: FunctionReference<
+        "query",
+        "internal",
+        { userId: string },
+        Array<{
+          cancelAt?: number;
+          cancelAtPeriodEnd: boolean;
+          currentPeriodEnd: number;
+          metadata?: any;
+          orgId?: string;
+          priceId: string;
+          quantity?: number;
+          status: string;
+          stripeCustomerId: string;
+          stripeSubscriptionId: string;
+          userId?: string;
+        }>
+      >;
+      updateSubscriptionMetadata: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          metadata: any;
+          orgId?: string;
+          stripeSubscriptionId: string;
+          userId?: string;
+        },
+        null
+      >;
+      updateSubscriptionQuantity: FunctionReference<
+        "action",
+        "internal",
+        { quantity: number; stripeSubscriptionId: string },
+        null
+      >;
     };
   };
 };

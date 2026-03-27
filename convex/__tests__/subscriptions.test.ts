@@ -9,7 +9,7 @@ const modules = import.meta.glob("../**/*.*s"); // REQUIRED for convex-test
 describe("subscriptions.getEntitlements", () => {
   it("returns free plan when user has no subscription", async () => {
     const t = convexTest(schema, modules);
-    const result = await t.query(api.subscriptions.getEntitlements, {});
+    const result = await t.query(api.entitlements.getEntitlements, {});
     expect(result.plan).toBe("free");
     expect(result.limits.maxApps).toBe(5);
     expect(result.limits.maxDecks).toBe(3);
@@ -21,7 +21,7 @@ describe("subscriptions.getEntitlements", () => {
   it.skip("returns free plan for authenticated user with no subscription", async () => {
     const t = convexTest(schema, modules);
     const asUser = t.withIdentity({ subject: "user_123", issuer: "clerk" });
-    const result = await asUser.query(api.subscriptions.getEntitlements, {});
+    const result = await asUser.query(api.entitlements.getEntitlements, {});
     expect(result.plan).toBe("free");
   });
 });

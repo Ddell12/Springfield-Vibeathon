@@ -7,8 +7,8 @@ vi.mock("convex/react", () => ({
 
 vi.mock("../../../../convex/_generated/api", () => ({
   api: {
-    subscriptions: {
-      getEntitlements: "subscriptions:getEntitlements",
+    entitlements: {
+      getEntitlements: "entitlements:getEntitlements",
     },
   },
 }));
