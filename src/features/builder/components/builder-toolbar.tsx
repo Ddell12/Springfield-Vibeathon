@@ -65,6 +65,7 @@ export function BuilderToolbar({
           href="/dashboard"
           className="flex min-h-[44px] min-w-[44px] flex-shrink-0 items-center justify-center rounded bg-gradient-to-br from-primary-container to-primary text-white transition-transform active:scale-90"
           aria-label="Back to dashboard"
+          title="Back to dashboard"
         >
           <MaterialIcon icon="arrow_back" size="xs" />
         </Link>
@@ -199,6 +200,7 @@ export function BuilderToolbar({
                   : "text-on-surface-variant hover:bg-surface-container-low hover:text-primary"
               )}
               aria-label={label}
+              title={label}
             >
               <MaterialIcon icon={icon} size="sm" />
             </button>

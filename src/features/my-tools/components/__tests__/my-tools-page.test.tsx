@@ -34,7 +34,7 @@ vi.mock("@/shared/components/material-icon", () => ({
 }));
 
 // Mock ProjectCard (used after refactor to reusable card component)
-vi.mock("@/features/dashboard/components/project-card", () => ({
+vi.mock("@/shared/components/project-card", () => ({
   ProjectCard: ({ project, onDelete }: any) => (
     <div data-testid="project-card" data-id={project.id}>
       <span>{project.title}</span>

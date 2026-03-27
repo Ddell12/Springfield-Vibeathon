@@ -1,12 +1,11 @@
 "use client";
 
-import { useAction, useMutation, useQuery } from "convex/react";
+import { useMutation } from "convex/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { useIsMobile } from "@/core/hooks/use-mobile";
-import { extractErrorMessage } from "@/core/utils";
 import { ShareDialog } from "@/features/sharing/components/share-dialog";
 import { MaterialIcon } from "@/shared/components/material-icon";
 import { SuggestionChips } from "@/shared/components/suggestion-chips";
@@ -20,6 +19,8 @@ import {
 
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
+import { usePublishing } from "../hooks/use-publishing";
+import { useSessionResume } from "../hooks/use-session-resume";
 import { useStreaming } from "../hooks/use-streaming";
 import { THERAPY_SUGGESTIONS } from "../lib/constants";
 import { BuilderToolbar, type DeviceSize, type ViewMode } from "./builder-toolbar";
@@ -42,16 +43,13 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
   const [deviceSize, setDeviceSize] = useState<DeviceSize>("desktop");
   const [mobilePanel, setMobilePanel] = useState<"chat" | "preview">("chat");
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
-  const [publishModalOpen, setPublishModalOpen] = useState(false);
-  const [isPublishing, setIsPublishing] = useState(false);
-  const [publishedUrl, setPublishedUrl] = useState<string | null>(null);
   const [continueDismissed, setContinueDismissed] = useState(false);
-  const publishApp = useAction(api.publish.publishApp);
   const updateTitle = useMutation(api.sessions.updateTitle);
   const ensureApp = useMutation(api.apps.ensureForSession);
   const [isEditingName, setIsEditingName] = useState(false);
   const [promptInput, setPromptInput] = useState("");
   const [pendingPrompt, setPendingPrompt] = useState<string | null>(null);
+  const lastPromptRef = useRef("");
 
   const {
     status,
@@ -77,69 +75,56 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
     if (bundleHtml && mobilePanel !== "preview") setMobilePanel("preview");
   }, [bundleHtml, mobilePanel]);
 
-  // Session resume: fetch session + files when initialSessionId is provided (path-based URL)
-  const resumeSessionData = useQuery(
-    api.sessions.get,
-    initialSessionId ? { sessionId: initialSessionId as Id<"sessions"> } : "skip"
-  );
-  const resumeFiles = useQuery(
-    api.generated_files.list,
-    initialSessionId ? { sessionId: initialSessionId as Id<"sessions"> } : "skip"
-  );
-
-  const activeSessionId = sessionId ?? initialSessionId;
-  const currentSession = useQuery(
-    api.sessions.get,
-    activeSessionId ? { sessionId: activeSessionId as Id<"sessions"> } : "skip"
-  );
-  const appRecord = useQuery(
-    api.apps.getBySession,
-    activeSessionId ? { sessionId: activeSessionId as Id<"sessions"> } : "skip"
-  );
-  // Used for the "Continue where you left off" card on the prompt screen
-  const mostRecent = useQuery(api.sessions.getMostRecent, initialSessionId ? "skip" : {});
-
-  // Resume an existing session when navigating from My Apps or refreshing /builder/{id}
-  const sessionResumed = useRef(false);
-  useEffect(() => {
-    if (
-      initialSessionId &&
-      resumeSessionData &&
-      resumeFiles &&
-      status === "idle" &&
-      !sessionResumed.current
-    ) {
-      sessionResumed.current = true;
-
-      // Separate the persisted bundle from user-visible files
-      const bundleFile = resumeFiles.find((f) => f.path === "_bundle.html");
-      const appFiles = resumeFiles.filter((f) => f.path !== "_bundle.html");
-
-      // Restore streaming hook state
-      resumeSession({
-        sessionId: initialSessionId,
-        files: appFiles.map((f) => ({ path: f.path, contents: f.contents })),
-        blueprint: resumeSessionData.blueprint ?? null,
-        bundleHtml: bundleFile?.contents ?? null,
-      });
-    }
-  }, [initialSessionId, resumeSessionData, resumeFiles, status, resumeSession]);
-
-  // Auto-submit prompt from URL query param (e.g., from template chips)
-  const promptSubmitted = useRef(false);
-  const lastPromptRef = useRef<string>("");
-
   const handleGenerate = useCallback((prompt: string) => {
     lastPromptRef.current = prompt;
     setPendingPrompt(prompt);
     generate(prompt);
   }, [generate]);
 
-  const handleRetry = () => {
+  const handleRetry = useCallback(() => {
     if (lastPromptRef.current) {
       generate(lastPromptRef.current);
     }
-  };
+  }, [generate]);
+
+  // Session resume & URL sync
+  const {
+    activeSessionId,
+    currentSession,
+    appRecord,
+    mostRecent,
+    handlePromptFromUrl,
+  } = useSessionResume(initialSessionId, status, sessionId, resumeSession, handleGenerate);
+
+  // Derive app name: prefer Convex session title (reactive) > blueprint > default
+  const appName = currentSession?.title
+    ?? (typeof blueprint?.title === "string" ? blueprint.title : "Untitled App");
+
+  // Publishing
+  const {
+    isPublishing,
+    publishedUrl,
+    publishModalOpen,
+    setPublishModalOpen,
+    handlePublish,
+    setPublishedUrl,
+  } = usePublishing(sessionId, appName);
+
+  // Auto-submit prompt from URL
+  const promptFromUrl = searchParams.get("prompt");
+  useEffect(() => {
+    handlePromptFromUrl(promptFromUrl);
+  }, [promptFromUrl, handlePromptFromUrl]);
+
+  // Warn before leaving during active generation
+  useEffect(() => {
+    if (status !== "generating") return;
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [status]);
 
   const handleNameEditEnd = async (name: string) => {
     setIsEditingName(false);
@@ -151,52 +136,6 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
       toast.error("Failed to rename app");
     }
   };
-
-  const promptFromUrl = searchParams.get("prompt");
-
-  useEffect(() => {
-    if (promptFromUrl && status === "idle" && !promptSubmitted.current && !initialSessionId) {
-      promptSubmitted.current = true;
-      handleGenerate(decodeURIComponent(promptFromUrl));
-    }
-  }, [promptFromUrl, status, handleGenerate, initialSessionId]);
-
-  // Navigate to path-based URL when SSE creates a new session mid-generation
-  useEffect(() => {
-    if (sessionId && !initialSessionId) {
-      router.replace(`/builder/${sessionId}`);
-    }
-  }, [sessionId, initialSessionId, router]);
-
-  // Redirect to /builder if the session doesn't exist in Convex (deleted or invalid ID)
-  useEffect(() => {
-    if (initialSessionId && resumeSessionData === null && resumeFiles !== undefined) {
-      router.replace("/builder");
-    }
-  }, [initialSessionId, resumeSessionData, resumeFiles, router]);
-
-  // Derive app name: prefer Convex session title (reactive) > blueprint > default
-  const appName = currentSession?.title
-    ?? (typeof blueprint?.title === "string" ? blueprint.title : "Untitled App");
-
-  async function handlePublish() {
-    if (!sessionId || isPublishing) return;
-
-    setIsPublishing(true);
-    try {
-      const result = await publishApp({
-        sessionId: sessionId as Id<"sessions">,
-        title: appName,
-      });
-      setPublishedUrl(result.deploymentUrl);
-      setPublishModalOpen(true);
-    } catch (err) {
-      console.error("Publish failed:", err);
-      toast.error(extractErrorMessage(err));
-    } finally {
-      setIsPublishing(false);
-    }
-  }
 
   async function handleShare() {
     if (!activeSessionId) return;
@@ -288,7 +227,6 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
             onPublish={handlePublish}
             onNewChat={() => {
               reset();
-              sessionResumed.current = false;
               router.push("/builder");
             }}
             isMobile={isMobile}

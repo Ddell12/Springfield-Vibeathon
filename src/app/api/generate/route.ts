@@ -298,7 +298,9 @@ export async function POST(request: Request): Promise<Response> {
         }
       } finally {
         if (buildDir) {
-          try { rmSync(buildDir, { recursive: true, force: true }); } catch {}
+          try { rmSync(buildDir, { recursive: true, force: true }); } catch (err) {
+            console.error("[generate] Failed to cleanup buildDir:", err);
+          }
         }
         controller.close();
       }

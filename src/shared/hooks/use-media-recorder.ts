@@ -44,7 +44,11 @@ export function useMediaRecorder(): UseMediaRecorderReturn {
         setAudioBase64(base64);
         setIsProcessing(false);
 
-        streamRef.current?.getTracks().forEach((track) => track.stop());
+        streamRef.current?.getTracks().forEach((track) => {
+          try { track.stop(); } catch (err) {
+            console.warn("[media-recorder] Failed to stop track:", err);
+          }
+        });
         streamRef.current = null;
       };
 

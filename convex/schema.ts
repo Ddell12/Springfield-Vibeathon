@@ -125,5 +125,6 @@ export default defineSchema({
     sortOrder: v.number(),
     category: v.optional(v.string()),
   }).index("by_deck", ["deckId"])
-    .index("by_deck_sortOrder", ["deckId", "sortOrder"]),
+    .index("by_deck_sortOrder", ["deckId", "sortOrder"])
+    .index("by_deck_label", ["deckId", "label"]),
 });

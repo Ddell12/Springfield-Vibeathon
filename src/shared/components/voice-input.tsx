@@ -1,6 +1,7 @@
 "use client";
 
 import { useAction } from "convex/react";
+import { toast } from "sonner";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { MaterialIcon } from "@/shared/components/material-icon";
@@ -33,7 +34,10 @@ export function VoiceInput({ onTranscript, disabled }: VoiceInputProps) {
           onTranscript(result.transcript.trim());
         }
       })
-      .catch(() => {})
+      .catch((err) => {
+        console.error("[voice-input] Transcription failed:", err);
+        toast.error("Couldn't understand audio — please try again");
+      })
       .finally(() => {
         isTranscribingRef.current = false;
         setIsTranscribing(false);

@@ -1,11 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useReducer, useRef } from "react";
 
 import { parseSSEChunks } from "@/core/sse-utils";
 import { extractErrorMessage } from "@/core/utils";
 import { type TherapyBlueprint,TherapyBlueprintSchema } from "@/features/builder/lib/schemas";
-import { parseSSEEvent,type SSEEvent } from "@/features/builder/lib/sse-events";
+import { parseSSEEvent,type SSEEvent } from "@/core/sse-events";
 
 export type StreamingStatus = "idle" | "generating" | "live" | "failed";
 
@@ -51,32 +51,143 @@ export interface UseStreamingOptions {
   onBundle?: (html: string) => void;
 }
 
+// --- State & Actions ---
+
+interface StreamingState {
+  status: StreamingStatus;
+  files: StreamingFile[];
+  blueprint: TherapyBlueprint | null;
+  appName: string | null;
+  error: string | null;
+  sessionId: string | null;
+  streamingText: string;
+  activities: Activity[];
+  bundleHtml: string | null;
+  buildFailed: boolean;
+}
+
+type StreamingAction =
+  | { type: "RESET" }
+  | { type: "SET_STATUS"; status: StreamingStatus }
+  | { type: "SET_SESSION_ID"; sessionId: string }
+  | { type: "SET_ERROR"; error: string }
+  | { type: "SET_STREAMING_TEXT"; text: string }
+  | { type: "SET_APP_NAME"; name: string }
+  | { type: "SET_BLUEPRINT"; blueprint: TherapyBlueprint }
+  | { type: "ADD_ACTIVITY"; activity: Activity }
+  | { type: "UPSERT_FILE"; file: StreamingFile }
+  | { type: "SET_BUNDLE"; html: string }
+  | { type: "SET_BUILD_FAILED"; failed: boolean }
+  | { type: "START_GENERATION" }
+  | { type: "DONE"; sessionId?: string; buildFailed?: boolean }
+  | { type: "RESUME_SESSION"; args: ResumeSessionArgs }
+  | { type: "ERROR_RESPONSE"; error: string };
+
+const initialState: StreamingState = {
+  status: "idle",
+  files: [],
+  blueprint: null,
+  appName: null,
+  error: null,
+  sessionId: null,
+  streamingText: "",
+  activities: [],
+  bundleHtml: null,
+  buildFailed: false,
+};
+
+function streamingReducer(state: StreamingState, action: StreamingAction): StreamingState {
+  switch (action.type) {
+    case "RESET":
+      return { ...initialState };
+
+    case "SET_STATUS":
+      return { ...state, status: action.status };
+
+    case "SET_SESSION_ID":
+      return { ...state, sessionId: action.sessionId };
+
+    case "SET_ERROR":
+      return { ...state, error: action.error };
+
+    case "SET_STREAMING_TEXT":
+      return { ...state, streamingText: action.text };
+
+    case "SET_APP_NAME":
+      return { ...state, appName: action.name };
+
+    case "SET_BLUEPRINT":
+      return { ...state, blueprint: action.blueprint };
+
+    case "ADD_ACTIVITY":
+      return { ...state, activities: [...state.activities, action.activity] };
+
+    case "UPSERT_FILE": {
+      const idx = state.files.findIndex((f) => f.path === action.file.path);
+      if (idx >= 0) {
+        const updated = [...state.files];
+        updated[idx] = action.file;
+        return { ...state, files: updated };
+      }
+      return { ...state, files: [...state.files, action.file] };
+    }
+
+    case "SET_BUNDLE":
+      return { ...state, bundleHtml: action.html };
+
+    case "SET_BUILD_FAILED":
+      return { ...state, buildFailed: action.failed };
+
+    case "START_GENERATION":
+      return {
+        ...state,
+        error: null,
+        status: "generating",
+        streamingText: "",
+        activities: [],
+        files: [],
+        appName: null,
+        bundleHtml: null,
+        buildFailed: false,
+      };
+
+    case "DONE":
+      return {
+        ...state,
+        status: "live",
+        buildFailed: action.buildFailed ?? false,
+        ...(action.sessionId ? { sessionId: action.sessionId } : {}),
+      };
+
+    case "RESUME_SESSION":
+      return {
+        ...state,
+        sessionId: action.args.sessionId,
+        files: action.args.files,
+        status: "live",
+        error: null,
+        streamingText: "",
+        activities: [],
+        ...(action.args.blueprint !== undefined
+          ? { blueprint: action.args.blueprint ?? null }
+          : {}),
+        ...(action.args.bundleHtml !== undefined
+          ? { bundleHtml: action.args.bundleHtml ?? null }
+          : {}),
+      };
+
+    case "ERROR_RESPONSE":
+      return { ...state, error: action.error, status: "failed" };
+
+    default:
+      return state;
+  }
+}
+
+// --- Hook ---
 
 export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn {
-  const [status, setStatus] = useState<StreamingStatus>("idle");
-  const [files, setFiles] = useState<StreamingFile[]>([]);
-  const [blueprint, setBlueprint] = useState<TherapyBlueprint | null>(null);
-  const [appName, setAppName] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [sessionId, setSessionId] = useState<string | null>(null);
-  const [streamingText, setStreamingText] = useState("");
-  const [activities, setActivities] = useState<Activity[]>([]);
-  const [bundleHtml, setBundleHtml] = useState<string | null>(null);
-  const [buildFailed, setBuildFailed] = useState(false);
-
-  const reset = () => {
-    abortRef.current?.abort();
-    setStatus("idle");
-    setFiles([]);
-    setBlueprint(null);
-    setAppName(null);
-    setError(null);
-    setSessionId(null);
-    setStreamingText("");
-    setActivities([]);
-    setBundleHtml(null);
-    setBuildFailed(false);
-  };
+  const [state, dispatch] = useReducer(streamingReducer, initialState);
 
   const abortRef = useRef<AbortController | null>(null);
   const onFileCompleteRef = useRef(options?.onFileComplete);
@@ -84,7 +195,7 @@ export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn 
   const activityCounterRef = useRef(0);
   const tokenBufferRef = useRef("");
   const rafIdRef = useRef<number | undefined>(undefined);
-  const sessionIdRef = useRef(sessionId);
+  const sessionIdRef = useRef(state.sessionId);
 
   useEffect(() => {
     onFileCompleteRef.current = options?.onFileComplete;
@@ -95,16 +206,29 @@ export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn 
   }, [options?.onBundle]);
 
   useEffect(() => {
-    sessionIdRef.current = sessionId;
-  }, [sessionId]);
+    sessionIdRef.current = state.sessionId;
+  }, [state.sessionId]);
+
+  const flushTokenBuffer = useCallback(() => {
+    if (rafIdRef.current) {
+      cancelAnimationFrame(rafIdRef.current);
+      rafIdRef.current = undefined;
+    }
+    dispatch({ type: "SET_STREAMING_TEXT", text: tokenBufferRef.current });
+  }, []);
+
+  const reset = useCallback(() => {
+    abortRef.current?.abort();
+    dispatch({ type: "RESET" });
+  }, []);
 
   const addActivity = useCallback(
     (type: Activity["type"], message: string, path?: string) => {
       const id = `activity-${++activityCounterRef.current}`;
-      setActivities((prev) => [
-        ...prev,
-        { id, type, message, path, timestamp: Date.now() },
-      ]);
+      dispatch({
+        type: "ADD_ACTIVITY",
+        activity: { id, type, message, path, timestamp: Date.now() },
+      });
     },
     []
   );
@@ -113,17 +237,16 @@ export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn 
     (sseEvent: SSEEvent) => {
       switch (sseEvent.event) {
         case "session":
-          setSessionId(sseEvent.sessionId);
+          dispatch({ type: "SET_SESSION_ID", sessionId: sseEvent.sessionId });
           break;
 
         case "status":
           if (sseEvent.status === "bundling") {
-            // Keep showing generating state to user during bundling
-            setStatus("generating");
+            dispatch({ type: "SET_STATUS", status: "generating" });
           } else if (sseEvent.status === "live") {
-            setStatus("live");
+            dispatch({ type: "SET_STATUS", status: "live" });
           } else if (sseEvent.status === "generating") {
-            setStatus("generating");
+            dispatch({ type: "SET_STATUS", status: "generating" });
           }
           break;
 
@@ -131,7 +254,7 @@ export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn 
           tokenBufferRef.current += sseEvent.token;
           if (!rafIdRef.current) {
             rafIdRef.current = requestAnimationFrame(() => {
-              setStreamingText(tokenBufferRef.current);
+              dispatch({ type: "SET_STREAMING_TEXT", text: tokenBufferRef.current });
               rafIdRef.current = undefined;
             });
           }
@@ -143,17 +266,10 @@ export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn 
 
         case "file_complete": {
           const { path, contents = "" } = sseEvent;
-          setFiles((prev) => {
-            const idx = prev.findIndex((f) => f.path === path);
-            const newFile: StreamingFile = { path, contents };
-            if (idx >= 0) {
-              const updated = [...prev];
-              updated[idx] = newFile;
-              return updated;
-            }
-            return [...prev, newFile];
+          dispatch({
+            type: "UPSERT_FILE",
+            file: { path, contents },
           });
-          // Write to WebContainer — log errors but don't fail the stream
           onFileCompleteRef.current?.(path, contents)?.catch((err: unknown) => {
             console.error(`[streaming] Failed to write ${path}:`, err);
           });
@@ -161,12 +277,12 @@ export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn 
         }
 
         case "app_name":
-          setAppName(sseEvent.name);
+          dispatch({ type: "SET_APP_NAME", name: sseEvent.name });
           break;
 
         case "blueprint": {
           const parsed = TherapyBlueprintSchema.safeParse(sseEvent.data);
-          if (parsed.success) setBlueprint(parsed.data);
+          if (parsed.success) dispatch({ type: "SET_BLUEPRINT", blueprint: parsed.data });
           break;
         }
 
@@ -183,7 +299,7 @@ export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn 
           break;
 
         case "bundle":
-          setBundleHtml(sseEvent.html);
+          dispatch({ type: "SET_BUNDLE", html: sseEvent.html });
           onBundleRef.current?.(sseEvent.html);
           break;
 
@@ -193,26 +309,27 @@ export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn 
             cancelAnimationFrame(rafIdRef.current);
             rafIdRef.current = undefined;
           }
-          setStreamingText(tokenBufferRef.current);
-          setStatus("live");
-          setBuildFailed(sseEvent.buildFailed ?? false);
-          if (sseEvent.sessionId) setSessionId(sseEvent.sessionId);
+          dispatch({ type: "SET_STREAMING_TEXT", text: tokenBufferRef.current });
+          dispatch({
+            type: "DONE",
+            sessionId: sseEvent.sessionId,
+            buildFailed: sseEvent.buildFailed,
+          });
           break;
 
         case "error":
-          setError(sseEvent.message);
-          setStatus("failed");
+          flushTokenBuffer();
+          dispatch({ type: "ERROR_RESPONSE", error: sseEvent.message });
           break;
       }
     },
-    [addActivity]
+    [addActivity, flushTokenBuffer]
   );
 
   const generate = useCallback(
     async (prompt: string): Promise<void> => {
       if (abortRef.current) {
         abortRef.current.abort();
-        // Cancel any pending rAF from the previous generation
         if (rafIdRef.current) {
           cancelAnimationFrame(rafIdRef.current);
           rafIdRef.current = undefined;
@@ -221,16 +338,8 @@ export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn 
       const controller = new AbortController();
       abortRef.current = controller;
 
-      // Reset state for new generation
-      setError(null);
-      setStatus("generating");
-      setStreamingText("");
+      dispatch({ type: "START_GENERATION" });
       tokenBufferRef.current = "";
-      setActivities([]);
-      setFiles([]);
-      setAppName(null);
-      setBundleHtml(null);
-      setBuildFailed(false);
 
       try {
         const response = await fetch("/api/generate", {
@@ -251,15 +360,15 @@ export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn 
           } catch {
             // response may not be JSON
           }
-          setError(detail);
-          setStatus("failed");
+          flushTokenBuffer();
+          dispatch({ type: "ERROR_RESPONSE", error: detail });
           return;
         }
 
         const body = response.body;
         if (!body) {
-          setError("No response body");
-          setStatus("failed");
+          flushTokenBuffer();
+          dispatch({ type: "ERROR_RESPONSE", error: "No response body" });
           return;
         }
 
@@ -296,8 +405,8 @@ export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn 
         }
       } catch (err) {
         if (err instanceof Error && err.name === "AbortError") return;
-        setError(extractErrorMessage(err));
-        setStatus("failed");
+        flushTokenBuffer();
+        dispatch({ type: "ERROR_RESPONSE", error: extractErrorMessage(err) });
       }
     },
     [handleEvent]
@@ -305,19 +414,8 @@ export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn 
 
   const resumeSession = useCallback(
     (args: ResumeSessionArgs) => {
-      setSessionId(args.sessionId);
       sessionIdRef.current = args.sessionId;
-      setFiles(args.files);
-      setStatus("live");
-      setError(null);
-      setStreamingText("");
-      setActivities([]);
-      if (args.blueprint !== undefined) {
-        setBlueprint(args.blueprint ?? null);
-      }
-      if (args.bundleHtml !== undefined) {
-        setBundleHtml(args.bundleHtml ?? null);
-      }
+      dispatch({ type: "RESUME_SESSION", args });
     },
     []
   );
@@ -335,18 +433,18 @@ export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn 
   }, []);
 
   return {
-    status,
-    files,
+    status: state.status,
+    files: state.files,
     generate,
     resumeSession,
-    blueprint,
-    appName,
-    error,
-    sessionId,
-    streamingText,
-    activities,
-    bundleHtml,
-    buildFailed,
+    blueprint: state.blueprint,
+    appName: state.appName,
+    error: state.error,
+    sessionId: state.sessionId,
+    streamingText: state.streamingText,
+    activities: state.activities,
+    bundleHtml: state.bundleHtml,
+    buildFailed: state.buildFailed,
     reset,
   };
 }
