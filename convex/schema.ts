@@ -43,7 +43,6 @@ export default defineSchema({
     sessionId: v.optional(v.id("sessions")),
     shareSlug: v.string(),
     previewUrl: v.optional(v.string()),
-    publishedUrl: v.optional(v.string()),
     createdAt: v.number(),
     updatedAt: v.number(),
   })

@@ -11,7 +11,6 @@ export const create = mutation({
     sessionId: v.optional(v.id("sessions")),
     shareSlug: v.string(),
     previewUrl: v.optional(v.string()),
-    publishedUrl: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
@@ -39,7 +38,6 @@ export const create = mutation({
       sessionId: args.sessionId,
       shareSlug: args.shareSlug,
       previewUrl: args.previewUrl,
-      publishedUrl: args.publishedUrl,
       createdAt: now,
       updatedAt: now,
     });
@@ -74,7 +72,6 @@ export const update = mutation({
     appId: v.id("apps"),
     title: v.optional(v.string()),
     description: v.optional(v.string()),
-    publishedUrl: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
@@ -87,7 +84,6 @@ export const update = mutation({
     const patch: Record<string, unknown> = { updatedAt: Date.now() };
     if (fields.title !== undefined) patch.title = fields.title;
     if (fields.description !== undefined) patch.description = fields.description;
-    if (fields.publishedUrl !== undefined) patch.publishedUrl = fields.publishedUrl;
     await ctx.db.patch(appId, patch);
     return appId;
   },
