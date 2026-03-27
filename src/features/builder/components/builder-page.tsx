@@ -23,7 +23,9 @@ import { usePublishing } from "../hooks/use-publishing";
 import { useSessionResume } from "../hooks/use-session-resume";
 import { useStreaming } from "../hooks/use-streaming";
 import { THERAPY_SUGGESTIONS } from "../lib/constants";
+import type { TherapyBlueprint } from "../lib/schemas";
 import { BuilderToolbar, type DeviceSize, type ViewMode } from "./builder-toolbar";
+import { InterviewController } from "./interview/interview-controller";
 import { ChatPanel } from "./chat-panel";
 import { CodePanel } from "./code-panel";
 import { ContinueCard } from "./continue-card";
@@ -50,6 +52,8 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
   const [promptInput, setPromptInput] = useState("");
   const [pendingPrompt, setPendingPrompt] = useState<string | null>(null);
   const lastPromptRef = useRef("");
+  const promptInputRef = useRef<HTMLInputElement>(null);
+  const [showFreeformInput, setShowFreeformInput] = useState(false);
 
   const {
     status,
@@ -75,10 +79,10 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
     if (bundleHtml && mobilePanel !== "preview") setMobilePanel("preview");
   }, [bundleHtml, mobilePanel]);
 
-  const handleGenerate = useCallback((prompt: string) => {
+  const handleGenerate = useCallback((prompt: string, blueprint?: TherapyBlueprint) => {
     lastPromptRef.current = prompt;
     setPendingPrompt(prompt);
-    generate(prompt);
+    generate(prompt, blueprint);
   }, [generate]);
 
   const handleRetry = useCallback(() => {
@@ -157,50 +161,71 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
       {showPromptScreen ? (
-        /* Phase 1: Full-width centered prompt — no session yet */
-        <div className="flex flex-1 flex-col items-center justify-center gap-6 p-6">
+        <div className="flex flex-1 flex-col items-center justify-center gap-6 overflow-y-auto p-6">
           <div className="text-center">
             <h1 className="font-headline text-3xl font-semibold text-foreground">
               What would you like to build?
             </h1>
             <p className="mt-2 text-base text-on-surface-variant">
-              Describe a therapy tool and I&apos;ll build it for you.
+              Choose a category or describe what you need.
             </p>
           </div>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (!promptInput.trim()) return;
-              handleGenerate(promptInput.trim());
-              setPromptInput("");
-            }}
-            className="w-full max-w-2xl"
-          >
-            <div className="flex items-center gap-2 rounded-full border border-outline-variant/40 bg-surface-container-lowest px-4 py-2 shadow-sm focus-within:ring-2 focus-within:ring-primary/30">
-              <Input
-                value={promptInput}
-                onChange={(e) => setPromptInput(e.target.value)}
-                placeholder="Describe the therapy tool you want to build…"
-                className="flex-1 border-0 bg-transparent p-0 text-base shadow-none focus-visible:ring-0"
-                aria-label="Describe the therapy tool you want to build"
-              />
-              <Button
-                type="submit"
-                disabled={!promptInput.trim()}
-                size="icon"
-                className="shrink-0 rounded-full"
-                aria-label="Generate app"
+
+          {showFreeformInput ? (
+            <>
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (!promptInput.trim()) return;
+                  handleGenerate(promptInput.trim());
+                  setPromptInput("");
+                }}
+                className="w-full max-w-2xl"
               >
-                <MaterialIcon icon="auto_fix_high" size="xs" />
-              </Button>
+                <div className="flex items-center gap-2 rounded-full border border-outline-variant/40 bg-surface-container-lowest px-4 py-2 shadow-sm focus-within:ring-2 focus-within:ring-primary/30">
+                  <Input
+                    ref={promptInputRef}
+                    value={promptInput}
+                    onChange={(e) => setPromptInput(e.target.value)}
+                    placeholder="Describe the therapy tool you want to build…"
+                    className="flex-1 border-0 bg-transparent p-0 text-base shadow-none focus-visible:ring-0"
+                    aria-label="Describe the therapy tool you want to build"
+                  />
+                  <Button
+                    type="submit"
+                    disabled={!promptInput.trim()}
+                    size="icon"
+                    className="shrink-0 rounded-full"
+                    aria-label="Generate app"
+                  >
+                    <MaterialIcon icon="auto_fix_high" size="xs" />
+                  </Button>
+                </div>
+              </form>
+              <SuggestionChips
+                suggestions={THERAPY_SUGGESTIONS}
+                onSelect={(suggestion) => handleGenerate(suggestion)}
+              />
+              <button
+                type="button"
+                onClick={() => setShowFreeformInput(false)}
+                className="text-sm text-on-surface-variant/60 hover:text-on-surface-variant transition-colors"
+              >
+                ← Back to categories
+              </button>
+            </>
+          ) : (
+            <div className="w-full max-w-2xl">
+              <InterviewController
+                onGenerate={(prompt, blueprint) => handleGenerate(prompt, blueprint)}
+                onEscapeHatch={() => {
+                  setShowFreeformInput(true);
+                  setTimeout(() => promptInputRef.current?.focus(), 100);
+                }}
+              />
             </div>
-          </form>
-          <SuggestionChips
-            suggestions={THERAPY_SUGGESTIONS}
-            onSelect={(suggestion) => {
-              handleGenerate(suggestion);
-            }}
-          />
+          )}
+
           {mostRecent && !continueDismissed && (
             <ContinueCard
               sessionId={mostRecent._id}

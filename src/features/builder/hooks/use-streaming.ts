@@ -33,7 +33,7 @@ export interface ResumeSessionArgs {
 export interface UseStreamingReturn {
   status: StreamingStatus;
   files: StreamingFile[];
-  generate: (prompt: string) => Promise<void>;
+  generate: (prompt: string, blueprint?: TherapyBlueprint) => Promise<void>;
   resumeSession: (args: ResumeSessionArgs) => void;
   blueprint: TherapyBlueprint | null;
   appName: string | null;
@@ -327,7 +327,7 @@ export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn 
   );
 
   const generate = useCallback(
-    async (prompt: string): Promise<void> => {
+    async (prompt: string, blueprint?: TherapyBlueprint): Promise<void> => {
       if (abortRef.current) {
         abortRef.current.abort();
         if (rafIdRef.current) {
@@ -348,6 +348,7 @@ export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn 
           body: JSON.stringify({
             prompt,
             sessionId: sessionIdRef.current ?? undefined,
+            ...(blueprint ? { blueprint } : {}),
           }),
           signal: controller.signal,
         });
