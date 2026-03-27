@@ -2,6 +2,7 @@ import { v } from "convex/values";
 
 import { mutation, query } from "./_generated/server";
 import { assertSessionOwner, getAuthUserId } from "./lib/auth";
+import { checkPremiumStatus, FREE_LIMITS } from "./lib/billing";
 
 export const create = mutation({
   args: {
@@ -15,6 +16,21 @@ export const create = mutation({
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new Error("Not authenticated");
+
+    // Free-tier limit enforcement — premium users bypass
+    const isPremium = await checkPremiumStatus(ctx, identity.subject);
+    if (!isPremium) {
+      const userApps = await ctx.db
+        .query("apps")
+        .withIndex("by_user", (q) => q.eq("userId", identity.subject))
+        .collect();
+      if (userApps.length >= FREE_LIMITS.maxApps) {
+        throw new Error(
+          "Free plan limit reached. Upgrade to Premium for unlimited apps.",
+        );
+      }
+    }
+
     const now = Date.now();
     return await ctx.db.insert("apps", {
       title: args.title,
@@ -100,6 +116,23 @@ export const ensureForSession = mutation({
   },
   handler: async (ctx, args) => {
     await assertSessionOwner(ctx, args.sessionId);
+    const identity = await ctx.auth.getUserIdentity();
+
+    // Free-tier limit enforcement — premium users bypass
+    if (identity) {
+      const isPremium = await checkPremiumStatus(ctx, identity.subject);
+      if (!isPremium) {
+        const userApps = await ctx.db
+          .query("apps")
+          .withIndex("by_user", (q) => q.eq("userId", identity.subject))
+          .collect();
+        if (userApps.length >= FREE_LIMITS.maxApps) {
+          throw new Error(
+            "Free plan limit reached. Upgrade to Premium for unlimited apps.",
+          );
+        }
+      }
+    }
 
     const existing = await ctx.db
       .query("apps")
@@ -112,7 +145,6 @@ export const ensureForSession = mutation({
     ).join("");
 
     const now = Date.now();
-    const identity = await ctx.auth.getUserIdentity();
     const appId = await ctx.db.insert("apps", {
       title: args.title,
       description: args.description ?? "",

@@ -19,13 +19,18 @@ export async function checkPremiumStatus(
   ctx: QueryCtx,
   userId: string,
 ): Promise<boolean> {
-  const { components } = await import("../_generated/api");
-  const subscriptions = await ctx.runQuery(
-    components.stripe.public.listSubscriptionsByUserId,
-    { userId },
-  );
-  return subscriptions.some(
-    (sub: { status: string }) =>
-      sub.status === "active" || sub.status === "trialing",
-  );
+  try {
+    const { components } = await import("../_generated/api");
+    const subscriptions = await ctx.runQuery(
+      components.stripe.public.listSubscriptionsByUserId,
+      { userId },
+    );
+    return subscriptions.some(
+      (sub: { status: string }) =>
+        sub.status === "active" || sub.status === "trialing",
+    );
+  } catch {
+    // Component not available (e.g., convex-test environment) — default to free
+    return false;
+  }
 }

@@ -2,6 +2,7 @@ import { v } from "convex/values";
 
 import { mutation, query } from "./_generated/server";
 import { assertSessionOwner, getAuthUserId } from "./lib/auth";
+import { checkPremiumStatus, FREE_LIMITS } from "./lib/billing";
 
 export const create = mutation({
   args: {
@@ -12,6 +13,23 @@ export const create = mutation({
   handler: async (ctx, args) => {
     await assertSessionOwner(ctx, args.sessionId);
     const identity = await ctx.auth.getUserIdentity();
+
+    // Free-tier limit enforcement — premium users bypass
+    if (identity) {
+      const isPremium = await checkPremiumStatus(ctx, identity.subject);
+      if (!isPremium) {
+        const userDecks = await ctx.db
+          .query("flashcardDecks")
+          .withIndex("by_user", (q) => q.eq("userId", identity.subject))
+          .collect();
+        if (userDecks.length >= FREE_LIMITS.maxDecks) {
+          throw new Error(
+            "Free plan limit reached. Upgrade to Premium for unlimited decks.",
+          );
+        }
+      }
+    }
+
     return await ctx.db.insert("flashcardDecks", {
       title: args.title,
       description: args.description,
