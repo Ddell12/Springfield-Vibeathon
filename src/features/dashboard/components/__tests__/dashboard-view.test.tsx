@@ -174,11 +174,10 @@ describe("DashboardView", () => {
     expect(screen.getByText("Visual Schedule App")).toBeInTheDocument();
   });
 
-  it("'Create New' link points to /builder", () => {
+  it("desktop header does not show Create New button (removed per design)", () => {
     render(<DashboardView />);
-    const createLinks = screen.getAllByRole("link", { name: /Create New/i });
-    expect(createLinks.length).toBeGreaterThan(0);
-    expect(createLinks[0]).toHaveAttribute("href", "/builder");
+    const createLinks = screen.queryAllByRole("link", { name: /Create New/i });
+    expect(createLinks).toHaveLength(0);
   });
 
   it("mobile menu button has aria-label 'Open navigation menu'", () => {

@@ -33,6 +33,22 @@ vi.mock("@/shared/components/material-icon", () => ({
   ),
 }));
 
+// Mock ProjectCard (used after refactor to reusable card component)
+vi.mock("@/features/dashboard/components/project-card", () => ({
+  ProjectCard: ({ project, onDelete }: any) => (
+    <div data-testid="project-card" data-id={project.id}>
+      <span>{project.title}</span>
+      {onDelete && <button onClick={onDelete}>Delete</button>}
+      <a href={`/builder/${project.id}`}>Open</a>
+    </div>
+  ),
+}));
+
+// Mock DeleteConfirmationDialog
+vi.mock("@/shared/components/delete-confirmation-dialog", () => ({
+  DeleteConfirmationDialog: () => null,
+}));
+
 import * as convexReact from "convex/react";
 
 const mockSession = {
@@ -80,22 +96,23 @@ describe("MyToolsPage", () => {
     expect(screen.getByText("My Schedule")).toBeInTheDocument();
   });
 
-  test("renders an Open link for each session card", () => {
+  test("renders ProjectCard with Open link for each session", () => {
     vi.mocked(convexReact.useQuery).mockReturnValue([mockSession]);
 
     render(<MyToolsPage />);
 
+    const card = screen.getByTestId("project-card");
+    expect(card).toBeInTheDocument();
     const openLink = screen.getByRole("link", { name: /open/i });
-    expect(openLink).toBeInTheDocument();
     expect(openLink).toHaveAttribute("href", `/builder/${mockSession._id}`);
   });
 
-  test("renders session query as description", () => {
+  test("renders ProjectCard with delete button", () => {
     vi.mocked(convexReact.useQuery).mockReturnValue([mockSession]);
 
     render(<MyToolsPage />);
 
-    expect(screen.getByText("Build a visual schedule")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /delete/i })).toBeInTheDocument();
   });
 
   test("renders multiple session cards", () => {

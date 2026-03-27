@@ -1,15 +1,20 @@
 "use client";
 
-import { useQuery } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import Link from "next/link";
+import { useState } from "react";
 
+import { ProjectCard } from "@/features/dashboard/components/project-card";
+import { DeleteConfirmationDialog } from "@/shared/components/delete-confirmation-dialog";
 import { MaterialIcon } from "@/shared/components/material-icon";
 
 import { api } from "../../../../convex/_generated/api";
-import type { Doc } from "../../../../convex/_generated/dataModel";
+import type { Id } from "../../../../convex/_generated/dataModel";
 
 export function MyToolsPage() {
   const sessions = useQuery(api.sessions.list);
+  const removeSession = useMutation(api.sessions.remove);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: Id<"sessions">; title: string } | null>(null);
 
   if (sessions === undefined) {
     return (
@@ -70,32 +75,20 @@ export function MyToolsPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {sessions.map((session: Doc<"sessions">) => (
-          <div
+        {sessions.map((session, i) => (
+          <ProjectCard
             key={session._id}
-            className="group bg-surface-container-lowest rounded-xl p-6 ring-1 ring-outline-variant/10 hover:ring-primary/30 transition-all hover:shadow-lg"
-          >
-            <h3 className="font-headline font-bold text-lg text-on-surface mb-2">
-              {session.title}
-            </h3>
-            {session.query && (
-              <p className="text-on-surface-variant text-sm mb-4 line-clamp-2">
-                {session.query}
-              </p>
-            )}
-            <p className="text-on-surface-variant/60 text-xs mb-4">
-              Created {new Date(session._creationTime).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
-            </p>
-            <div className="flex gap-2">
-              <Link
-                href={`/builder/${session._id}`}
-                className="flex items-center gap-1 text-primary font-semibold text-sm hover:underline"
-              >
-                <MaterialIcon icon="open_in_new" size="sm" />
-                Open
-              </Link>
-            </div>
-          </div>
+            project={{
+              id: session._id,
+              title: session.title,
+              thumbnail: null,
+              updatedAt: session._creationTime,
+              userInitial: session.title.charAt(0).toUpperCase(),
+              userColor: "bg-tertiary-fixed text-on-surface",
+            }}
+            index={i}
+            onDelete={() => setDeleteTarget({ id: session._id, title: session.title })}
+          />
         ))}
       </div>
 
@@ -130,6 +123,18 @@ export function MyToolsPage() {
           </div>
         </div>
       </section>
+
+      <DeleteConfirmationDialog
+        open={deleteTarget !== null}
+        onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
+        projectName={deleteTarget?.title ?? ""}
+        onConfirmDelete={() => {
+          if (deleteTarget) {
+            removeSession({ sessionId: deleteTarget.id });
+            setDeleteTarget(null);
+          }
+        }}
+      />
     </div>
   );
 }

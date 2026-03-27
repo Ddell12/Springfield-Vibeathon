@@ -39,6 +39,7 @@ export function FlashcardPage() {
   const [mobilePanel, setMobilePanel] = useState<"chat" | "preview">("chat");
   const [isEditingName, setIsEditingName] = useState(false);
   const [promptInput, setPromptInput] = useState("");
+  const [pendingPrompt, setPendingPrompt] = useState<string | null>(null);
 
   // Deck sheet state
   const [deckSheetOpen, setDeckSheetOpen] = useState(false);
@@ -82,6 +83,7 @@ export function FlashcardPage() {
 
   const handleGenerate = useCallback(
     (prompt: string) => {
+      setPendingPrompt(prompt);
       generate(prompt);
     },
     [generate],
@@ -217,6 +219,8 @@ export function FlashcardPage() {
                       status={status}
                       activityMessage={activityMessage}
                       onSubmit={handleSubmit}
+                      pendingPrompt={pendingPrompt}
+                      onPendingPromptClear={() => setPendingPrompt(null)}
                     />
                   </div>
                 ) : (
@@ -238,6 +242,8 @@ export function FlashcardPage() {
                       status={status}
                       activityMessage={activityMessage}
                       onSubmit={handleSubmit}
+                      pendingPrompt={pendingPrompt}
+                      onPendingPromptClear={() => setPendingPrompt(null)}
                     />
                   </div>
                 </ResizablePanel>

@@ -98,7 +98,11 @@ export async function POST(request: Request): Promise<Response> {
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
     async start(controller) {
+      // Check if client has disconnected (navigation away, tab close, etc.)
+      const isAborted = () => request.signal.aborted;
+
       const send = (eventType: string, data: object) => {
+        if (isAborted()) return;
         try {
           controller.enqueue(encoder.encode(sseEncode(eventType, data)));
         } catch {
@@ -153,7 +157,9 @@ export async function POST(request: Request): Promise<Response> {
         });
 
         for await (const messageStream of runner) {
+          if (isAborted()) break;
           for await (const event of messageStream) {
+            if (isAborted()) break;
             if (
               event.type === "content_block_delta" &&
               event.delta.type === "text_delta"
@@ -415,18 +421,31 @@ export async function POST(request: Request): Promise<Response> {
         send("status", { status: "live" });
         send("done", { sessionId, files: fileArray, buildFailed: !buildSucceeded && collectedFiles.size > 0 });
       } catch (error) {
-        console.error("[generate] Error:", error instanceof Error ? error.stack : error);
+        // Client disconnected mid-stream — normal for navigation away, tab close, etc.
+        // Don't mark session as failed or log scary errors for this common case.
+        const isClientDisconnect =
+          isAborted() ||
+          (error instanceof Error &&
+            (error.message.includes("aborted") ||
+              (error as NodeJS.ErrnoException).code === "ECONNRESET" ||
+              error.name === "AbortError"));
 
-        try {
-          await convex.mutation(api.sessions.setFailed, {
-            sessionId,
-            error: extractErrorMessage(error),
-          });
-        } catch (persistError) {
-          console.error("[generate] Failed to persist error state:", persistError);
+        if (isClientDisconnect) {
+          // Silently close — session stays in "generating" state (user can resume or start new)
+        } else {
+          console.error("[generate] Error:", error instanceof Error ? error.stack : error);
+
+          try {
+            await convex.mutation(api.sessions.setFailed, {
+              sessionId,
+              error: extractErrorMessage(error),
+            });
+          } catch (persistError) {
+            console.error("[generate] Failed to persist error state:", persistError);
+          }
+
+          send("error", { message: "Generation failed — please try again" });
         }
-
-        send("error", { message: "Generation failed — please try again" });
       } finally {
         if (buildDir) {
           try { rmSync(buildDir, { recursive: true, force: true }); } catch {}

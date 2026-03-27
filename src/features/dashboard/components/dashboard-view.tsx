@@ -83,12 +83,9 @@ export function DashboardView() {
           </h1>
         </div>
         <div className="flex items-center gap-6">
-          <Link
-            href="/builder"
-            className="flex items-center gap-2 rounded-lg bg-gradient-to-br from-primary to-primary-container px-5 py-2 font-headline text-sm font-semibold text-white opacity-80 shadow-sm transition-all active:opacity-100"
-          >
-            Create New
-          </Link>
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-tertiary text-xs font-bold text-on-tertiary">
+            D
+          </div>
         </div>
       </header>
 

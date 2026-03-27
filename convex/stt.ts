@@ -27,6 +27,7 @@ export const transcribeSpeech = action({
       const formData = new FormData();
       formData.append("file", blob, "audio.webm");
       formData.append("model_id", "scribe_v2");
+      formData.append("language_code", "en");
 
       const response = await fetch(
         "https://api.elevenlabs.io/v1/speech-to-text",

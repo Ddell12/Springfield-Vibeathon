@@ -34,8 +34,9 @@ export function ShareDialog({
   const [copied, setCopied] = useState(false);
 
   const origin = typeof window !== "undefined" ? window.location.origin : "";
-  const previewUrl = `${origin}/tool/${shareSlug}`;
+  const previewUrl = shareSlug ? `${origin}/tool/${shareSlug}` : "";
   const activeUrl = activeTab === "published" && publishedUrl ? publishedUrl : previewUrl;
+  const isLoading = !activeUrl;
 
   async function handleCopy() {
     await copyToClipboard(activeUrl, "Link copied!");
@@ -105,19 +106,26 @@ export function ShareDialog({
         {/* QR Code */}
         <div className="flex justify-center">
           <div className="w-40 h-40 border border-surface-container-low rounded-xl p-2 flex items-center justify-center">
-            <QRCode value={activeUrl} size={140} />
+            {isLoading ? (
+              <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+            ) : (
+              <QRCode value={activeUrl} size={140} />
+            )}
           </div>
         </div>
 
         {/* URL Input Row */}
         <div className="flex gap-2">
           <div className="flex-1 bg-surface-container-low px-4 py-2.5 rounded-lg flex items-center">
-            <span className="text-sm text-on-surface truncate">{activeUrl}</span>
+            <span className="text-sm text-on-surface truncate">
+              {isLoading ? "Creating share link..." : activeUrl}
+            </span>
           </div>
           <button
             type="button"
             onClick={handleCopy}
-            className="flex items-center gap-2 px-4 py-2.5 text-primary font-medium text-sm hover:bg-primary-fixed/20 transition-all rounded-lg"
+            disabled={isLoading}
+            className="flex items-center gap-2 px-4 py-2.5 text-primary font-medium text-sm hover:bg-primary-fixed/20 transition-all rounded-lg disabled:opacity-50"
           >
             <MaterialIcon icon={copied ? "check" : "content_copy"} size="xs" />
             {copied ? "Copied!" : "Copy Link"}

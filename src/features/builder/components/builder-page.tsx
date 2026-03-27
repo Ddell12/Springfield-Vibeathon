@@ -51,6 +51,7 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
   const ensureApp = useMutation(api.apps.ensureForSession);
   const [isEditingName, setIsEditingName] = useState(false);
   const [promptInput, setPromptInput] = useState("");
+  const [pendingPrompt, setPendingPrompt] = useState<string | null>(null);
 
   const {
     status,
@@ -130,6 +131,7 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
 
   const handleGenerate = useCallback((prompt: string) => {
     lastPromptRef.current = prompt;
+    setPendingPrompt(prompt);
     generate(prompt);
   }, [generate]);
 
@@ -197,15 +199,16 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
   }
 
   async function handleShare() {
-    if (activeSessionId) {
-      try {
-        await ensureApp({
-          sessionId: activeSessionId as Id<"sessions">,
-          title: appName,
-        });
-      } catch (err) {
-        console.error("Failed to create share link:", err);
-      }
+    if (!activeSessionId) return;
+    try {
+      await ensureApp({
+        sessionId: activeSessionId as Id<"sessions">,
+        title: appName,
+      });
+    } catch (err) {
+      console.error("Failed to create share link:", err);
+      toast.error("Could not create share link");
+      return;
     }
     setShareDialogOpen(true);
   }
@@ -308,6 +311,8 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
                       onRetry={handleRetry}
                       streamingText={streamingText}
                       activities={activities}
+                      pendingPrompt={pendingPrompt}
+                      onPendingPromptClear={() => setPendingPrompt(null)}
                     />
                   </div>
                 ) : (
@@ -318,6 +323,7 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
                       error={error ?? undefined}
                       deviceSize="mobile"
                       buildFailed={buildFailed}
+                      activityMessage={activities[activities.length - 1]?.message}
                     />
                   </div>
                 )}
@@ -336,6 +342,8 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
                       onRetry={handleRetry}
                       streamingText={streamingText}
                       activities={activities}
+                      pendingPrompt={pendingPrompt}
+                      onPendingPromptClear={() => setPendingPrompt(null)}
                     />
                   </div>
                 </ResizablePanel>
@@ -362,6 +370,7 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
                         error={error ?? undefined}
                         deviceSize={deviceSize}
                         buildFailed={buildFailed}
+                        activityMessage={activities[activities.length - 1]?.message}
                       />
                     </div>
                   </ResizablePanel>
@@ -375,7 +384,7 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
       <ShareDialog
         open={shareDialogOpen}
         onOpenChange={setShareDialogOpen}
-        shareSlug={appRecord?.shareSlug ?? sessionId ?? "preview"}
+        shareSlug={appRecord?.shareSlug ?? ""}
         appTitle={appName}
         publishedUrl={appRecord?.publishedUrl ?? publishedUrl ?? undefined}
       />

@@ -65,6 +65,8 @@ interface ChatPanelProps {
   onRetry?: () => void;
   streamingText: string;
   activities: Activity[];
+  pendingPrompt?: string | null;
+  onPendingPromptClear?: () => void;
 }
 
 export function ChatPanel({
@@ -76,6 +78,8 @@ export function ChatPanel({
   onRetry,
   streamingText,
   activities,
+  pendingPrompt,
+  onPendingPromptClear,
 }: ChatPanelProps) {
   const [input, setInput] = useState("");
   const scrollEndRef = useRef<HTMLDivElement>(null);
@@ -89,12 +93,19 @@ export function ChatPanel({
   const isLive = status === "live";
   const isEmpty = !sessionId && status === "idle";
 
+  // Clear pending prompt once real messages arrive from Convex
+  useEffect(() => {
+    if (pendingPrompt && messages && messages.some((m) => m.role === "user")) {
+      onPendingPromptClear?.();
+    }
+  }, [messages, pendingPrompt, onPendingPromptClear]);
+
   // Auto-scroll to bottom when new messages arrive or streaming updates
   useEffect(() => {
     if (scrollEndRef.current) {
       scrollEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
-  }, [messages?.length, streamingText, activities.length, isGenerating, isLive]);
+  }, [messages?.length, streamingText, activities.length, isGenerating, isLive, pendingPrompt]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -130,6 +141,11 @@ export function ChatPanel({
                 onSelect={handleSuggestionSelect}
               />
             </div>
+          )}
+
+          {/* Show user's prompt immediately before Convex subscription catches up */}
+          {pendingPrompt && (!messages || !messages.some((m) => m.role === "user")) && (
+            <UserMessage content={pendingPrompt} />
           )}
 
           {/* Persisted messages from Convex */}

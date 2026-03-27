@@ -15,9 +15,10 @@ interface PreviewPanelProps {
   error?: string;
   deviceSize?: DeviceSize;
   buildFailed?: boolean;
+  activityMessage?: string;
 }
 
-export function PreviewPanel({ bundleHtml, state, error, deviceSize = "desktop", buildFailed = false }: PreviewPanelProps) {
+export function PreviewPanel({ bundleHtml, state, error, deviceSize = "desktop", buildFailed = false, activityMessage }: PreviewPanelProps) {
   const [refreshKey, setRefreshKey] = useState(0);
   // Track which blobUrl the iframe has finished loading — null means "not yet loaded"
   const [loadedBlobUrl, setLoadedBlobUrl] = useState<string | null>(null);
@@ -81,9 +82,26 @@ export function PreviewPanel({ bundleHtml, state, error, deviceSize = "desktop",
       )}
 
       {isGenerating && !hasPreview && (
-        <div className="flex flex-col items-center gap-3 text-muted-foreground">
-          <Loader2 className="h-8 w-8 animate-spin" />
-          <p className="text-sm font-medium">Building your app...</p>
+        <div className="flex flex-col items-center gap-5 text-muted-foreground max-w-xs text-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary/50" />
+          <div>
+            <p className="text-sm font-medium">Building your app...</p>
+            {activityMessage && (
+              <p className="mt-1.5 text-xs text-muted-foreground/60 animate-pulse">
+                {activityMessage}
+              </p>
+            )}
+          </div>
+          {/* Skeleton wireframe */}
+          <div className="w-full space-y-3 rounded-xl border border-border/30 bg-background/50 p-5">
+            <div className="h-3 w-1/2 rounded-full bg-muted/60 animate-pulse" />
+            <div className="h-8 w-full rounded-lg bg-muted/40 animate-pulse" />
+            <div className="flex gap-2">
+              <div className="h-6 w-16 rounded-md bg-muted/50 animate-pulse" />
+              <div className="h-6 w-20 rounded-md bg-muted/50 animate-pulse" />
+            </div>
+            <div className="h-24 w-full rounded-lg bg-muted/30 animate-pulse" />
+          </div>
         </div>
       )}
 

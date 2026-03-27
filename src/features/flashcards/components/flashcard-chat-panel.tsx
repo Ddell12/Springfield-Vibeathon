@@ -17,6 +17,8 @@ interface FlashcardChatPanelProps {
   status: FlashcardStreamingStatus;
   activityMessage: string;
   onSubmit: (query: string) => void;
+  pendingPrompt?: string | null;
+  onPendingPromptClear?: () => void;
 }
 
 export function FlashcardChatPanel({
@@ -24,6 +26,8 @@ export function FlashcardChatPanel({
   status,
   activityMessage,
   onSubmit,
+  pendingPrompt,
+  onPendingPromptClear,
 }: FlashcardChatPanelProps) {
   const [input, setInput] = useState("");
   const scrollEndRef = useRef<HTMLDivElement>(null);
@@ -33,9 +37,16 @@ export function FlashcardChatPanel({
   );
   const isGenerating = status === "generating";
 
+  // Clear pending prompt once real messages arrive from Convex
+  useEffect(() => {
+    if (pendingPrompt && messages && messages.some((m) => m.role === "user")) {
+      onPendingPromptClear?.();
+    }
+  }, [messages, pendingPrompt, onPendingPromptClear]);
+
   useEffect(() => {
     scrollEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, activityMessage]);
+  }, [messages, activityMessage, pendingPrompt]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,6 +59,18 @@ export function FlashcardChatPanel({
     <div className="flex h-full flex-col">
       <div className="flex-1 overflow-y-auto px-4 py-4">
         <div className="flex flex-col gap-3">
+          {/* Show user's prompt immediately before Convex subscription catches up */}
+          {pendingPrompt && (!messages || !messages.some((m) => m.role === "user")) && (
+            <div className="flex items-end flex-col">
+              <span className="mb-1 px-1 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">
+                You
+              </span>
+              <div className="max-w-[90%] rounded-2xl rounded-tr-none bg-primary px-4 py-2.5 text-sm text-on-primary shadow-sm">
+                {pendingPrompt}
+              </div>
+            </div>
+          )}
+
           {messages?.map((msg) => (
             <div
               key={msg._id}

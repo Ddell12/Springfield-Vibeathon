@@ -22,6 +22,7 @@ import type * as init from "../init.js";
 import type * as knowledge_data from "../knowledge/data.js";
 import type * as knowledge_search from "../knowledge/search.js";
 import type * as knowledge_seed from "../knowledge/seed.js";
+import type * as lib_auth from "../lib/auth.js";
 import type * as lib_session_states from "../lib/session_states.js";
 import type * as messages from "../messages.js";
 import type * as publish from "../publish.js";
@@ -56,6 +57,7 @@ declare const fullApi: ApiFromModules<{
   "knowledge/data": typeof knowledge_data;
   "knowledge/search": typeof knowledge_search;
   "knowledge/seed": typeof knowledge_seed;
+  "lib/auth": typeof lib_auth;
   "lib/session_states": typeof lib_session_states;
   messages: typeof messages;
   publish: typeof publish;
