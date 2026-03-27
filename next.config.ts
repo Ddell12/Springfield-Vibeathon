@@ -6,7 +6,10 @@ const nextConfig: NextConfig = {
   // Include the WAB scaffold (and its prod node_modules installed by postinstall)
   // in the /api/generate serverless function so esbuild can resolve imports at runtime
   outputFileTracingIncludes: {
-    "/api/generate": ["./artifacts/wab-scaffold/**/*"],
+    "/api/generate": [
+      "./artifacts/wab-scaffold/**/*",
+      "./scripts/bundle-worker.mjs",
+    ],
   },
   async headers() {
     return [
