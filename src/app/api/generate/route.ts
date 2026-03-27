@@ -84,6 +84,7 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   const query = parsed.data.query ?? parsed.data.prompt!;
+  const blueprintData = parsed.data.blueprint;
   const mode = parsed.data.mode;
   const providedSessionId = parsed.data.sessionId as Id<"sessions"> | undefined;
 
@@ -152,7 +153,12 @@ export async function POST(request: Request): Promise<Response> {
           max_tokens: isFlashcardMode ? 4096 : 32768,
           system: systemPrompt,
           tools,
-          messages: [{ role: "user", content: query }],
+          messages: [{
+            role: "user",
+            content: blueprintData
+              ? `## Pre-Approved Blueprint\n\n${JSON.stringify(blueprintData, null, 2)}\n\n## User Request\n\n${query}`
+              : query,
+          }],
           stream: true,
           max_iterations: 10,
         });
