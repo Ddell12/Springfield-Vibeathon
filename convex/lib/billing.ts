@@ -2,7 +2,7 @@ import type { QueryCtx } from "../_generated/server";
 
 export const FREE_LIMITS = {
   maxApps: 5,
-  maxDecks: 3,
+  maxDecks: 10,
 } as const;
 
 export const PREMIUM_LIMITS = {
