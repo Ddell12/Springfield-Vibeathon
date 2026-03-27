@@ -2,8 +2,8 @@
 
 import { useCallback, useRef, useState } from "react";
 
-import { parseSSEChunks } from "@/core/sse-utils";
 import { parseSSEEvent } from "@/core/sse-events";
+import { parseSSEChunks } from "@/core/sse-utils";
 
 import type { Id } from "../../../../convex/_generated/dataModel";
 

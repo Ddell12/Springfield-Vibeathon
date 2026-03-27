@@ -11,7 +11,7 @@ const anthropic = new Anthropic({
 
 const RequestSchema = z.object({
   category: z.string(),
-  answers: z.record(z.union([z.string(), z.array(z.string())])),
+  answers: z.record(z.string(), z.union([z.string(), z.array(z.string())])),
   freeformNotes: z.array(z.string()).optional(),
 });
 

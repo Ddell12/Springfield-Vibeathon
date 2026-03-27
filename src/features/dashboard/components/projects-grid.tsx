@@ -1,7 +1,6 @@
 "use client";
 
 import { EmptyState } from "@/shared/components/empty-state";
-
 import { ProjectCard, type ProjectData } from "@/shared/components/project-card";
 
 export function ProjectsGrid({

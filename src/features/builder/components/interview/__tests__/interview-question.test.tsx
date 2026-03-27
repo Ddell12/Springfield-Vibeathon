@@ -1,5 +1,6 @@
 import { fireEvent, render } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+
 import type { InterviewQuestion as IQ } from "../../../lib/interview/types";
 import { InterviewQuestion } from "../interview-question";
 

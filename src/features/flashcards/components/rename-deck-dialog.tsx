@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { startTransition, useEffect, useState } from "react";
 
 import { cn } from "@/core/utils";
 import { MaterialIcon } from "@/shared/components/material-icon";
@@ -29,7 +29,7 @@ export function RenameDeckDialog({
   const [name, setName] = useState(currentName);
 
   useEffect(() => {
-    if (open) setName(currentName);
+    if (open) startTransition(() => setName(currentName));
   }, [open, currentName]);
 
   const handleSubmit = (e: React.FormEvent) => {

@@ -1,5 +1,6 @@
 import { fireEvent, render, waitFor } from "@testing-library/react";
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { beforeEach,describe, expect, it, vi } from "vitest";
+
 import { InterviewController } from "../interview-controller";
 
 vi.mock("@/shared/components/material-icon", () => ({

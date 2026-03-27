@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import { CATEGORIES, getCategoryById, getEssentialQuestions, getExtendedQuestions } from "../categories";
 
 describe("categories", () => {

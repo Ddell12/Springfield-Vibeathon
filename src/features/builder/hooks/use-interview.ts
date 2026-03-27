@@ -2,9 +2,9 @@
 
 import { useCallback, useReducer } from "react";
 
-import type { TherapyBlueprint } from "../lib/schemas";
 import { createInitialState, interviewReducer } from "../lib/interview/interview-state";
 import type { InterviewQuestion } from "../lib/interview/types";
+import type { TherapyBlueprint } from "../lib/schemas";
 
 export function useInterview() {
   const [state, dispatch] = useReducer(interviewReducer, undefined, createInitialState);

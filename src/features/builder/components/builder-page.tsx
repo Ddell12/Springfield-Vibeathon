@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery } from "convex/react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { startTransition, useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { useIsMobile } from "@/core/hooks/use-mobile";
@@ -25,10 +25,10 @@ import { useStreaming } from "../hooks/use-streaming";
 import { THERAPY_SUGGESTIONS } from "../lib/constants";
 import type { TherapyBlueprint } from "../lib/schemas";
 import { BuilderToolbar, type DeviceSize, type ViewMode } from "./builder-toolbar";
-import { InterviewController } from "./interview/interview-controller";
 import { ChatPanel } from "./chat-panel";
 import { CodePanel } from "./code-panel";
 import { ContinueCard } from "./continue-card";
+import { InterviewController } from "./interview/interview-controller";
 import { PreviewPanel } from "./preview-panel";
 import { PublishSuccessModal } from "./publish-success-modal";
 
@@ -103,11 +103,11 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
 
   // Auto-switch to preview when bundle is ready (perceived speed boost)
   useEffect(() => {
-    if (bundleHtml && viewMode !== "preview") setViewMode("preview");
+    if (bundleHtml && viewMode !== "preview") startTransition(() => setViewMode("preview"));
   }, [bundleHtml, viewMode]);
 
   useEffect(() => {
-    if (bundleHtml && mobilePanel !== "preview") setMobilePanel("preview");
+    if (bundleHtml && mobilePanel !== "preview") startTransition(() => setMobilePanel("preview"));
   }, [bundleHtml, mobilePanel]);
 
   const handleGenerate = useCallback((prompt: string, blueprint?: TherapyBlueprint) => {

@@ -9,13 +9,13 @@ import { DeleteConfirmationDialog } from "@/shared/components/delete-confirmatio
 import { EmptyState } from "@/shared/components/empty-state";
 import { MaterialIcon } from "@/shared/components/material-icon";
 import { MobileNavDrawer } from "@/shared/components/mobile-nav-drawer";
+import { ProjectCard } from "@/shared/components/project-card";
 import { Button } from "@/shared/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/components/ui/tabs";
 
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 import { MainPromptInput } from "./main-prompt-input";
-import { ProjectCard } from "@/shared/components/project-card";
 import { TemplatesTab } from "./templates-tab";
 
 const TEMPLATE_CHIPS = [

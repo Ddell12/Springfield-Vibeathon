@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { useIsMobile } from "@/core/hooks/use-mobile";
+import { DeleteConfirmationDialog } from "@/shared/components/delete-confirmation-dialog";
 import { MaterialIcon } from "@/shared/components/material-icon";
 import { SuggestionChips } from "@/shared/components/suggestion-chips";
 import { Button } from "@/shared/components/ui/button";
@@ -20,7 +21,6 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/shared/components/ui/sheet";
-import { DeleteConfirmationDialog } from "@/shared/components/delete-confirmation-dialog";
 
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";

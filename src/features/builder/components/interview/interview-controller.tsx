@@ -7,17 +7,17 @@ import { cn } from "@/core/utils";
 import { MaterialIcon } from "@/shared/components/material-icon";
 
 import { useInterview } from "../../hooks/use-interview";
+import { assembleBlueprint } from "../../lib/interview/blueprint-assembler";
 import {
   getCategoryById,
   getEssentialQuestions,
   getExtendedQuestions,
 } from "../../lib/interview/categories";
-import { assembleBlueprint } from "../../lib/interview/blueprint-assembler";
-import type { TherapyBlueprint } from "../../lib/schemas";
 import type { InterviewQuestion as IQ } from "../../lib/interview/types";
+import type { TherapyBlueprint } from "../../lib/schemas";
+import { BlueprintApprovalCard } from "./blueprint-approval-card";
 import { CategoryPicker } from "./category-picker";
 import { InterviewQuestion } from "./interview-question";
-import { BlueprintApprovalCard } from "./blueprint-approval-card";
 
 interface InterviewControllerProps {
   onGenerate: (prompt: string, blueprint: TherapyBlueprint) => void;
