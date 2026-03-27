@@ -318,6 +318,7 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
                       deviceSize="mobile"
                       buildFailed={buildFailed}
                       activityMessage={activities[activities.length - 1]?.message}
+                      onRetry={handleRetry}
                     />
                   </div>
                 )}
@@ -365,6 +366,7 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
                         deviceSize={deviceSize}
                         buildFailed={buildFailed}
                         activityMessage={activities[activities.length - 1]?.message}
+                        onRetry={handleRetry}
                       />
                     </div>
                   </ResizablePanel>

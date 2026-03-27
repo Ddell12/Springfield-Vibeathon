@@ -16,9 +16,10 @@ interface PreviewPanelProps {
   deviceSize?: DeviceSize;
   buildFailed?: boolean;
   activityMessage?: string;
+  onRetry?: () => void;
 }
 
-export function PreviewPanel({ bundleHtml, state, error, deviceSize = "desktop", buildFailed = false, activityMessage }: PreviewPanelProps) {
+export function PreviewPanel({ bundleHtml, state, error, deviceSize = "desktop", buildFailed = false, activityMessage, onRetry }: PreviewPanelProps) {
   const [refreshKey, setRefreshKey] = useState(0);
   // Track which blobUrl the iframe has finished loading — null means "not yet loaded"
   const [loadedBlobUrl, setLoadedBlobUrl] = useState<string | null>(null);
@@ -132,6 +133,16 @@ export function PreviewPanel({ bundleHtml, state, error, deviceSize = "desktop",
               ? "The generated code had build errors. Try sending a follow-up message like \"fix the build errors\" to resolve."
               : "Check the Code panel for your generated files."}
           </p>
+          {onRetry && (
+            <button
+              type="button"
+              onClick={onRetry}
+              className="mt-2 flex items-center gap-2 rounded-lg bg-primary/10 px-4 py-2 text-sm font-medium text-primary hover:bg-primary/20 transition-colors"
+            >
+              <RefreshCw className="h-4 w-4" />
+              Try again
+            </button>
+          )}
         </div>
       )}
 
