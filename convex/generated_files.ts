@@ -110,11 +110,12 @@ export const getPublicBundle = query({
       .query("apps")
       .withIndex("by_share_slug", (q) => q.eq("shareSlug", args.shareSlug))
       .first();
-    if (!app?.sessionId) return null;
+    const sessionId = app?.sessionId;
+    if (!sessionId) return null;
     const file = await ctx.db
       .query("files")
       .withIndex("by_session_path", (q) =>
-        q.eq("sessionId", app.sessionId).eq("path", "_bundle.html")
+        q.eq("sessionId", sessionId).eq("path", "_bundle.html")
       )
       .first();
     return file?.contents ?? null;
