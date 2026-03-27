@@ -39,6 +39,7 @@ describe("schema — streaming builder contract", () => {
       title: "Test",
       query: "test",
     });
+    await t.mutation(api.sessions.startGeneration, { sessionId: id });
     await t.mutation(api.sessions.setLive, { sessionId: id });
     const session = await t.query(api.sessions.get, { sessionId: id });
     expect(session?.state).toBe("live");
@@ -50,6 +51,7 @@ describe("schema — streaming builder contract", () => {
       title: "Test",
       query: "test",
     });
+    await t.mutation(api.sessions.startGeneration, { sessionId: id });
     await t.mutation(api.sessions.setFailed, {
       sessionId: id,
       error: "LLM timeout",

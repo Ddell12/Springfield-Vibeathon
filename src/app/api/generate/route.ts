@@ -310,7 +310,7 @@ export async function POST(request: Request): Promise<Response> {
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' blob: data: https://fonts.googleapis.com https://fonts.gstatic.com https://cdn.tailwindcss.com;" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src blob: data: https:; connect-src blob: data:; frame-ancestors 'none';" />
   <script>window.tailwind = { config: { darkMode: ["class"], theme: { extend: ${twExtend} } } };</script>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>${processedCss}</style>

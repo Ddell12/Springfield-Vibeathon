@@ -2,6 +2,7 @@ import { v } from "convex/values";
 
 import type { Id } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
+import { assertSessionOwner } from "./lib/auth";
 
 export const upsert = mutation({
   args: {
@@ -11,6 +12,7 @@ export const upsert = mutation({
     version: v.number(),
   },
   handler: async (ctx, args) => {
+    await assertSessionOwner(ctx, args.sessionId);
     if (args.path.length > 500 || args.path.includes("..")) {
       throw new Error("Invalid file path");
     }
@@ -46,6 +48,7 @@ export const upsertAutoVersion = mutation({
     contents: v.string(),
   },
   handler: async (ctx, args): Promise<{ id: Id<"files">; version: number }> => {
+    await assertSessionOwner(ctx, args.sessionId);
     if (args.path.length > 500 || args.path.includes("..")) {
       throw new Error("Invalid file path");
     }
@@ -72,6 +75,8 @@ export const upsertAutoVersion = mutation({
 export const list = query({
   args: { sessionId: v.id("sessions") },
   handler: async (ctx, args) => {
+    const session = await assertSessionOwner(ctx, args.sessionId, { soft: true });
+    if (!session) return [];
     return await ctx.db
       .query("files")
       .withIndex("by_session", (q) => q.eq("sessionId", args.sessionId))
@@ -85,6 +90,8 @@ export const getByPath = query({
     path: v.string(),
   },
   handler: async (ctx, args) => {
+    const session = await assertSessionOwner(ctx, args.sessionId, { soft: true });
+    if (!session) return null;
     const result = await ctx.db
       .query("files")
       .withIndex("by_session_path", (q) =>

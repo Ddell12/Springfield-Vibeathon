@@ -1,8 +1,12 @@
 import { v } from "convex/values";
 
 import { mutation, query } from "./_generated/server";
-import { getAuthUserId } from "./lib/auth";
-import { SESSION_STATES } from "./lib/session_states";
+import { assertSessionOwner, getAuthUserId } from "./lib/auth";
+import {
+  SESSION_STATES,
+  VALID_TRANSITIONS,
+  type SessionState,
+} from "./lib/session_states";
 
 export const create = mutation({
   args: {
@@ -23,7 +27,7 @@ export const create = mutation({
 export const get = query({
   args: { sessionId: v.id("sessions") },
   handler: async (ctx, args) => {
-    return await ctx.db.get(args.sessionId);
+    return await assertSessionOwner(ctx, args.sessionId, { soft: true });
   },
 });
 
@@ -43,8 +47,13 @@ export const list = query({
 export const startGeneration = mutation({
   args: { sessionId: v.id("sessions") },
   handler: async (ctx, args) => {
-    const session = await ctx.db.get(args.sessionId);
-    if (!session) throw new Error("Session not found");
+    const session = await assertSessionOwner(ctx, args.sessionId);
+    const allowed = VALID_TRANSITIONS[session.state as SessionState];
+    if (!allowed?.includes("generating")) {
+      throw new Error(
+        `Cannot start generation from state "${session.state}"`,
+      );
+    }
     await ctx.db.patch(args.sessionId, {
       state: SESSION_STATES.GENERATING,
       stateMessage: "Generating your app...",
@@ -57,8 +66,11 @@ export const setLive = mutation({
     sessionId: v.id("sessions"),
   },
   handler: async (ctx, args) => {
-    const session = await ctx.db.get(args.sessionId);
-    if (!session) throw new Error("Session not found");
+    const session = await assertSessionOwner(ctx, args.sessionId);
+    const allowed = VALID_TRANSITIONS[session.state as SessionState];
+    if (!allowed?.includes("live")) {
+      throw new Error(`Cannot set live from state "${session.state}"`);
+    }
     await ctx.db.patch(args.sessionId, {
       state: SESSION_STATES.LIVE,
       stateMessage: "Live",
@@ -72,8 +84,11 @@ export const setFailed = mutation({
     error: v.string(),
   },
   handler: async (ctx, args) => {
-    const session = await ctx.db.get(args.sessionId);
-    if (!session) throw new Error("Session not found");
+    const session = await assertSessionOwner(ctx, args.sessionId);
+    const allowed = VALID_TRANSITIONS[session.state as SessionState];
+    if (!allowed?.includes("failed")) {
+      throw new Error(`Cannot set failed from state "${session.state}"`);
+    }
     await ctx.db.patch(args.sessionId, {
       state: SESSION_STATES.FAILED,
       error: args.error,
@@ -137,6 +152,22 @@ export const remove = mutation({
       await ctx.db.delete(app._id);
     }
 
+    // Cascade-delete flashcard decks and their cards
+    const decks = await ctx.db
+      .query("flashcardDecks")
+      .withIndex("by_session", (q) => q.eq("sessionId", args.sessionId))
+      .take(50);
+    for (const deck of decks) {
+      const cards = await ctx.db
+        .query("flashcards")
+        .withIndex("by_deck", (q) => q.eq("deckId", deck._id))
+        .take(200);
+      for (const card of cards) {
+        await ctx.db.delete(card._id);
+      }
+      await ctx.db.delete(deck._id);
+    }
+
     // Delete the session itself
     await ctx.db.delete(args.sessionId);
   },
@@ -148,8 +179,7 @@ export const updateTitle = mutation({
     title: v.string(),
   },
   handler: async (ctx, args) => {
-    const session = await ctx.db.get(args.sessionId);
-    if (!session) throw new Error("Session not found");
+    await assertSessionOwner(ctx, args.sessionId);
     const trimmed = args.title.slice(0, 100);
     await ctx.db.patch(args.sessionId, { title: trimmed });
   },
@@ -177,8 +207,7 @@ export const setBlueprint = mutation({
     blueprint: v.any(), // Validated via TherapyBlueprintSchema (Zod) at app layer before persistence
   },
   handler: async (ctx, args) => {
-    const session = await ctx.db.get(args.sessionId);
-    if (!session) throw new Error("Session not found");
+    await assertSessionOwner(ctx, args.sessionId);
     await ctx.db.patch(args.sessionId, { blueprint: args.blueprint });
   },
 });

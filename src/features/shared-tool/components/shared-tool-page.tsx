@@ -81,9 +81,9 @@ export function SharedToolPage() {
           </div>
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center gap-4 text-center">
-            <MaterialIcon icon="construction" className="text-5xl text-primary/40" />
+            <MaterialIcon icon="construction" className="text-5xl text-primary/60" />
             <p className="text-on-surface-variant text-lg">This tool is still being built.</p>
-            <p className="text-on-surface-variant/60 text-sm">Check back soon!</p>
+            <p className="text-on-surface-variant text-sm">Check back soon!</p>
           </div>
         )}
       </main>
