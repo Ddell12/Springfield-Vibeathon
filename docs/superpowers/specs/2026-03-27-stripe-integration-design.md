@@ -59,7 +59,21 @@ The component manages its own isolated tables (`stripe_customers`, `stripe_subsc
 
 ### 3.2 Webhook Route
 
-The component's `registerRoutes()` adds a `/stripe/webhook` path to `convex/http.ts`, alongside the existing `/api/rag/search` route. Handles signature verification and event dispatch internally.
+The `registerRoutes` function (a named export from `@convex-dev/stripe`) adds a `/stripe/webhook` path to `convex/http.ts`, alongside the existing `/api/rag/search` route. Handles signature verification and event dispatch internally.
+
+```typescript
+// convex/http.ts (additions)
+import { registerRoutes } from "@convex-dev/stripe";
+import { components } from "./_generated/api";
+
+// ... existing httpRouter setup ...
+
+registerRoutes(http, components.stripe, {
+  webhookPath: "/stripe/webhook",
+});
+
+export default http;
+```
 
 ### 3.3 Data Flow
 
@@ -96,7 +110,24 @@ if (plan === "free" && appCount >= limits.maxApps) {
 }
 ```
 
-Limit enforcement also happens server-side in mutations (not just client-side) to prevent race conditions. Convex mutations are transactional, so two concurrent saves can't both succeed past the limit.
+Limit enforcement also happens server-side in the existing mutations that create apps and decks (e.g., `convex/apps.ts`, `convex/flashcard_decks.ts`). Before inserting a record, these mutations query the user's subscription status from the component's tables and count existing records. If the user is free and at the limit, the mutation throws. Convex mutations are transactional, so two concurrent saves can't both succeed past the limit.
+
+```typescript
+// Example: server-side enforcement in an app save mutation
+const userId = (await ctx.auth.getUserIdentity())?.subject;
+if (userId) {
+  const isPremium = await checkPremiumStatus(ctx, userId); // reads component tables
+  if (!isPremium) {
+    const apps = await ctx.db
+      .query("apps")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .collect();
+    if (apps.length >= FREE_LIMITS.maxApps) {
+      throw new Error("Free plan limit reached. Upgrade to Premium for unlimited apps.");
+    }
+  }
+}
+```
 
 ---
 
@@ -123,6 +154,7 @@ Create in Stripe Dashboard (test mode first, then live):
 | `src/features/billing/components/upgrade-prompt.tsx` | New | Inline upgrade card shown at limit gates |
 | `src/features/billing/components/billing-section.tsx` | New | Settings page section: plan info + manage button |
 | `src/features/settings/components/settings-page.tsx` | Modified | Add billing section |
+| `src/features/settings/components/settings-sidebar.tsx` | Modified | Add "billing" to SECTIONS array and labels |
 | `src/features/builder/` (gating points) | Modified | Gate app save on free limit |
 | `src/features/flashcards/` (gating points) | Modified | Gate deck creation on free limit |
 
