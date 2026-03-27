@@ -209,6 +209,14 @@ export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn 
     sessionIdRef.current = state.sessionId;
   }, [state.sessionId]);
 
+  const flushTokenBuffer = useCallback(() => {
+    if (rafIdRef.current) {
+      cancelAnimationFrame(rafIdRef.current);
+      rafIdRef.current = undefined;
+    }
+    dispatch({ type: "SET_STREAMING_TEXT", text: tokenBufferRef.current });
+  }, []);
+
   const reset = useCallback(() => {
     abortRef.current?.abort();
     dispatch({ type: "RESET" });
@@ -310,11 +318,12 @@ export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn 
           break;
 
         case "error":
+          flushTokenBuffer();
           dispatch({ type: "ERROR_RESPONSE", error: sseEvent.message });
           break;
       }
     },
-    [addActivity]
+    [addActivity, flushTokenBuffer]
   );
 
   const generate = useCallback(
@@ -351,12 +360,14 @@ export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn 
           } catch {
             // response may not be JSON
           }
+          flushTokenBuffer();
           dispatch({ type: "ERROR_RESPONSE", error: detail });
           return;
         }
 
         const body = response.body;
         if (!body) {
+          flushTokenBuffer();
           dispatch({ type: "ERROR_RESPONSE", error: "No response body" });
           return;
         }
@@ -394,6 +405,7 @@ export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn 
         }
       } catch (err) {
         if (err instanceof Error && err.name === "AbortError") return;
+        flushTokenBuffer();
         dispatch({ type: "ERROR_RESPONSE", error: extractErrorMessage(err) });
       }
     },

@@ -93,7 +93,6 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
     currentSession,
     appRecord,
     mostRecent,
-    sessionResumed,
     handlePromptFromUrl,
   } = useSessionResume(initialSessionId, status, sessionId, resumeSession, handleGenerate);
 
@@ -228,7 +227,6 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
             onPublish={handlePublish}
             onNewChat={() => {
               reset();
-              sessionResumed.current = false;
               router.push("/builder");
             }}
             isMobile={isMobile}

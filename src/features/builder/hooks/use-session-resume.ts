@@ -65,6 +65,13 @@ export function useSessionResume(
     }
   }, [initialSessionId, resumeSessionData, resumeFiles, status, resumeSession]);
 
+  // Reset resume guard when session returns to idle (e.g., after onNewChat)
+  useEffect(() => {
+    if (status === "idle") {
+      sessionResumed.current = false;
+    }
+  }, [status]);
+
   // Auto-submit prompt from URL query param (e.g., from template chips)
   const promptSubmitted = useRef(false);
 
@@ -99,7 +106,6 @@ export function useSessionResume(
     currentSession,
     appRecord,
     mostRecent,
-    sessionResumed,
     handlePromptFromUrl,
   };
 }

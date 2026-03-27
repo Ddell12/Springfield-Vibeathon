@@ -1,7 +1,7 @@
 "use client";
 
 import { useAction } from "convex/react";
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { extractErrorMessage } from "@/core/utils";
@@ -14,10 +14,12 @@ export function usePublishing(sessionId: string | null, appName: string) {
   const [isPublishing, setIsPublishing] = useState(false);
   const [publishedUrl, setPublishedUrl] = useState<string | null>(null);
   const [publishModalOpen, setPublishModalOpen] = useState(false);
+  const isPublishingRef = useRef(false);
 
   const handlePublish = useCallback(async () => {
-    if (!sessionId || isPublishing) return;
+    if (!sessionId || isPublishingRef.current) return;
 
+    isPublishingRef.current = true;
     setIsPublishing(true);
     try {
       const result = await publishApp({
@@ -30,9 +32,10 @@ export function usePublishing(sessionId: string | null, appName: string) {
       console.error("Publish failed:", err);
       toast.error(extractErrorMessage(err));
     } finally {
+      isPublishingRef.current = false;
       setIsPublishing(false);
     }
-  }, [sessionId, isPublishing, appName, publishApp]);
+  }, [sessionId, appName, publishApp]);
 
   return {
     isPublishing,
