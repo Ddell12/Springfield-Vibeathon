@@ -38,8 +38,9 @@ export function InterviewQuestion({ question, onAnswer }: InterviewQuestionProps
               type="button"
               onClick={() => onAnswer(question.id, option.value)}
               className={cn(
-                "rounded-full bg-primary/10 px-4 py-2 text-sm font-medium",
-                "hover:bg-primary/20 transition-colors",
+                "rounded-full border border-primary/20 bg-primary/5 px-4 py-2.5 text-sm font-medium text-foreground",
+                "hover:bg-primary/15 hover:border-primary/40 hover:shadow-sm active:scale-[0.97]",
+                "transition-all duration-200",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50",
               )}
             >
@@ -68,8 +69,9 @@ export function InterviewQuestion({ question, onAnswer }: InterviewQuestionProps
               type="button"
               onClick={() => onAnswer(question.id, option.value)}
               className={cn(
-                "rounded-full bg-primary/10 px-4 py-2 text-sm font-medium",
-                "hover:bg-primary/20 transition-colors",
+                "rounded-full border border-primary/20 bg-primary/5 px-4 py-2.5 text-sm font-medium text-foreground",
+                "hover:bg-primary/15 hover:border-primary/40 hover:shadow-sm active:scale-[0.97]",
+                "transition-all duration-200",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50",
               )}
             >

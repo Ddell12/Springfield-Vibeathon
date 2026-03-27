@@ -3,13 +3,18 @@
 import { useEffect } from "react";
 import { toast } from "sonner";
 
+import { cn } from "@/core/utils";
+import { MaterialIcon } from "@/shared/components/material-icon";
+
 import { useInterview } from "../../hooks/use-interview";
 import {
+  getCategoryById,
   getEssentialQuestions,
   getExtendedQuestions,
 } from "../../lib/interview/categories";
 import { assembleBlueprint } from "../../lib/interview/blueprint-assembler";
 import type { TherapyBlueprint } from "../../lib/schemas";
+import type { InterviewQuestion as IQ } from "../../lib/interview/types";
 import { CategoryPicker } from "./category-picker";
 import { InterviewQuestion } from "./interview-question";
 import { BlueprintApprovalCard } from "./blueprint-approval-card";
@@ -17,6 +22,61 @@ import { BlueprintApprovalCard } from "./blueprint-approval-card";
 interface InterviewControllerProps {
   onGenerate: (prompt: string, blueprint: TherapyBlueprint) => void;
   onEscapeHatch?: () => void;
+}
+
+/** Renders previously answered questions as locked chat bubbles */
+function AnsweredQuestions({
+  questions,
+  answers,
+}: {
+  questions: IQ[];
+  answers: Record<string, string | string[]>;
+}) {
+  return (
+    <>
+      {questions.map((q) => {
+        const raw = answers[q.id];
+        const displayValue = Array.isArray(raw) ? raw.join(", ") : (raw ?? "");
+        const option = q.options?.find((o) => o.value === displayValue);
+        const label = option?.label ?? displayValue;
+
+        return (
+          <div key={q.id} className="flex flex-col gap-2">
+            <div className="flex justify-start">
+              <div className="max-w-[85%] break-words rounded-2xl rounded-bl-md border border-outline-variant/15 bg-surface-container px-4 py-3">
+                <p className="text-sm text-foreground">{q.text}</p>
+              </div>
+            </div>
+            <div className="flex justify-end">
+              <div className="max-w-[85%] break-words rounded-2xl rounded-br-md bg-primary/15 px-4 py-2">
+                <p className="text-sm font-medium text-foreground">{label}</p>
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </>
+  );
+}
+
+/** Category intro header shown at the top of the interview */
+function CategoryHeader({ categoryId }: { categoryId: string }) {
+  const category = getCategoryById(categoryId);
+  if (!category) return null;
+
+  return (
+    <div className="flex items-center gap-3 rounded-2xl bg-primary/5 px-5 py-3">
+      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/15">
+        <MaterialIcon icon={category.icon} size="sm" className="text-primary" />
+      </div>
+      <div>
+        <p className="text-sm font-semibold text-primary">
+          Let&apos;s build a {category.label}!
+        </p>
+        <p className="text-xs text-on-surface-variant">{category.description}</p>
+      </div>
+    </div>
+  );
 }
 
 export function InterviewController({
@@ -81,9 +141,7 @@ export function InterviewController({
 
         if (followUps.length > 0) {
           setFollowUps(followUps, draftBlueprint);
-          // Follow-up questions will be answered, then we move to review
         } else {
-          // No follow-ups — assemble and go straight to review
           const { blueprint, richPrompt } = assembleBlueprint(
             state.category!,
             state.answers,
@@ -157,38 +215,19 @@ export function InterviewController({
     );
   }
 
+  // All answered essential questions (shared across gate/extended/followup/review phases)
+  const essentialQuestions = state.category ? getEssentialQuestions(state.category) : [];
+  const answeredEssentialQuestions = essentialQuestions.filter((q) => q.id in state.answers);
+
   // Phase: essential
   if (state.phase === "essential" && state.category) {
-    const questions = getEssentialQuestions(state.category);
-    const answeredQuestions = questions.slice(0, state.currentQuestionIndex);
-    const currentQuestion = questions[state.currentQuestionIndex];
+    const currentQuestion = essentialQuestions[state.currentQuestionIndex];
+    const answeredQuestions = essentialQuestions.slice(0, state.currentQuestionIndex);
 
     return (
       <div className="flex flex-col gap-4">
-        {/* Previously answered questions — locked as user bubbles */}
-        {answeredQuestions.map((q) => {
-          const raw = state.answers[q.id];
-          const displayValue = Array.isArray(raw) ? raw.join(", ") : (raw ?? "");
-          const option = q.options?.find((o) => o.value === displayValue);
-          const label = option?.label ?? displayValue;
-
-          return (
-            <div key={q.id} className="flex flex-col gap-2">
-              <div className="flex justify-start">
-                <div className="max-w-[85%] break-words rounded-2xl rounded-bl-md border border-outline-variant/15 bg-surface-container px-4 py-3">
-                  <p className="text-sm text-foreground">{q.text}</p>
-                </div>
-              </div>
-              <div className="flex justify-end">
-                <div className="max-w-[85%] break-words rounded-2xl rounded-br-md bg-primary/15 px-4 py-2">
-                  <p className="text-sm font-medium text-foreground">{label}</p>
-                </div>
-              </div>
-            </div>
-          );
-        })}
-
-        {/* Current question */}
+        <CategoryHeader categoryId={state.category} />
+        <AnsweredQuestions questions={answeredQuestions} answers={state.answers} />
         {currentQuestion && (
           <InterviewQuestion
             question={currentQuestion}
@@ -199,10 +238,13 @@ export function InterviewController({
     );
   }
 
-  // Phase: gate
-  if (state.phase === "gate") {
+  // Phase: gate — show full conversation history above the gate message
+  if (state.phase === "gate" && state.category) {
     return (
       <div className="flex flex-col gap-4">
+        <CategoryHeader categoryId={state.category} />
+        <AnsweredQuestions questions={answeredEssentialQuestions} answers={state.answers} />
+
         <div className="flex justify-start">
           <div className="max-w-[85%] break-words rounded-2xl rounded-bl-md border border-outline-variant/15 bg-surface-container px-4 py-3">
             <p className="text-sm text-foreground">
@@ -230,36 +272,17 @@ export function InterviewController({
     );
   }
 
-  // Phase: extended
+  // Phase: extended — show essential history + extended questions
   if (state.phase === "extended" && state.category) {
-    const questions = getExtendedQuestions(state.category);
-    const answeredQuestions = questions.slice(0, state.currentQuestionIndex);
-    const currentQuestion = questions[state.currentQuestionIndex];
+    const extendedQuestions = getExtendedQuestions(state.category);
+    const answeredExtendedQuestions = extendedQuestions.slice(0, state.currentQuestionIndex);
+    const currentQuestion = extendedQuestions[state.currentQuestionIndex];
 
     return (
       <div className="flex flex-col gap-4">
-        {answeredQuestions.map((q) => {
-          const raw = state.answers[q.id];
-          const displayValue = Array.isArray(raw) ? raw.join(", ") : (raw ?? "");
-          const option = q.options?.find((o) => o.value === displayValue);
-          const label = option?.label ?? displayValue;
-
-          return (
-            <div key={q.id} className="flex flex-col gap-2">
-              <div className="flex justify-start">
-                <div className="max-w-[85%] break-words rounded-2xl rounded-bl-md border border-outline-variant/15 bg-surface-container px-4 py-3">
-                  <p className="text-sm text-foreground">{q.text}</p>
-                </div>
-              </div>
-              <div className="flex justify-end">
-                <div className="max-w-[85%] break-words rounded-2xl rounded-br-md bg-primary/15 px-4 py-2">
-                  <p className="text-sm font-medium text-foreground">{label}</p>
-                </div>
-              </div>
-            </div>
-          );
-        })}
-
+        <CategoryHeader categoryId={state.category} />
+        <AnsweredQuestions questions={answeredEssentialQuestions} answers={state.answers} />
+        <AnsweredQuestions questions={answeredExtendedQuestions} answers={state.answers} />
         {currentQuestion && (
           <InterviewQuestion
             question={currentQuestion}
@@ -271,44 +294,16 @@ export function InterviewController({
   }
 
   // Phase: followup — loading or answering follow-up questions
-  if (state.phase === "followup") {
-    // If follow-up questions have been loaded, show them
+  if (state.phase === "followup" && state.category) {
     if (state.followUpQuestions.length > 0) {
-      const answeredQuestions = state.followUpQuestions.slice(
-        0,
-        state.currentQuestionIndex,
-      );
-      const currentQuestion =
-        state.followUpQuestions[state.currentQuestionIndex];
+      const answeredFollowUpQuestions = state.followUpQuestions.slice(0, state.currentQuestionIndex);
+      const currentQuestion = state.followUpQuestions[state.currentQuestionIndex];
 
       return (
         <div className="flex flex-col gap-4">
-          {answeredQuestions.map((q) => {
-            const raw = state.answers[q.id];
-            const displayValue = Array.isArray(raw)
-              ? raw.join(", ")
-              : (raw ?? "");
-            const option = q.options?.find((o) => o.value === displayValue);
-            const label = option?.label ?? displayValue;
-
-            return (
-              <div key={q.id} className="flex flex-col gap-2">
-                <div className="flex justify-start">
-                  <div className="max-w-[85%] break-words rounded-2xl rounded-bl-md border border-outline-variant/15 bg-surface-container px-4 py-3">
-                    <p className="text-sm text-foreground">{q.text}</p>
-                  </div>
-                </div>
-                <div className="flex justify-end">
-                  <div className="max-w-[85%] break-words rounded-2xl rounded-br-md bg-primary/15 px-4 py-2">
-                    <p className="text-sm font-medium text-foreground">
-                      {label}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-
+          <CategoryHeader categoryId={state.category} />
+          <AnsweredQuestions questions={answeredEssentialQuestions} answers={state.answers} />
+          <AnsweredQuestions questions={answeredFollowUpQuestions} answers={state.answers} />
           {currentQuestion && (
             <InterviewQuestion
               question={currentQuestion}
@@ -321,9 +316,11 @@ export function InterviewController({
 
     // Loading state
     return (
-      <div className="flex items-center justify-center py-8">
-        <div className="flex items-center gap-3 text-on-surface-variant">
-          <div className="h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+      <div className="flex flex-col gap-4">
+        <CategoryHeader categoryId={state.category} />
+        <AnsweredQuestions questions={answeredEssentialQuestions} answers={state.answers} />
+        <div className="flex items-center gap-3 rounded-2xl bg-primary/5 px-5 py-4 text-on-surface-variant">
+          <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary/40 border-t-primary" />
           <p className="text-sm">Personalizing your plan…</p>
         </div>
       </div>
@@ -331,13 +328,17 @@ export function InterviewController({
   }
 
   // Phase: review
-  if (state.phase === "review" && state.draftBlueprint) {
+  if (state.phase === "review" && state.draftBlueprint && state.category) {
     return (
-      <BlueprintApprovalCard
-        blueprint={state.draftBlueprint}
-        onApprove={handleApprove}
-        onEdit={reEnter}
-      />
+      <div className="flex flex-col gap-4">
+        <CategoryHeader categoryId={state.category} />
+        <AnsweredQuestions questions={answeredEssentialQuestions} answers={state.answers} />
+        <BlueprintApprovalCard
+          blueprint={state.draftBlueprint}
+          onApprove={handleApprove}
+          onEdit={reEnter}
+        />
+      </div>
     );
   }
 
