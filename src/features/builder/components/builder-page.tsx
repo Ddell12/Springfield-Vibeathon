@@ -105,10 +105,13 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
     }
   }, [status]);
 
-  // Auto-switch to preview when bundle is ready (perceived speed boost)
+  // Auto-switch to preview when bundle first arrives (perceived speed boost)
+  // Only triggers on bundleHtml changes — not on viewMode changes, which would
+  // prevent the user from switching to the code view via "View source".
   useEffect(() => {
-    if (bundleHtml && viewMode !== "preview") startTransition(() => setViewMode("preview"));
-  }, [bundleHtml, viewMode]);
+    if (bundleHtml) startTransition(() => setViewMode("preview"));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bundleHtml]);
 
   useEffect(() => {
     if (bundleHtml && mobilePanel !== "preview") startTransition(() => setMobilePanel("preview"));
