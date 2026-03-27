@@ -62,10 +62,10 @@ describe("BuilderPage — three-panel layout", () => {
     expect(panels.length).toBeGreaterThanOrEqual(2);
   });
 
-  it("renders the chat panel area with a text input", () => {
+  it("renders the prompt screen with category picker when no session", () => {
     render(<BuilderPage initialSessionId={null} />);
-    const input = screen.queryByRole("textbox") ?? screen.queryByPlaceholderText(/describe|tell|build/i);
-    expect(input).toBeTruthy();
+    // The new prompt screen shows the InterviewController (category picker) by default
+    expect(screen.getByText("What would you like to build?")).toBeTruthy();
   });
 
   it("does not render PhaseTimeline component", () => {
@@ -119,8 +119,8 @@ describe("BuilderPage — three-panel layout", () => {
     vi.mocked(useIsMobile).mockReturnValueOnce(true);
 
     render(<BuilderPage initialSessionId={null} />);
-    // Mobile view should still render the chat panel by default (mobilePanel = "chat")
-    expect(screen.queryByRole("textbox")).toBeTruthy();
+    // Mobile view with no session shows the prompt screen (category picker)
+    expect(screen.getByText("What would you like to build?")).toBeTruthy();
   });
 
   it("shows error state in streaming hook", async () => {
