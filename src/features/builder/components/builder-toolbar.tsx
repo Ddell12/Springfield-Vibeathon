@@ -22,6 +22,8 @@ interface BuilderToolbarProps {
   onNameEditStart?: () => void;
   onNameEditEnd?: (name: string) => void;
   onShare?: () => void;
+  onSave?: () => void;
+  isSaved?: boolean;
   onNewChat?: () => void;
   isMobile?: boolean;
   mobilePanel?: "chat" | "preview";
@@ -45,6 +47,8 @@ export function BuilderToolbar({
   onNameEditStart,
   onNameEditEnd,
   onShare,
+  onSave,
+  isSaved,
   onNewChat,
   isMobile,
   mobilePanel,
@@ -213,6 +217,21 @@ export function BuilderToolbar({
           >
             <MaterialIcon icon="code" size="sm" />
             <span className="hidden sm:inline">Source</span>
+          </Button>
+        )}
+        {onSave && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className={cn(
+              "min-h-[44px] gap-1.5 rounded-md px-3 text-xs font-semibold transition-all active:scale-95",
+              isSaved ? "text-primary" : "text-on-surface-variant",
+            )}
+            onClick={onSave}
+            disabled={isSaved}
+          >
+            <MaterialIcon icon={isSaved ? "check_circle" : "bookmark"} size="sm" />
+            <span className="hidden sm:inline">{isSaved ? "Saved" : "Save"}</span>
           </Button>
         )}
         <Button

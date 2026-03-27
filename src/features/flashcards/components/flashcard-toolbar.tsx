@@ -15,6 +15,8 @@ interface FlashcardToolbarProps {
   onNameEditStart?: () => void;
   onNameEditEnd?: (name: string) => void;
   onShare?: () => void;
+  onSave?: () => void;
+  isSaved?: boolean;
   onNewChat?: () => void;
   onOpenDeckSheet?: () => void;
   isMobile?: boolean;
@@ -29,6 +31,8 @@ export function FlashcardToolbar({
   onNameEditStart,
   onNameEditEnd,
   onShare,
+  onSave,
+  isSaved,
   onNewChat,
   onOpenDeckSheet,
   isMobile,
@@ -141,6 +145,21 @@ export function FlashcardToolbar({
           >
             <MaterialIcon icon="collections_bookmark" size="sm" />
             <span className="hidden sm:inline">Decks</span>
+          </Button>
+        )}
+        {onSave && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className={cn(
+              "min-h-[44px] gap-1.5 rounded-md px-3 text-xs font-semibold transition-all active:scale-95",
+              isSaved ? "text-primary" : "text-on-surface-variant",
+            )}
+            onClick={onSave}
+            disabled={isSaved}
+          >
+            <MaterialIcon icon={isSaved ? "check_circle" : "bookmark"} size="sm" />
+            <span className="hidden sm:inline">{isSaved ? "Saved" : "Save"}</span>
           </Button>
         )}
         <Button

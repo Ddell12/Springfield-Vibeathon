@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery } from "convex/react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { useIsMobile } from "@/core/hooks/use-mobile";
@@ -53,6 +53,7 @@ export function FlashcardPage() {
   const updateTitle = useMutation(api.sessions.updateTitle);
   const updateDeck = useMutation(api.flashcard_decks.update);
   const removeDeck = useMutation(api.flashcard_decks.remove);
+  const ensureApp = useMutation(api.apps.ensureForSession);
 
   const currentSession = useQuery(
     api.sessions.get,
@@ -64,7 +65,34 @@ export function FlashcardPage() {
     sessionId ? { sessionId } : "skip",
   );
 
+  const appRecord = useQuery(
+    api.apps.getBySession,
+    sessionId ? { sessionId } : "skip",
+  );
+
   const sessionName = currentSession?.title ?? "Untitled Deck";
+
+  // Auto-save to My Apps when generation completes
+  const autoSavedRef = useRef(false);
+  useEffect(() => {
+    if (status === "live" && sessionId && !appRecord && !autoSavedRef.current) {
+      autoSavedRef.current = true;
+      ensureApp({ sessionId, title: sessionName })
+        .then(() => toast.success("Saved to My Apps!"))
+        .catch(() => {});
+    }
+    if (status === "generating") autoSavedRef.current = false;
+  }, [status, sessionId, appRecord, sessionName, ensureApp]);
+
+  const handleSave = useCallback(async () => {
+    if (!sessionId) return;
+    try {
+      await ensureApp({ sessionId, title: sessionName });
+      toast.success("Saved to My Apps!");
+    } catch {
+      toast.error("Could not save — please try again");
+    }
+  }, [sessionId, sessionName, ensureApp]);
 
   /* eslint-disable react-hooks/set-state-in-effect -- auto-select first deck on load */
   useEffect(() => {
@@ -201,6 +229,8 @@ export function FlashcardPage() {
             isEditingName={isEditingName}
             onNameEditStart={() => setIsEditingName(true)}
             onNameEditEnd={handleNameEditEnd}
+            onSave={handleSave}
+            isSaved={!!appRecord}
             onNewChat={handleNewChat}
             onOpenDeckSheet={() => setDeckSheetOpen(true)}
             isMobile={isMobile}

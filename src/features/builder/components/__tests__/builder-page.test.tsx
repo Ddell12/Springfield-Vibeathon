@@ -20,7 +20,7 @@ vi.mock("next/navigation", () => ({
 // Mock Convex hooks — return undefined (not null) to match real convex behavior for skipped/loading queries
 vi.mock("convex/react", () => ({
   useQuery: vi.fn().mockReturnValue(undefined),
-  useMutation: vi.fn().mockReturnValue(vi.fn()),
+  useMutation: vi.fn().mockReturnValue(vi.fn().mockResolvedValue(null)),
   useAction: vi.fn().mockReturnValue(vi.fn().mockResolvedValue({ audioUrl: "https://test.example.com/audio.mp3" })),
 }));
 

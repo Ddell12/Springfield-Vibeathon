@@ -167,6 +167,32 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
     }
   };
 
+  // Auto-save to My Apps when generation completes
+  const autoSavedRef = useRef(false);
+  useEffect(() => {
+    if (status === "live" && activeSessionId && !appRecord && !autoSavedRef.current) {
+      autoSavedRef.current = true;
+      ensureApp({ sessionId: activeSessionId as Id<"sessions">, title: appName })
+        .then(() => toast.success("Saved to My Apps!"))
+        .catch(() => {}); // Silently fail — user can retry with Save button
+    }
+    if (status === "generating") autoSavedRef.current = false;
+  }, [status, activeSessionId, appRecord, appName, ensureApp]);
+
+  async function handleSave() {
+    if (!activeSessionId) return;
+    try {
+      await ensureApp({
+        sessionId: activeSessionId as Id<"sessions">,
+        title: appName,
+      });
+      toast.success("Saved to My Apps!");
+    } catch (err) {
+      console.error("Failed to save:", err);
+      toast.error("Could not save — please try again");
+    }
+  }
+
   async function handleShare() {
     if (!activeSessionId) return;
     try {
@@ -273,6 +299,8 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
             isEditingName={isEditingName}
             onNameEditStart={() => setIsEditingName(true)}
             onNameEditEnd={handleNameEditEnd}
+            onSave={handleSave}
+            isSaved={!!appRecord}
             onShare={handleShare}
             onNewChat={() => {
               reset();
