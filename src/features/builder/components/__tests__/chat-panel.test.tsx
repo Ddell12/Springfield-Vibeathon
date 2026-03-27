@@ -163,15 +163,14 @@ describe("ChatPanel — streaming builder contract", () => {
     mockUseQuery.mockReturnValue([]);
   });
 
-  it("shows streaming text when isGenerating and streamingText is provided", () => {
+  it("shows starting indicator when generating with no activities or streaming text", () => {
     render(
       <ChatPanel
         {...defaultProps}
         status="generating"
-        streamingText="Generating your app..."
       />
     );
-    expect(screen.getByText(/Generating your app/)).toBeTruthy();
+    expect(screen.getByText(/Starting generation/)).toBeTruthy();
   });
 
   it("shows activity cards for file_written activities during generation", () => {
@@ -195,7 +194,7 @@ describe("ChatPanel — streaming builder contract", () => {
     expect(screen.getByText("App.tsx")).toBeTruthy();
   });
 
-  it("shows progress steps during generation when activities present", () => {
+  it("shows activity message during generation when activities present", () => {
     render(
       <ChatPanel
         {...defaultProps}
@@ -210,8 +209,8 @@ describe("ChatPanel — streaming builder contract", () => {
         ]}
       />
     );
-    // Thinking indicator shows when activity type is "thinking"
-    expect(screen.getByText(/Thinking\.\.\./)).toBeTruthy();
+    // Activity message is shown directly (no type-based labels)
+    expect(screen.getByText("Understanding request")).toBeTruthy();
   });
 
   it("shows input placeholder for live status", () => {

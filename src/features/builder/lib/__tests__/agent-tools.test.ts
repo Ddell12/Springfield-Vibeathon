@@ -209,20 +209,17 @@ describe("createAgentTools", () => {
       ).rejects.toThrow("Cannot overwrite scaffold file");
     });
 
-    it("sends file_complete SSE event with path only (no contents)", async () => {
+    it("sends file_complete SSE event with path and contents", async () => {
       const ctx = makeContext();
       const tools = createAgentTools(ctx);
       const writeFile = tools.find((t) => t.name === "write_file")!;
 
       await writeFile.run({ path: "src/App.tsx", contents: "export default function App() {}" });
 
-      expect(ctx.send).toHaveBeenCalledWith("file_complete", { path: "src/App.tsx" });
-      // Ensure contents are NOT sent in file_complete
-      const fileCompleteCall = (ctx.send as ReturnType<typeof vi.fn>).mock.calls.find(
-        (c: string[]) => c[0] === "file_complete"
-      );
-      expect(fileCompleteCall).toBeDefined();
-      expect(fileCompleteCall![1]).not.toHaveProperty("contents");
+      expect(ctx.send).toHaveBeenCalledWith("file_complete", {
+        path: "src/App.tsx",
+        contents: "export default function App() {}",
+      });
     });
 
     it("sends activity SSE event after writing", async () => {
