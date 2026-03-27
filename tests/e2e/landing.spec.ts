@@ -1,11 +1,10 @@
-import { expect,test } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
 test.describe("Landing page", () => {
-  test("hero heading is visible", async ({ page }) => {
+  test("hero heading mentions therapy apps", async ({ page }) => {
     await page.goto("/");
 
-    // The hero heading should mention therapy tools
-    const heading = page.getByRole("heading").filter({ hasText: /therapy tool/i });
+    const heading = page.getByRole("heading").filter({ hasText: /therapy apps/i });
     await expect(heading.first()).toBeVisible();
   });
 
@@ -14,13 +13,49 @@ test.describe("Landing page", () => {
 
     const cta = page.getByRole("link", { name: /start building/i });
     await expect(cta.first()).toBeVisible();
-    await expect(cta.first()).toHaveAttribute("href", "/builder");
+    const href = await cta.first().getAttribute("href");
+    expect(href).toContain("/builder");
   });
 
-  test("header shows 'Bridges' brand text", async ({ page }) => {
+  test("'View Templates' CTA links to /templates", async ({ page }) => {
     await page.goto("/");
 
-    const brand = page.getByRole("link", { name: /bridges/i });
+    const cta = page.getByRole("link", { name: /view templates/i });
+    await expect(cta.first()).toBeVisible();
+    const href = await cta.first().getAttribute("href");
+    expect(href).toContain("/templates");
+  });
+
+  test("header shows 'Bridges' brand", async ({ page }) => {
+    await page.goto("/");
+
+    // The marketing header renders a Bridges link in the nav
+    const brand = page.locator("header").getByRole("link", { name: /bridges/i });
     await expect(brand.first()).toBeVisible();
+  });
+
+  test("how-it-works section renders", async ({ page }) => {
+    await page.goto("/");
+
+    // HowItWorks renders an h2 "How it Works" with three step cards
+    const heading = page.getByRole("heading", { name: /how it works/i });
+    await expect(heading).toBeVisible();
+  });
+
+  test("testimonials section renders", async ({ page }) => {
+    await page.goto("/");
+
+    // Testimonials section has an h2 "Families & Therapists Love Bridges"
+    const heading = page.getByRole("heading", { name: /families.*therapists/i });
+    await expect(heading).toBeVisible();
+  });
+
+  test("footer renders", async ({ page }) => {
+    await page.goto("/");
+
+    // LandingFooter renders a <footer> element with the Bridges copyright
+    const footer = page.locator("footer");
+    await expect(footer).toBeVisible();
+    await expect(footer).toContainText(/bridges/i);
   });
 });
