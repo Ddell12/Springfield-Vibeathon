@@ -56,6 +56,8 @@ The full system prompt will be parameterized with session config (target sounds,
 
 ## 2. Data Model
 
+> **Note on `userId`:** These tables use `v.string()` for `userId` (Clerk subject ID) rather than `v.id("users")` because Bridges has no `users` table — this is consistent with how `sessions`, `apps`, and `flashcardDecks` store user references.
+
 ### `speechCoachSessions`
 
 One record per coaching session.
@@ -69,7 +71,8 @@ speechCoachSessions: defineTable({
     v.literal("configuring"),
     v.literal("active"),
     v.literal("completed"),
-    v.literal("analyzed")
+    v.literal("analyzed"),
+    v.literal("failed")
   ),
   config: v.object({
     targetSounds: v.array(v.string()),
@@ -79,11 +82,17 @@ speechCoachSessions: defineTable({
   }),
   startedAt: v.optional(v.number()),
   endedAt: v.optional(v.number()),
-  transcript: v.optional(v.string()),
+  transcriptStorageId: v.optional(v.id("_storage")),
+  errorMessage: v.optional(v.string()),
 })
-  .index("by_userId", ["userId"])
-  .index("by_status", ["status"]),
+  .index("by_userId_startedAt", ["userId", "startedAt"]),
 ```
+
+**Key changes from initial draft:**
+- Added `"failed"` status for connection failures, mic denial, or agent crashes
+- Replaced `transcript: v.string()` with `transcriptStorageId: v.id("_storage")` — 10-minute transcripts can be large; Convex file storage avoids the 1MB document size limit
+- Added `errorMessage` for storing failure context
+- Replaced `by_userId` + `by_status` with compound `by_userId_startedAt` for efficient sorted history queries (the `by_status` index had no read path)
 
 ### `speechCoachProgress`
 
@@ -162,17 +171,28 @@ src/features/speech-coach/
 
 `src/app/(app)/speech-coach/page.tsx` — thin wrapper importing from `src/features/speech-coach/`
 
-### Convex Functions (`convex/speechCoach.ts`)
+### Convex Functions (two files — queries/mutations separate from actions)
+
+**`convex/speechCoach.ts`** — queries and mutations (no `"use node"`)
 
 | Function | Type | Purpose |
 |----------|------|---------|
-| `createSession` | mutation | Create session record with parent's config |
+| `createSession` | mutation | Create session record with parent's config (requires auth) |
 | `startSession` | mutation | Set conversationId + status → "active" |
-| `endSession` | mutation | Set status → "completed", store endedAt |
-| `analyzeSession` | action | Pull transcript → Claude analysis → write progress |
-| `getSessionHistory` | query | User's past sessions, sorted by date |
+| `endSession` | mutation | Set status → "completed", store endedAt, schedule analysis |
+| `failSession` | mutation | Set status → "failed" with error message |
+| `getSessionHistory` | query | User's past sessions via `by_userId_startedAt` index |
 | `getProgress` | query | Progress records for a user |
 | `getSessionDetail` | query | Single session + its progress analysis |
+
+**`convex/speechCoachActions.ts`** — actions with `"use node";` (external API calls)
+
+| Function | Type | Purpose |
+|----------|------|---------|
+| `analyzeSession` | action | Pull transcript from ElevenLabs → Claude analysis → write progress |
+| `getSignedUrl` | action | Request signed URL from ElevenLabs for secure WebSocket connection |
+
+> **Why two files?** Per project conventions, `"use node"` cannot appear in files that export queries or mutations — it would cause a runtime error. Actions that call external APIs (ElevenLabs, Anthropic) must be isolated.
 
 ## 4. User Flow
 
@@ -188,8 +208,9 @@ Parent navigates to `/speech-coach` from sidebar. Setup screen offers:
 
 ### Step 2: Active Session
 
+- **Microphone permission:** Before connecting, the app checks `navigator.mediaDevices.getUserMedia`. If denied or unavailable, shows a friendly message: "We need your microphone so the coach can hear your child. Please allow microphone access and try again." Session moves to "failed" state with error context — does not proceed without audio.
 - Screen transitions to minimal coaching view — animated indicator showing listening/speaking state
-- ElevenLabs Conversational AI connects via WebSocket using `@11labs/client` SDK
+- ElevenLabs Conversational AI connects via WebSocket using `@elevenlabs/react` SDK (see Section 8)
 - Agent greets child and begins exercises based on configured targets
 - "Stop Session" button available for parent
 - Minimal visual distractions — children with ASD are sensitive to busy screens
@@ -207,7 +228,7 @@ Parent navigates to `/speech-coach` from sidebar. Setup screen offers:
 
 ## 5. Post-Session Analysis Pipeline
 
-Triggered by `endSession` via `ctx.scheduler.runAfter(0, internal.speechCoach.analyzeSession, { sessionId })`.
+Triggered by `endSession` via `ctx.scheduler.runAfter(0, internal.speechCoachActions.analyzeSession, { sessionId })`.
 
 ### Pipeline Steps
 
@@ -262,7 +283,14 @@ A single structured text document uploaded to the ElevenLabs agent via `add_know
 
 ### Source of Truth
 
-Curriculum lives in `src/features/speech-coach/lib/curriculum-data.ts`. A setup script compiles it into the text document and uploads to ElevenLabs, so content is versioned in git and updates are a single command.
+Curriculum lives in `src/features/speech-coach/lib/curriculum-data.ts`. A one-time setup script (`scripts/seed-speech-curriculum.ts`) compiles it into a text document and uploads to ElevenLabs via `add_knowledge_base_to_agent`. The script:
+
+- Authenticates with `ELEVENLABS_API_KEY` from `.env.local`
+- Is idempotent — checks if the knowledge base already exists before uploading
+- Can be re-run to update the curriculum (uploads a new version)
+- Is **not** part of CI — run manually when curriculum content changes
+
+Content is versioned in git so changes go through code review.
 
 ## 7. Parent Dashboard
 
@@ -295,22 +323,59 @@ Three tabs on the `/speech-coach` page:
 
 ### Client-Side SDK
 
-Uses `@11labs/client` (or ElevenLabs embed widget) for the real-time voice connection.
+**Package:** `@elevenlabs/react` — the official React SDK for ElevenLabs Conversational AI. Provides the `useConversation` hook that manages WebSocket connections, microphone access, and audio playback. Must be installed as a new dependency.
 
-### Connection Flow
+> **Why `@elevenlabs/react` and not `@11labs/client`?** ElevenLabs publishes under two npm scopes. `@elevenlabs/react` is the current React-specific package with hooks. `@11labs/client` is the vanilla JS package. Since Bridges is React/Next.js, the React SDK is the right choice — it handles component lifecycle, cleanup, and re-renders properly.
 
-1. Parent hits "Start Session" → `createSession` mutation returns session ID
-2. Frontend initializes ElevenLabs conversation client with agent ID
-3. Agent ID is stored as an environment variable (not hardcoded)
-4. WebSocket handles bidirectional audio streaming
-5. On conversation end, the `conversationId` is captured
-6. `startSession` mutation stores the conversationId
-7. On disconnect/stop, `endSession` fires → triggers analysis pipeline
+### Authentication: Signed URL Flow
+
+**The API key must never reach the client.** ElevenLabs Conversational AI uses signed URLs — temporary, expiring WebSocket URLs generated server-side.
+
+```
+Parent hits "Start Session"
+  → Frontend calls Convex action `getSignedUrl` (server-side, has API key)
+    → Convex action calls ElevenLabs: GET /v1/convai/conversation/get-signed-url?agent_id={id}
+    → Returns signed WebSocket URL (expires in 15 minutes)
+  → Frontend passes signed URL to `useConversation().startSession({ signedUrl })`
+  → WebSocket connects securely — no API key exposed
+```
+
+The `getSignedUrl` action in `convex/speechCoachActions.ts`:
+- Requires authenticated user (`ctx.auth.getUserIdentity()`)
+- Calls ElevenLabs API with server-side `ELEVENLABS_API_KEY`
+- Returns the signed URL to the client
+
+### Connection Flow (Revised)
+
+1. Parent configures session → hits "Start Session"
+2. `createSession` mutation creates the record (status: "configuring")
+3. Frontend checks microphone permission — aborts to "failed" if denied
+4. Frontend calls `getSignedUrl` action → receives temporary signed URL
+5. `useConversation().startSession({ signedUrl })` opens the WebSocket
+6. On successful connection, the `conversationId` is immediately available from the SDK
+7. `startSession` mutation stores `conversationId` and sets status → "active" **immediately** (not at end — prevents data loss on page refresh or navigation)
+8. Session proceeds — agent and child interact in real-time
+9. On stop/disconnect, `endSession` mutation sets status → "completed" and schedules analysis
+
+### Error States
+
+| Scenario | Handling |
+|----------|----------|
+| Microphone denied | Show friendly message, session → "failed" |
+| Signed URL request fails | Show retry option, session stays "configuring" |
+| WebSocket connection drops | Show "Connection lost" with reconnect option |
+| Agent crashes mid-session | Session → "failed" with error, offer to try again |
+| Page refresh during session | `conversationId` already stored — session can be marked completed on next visit |
 
 ### Environment Variables
 
-- `NEXT_PUBLIC_ELEVENLABS_AGENT_ID` — the speech coach agent ID (set after agent creation)
-- Existing `ELEVENLABS_API_KEY` — used server-side for transcript retrieval
+- `ELEVENLABS_AGENT_ID` — the speech coach agent ID (server-side only, used in `getSignedUrl`)
+- Existing `ELEVENLABS_API_KEY` — used server-side for signed URL generation and transcript retrieval
+- No `NEXT_PUBLIC_*` variables needed — agent ID stays server-side
+
+### Auth Guard
+
+The `/speech-coach` route requires authentication. All Convex mutations and queries in `convex/speechCoach.ts` call `ctx.auth.getUserIdentity()` and throw if not authenticated. The `active-session` component checks auth state before initiating the signed URL request.
 
 ## 9. Scope Boundaries
 
@@ -319,7 +384,8 @@ Uses `@11labs/client` (or ElevenLabs embed widget) for the real-time voice conne
 - Knowledge base with 8 sound groups, two age ranges
 - Session configuration, live coaching, post-session analysis
 - Parent dashboard with history and progress overview
-- Sidebar navigation entry
+- Sidebar navigation entry (icon: `AudioLines` from Lucide, label: "Speech Coach", positioned after "Templates" in `NAV_ITEMS`)
+- New dependency: `@elevenlabs/react`
 
 ### Out of Scope (v1)
 - Therapist portal / multi-user role management
