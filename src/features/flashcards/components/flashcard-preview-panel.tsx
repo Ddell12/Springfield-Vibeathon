@@ -12,11 +12,13 @@ import { FlashcardSwiper } from "./flashcard-swiper";
 interface FlashcardPreviewPanelProps {
   activeDeckId: Id<"flashcardDecks"> | null;
   onOpenDeckSheet?: () => void;
+  status?: "idle" | "generating" | "live" | "failed";
 }
 
 export function FlashcardPreviewPanel({
   activeDeckId,
   onOpenDeckSheet,
+  status,
 }: FlashcardPreviewPanelProps) {
   const deck = useQuery(
     api.flashcard_decks.get,
@@ -49,10 +51,18 @@ export function FlashcardPreviewPanel({
   }
 
   if (!cards || cards.length === 0) {
+    if (status === "generating") {
+      return (
+        <div className="flex h-full flex-col items-center justify-center text-on-surface-variant">
+          <MaterialIcon icon="progress_activity" size="lg" className="animate-spin" />
+          <p className="mt-3 text-sm">Creating your flashcards...</p>
+        </div>
+      );
+    }
     return (
       <div className="flex h-full flex-col items-center justify-center text-on-surface-variant">
-        <MaterialIcon icon="progress_activity" size="lg" className="animate-spin" />
-        <p className="mt-3 text-sm">Creating your flashcards...</p>
+        <MaterialIcon icon="style" size="lg" className="opacity-30" />
+        <p className="mt-3 text-sm">No cards yet. Try a different prompt.</p>
       </div>
     );
   }

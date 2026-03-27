@@ -97,9 +97,15 @@ export function FlashcardChatPanel({
             </div>
           ))}
 
-          {isGenerating && activityMessage && (
-            <div className="flex items-center gap-2 text-xs text-on-surface-variant/60">
-              <MaterialIcon icon="progress_activity" size="xs" className="animate-spin" />
+          {(isGenerating || status === "failed") && activityMessage && (
+            <div className={`flex items-center gap-2 text-xs ${
+              status === "failed" ? "text-destructive" : "text-on-surface-variant/60"
+            }`}>
+              <MaterialIcon
+                icon={status === "failed" ? "error" : "progress_activity"}
+                size="xs"
+                className={status === "failed" ? "" : "animate-spin"}
+              />
               {activityMessage}
             </div>
           )}

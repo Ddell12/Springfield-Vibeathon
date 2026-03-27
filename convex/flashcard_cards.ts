@@ -11,19 +11,22 @@ async function assertDeckOwner(
   deckId: Id<"flashcardDecks">,
   opts?: { soft?: boolean },
 ) {
-  const userId = await getAuthUserId(ctx);
-  if (!userId) {
-    if (opts?.soft) return null;
-    throw new Error("Not authenticated");
-  }
   const deck = await ctx.db.get(deckId);
   if (!deck) {
     if (opts?.soft) return null;
     throw new Error("Deck not found");
   }
-  if (deck.userId && deck.userId !== userId) {
+
+  // Legacy decks (no userId) are accessible to everyone
+  if (!deck.userId) {
+    return deck;
+  }
+
+  // Owned decks require matching auth
+  const userId = await getAuthUserId(ctx);
+  if (!userId || deck.userId !== userId) {
     if (opts?.soft) return null;
-    throw new Error("Not authorized");
+    throw new Error(userId ? "Not authorized" : "Not authenticated");
   }
   return deck;
 }

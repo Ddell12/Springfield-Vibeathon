@@ -260,10 +260,12 @@ export async function POST(request: Request): Promise<Response> {
         const postLlmPromises: Promise<unknown>[] = [];
 
         // Persist a friendly summary instead of raw Claude reasoning text
-        if (fileArray.length > 0) {
-          const friendlyMsg = buildSucceeded
-            ? "Your app is ready! Try it out and let me know if you'd like any changes."
-            : "I created your app but the preview needs a small fix. Try sending a follow-up message.";
+        if (fileArray.length > 0 || isFlashcardMode) {
+          const friendlyMsg = isFlashcardMode
+            ? "Your flashcards are ready! Swipe through them in the preview panel."
+            : buildSucceeded
+              ? "Your app is ready! Try it out and let me know if you'd like any changes."
+              : "I created your app but the preview needs a small fix. Try sending a follow-up message.";
           postLlmPromises.push(
             convex.mutation(api.messages.create, {
               sessionId,

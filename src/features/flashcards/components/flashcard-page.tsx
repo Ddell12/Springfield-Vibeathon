@@ -228,6 +228,7 @@ export function FlashcardPage() {
                     <FlashcardPreviewPanel
                       activeDeckId={activeDeckId}
                       onOpenDeckSheet={() => setDeckSheetOpen(true)}
+                      status={status}
                     />
                   </div>
                 )}
@@ -255,6 +256,7 @@ export function FlashcardPage() {
                     <FlashcardPreviewPanel
                       activeDeckId={activeDeckId}
                       onOpenDeckSheet={() => setDeckSheetOpen(true)}
+                      status={status}
                     />
                   </div>
                 </ResizablePanel>
