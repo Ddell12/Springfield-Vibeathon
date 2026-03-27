@@ -1,10 +1,12 @@
+import { ROUTES } from "@/core/routes";
+
 export const NAV_ITEMS = [
-  { icon: "home", label: "Home", href: "/dashboard" },
-  { icon: "auto_awesome", label: "Builder", href: "/builder" },
-  { icon: "collections_bookmark", label: "Flashcards", href: "/flashcards" },
-  { icon: "grid_view", label: "Templates", href: "/templates" },
-  { icon: "folder_open", label: "My Apps", href: "/my-tools" },
-  { icon: "settings", label: "Settings", href: "/settings" },
+  { icon: "home", label: "Home", href: ROUTES.DASHBOARD },
+  { icon: "auto_awesome", label: "Builder", href: ROUTES.BUILDER },
+  { icon: "collections_bookmark", label: "Flashcards", href: ROUTES.FLASHCARDS },
+  { icon: "grid_view", label: "Templates", href: ROUTES.TEMPLATES },
+  { icon: "folder_open", label: "My Apps", href: ROUTES.MY_TOOLS },
+  { icon: "settings", label: "Settings", href: ROUTES.SETTINGS },
 ] as const;
 
 export function isNavActive(
