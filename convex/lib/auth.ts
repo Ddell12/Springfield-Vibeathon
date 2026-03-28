@@ -1,3 +1,4 @@
+import { ConvexError } from "convex/values";
 import type { Id } from "../_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "../_generated/server";
 
@@ -40,4 +41,47 @@ export async function assertSessionOwner(
   }
 
   return session;
+}
+
+export type UserRole = "slp" | "caregiver";
+
+export async function getAuthRole(
+  ctx: QueryCtx | MutationCtx,
+): Promise<UserRole | null> {
+  const identity = await ctx.auth.getUserIdentity();
+  if (!identity) return null;
+  // Role comes from Clerk publicMetadata, included in JWT via template customization
+  const metadata = (identity as Record<string, unknown>).public_metadata as
+    | { role?: string }
+    | undefined;
+  return (metadata?.role as UserRole) ?? null;
+}
+
+export async function assertSLP(
+  ctx: QueryCtx | MutationCtx,
+): Promise<string> {
+  const userId = await getAuthUserId(ctx);
+  if (!userId) throw new ConvexError("Not authenticated");
+  const role = await getAuthRole(ctx);
+  if (role !== null && role !== "slp") {
+    throw new ConvexError("Only SLPs can perform this action");
+  }
+  // If role is null (no metadata set yet), treat as SLP (default role)
+  return userId;
+}
+
+export async function assertCaregiverAccess(
+  ctx: QueryCtx | MutationCtx,
+  patientId: Id<"patients">,
+): Promise<string> {
+  const userId = await getAuthUserId(ctx);
+  if (!userId) throw new ConvexError("Not authenticated");
+  const link = await ctx.db
+    .query("caregiverLinks")
+    .withIndex("by_caregiverUserId", (q) => q.eq("caregiverUserId", userId))
+    .filter((q) => q.eq(q.field("patientId"), patientId))
+    .filter((q) => q.eq(q.field("inviteStatus"), "accepted"))
+    .first();
+  if (!link) throw new ConvexError("Not authorized to access this patient");
+  return userId;
 }
