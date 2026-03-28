@@ -105,7 +105,7 @@ Note: No `by_status` index — all queries filter by `slpUserId` first (caseload
 | `details` | `v.optional(v.string())` | no | Human-readable description |
 | `timestamp` | `v.number()` | yes | |
 
-**Indexes:** `by_patientId` on `["patientId"]`, `by_timestamp` on `["timestamp"]`
+**Indexes:** `by_patientId_timestamp` on `["patientId", "timestamp"]` (compound index enables sorted range scan per patient — more efficient than separate indexes)
 
 ---
 
@@ -145,7 +145,9 @@ Extend `convex/lib/auth.ts`:
 
 Protected via `proxy.ts` matcher + Convex-side `assertSLP`/`assertCaregiverAccess` defense in depth.
 
-**Required `proxy.ts` change:** Add `/patients(.*)` to the existing `proxy.ts` route matcher alongside `/dashboard(.*)`, `/my-tools(.*)`, and `/settings(.*)`. Without this, unauthenticated users can hit `/patients` and receive a raw Convex auth error instead of a Clerk redirect.
+**Required `proxy.ts` change:** Add `/patients(.*)` to the `isProtectedRoute` array in `src/proxy.ts` (not `config.matcher` — that's a global regex and should not be edited). This sits alongside the existing `/dashboard(.*)`, `/my-tools(.*)`, and `/settings(.*)` entries. Without this, unauthenticated users can hit `/patients` and receive a raw Convex auth error instead of a Clerk redirect.
+
+**`/invite/[token]` is intentionally public.** It is NOT added to `isProtectedRoute` — parents must access the invite landing page before they have an account.
 
 ### Invite link flow
 
@@ -183,7 +185,7 @@ SLP adds patient with parent email
 
 | Function | Type | Args | Purpose |
 |---|---|---|---|
-| `createInvite` | `mutation` | `{ patientId, email, relationship? }` | Generates 32-char hex token. Creates pending `caregiverLinks` row. Logs `invite-sent`. Returns token. |
+| `createInvite` | `mutation` | `{ patientId, email, relationship? }` | Adds a caregiver to an **existing** patient (post-creation). Used from the patient detail Caregiver Info widget "Invite a caregiver" CTA. Generates 32-char hex token, creates pending `caregiverLinks` row, logs `invite-sent`. Returns token. Note: the initial invite during patient creation is inlined in `patients.create` — this function is only for adding additional caregivers after the fact. |
 | `getInvite` | `query` | `{ token }` | Looks up by `by_inviteToken`. Returns patient first name + SLP display name. Returns `null` if not pending. |
 | `acceptInvite` | `mutation` | `{ token }` | Sets `caregiverUserId`, flips to `accepted`. Logs `invite-accepted`. Schedules `clerkActions.setCaregiverRole`. Idempotent for same user. |
 | `revokeInvite` | `mutation` | `{ token }` | Asserts SLP ownership. Flips to `revoked`. |
@@ -250,7 +252,7 @@ src/features/patients/
 
 ### Sidebar
 
-Add "Patients" item to `src/shared/lib/navigation.ts` between Home and Builder. Icon: `"group"` (Material Symbols, matching the existing nav icon convention). Conditionally shown only when `role === "slp"`.
+Add "Patients" item to `src/shared/lib/navigation.ts` between Home and Builder. Icon: `"group"` (Material Symbols, matching the existing nav icon convention). Conditionally shown only when `role === "slp"`. Also add a `pathname.startsWith("/patients")` branch to `isNavActive` — without this, sub-routes like `/patients/[id]` and `/patients/new` won't highlight the nav item.
 
 ### Caseload page (`/patients`)
 
