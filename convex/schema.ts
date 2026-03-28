@@ -312,4 +312,53 @@ export default defineSchema({
     .index("by_goalId", ["goalId"])
     .index("by_goalId_date", ["goalId", "date"])
     .index("by_patientId_date", ["patientId", "date"]),
+
+  progressReports: defineTable({
+    patientId: v.id("patients"),
+    slpUserId: v.string(),
+    reportType: v.union(
+      v.literal("weekly-summary"),
+      v.literal("monthly-summary"),
+      v.literal("iep-progress-report")
+    ),
+    periodStart: v.string(),
+    periodEnd: v.string(),
+    goalSummaries: v.array(v.object({
+      goalId: v.string(),
+      shortDescription: v.string(),
+      domain: v.union(
+        v.literal("articulation"),
+        v.literal("language-receptive"),
+        v.literal("language-expressive"),
+        v.literal("fluency"),
+        v.literal("voice"),
+        v.literal("pragmatic-social"),
+        v.literal("aac"),
+        v.literal("feeding")
+      ),
+      accuracyTrend: v.union(
+        v.literal("improving"),
+        v.literal("stable"),
+        v.literal("declining")
+      ),
+      averageAccuracy: v.number(),
+      sessionsCount: v.number(),
+      status: v.union(
+        v.literal("active"),
+        v.literal("met"),
+        v.literal("discontinued"),
+        v.literal("modified")
+      ),
+      narrative: v.string(),
+    })),
+    overallNarrative: v.string(),
+    status: v.union(
+      v.literal("draft"),
+      v.literal("reviewed"),
+      v.literal("signed")
+    ),
+    signedAt: v.optional(v.number()),
+  })
+    .index("by_patientId", ["patientId"])
+    .index("by_patientId_reportType", ["patientId", "reportType"]),
 });
