@@ -1,0 +1,159 @@
+import { convexTest } from "convex-test";
+import { describe, expect, it } from "vitest";
+import { api } from "../_generated/api";
+import schema from "../schema";
+
+const modules = import.meta.glob("../**/*.*s");
+
+const SLP_IDENTITY = { subject: "slp-user-123", issuer: "clerk" };
+const OTHER_SLP = { subject: "other-slp-456", issuer: "clerk" };
+const CAREGIVER_IDENTITY = {
+  subject: "caregiver-789",
+  issuer: "clerk",
+  public_metadata: JSON.stringify({ role: "caregiver" }),
+};
+
+const VALID_PATIENT = {
+  firstName: "Alex",
+  lastName: "Smith",
+  dateOfBirth: "2020-01-15",
+  diagnosis: "articulation" as const,
+};
+
+describe("patients.create", () => {
+  it("creates a patient with required fields", async () => {
+    const t = convexTest(schema, modules).withIdentity(SLP_IDENTITY);
+    const result = await t.mutation(api.patients.create, VALID_PATIENT);
+    expect(result.patientId).toBeDefined();
+    expect(result.inviteToken).toBeUndefined();
+
+    const patient = await t.query(api.patients.get, { patientId: result.patientId });
+    expect(patient?.firstName).toBe("Alex");
+    expect(patient?.status).toBe("active");
+    expect(patient?.slpUserId).toBe("slp-user-123");
+  });
+
+  it("creates patient with invite when parentEmail provided", async () => {
+    const t = convexTest(schema, modules).withIdentity(SLP_IDENTITY);
+    const result = await t.mutation(api.patients.create, {
+      ...VALID_PATIENT,
+      parentEmail: "parent@example.com",
+    });
+    expect(result.inviteToken).toBeDefined();
+    expect(result.inviteToken).toHaveLength(32);
+  });
+
+  it("trims and validates names", async () => {
+    const t = convexTest(schema, modules).withIdentity(SLP_IDENTITY);
+    await expect(
+      t.mutation(api.patients.create, { ...VALID_PATIENT, firstName: "" })
+    ).rejects.toThrow();
+    await expect(
+      t.mutation(api.patients.create, { ...VALID_PATIENT, firstName: "a".repeat(101) })
+    ).rejects.toThrow();
+  });
+
+  it("validates dateOfBirth is in the past and within 21 years", async () => {
+    const t = convexTest(schema, modules).withIdentity(SLP_IDENTITY);
+    await expect(
+      t.mutation(api.patients.create, { ...VALID_PATIENT, dateOfBirth: "2099-01-01" })
+    ).rejects.toThrow();
+    await expect(
+      t.mutation(api.patients.create, { ...VALID_PATIENT, dateOfBirth: "2000-01-01" })
+    ).rejects.toThrow();
+  });
+
+  it("rejects unauthenticated users", async () => {
+    const t = convexTest(schema, modules);
+    await expect(
+      t.mutation(api.patients.create, VALID_PATIENT)
+    ).rejects.toThrow();
+  });
+});
+
+describe("patients.list", () => {
+  it("returns only the SLP's own patients", async () => {
+    const t = convexTest(schema, modules);
+    const slp1 = t.withIdentity(SLP_IDENTITY);
+    const slp2 = t.withIdentity(OTHER_SLP);
+
+    await slp1.mutation(api.patients.create, VALID_PATIENT);
+    await slp2.mutation(api.patients.create, { ...VALID_PATIENT, firstName: "Jordan" });
+
+    const list = await slp1.query(api.patients.list, {});
+    expect(list).toHaveLength(1);
+    expect(list[0].firstName).toBe("Alex");
+  });
+
+  it("filters by status", async () => {
+    const t = convexTest(schema, modules).withIdentity(SLP_IDENTITY);
+    const { patientId } = await t.mutation(api.patients.create, VALID_PATIENT);
+    await t.mutation(api.patients.create, { ...VALID_PATIENT, firstName: "Jordan" });
+    await t.mutation(api.patients.updateStatus, { patientId, status: "discharged" });
+
+    const active = await t.query(api.patients.list, { status: "active" });
+    expect(active).toHaveLength(1);
+    expect(active[0].firstName).toBe("Jordan");
+  });
+});
+
+describe("patients.update", () => {
+  it("partial updates work", async () => {
+    const t = convexTest(schema, modules).withIdentity(SLP_IDENTITY);
+    const { patientId } = await t.mutation(api.patients.create, VALID_PATIENT);
+    await t.mutation(api.patients.update, {
+      patientId,
+      interests: ["dinosaurs", "trains"],
+    });
+
+    const patient = await t.query(api.patients.get, { patientId });
+    expect(patient?.interests).toEqual(["dinosaurs", "trains"]);
+    expect(patient?.firstName).toBe("Alex");
+  });
+
+  it("rejects unauthorized SLP", async () => {
+    const t = convexTest(schema, modules);
+    const { patientId } = await t.withIdentity(SLP_IDENTITY).mutation(
+      api.patients.create, VALID_PATIENT
+    );
+    await expect(
+      t.withIdentity(OTHER_SLP).mutation(api.patients.update, {
+        patientId,
+        interests: ["hack"],
+      })
+    ).rejects.toThrow();
+  });
+});
+
+describe("patients.updateStatus", () => {
+  it("changes status and logs activity", async () => {
+    const t = convexTest(schema, modules).withIdentity(SLP_IDENTITY);
+    const { patientId } = await t.mutation(api.patients.create, VALID_PATIENT);
+    await t.mutation(api.patients.updateStatus, { patientId, status: "on-hold" });
+
+    const patient = await t.query(api.patients.get, { patientId });
+    expect(patient?.status).toBe("on-hold");
+
+    const activity = await t.query(api.activityLog.listByPatient, { patientId });
+    const statusChange = activity.find((a: { action: string }) => a.action === "status-changed");
+    expect(statusChange).toBeDefined();
+    expect(statusChange?.details).toContain("active");
+    expect(statusChange?.details).toContain("on-hold");
+  });
+});
+
+describe("patients.getStats", () => {
+  it("returns correct counts by status", async () => {
+    const t = convexTest(schema, modules).withIdentity(SLP_IDENTITY);
+    await t.mutation(api.patients.create, VALID_PATIENT);
+    await t.mutation(api.patients.create, { ...VALID_PATIENT, firstName: "B" });
+    const { patientId } = await t.mutation(api.patients.create, { ...VALID_PATIENT, firstName: "C" });
+    await t.mutation(api.patients.updateStatus, { patientId, status: "discharged" });
+
+    const stats = await t.query(api.patients.getStats, {});
+    expect(stats.active).toBe(2);
+    expect(stats.discharged).toBe(1);
+    expect(stats.onHold).toBe(0);
+    expect(stats.pendingIntake).toBe(0);
+  });
+});
