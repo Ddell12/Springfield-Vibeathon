@@ -8,6 +8,10 @@ export const ROUTES = {
   FLASHCARDS: "/flashcards",
   SETTINGS: "/settings",
   TOOL_VIEW: (toolId: string) => `/tool/${toolId}` as const,
+  PATIENTS: "/patients",
+  PATIENT_DETAIL: (id: string) => `/patients/${id}` as const,
+  PATIENT_NEW: "/patients/new",
+  INVITE: (token: string) => `/invite/${token}` as const,
   SIGN_IN: "/sign-in",
   SIGN_UP: "/sign-up",
 } as const;

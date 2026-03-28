@@ -4,6 +4,7 @@ const isProtectedRoute = createRouteMatcher([
   "/dashboard(.*)",
   "/my-tools(.*)",
   "/settings(.*)",
+  "/patients(.*)",
 ]);
 
 const isPublicApiRoute = createRouteMatcher([
