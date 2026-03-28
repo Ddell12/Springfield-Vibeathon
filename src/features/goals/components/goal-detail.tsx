@@ -1,12 +1,17 @@
 "use client";
 
+import { useState } from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/shared/components/ui/button";
 import { MaterialIcon } from "@/shared/components/material-icon";
 import { cn } from "@/core/utils";
 import { useGoalWithProgress } from "../hooks/use-goals";
-import { domainLabel, domainColor, statusBadgeColor } from "../lib/goal-utils";
+import { GoalForm } from "./goal-form";
+import { GoalMetBanner } from "./goal-met-banner";
+import { ProgressChart } from "./progress-chart";
+import { ProgressDataTable } from "./progress-data-table";
+import { domainLabel, domainColor, statusBadgeColor, checkGoalMetClient } from "../lib/goal-utils";
 import type { Id } from "../../../../convex/_generated/dataModel";
 
 interface GoalDetailProps {
@@ -16,6 +21,7 @@ interface GoalDetailProps {
 
 export function GoalDetail({ patientId, goalId }: GoalDetailProps) {
   const result = useGoalWithProgress(goalId as Id<"goals">);
+  const [editOpen, setEditOpen] = useState(false);
 
   if (result === undefined) {
     return (
@@ -30,6 +36,11 @@ export function GoalDetail({ patientId, goalId }: GoalDetailProps) {
   }
 
   const { goal, progressData } = result;
+  const isGoalMet = goal.status === "active" && checkGoalMetClient(
+    goal.targetAccuracy,
+    goal.targetConsecutiveSessions,
+    progressData,
+  );
 
   return (
     <div className="flex flex-col gap-6 p-4 sm:p-6 lg:p-8">
@@ -51,27 +62,49 @@ export function GoalDetail({ patientId, goalId }: GoalDetailProps) {
             {goal.status.charAt(0).toUpperCase() + goal.status.slice(1)}
           </span>
         </div>
-        <h1 className="text-2xl font-bold tracking-tight">{goal.shortDescription}</h1>
-        <p className="text-sm text-muted-foreground">{goal.fullGoalText}</p>
-        <p className="text-sm text-muted-foreground">
-          Target: {goal.targetAccuracy}% across {goal.targetConsecutiveSessions} consecutive sessions
-        </p>
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">{goal.shortDescription}</h1>
+            <p className="text-sm text-muted-foreground">{goal.fullGoalText}</p>
+            <p className="text-sm text-muted-foreground">
+              Target: {goal.targetAccuracy}% across {goal.targetConsecutiveSessions} consecutive sessions
+            </p>
+          </div>
+          <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
+            <MaterialIcon icon="edit" size="sm" />
+            Edit Goal
+          </Button>
+        </div>
       </div>
 
-      {/* Placeholder for progress chart — added in Phase 2 */}
+      {/* Goal met banner */}
+      {isGoalMet && (
+        <GoalMetBanner
+          goalId={goal._id}
+          targetAccuracy={goal.targetAccuracy}
+          targetConsecutiveSessions={goal.targetConsecutiveSessions}
+        />
+      )}
+
+      {/* Progress chart */}
       <div className="rounded-xl bg-surface-container p-6">
-        <h3 className="mb-2 text-sm font-semibold">Progress</h3>
-        {progressData.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            No progress data yet. Data will appear here when session notes with this goal are signed.
-          </p>
-        ) : (
-          <p className="text-sm text-muted-foreground">
-            {progressData.length} data point{progressData.length !== 1 ? "s" : ""} recorded.
-            Chart coming in Phase 2.
-          </p>
-        )}
+        <h3 className="mb-4 text-sm font-semibold">Progress Chart</h3>
+        <ProgressChart data={progressData} targetAccuracy={goal.targetAccuracy} />
       </div>
+
+      {/* Data table */}
+      <div className="rounded-xl bg-surface-container p-6">
+        <h3 className="mb-4 text-sm font-semibold">Data Points</h3>
+        <ProgressDataTable data={progressData} />
+      </div>
+
+      {/* Edit dialog */}
+      <GoalForm
+        patientId={patientId as Id<"patients">}
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        editGoal={goal}
+      />
     </div>
   );
 }
