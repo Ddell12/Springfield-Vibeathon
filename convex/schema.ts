@@ -127,4 +127,79 @@ export default defineSchema({
   }).index("by_deck", ["deckId"])
     .index("by_deck_sortOrder", ["deckId", "sortOrder"])
     .index("by_deck_label", ["deckId", "label"]),
+
+  patients: defineTable({
+    slpUserId: v.string(),
+    firstName: v.string(),
+    lastName: v.string(),
+    dateOfBirth: v.string(),
+    diagnosis: v.union(
+      v.literal("articulation"),
+      v.literal("language"),
+      v.literal("fluency"),
+      v.literal("voice"),
+      v.literal("aac-complex"),
+      v.literal("other")
+    ),
+    status: v.union(
+      v.literal("active"),
+      v.literal("on-hold"),
+      v.literal("discharged"),
+      v.literal("pending-intake")
+    ),
+    parentEmail: v.optional(v.string()),
+    interests: v.optional(v.array(v.string())),
+    communicationLevel: v.optional(
+      v.union(
+        v.literal("pre-verbal"),
+        v.literal("single-words"),
+        v.literal("phrases"),
+        v.literal("sentences")
+      )
+    ),
+    sensoryNotes: v.optional(v.string()),
+    behavioralNotes: v.optional(v.string()),
+    notes: v.optional(v.string()),
+  }).index("by_slpUserId", ["slpUserId"]),
+
+  caregiverLinks: defineTable({
+    patientId: v.id("patients"),
+    caregiverUserId: v.optional(v.string()),
+    email: v.string(),
+    inviteToken: v.string(),
+    inviteStatus: v.union(
+      v.literal("pending"),
+      v.literal("accepted"),
+      v.literal("revoked")
+    ),
+    relationship: v.optional(v.string()),
+  }).index("by_patientId", ["patientId"])
+    .index("by_caregiverUserId", ["caregiverUserId"])
+    .index("by_inviteToken", ["inviteToken"])
+    .index("by_email", ["email"]),
+
+  patientMaterials: defineTable({
+    patientId: v.id("patients"),
+    sessionId: v.optional(v.id("sessions")),
+    appId: v.optional(v.id("apps")),
+    assignedBy: v.string(),
+    assignedAt: v.number(),
+    notes: v.optional(v.string()),
+  }).index("by_patientId", ["patientId"])
+    .index("by_sessionId", ["sessionId"]),
+
+  activityLog: defineTable({
+    patientId: v.id("patients"),
+    actorUserId: v.string(),
+    action: v.union(
+      v.literal("patient-created"),
+      v.literal("profile-updated"),
+      v.literal("material-assigned"),
+      v.literal("invite-sent"),
+      v.literal("invite-accepted"),
+      v.literal("status-changed")
+    ),
+    details: v.optional(v.string()),
+    timestamp: v.number(),
+  }).index("by_patientId_timestamp", ["patientId", "timestamp"]),
 });
