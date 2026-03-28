@@ -659,12 +659,9 @@ function validateEmail(email: string): string {
 }
 
 function generateInviteToken(): string {
-  const chars = "0123456789abcdef";
-  let token = "";
-  for (let i = 0; i < 32; i++) {
-    token += chars[Math.floor(Math.random() * chars.length)];
-  }
-  return token;
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
 }
 
 export const list = query({
@@ -1149,12 +1146,9 @@ import { ConvexError } from "convex/values";
 import { getAuthUserId, assertSLP } from "./lib/auth";
 
 function generateInviteToken(): string {
-  const chars = "0123456789abcdef";
-  let token = "";
-  for (let i = 0; i < 32; i++) {
-    token += chars[Math.floor(Math.random() * chars.length)];
-  }
-  return token;
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
 }
 
 function validateEmail(email: string): string {
@@ -3108,11 +3102,9 @@ Create `src/features/patients/components/invite-landing.tsx`:
 "use client";
 
 import { use, useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useMutation } from "convex/react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useUser } from "@clerk/nextjs";
-import { api } from "../../../../convex/_generated/api";
 import { Button } from "@/shared/components/ui/button";
 import { MaterialIcon } from "@/shared/components/material-icon";
 import { useInviteInfo, useAcceptInvite } from "../hooks/use-invite";
@@ -3258,6 +3250,8 @@ git commit -m "fix: resolve test/build issues from patient management integratio
 ---
 
 ## Task 14: Manual Smoke Test Checklist
+
+**Prerequisite:** Ensure the Clerk JWT template includes `public_metadata` (see Prerequisites Checklist at bottom) and `CLERK_SECRET_KEY` is set in the Convex dashboard. Without these, role-based nav hiding and invite acceptance will not work.
 
 Before marking complete, verify these flows manually with `next dev`:
 
