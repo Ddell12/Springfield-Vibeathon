@@ -2,6 +2,7 @@ import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { ConvexError } from "convex/values";
 import { assertSLP } from "./lib/auth";
+import { insertProgressFromTargets } from "./lib/progress";
 
 // ── Validators ──────────────────────────────────────────────────────────────
 
@@ -346,6 +347,15 @@ export const sign = mutation({
       details: `Signed session note for ${note.sessionDate}`,
       timestamp: now,
     });
+
+    // Auto-create progressData for targets linked to goals
+    await insertProgressFromTargets(
+      ctx.db,
+      note.structuredData.targetsWorkedOn,
+      args.noteId,
+      note.patientId,
+      note.sessionDate,
+    );
   },
 });
 

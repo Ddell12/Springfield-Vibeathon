@@ -15,6 +15,7 @@ import { calculateAccuracy, accuracyColor, accuracyLabel } from "../lib/session-
 
 export interface TargetData {
   target: string;
+  goalId?: string;
   trials?: number;
   correct?: number;
   promptLevel?: "independent" | "verbal-cue" | "model" | "physical";
@@ -26,6 +27,7 @@ interface TargetEntryProps {
   onChange: (data: TargetData) => void;
   onRemove: () => void;
   disabled?: boolean;
+  activeGoals?: Array<{ _id: string; shortDescription: string; domain: string }>;
 }
 
 const promptLevelOptions = [
@@ -35,7 +37,7 @@ const promptLevelOptions = [
   { value: "physical", label: "Physical" },
 ] as const;
 
-export function TargetEntry({ data, onChange, onRemove, disabled }: TargetEntryProps) {
+export function TargetEntry({ data, onChange, onRemove, disabled, activeGoals }: TargetEntryProps) {
   const accuracy = calculateAccuracy(data.correct, data.trials);
 
   function handleTrialsChange(value: string) {
@@ -111,6 +113,28 @@ export function TargetEntry({ data, onChange, onRemove, disabled }: TargetEntryP
               ))}
             </SelectContent>
           </Select>
+
+          {/* Goal link (optional) */}
+          {activeGoals && activeGoals.length > 0 && (
+            <Select
+              value={data.goalId ?? ""}
+              onValueChange={(value) =>
+                onChange({ ...data, goalId: value || undefined })
+              }
+              disabled={disabled}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Link to goal..." />
+              </SelectTrigger>
+              <SelectContent>
+                {activeGoals.map((g) => (
+                  <SelectItem key={g._id} value={g._id}>
+                    {g.shortDescription}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </div>
 
         {/* Accuracy badge */}

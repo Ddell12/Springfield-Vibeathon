@@ -10,6 +10,7 @@ import {
 } from "@/shared/components/ui/radio-group";
 import { MaterialIcon } from "@/shared/components/material-icon";
 import { TargetEntry, type TargetData } from "./target-entry";
+import { useActiveGoals } from "@/features/goals/hooks/use-goals";
 import { DurationPresetInput } from "./duration-preset-input";
 import type { Doc } from "../../../../convex/_generated/dataModel";
 
@@ -88,6 +89,7 @@ export function StructuredDataForm({
   onStructuredDataChange,
 }: StructuredDataFormProps) {
   const targets = structuredData.targetsWorkedOn;
+  const activeGoals = useActiveGoals(patient._id);
 
   function handleTargetChange(index: number, data: TargetData) {
     const updated = [...targets];
@@ -226,6 +228,7 @@ export function StructuredDataForm({
                 onChange={(data) => handleTargetChange(index, data)}
                 onRemove={() => handleTargetRemove(index)}
                 disabled={disabled}
+                activeGoals={activeGoals ?? []}
               />
             ))}
           </div>
