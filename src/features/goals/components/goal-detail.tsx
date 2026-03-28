@@ -9,6 +9,7 @@ import { cn } from "@/core/utils";
 import { useGoalWithProgress } from "../hooks/use-goals";
 import { GoalForm } from "./goal-form";
 import { GoalMetBanner } from "./goal-met-banner";
+import { ProgressReportGenerator } from "./progress-report-generator";
 import { ProgressChart } from "./progress-chart";
 import { ProgressDataTable } from "./progress-data-table";
 import { domainLabel, domainColor, statusBadgeColor, checkGoalMetClient } from "../lib/goal-utils";
@@ -22,6 +23,7 @@ interface GoalDetailProps {
 export function GoalDetail({ patientId, goalId }: GoalDetailProps) {
   const result = useGoalWithProgress(goalId as Id<"goals">);
   const [editOpen, setEditOpen] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
 
   if (result === undefined) {
     return (
@@ -70,6 +72,10 @@ export function GoalDetail({ patientId, goalId }: GoalDetailProps) {
               Target: {goal.targetAccuracy}% across {goal.targetConsecutiveSessions} consecutive sessions
             </p>
           </div>
+          <Button variant="outline" size="sm" onClick={() => setReportOpen(true)}>
+            <MaterialIcon icon="auto_awesome" size="sm" />
+            Generate Report
+          </Button>
           <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
             <MaterialIcon icon="edit" size="sm" />
             Edit Goal
@@ -104,6 +110,11 @@ export function GoalDetail({ patientId, goalId }: GoalDetailProps) {
         open={editOpen}
         onOpenChange={setEditOpen}
         editGoal={goal}
+      />
+      <ProgressReportGenerator
+        patientId={patientId as Id<"patients">}
+        open={reportOpen}
+        onOpenChange={setReportOpen}
       />
     </div>
   );
