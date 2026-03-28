@@ -35,6 +35,7 @@ import type * as patients from "../patients.js";
 import type * as rate_limit_check from "../rate_limit_check.js";
 import type * as rate_limits from "../rate_limits.js";
 import type * as seeds_image_seeds from "../seeds/image_seeds.js";
+import type * as sessionNotes from "../sessionNotes.js";
 import type * as sessions from "../sessions.js";
 import type * as stt from "../stt.js";
 import type * as subscriptions from "../subscriptions.js";
@@ -77,6 +78,7 @@ declare const fullApi: ApiFromModules<{
   rate_limit_check: typeof rate_limit_check;
   rate_limits: typeof rate_limits;
   "seeds/image_seeds": typeof seeds_image_seeds;
+  sessionNotes: typeof sessionNotes;
   sessions: typeof sessions;
   stt: typeof stt;
   subscriptions: typeof subscriptions;
