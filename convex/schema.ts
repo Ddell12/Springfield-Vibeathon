@@ -200,7 +200,11 @@ export default defineSchema({
       v.literal("status-changed"),
       v.literal("session-documented"),
       v.literal("session-signed"),
-      v.literal("session-unsigned")
+      v.literal("session-unsigned"),
+      v.literal("goal-created"),
+      v.literal("goal-met"),
+      v.literal("goal-modified"),
+      v.literal("report-generated")
     ),
     details: v.optional(v.string()),
     timestamp: v.number(),
@@ -252,4 +256,34 @@ export default defineSchema({
   })
     .index("by_patientId_sessionDate", ["patientId", "sessionDate"])
     .index("by_slpUserId", ["slpUserId"]),
+
+  goals: defineTable({
+    patientId: v.id("patients"),
+    slpUserId: v.string(),
+    domain: v.union(
+      v.literal("articulation"),
+      v.literal("language-receptive"),
+      v.literal("language-expressive"),
+      v.literal("fluency"),
+      v.literal("voice"),
+      v.literal("pragmatic-social"),
+      v.literal("aac"),
+      v.literal("feeding")
+    ),
+    shortDescription: v.string(),
+    fullGoalText: v.string(),
+    targetAccuracy: v.number(),
+    targetConsecutiveSessions: v.number(),
+    status: v.union(
+      v.literal("active"),
+      v.literal("met"),
+      v.literal("discontinued"),
+      v.literal("modified")
+    ),
+    startDate: v.string(),
+    targetDate: v.optional(v.string()),
+    notes: v.optional(v.string()),
+  })
+    .index("by_patientId", ["patientId"])
+    .index("by_patientId_status", ["patientId", "status"]),
 });
