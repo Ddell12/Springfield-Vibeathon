@@ -286,4 +286,30 @@ export default defineSchema({
   })
     .index("by_patientId", ["patientId"])
     .index("by_patientId_status", ["patientId", "status"]),
+
+  progressData: defineTable({
+    goalId: v.id("goals"),
+    patientId: v.id("patients"),
+    source: v.union(
+      v.literal("session-note"),
+      v.literal("in-app-auto"),
+      v.literal("manual-entry")
+    ),
+    sourceId: v.optional(v.string()),
+    date: v.string(),
+    trials: v.optional(v.number()),
+    correct: v.optional(v.number()),
+    accuracy: v.number(),
+    promptLevel: v.optional(v.union(
+      v.literal("independent"),
+      v.literal("verbal-cue"),
+      v.literal("model"),
+      v.literal("physical")
+    )),
+    notes: v.optional(v.string()),
+    timestamp: v.number(),
+  })
+    .index("by_goalId", ["goalId"])
+    .index("by_goalId_date", ["goalId", "date"])
+    .index("by_patientId_date", ["patientId", "date"]),
 });
