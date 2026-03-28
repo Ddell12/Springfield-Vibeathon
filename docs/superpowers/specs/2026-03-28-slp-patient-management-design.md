@@ -61,7 +61,9 @@ Four new Convex tables in `convex/schema.ts`.
 | `behavioralNotes` | `v.optional(v.string())` | no | Free text |
 | `notes` | `v.optional(v.string())` | no | General clinical notes |
 
-**Indexes:** `by_slpUserId` on `["slpUserId"]`, `by_status` on `["status"]`
+**Indexes:** `by_slpUserId` on `["slpUserId"]`
+
+Note: No `by_status` index — all queries filter by `slpUserId` first (caseload <100 patients), making a status-only index unused.
 
 **Future org support:** Add optional `orgId: v.optional(v.string())` field and `by_orgId` index. All existing patients have `orgId: undefined` — no migration needed.
 
@@ -85,6 +87,8 @@ Four new Convex tables in `convex/schema.ts`.
 | `patientId` | `v.id("patients")` | yes | |
 | `sessionId` | `v.optional(v.id("sessions"))` | no | Builder session |
 | `appId` | `v.optional(v.id("apps"))` | no | Published app |
+
+**Constraint:** At least one of `sessionId` or `appId` must be present. Convex validators can't express this, so the `assign` mutation validates this at runtime and throws `ConvexError` if both are undefined.
 | `assignedBy` | `v.string()` | yes | Clerk user ID |
 | `assignedAt` | `v.number()` | yes | Timestamp |
 | `notes` | `v.optional(v.string())` | no | Why this material was assigned |
@@ -117,6 +121,10 @@ Roles stored in Clerk `publicMetadata`:
 
 Role is included in JWT claims via Clerk JWT template customization, readable in Convex via `ctx.auth.getUserIdentity()`.
 
+**Required Clerk dashboard configuration:** Create or modify the Clerk JWT template for Convex to include `{{user.public_metadata}}` as a custom claim. Without this, `getAuthRole(ctx)` will return `null` for all users. This is a one-time manual step in the Clerk dashboard under JWT Templates.
+
+**Note on role propagation timing:** After `acceptInvite` sets the `caregiverLinks` row to `accepted`, the Clerk role update is deferred via `ctx.scheduler.runAfter`. There is a brief window where the row is `accepted` but the JWT still lacks the `caregiver` role. The post-invite redirect should not gate on a strict role check — use the `caregiverLinks` row status as the source of truth for immediate access, and let the JWT claim catch up on the next token refresh.
+
 ### Convex auth helpers
 
 Extend `convex/lib/auth.ts`:
@@ -137,11 +145,14 @@ Extend `convex/lib/auth.ts`:
 
 Protected via `proxy.ts` matcher + Convex-side `assertSLP`/`assertCaregiverAccess` defense in depth.
 
+**Required `proxy.ts` change:** Add `/patients(.*)` to the existing `proxy.ts` route matcher alongside `/dashboard(.*)`, `/my-tools(.*)`, and `/settings(.*)`. Without this, unauthenticated users can hit `/patients` and receive a raw Convex auth error instead of a Clerk redirect.
+
 ### Invite link flow
 
 ```
 SLP adds patient with parent email
-  → patients.create mutation generates invite via caregivers.createInvite
+  → patients.create mutation inlines invite creation (generates token,
+    inserts caregiverLinks row, logs invite-sent) — all in one transaction
   → SLP copies invite link manually (no automated email in v1)
   → Parent opens /invite/<token>
   → Landing page shows: "Dr. Smith invited you to connect with Alex's speech therapy"
@@ -163,7 +174,7 @@ SLP adds patient with parent email
 |---|---|---|---|
 | `list` | `query` | `{ status?: string }` | Returns patients for authenticated SLP. Uses `by_slpUserId` index. |
 | `get` | `query` | `{ patientId: Id<"patients"> }` | Single patient. Asserts SLP owner or linked caregiver. |
-| `create` | `mutation` | `{ firstName, lastName, dateOfBirth, diagnosis, status?, parentEmail?, interests?, communicationLevel?, sensoryNotes?, behavioralNotes?, notes? }` | Creates patient, logs `patient-created`. Optionally calls `caregivers.createInvite` if `parentEmail` provided. |
+| `create` | `mutation` | `{ firstName, lastName, dateOfBirth, diagnosis, status?, parentEmail?, interests?, communicationLevel?, sensoryNotes?, behavioralNotes?, notes? }` | Creates patient, logs `patient-created`. If `parentEmail` provided, inlines invite creation (generates token, inserts `caregiverLinks` row, logs `invite-sent`) in the same transaction. Returns `{ patientId, inviteToken? }`. |
 | `update` | `mutation` | `{ patientId, ...partialFields }` | Partial update. Asserts SLP ownership. Logs `profile-updated`. |
 | `updateStatus` | `mutation` | `{ patientId, status }` | Dedicated status change. Logs `status-changed` with old → new status in details. |
 | `getStats` | `query` | `{}` | Returns `{ active, onHold, discharged, pendingIntake }` counts for filter pills. |
@@ -198,7 +209,7 @@ SLP adds patient with parent email
 
 | Function | Type | Args | Purpose |
 |---|---|---|---|
-| `setCaregiverRole` | `internalAction` | `{ userId }` | Calls Clerk Backend API to set `publicMetadata.role = "caregiver"`. |
+| `setCaregiverRole` | `internalAction` | `{ userId }` | Calls Clerk Backend API to set `publicMetadata.role = "caregiver"`. Requires `CLERK_SECRET_KEY` set in the Convex dashboard environment variables (separate from the Next.js `.env.local` copy). |
 
 ---
 
@@ -239,7 +250,7 @@ src/features/patients/
 
 ### Sidebar
 
-Add "Patients" item to `src/shared/lib/navigation.ts` between Home and Builder. Icon: `Users` from lucide-react. Conditionally shown only when `role === "slp"`.
+Add "Patients" item to `src/shared/lib/navigation.ts` between Home and Builder. Icon: `"group"` (Material Symbols, matching the existing nav icon convention). Conditionally shown only when `role === "slp"`.
 
 ### Caseload page (`/patients`)
 
