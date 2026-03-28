@@ -38,8 +38,8 @@ This subsystem adds structured goal tracking with measurable criteria, automatic
 
 ### Phase 2: Progress Data Pipeline
 - Schema: `progressData` table
-- Convex functions: `progressData.ts` (listByGoal, listByPatient, createFromSessionNote, createManual)
-- Convex helpers: `lib/progress.ts` (calculateStreak, detectTrend, checkGoalMet)
+- Convex functions: `progressData.ts` (listByGoal, listByPatient, createManual)
+- Convex helpers: `lib/progress.ts` (calculateStreak, detectTrend, checkGoalMet, insertProgressFromTargets)
 - Modify `sessionNotes.sign` to auto-create progressData rows
 - Modify `structured-data-form.tsx` to add goal picker on target rows
 - UI: progress-chart, progress-data-table, goal-met-banner
@@ -99,7 +99,7 @@ progressData: defineTable({
     v.literal("in-app-auto"),
     v.literal("manual-entry")
   ),
-  sourceId: v.optional(v.string()),    // sessionNote ID or app interaction ID
+  sourceId: v.optional(v.string()),    // Intentionally v.string() (not v.id) — holds IDs from multiple tables (sessionNotes, future app interactions)
   date: v.string(),                    // ISO date
   trials: v.optional(v.number()),
   correct: v.optional(v.number()),
@@ -132,13 +132,31 @@ progressReports: defineTable({
   periodStart: v.string(),
   periodEnd: v.string(),
   goalSummaries: v.array(v.object({
-    goalId: v.string(),
+    goalId: v.string(),               // Stored as string (not v.id) since report is a snapshot — goal may be modified/deleted after report is signed
     shortDescription: v.string(),
-    domain: v.string(),
-    accuracyTrend: v.string(),        // "improving", "stable", "declining"
+    domain: v.union(
+      v.literal("articulation"),
+      v.literal("language-receptive"),
+      v.literal("language-expressive"),
+      v.literal("fluency"),
+      v.literal("voice"),
+      v.literal("pragmatic-social"),
+      v.literal("aac"),
+      v.literal("feeding")
+    ),
+    accuracyTrend: v.union(
+      v.literal("improving"),
+      v.literal("stable"),
+      v.literal("declining")
+    ),
     averageAccuracy: v.number(),
     sessionsCount: v.number(),
-    status: v.string(),
+    status: v.union(
+      v.literal("active"),
+      v.literal("met"),
+      v.literal("discontinued"),
+      v.literal("modified")
+    ),
     narrative: v.string(),            // AI-generated per-goal summary
   })),
   overallNarrative: v.string(),       // AI-generated summary across all goals
@@ -159,6 +177,14 @@ progressReports: defineTable({
 - `"goal-created"`, `"goal-met"`, `"goal-modified"`, `"report-generated"`
 
 **`sessionNotes.sign` mutation** — After signing, iterate `structuredData.targetsWorkedOn` entries that have a `goalId`, verify the goal exists and belongs to this patient, calculate accuracy (`correct / trials * 100`), and insert a `progressData` row with `source: "session-note"` and `sourceId: noteId`. Skip targets where both `trials` and `correct` are missing (no meaningful data point).
+
+**Important precondition:** The existing `sign` mutation only accepts notes with `status === "complete"`. Progress data is only created from finalized, complete notes — never from drafts or in-progress notes.
+
+**Convex constraint:** Mutations cannot call `ctx.runMutation()` — that API is only available in actions. The progress data inserts are done inline via `ctx.db.insert("progressData", ...)` directly in the `sign` mutation. Extract the insert logic into a shared helper function (`convex/lib/progress.ts`: `insertProgressFromTargets(ctx.db, targets, noteId, patientId, sessionDate)`) for testability, but it runs within the sign mutation's transaction.
+
+**Existing code change:** The `TargetData` interface in `src/features/session-notes/components/target-entry.tsx` must be extended to include the `goalId` field, which already exists in the schema validator but is missing from the client-side TypeScript interface.
+
+**Design note:** `progressData` intentionally omits `slpUserId`. Progress data is always accessed through goal or patient context, both of which carry `slpUserId`. Adding it would be denormalization without a query need.
 
 ---
 
@@ -184,11 +210,11 @@ progressReports: defineTable({
 **Queries:**
 
 - **`listByGoal`** — All data points for a goal, ordered by date desc. Powers the progress chart.
-- **`listByPatient`** — All data points for a patient within a date range. Powers the report generator.
+- **`listByPatient`** — All data points for a patient within a date range. Uses `by_patientId_date` index with range operators. ISO date strings compare correctly as strings (`"2026-03-01" < "2026-03-28"`). Powers the report generator.
 
 **Mutations:**
 
-- **`createFromSessionNote`** — Internal mutation called by the session note `sign` mutation. Accepts an array of `{ goalId, date, trials, correct, accuracy, promptLevel }`. Inserts one `progressData` row per target. No direct client access.
+- **`createFromSessionNote`** — **Not a separate mutation.** The progress data inserts are done inline in the `sessionNotes.sign` mutation via a shared helper function (`convex/lib/progress.ts`: `insertProgressFromTargets`). This helper takes `ctx.db` and the target data, and calls `ctx.db.insert("progressData", ...)` for each target. Convex mutations cannot call other mutations — everything runs in one transaction.
 - **`createManual`** — SLP manually adds a data point for a goal (for data collected outside the app). Validates accuracy 0-100, trials/correct consistency.
 
 ### `convex/lib/progress.ts`
@@ -278,6 +304,25 @@ src/features/goals/
     goal-bank-data.ts            — Static array of common IEP goal templates by domain
 ```
 
+### New dependency
+
+- **`recharts`** — Install via `npm install recharts`. Used for progress line charts and sparklines. No other new npm dependencies.
+
+### Goal bank data shape (`goal-bank-data.ts`)
+
+```ts
+interface GoalTemplate {
+  id: string;                          // Unique template ID, e.g., "artic-initial-r"
+  domain: GoalDomain;                  // Matches the goals table domain union
+  shortDescription: string;            // e.g., "Produce /r/ in initial position"
+  fullGoalText: string;                // Template with placeholders: "...with {accuracy}% accuracy across {sessions} consecutive sessions"
+  defaultTargetAccuracy: number;       // e.g., 80
+  defaultConsecutiveSessions: number;  // e.g., 3
+}
+```
+
+Templates are grouped by domain. The picker filters by selected domain, showing 5-15 templates per domain covering the most common IEP goals.
+
 ### Patient detail page integration
 
 New **"Goals" widget** added to the patient detail page left column, above SessionNotesList:
@@ -339,7 +384,7 @@ Full-page view at `/patients/[id]/goals/[goalId]`:
 
 - Per-goal sections: short description, accuracy trend arrow (up/right/down), sessions count, narrative paragraph
 - Overall narrative section
-- Editable in `draft` and `reviewed` states (contentEditable on narrative fields)
+- Editable in `draft` and `reviewed` states (controlled `<Textarea>` components, not contentEditable)
 - Status bar: "Mark Reviewed" → "Sign" (or "Unsign")
 - "Print / Export PDF" triggers `window.print()` with `@media print` styles
 
