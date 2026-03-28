@@ -8,6 +8,7 @@ import { MaterialIcon } from "@/shared/components/material-icon";
 import { usePatient } from "../hooks/use-patients";
 import { PatientProfileWidget } from "./patient-profile-widget";
 import { ActivityTimeline } from "./activity-timeline";
+import { SessionNotesList } from "@/features/session-notes/components/session-notes-list";
 import { AssignedMaterials } from "./assigned-materials";
 import { CaregiverInfo } from "./caregiver-info";
 import { QuickNotes } from "./quick-notes";
@@ -49,7 +50,10 @@ export function PatientDetailPage({ paramsPromise }: PatientDetailPageProps) {
       {/* Two-column widget grid */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Left column */}
-        <ActivityTimeline patientId={patient._id} />
+        <div className="flex flex-col gap-6">
+          <SessionNotesList patientId={patient._id} />
+          <ActivityTimeline patientId={patient._id} />
+        </div>
 
         {/* Right column */}
         <div className="flex flex-col gap-6">

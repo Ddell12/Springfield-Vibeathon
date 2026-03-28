@@ -73,6 +73,12 @@ export function PatientRowExpanded({ patient }: PatientRowExpandedProps) {
             View Full Profile
           </Link>
         </Button>
+        <Button asChild size="sm" variant="outline" className="justify-start">
+          <Link href={`/patients/${patient._id}/sessions/new`}>
+            <MaterialIcon icon="description" size="sm" />
+            New Session
+          </Link>
+        </Button>
         <Button size="sm" variant="outline" className="justify-start" disabled>
           <MaterialIcon icon="assignment" size="sm" />
           Assign Material
