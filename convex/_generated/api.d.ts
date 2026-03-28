@@ -8,10 +8,13 @@
  * @module
  */
 
+import type * as activityLog from "../activityLog.js";
 import type * as ai from "../ai.js";
 import type * as aiActions from "../aiActions.js";
 import type * as app_state from "../app_state.js";
 import type * as apps from "../apps.js";
+import type * as caregivers from "../caregivers.js";
+import type * as clerkActions from "../clerkActions.js";
 import type * as entitlements from "../entitlements.js";
 import type * as flashcard_cards from "../flashcard_cards.js";
 import type * as flashcard_decks from "../flashcard_decks.js";
@@ -27,6 +30,8 @@ import type * as lib_auth from "../lib/auth.js";
 import type * as lib_billing from "../lib/billing.js";
 import type * as lib_session_states from "../lib/session_states.js";
 import type * as messages from "../messages.js";
+import type * as patientMaterials from "../patientMaterials.js";
+import type * as patients from "../patients.js";
 import type * as rate_limit_check from "../rate_limit_check.js";
 import type * as rate_limits from "../rate_limits.js";
 import type * as seeds_image_seeds from "../seeds/image_seeds.js";
@@ -45,10 +50,13 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  activityLog: typeof activityLog;
   ai: typeof ai;
   aiActions: typeof aiActions;
   app_state: typeof app_state;
   apps: typeof apps;
+  caregivers: typeof caregivers;
+  clerkActions: typeof clerkActions;
   entitlements: typeof entitlements;
   flashcard_cards: typeof flashcard_cards;
   flashcard_decks: typeof flashcard_decks;
@@ -64,6 +72,8 @@ declare const fullApi: ApiFromModules<{
   "lib/billing": typeof lib_billing;
   "lib/session_states": typeof lib_session_states;
   messages: typeof messages;
+  patientMaterials: typeof patientMaterials;
+  patients: typeof patients;
   rate_limit_check: typeof rate_limit_check;
   rate_limits: typeof rate_limits;
   "seeds/image_seeds": typeof seeds_image_seeds;
