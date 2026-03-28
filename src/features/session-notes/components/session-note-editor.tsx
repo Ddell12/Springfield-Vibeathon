@@ -138,7 +138,7 @@ export function SessionNoteEditor({
           setCurrentNoteId(newId);
           // Update URL to include the new note ID without a full navigation
           router.replace(
-            `/patients/${patientId}/notes/${newId}`
+            `/patients/${patientId}/sessions/${newId}`
           );
         }
       } catch (err) {
