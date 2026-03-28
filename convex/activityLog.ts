@@ -12,7 +12,10 @@ export const log = internalMutation({
       v.literal("material-assigned"),
       v.literal("invite-sent"),
       v.literal("invite-accepted"),
-      v.literal("status-changed")
+      v.literal("status-changed"),
+      v.literal("session-documented"),
+      v.literal("session-signed"),
+      v.literal("session-unsigned")
     ),
     details: v.optional(v.string()),
     timestamp: v.number(),

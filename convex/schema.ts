@@ -197,9 +197,59 @@ export default defineSchema({
       v.literal("material-assigned"),
       v.literal("invite-sent"),
       v.literal("invite-accepted"),
-      v.literal("status-changed")
+      v.literal("status-changed"),
+      v.literal("session-documented"),
+      v.literal("session-signed"),
+      v.literal("session-unsigned")
     ),
     details: v.optional(v.string()),
     timestamp: v.number(),
   }).index("by_patientId_timestamp", ["patientId", "timestamp"]),
+
+  sessionNotes: defineTable({
+    patientId: v.id("patients"),
+    slpUserId: v.string(),
+    sessionDate: v.string(),
+    sessionDuration: v.number(),
+    sessionType: v.union(
+      v.literal("in-person"),
+      v.literal("teletherapy"),
+      v.literal("parent-consultation")
+    ),
+    status: v.union(
+      v.literal("draft"),
+      v.literal("in-progress"),
+      v.literal("complete"),
+      v.literal("signed")
+    ),
+    structuredData: v.object({
+      targetsWorkedOn: v.array(v.object({
+        target: v.string(),
+        goalId: v.optional(v.string()),
+        trials: v.optional(v.number()),
+        correct: v.optional(v.number()),
+        promptLevel: v.optional(v.union(
+          v.literal("independent"),
+          v.literal("verbal-cue"),
+          v.literal("model"),
+          v.literal("physical")
+        )),
+        notes: v.optional(v.string()),
+      })),
+      behaviorNotes: v.optional(v.string()),
+      parentFeedback: v.optional(v.string()),
+      homeworkAssigned: v.optional(v.string()),
+      nextSessionFocus: v.optional(v.string()),
+    }),
+    soapNote: v.optional(v.object({
+      subjective: v.string(),
+      objective: v.string(),
+      assessment: v.string(),
+      plan: v.string(),
+    })),
+    aiGenerated: v.boolean(),
+    signedAt: v.optional(v.number()),
+  })
+    .index("by_patientId_sessionDate", ["patientId", "sessionDate"])
+    .index("by_slpUserId", ["slpUserId"]),
 });
