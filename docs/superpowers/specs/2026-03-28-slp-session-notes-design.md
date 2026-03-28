@@ -64,7 +64,7 @@ One new Convex table in `convex/schema.ts`.
 | `aiGenerated` | `v.boolean()` | yes | Whether the current SOAP was AI-generated (audit trail) |
 | `signedAt` | `v.optional(v.number())` | no | Timestamp when signed. Cleared on unsign. |
 
-**Indexes:** `by_patientId` on `["patientId"]`, `by_slpUserId` on `["slpUserId"]`, `by_sessionDate` on `["sessionDate"]`
+**Indexes:** `by_patientId_sessionDate` on `["patientId", "sessionDate"]` (compound — enables efficient sorted range scan per patient for `list` and `getLatestSoap`), `by_slpUserId` on `["slpUserId"]`
 
 ### Structured Data Schema (embedded object)
 
@@ -72,7 +72,7 @@ One new Convex table in `convex/schema.ts`.
 structuredData: v.object({
   targetsWorkedOn: v.array(v.object({
     target: v.string(),                    // e.g., "/r/ in initial position"
-    goalId: v.optional(v.id("goals")),     // Links to IEP goal (Subsystem 3 ready)
+    goalId: v.optional(v.string()),          // Will become v.id("goals") when Subsystem 3 adds the goals table
     trials: v.optional(v.number()),        // e.g., 20
     correct: v.optional(v.number()),       // e.g., 14
     promptLevel: v.optional(v.union(
@@ -90,7 +90,7 @@ structuredData: v.object({
 })
 ```
 
-The `goalId` field on each target is the bridge to Subsystem 3 (Goal Tracking). Until goals exist, it's `undefined` and ignored. When Subsystem 3 lands, the session note form can pre-populate target suggestions from active goals, and session data auto-feeds progress tracking.
+The `goalId` field on each target is the bridge to Subsystem 3 (Goal Tracking). It uses `v.string()` temporarily because Convex requires the referenced table to exist for `v.id("goals")` — the `goals` table doesn't exist until Subsystem 3. When Subsystem 3 lands, this field will be tightened to `v.id("goals")` and the form will gain goal-based target suggestions.
 
 ### SOAP Note Schema (embedded object)
 
@@ -143,7 +143,7 @@ The `/api/generate-soap` route requires Clerk authentication — add to the prot
 | `update` | `mutation` | `{ sessionNoteId, sessionDate?, sessionDuration?, sessionType?, structuredData? }` | Partial update of session metadata and structured data. Asserts SLP ownership. Rejects if status is `signed` (must unsign first). |
 | `updateSoap` | `mutation` | `{ sessionNoteId, soapNote: { subjective, objective, assessment, plan } }` | Writes or overwrites the SOAP note. Sets `aiGenerated: false` (manual edit). Rejects if `signed`. |
 | `saveSoapFromAI` | `mutation` | `{ sessionNoteId, soapNote: { subjective, objective, assessment, plan } }` | Called by the `/api/generate-soap` route after streaming completes. Sets `aiGenerated: true`. Rejects if `signed`. |
-| `sign` | `mutation` | `{ sessionNoteId }` | Sets status to `signed`, sets `signedAt` to now. Requires SOAP note to exist. Logs `session-signed`. |
+| `sign` | `mutation` | `{ sessionNoteId }` | Sets status to `signed`, sets `signedAt` to now. Requires status `complete` and SOAP note to exist. Logs `session-signed`. |
 | `unsign` | `mutation` | `{ sessionNoteId }` | Sets status back to `complete`, clears `signedAt`. Logs `session-unsigned`. Asserts SLP ownership. |
 | `updateStatus` | `mutation` | `{ sessionNoteId, status }` | Transitions between `draft`, `in-progress`, `complete`. Cannot transition to/from `signed` (use `sign`/`unsign`). |
 | `delete` | `mutation` | `{ sessionNoteId }` | Deletes a session note. Rejects if `signed` (must unsign first). Asserts SLP ownership. |
