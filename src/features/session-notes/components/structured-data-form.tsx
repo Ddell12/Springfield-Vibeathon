@@ -10,8 +10,12 @@ import {
 } from "@/shared/components/ui/radio-group";
 import { MaterialIcon } from "@/shared/components/material-icon";
 import { TargetEntry, type TargetData } from "./target-entry";
+// Accepted cross-feature dependency: session-notes depends on goals for target linking.
+// This is a hub-pattern import where session notes are the aggregation point.
 import { useActiveGoals } from "@/features/goals/hooks/use-goals";
 import { DurationPresetInput } from "./duration-preset-input";
+import { formatAge } from "@/features/patients/lib/patient-utils";
+import { DIAGNOSIS_LABELS } from "@/shared/lib/diagnosis";
 import type { Doc } from "../../../../convex/_generated/dataModel";
 
 const MAX_TARGETS = 20;
@@ -38,33 +42,6 @@ interface StructuredDataFormProps {
   onSessionTypeChange: (type: SessionType) => void;
   onStructuredDataChange: (data: StructuredData) => void;
 }
-
-function calculateAge(dateOfBirth: string): string {
-  const dob = new Date(dateOfBirth);
-  const now = new Date();
-  let years = now.getFullYear() - dob.getFullYear();
-  let months = now.getMonth() - dob.getMonth();
-  if (months < 0 || (months === 0 && now.getDate() < dob.getDate())) {
-    years--;
-    months += 12;
-  }
-  if (now.getDate() < dob.getDate()) {
-    months--;
-    if (months < 0) months += 12;
-  }
-  if (years < 1) return `${months}mo`;
-  if (months === 0) return `${years}y`;
-  return `${years}y ${months}mo`;
-}
-
-const diagnosisLabels: Record<string, string> = {
-  articulation: "Articulation",
-  language: "Language",
-  fluency: "Fluency",
-  voice: "Voice",
-  "aac-complex": "AAC / Complex Communication",
-  other: "Other",
-};
 
 const sessionTypeOptions = [
   { value: "in-person" as const, label: "In-Person", icon: "person" },
@@ -129,10 +106,10 @@ export function StructuredDataForm({
             {patient.firstName} {patient.lastName}
           </span>
           <span className="text-muted-foreground">
-            Age: {calculateAge(patient.dateOfBirth)}
+            Age: {formatAge(patient.dateOfBirth)}
           </span>
           <span className="text-muted-foreground">
-            {diagnosisLabels[patient.diagnosis] ?? patient.diagnosis}
+            {DIAGNOSIS_LABELS[patient.diagnosis as keyof typeof DIAGNOSIS_LABELS] ?? patient.diagnosis}
           </span>
         </div>
       </div>

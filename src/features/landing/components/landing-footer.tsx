@@ -1,3 +1,5 @@
+import { APP_BRAND } from "@/core/config";
+
 export function LandingFooter() {
   return (
     <footer className="bg-surface py-12 border-t border-outline-variant/10">
@@ -7,7 +9,7 @@ export function LandingFooter() {
             Bridges
           </span>
           <span className="text-xs text-on-surface-variant">
-            &copy; {new Date().getFullYear()} Bridges AI. All rights reserved.
+            &copy; {new Date().getFullYear()} {APP_BRAND}. All rights reserved.
           </span>
         </div>
         <div className="flex gap-8">

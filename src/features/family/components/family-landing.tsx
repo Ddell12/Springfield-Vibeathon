@@ -46,7 +46,7 @@ function ChildCard({ patientId }: ChildCardProps) {
             <p className="text-sm text-muted-foreground">{patient.lastName}</p>
           )}
         </div>
-        <Button asChild className="w-full bg-gradient-to-r from-[#00595c] to-[#0d7377] text-white hover:opacity-90">
+        <Button asChild className="w-full bg-primary-gradient text-white hover:opacity-90">
           <Link href={`/family/${patientId}`}>View Practice</Link>
         </Button>
       </CardContent>

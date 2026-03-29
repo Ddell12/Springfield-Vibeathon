@@ -15,6 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/components/ui
 
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
+import { APP_BRAND } from "@/core/config";
 import { MainPromptInput } from "./main-prompt-input";
 import { TemplatesTab } from "./templates-tab";
 
@@ -79,7 +80,7 @@ export function DashboardView() {
       <header className="sticky top-0 z-30 hidden h-16 w-full items-center justify-between bg-background/70 px-8 backdrop-blur-xl md:flex">
         <div className="flex items-center gap-3">
           <h1 className="font-headline text-xl font-extrabold tracking-tight text-primary">
-            Bridges AI
+            {APP_BRAND}
           </h1>
         </div>
         <div className="flex items-center gap-6">

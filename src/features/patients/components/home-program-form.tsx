@@ -17,8 +17,6 @@ import { Label } from "@/shared/components/ui/label";
 import { Textarea } from "@/shared/components/ui/textarea";
 import type { Id } from "../../../../convex/_generated/dataModel";
 
-const extendedApi = api as any;
-
 interface HomeProgramFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -30,7 +28,7 @@ function todayIso() {
 }
 
 export function HomeProgramForm({ open, onOpenChange, patientId }: HomeProgramFormProps) {
-  const createProgram = useMutation(extendedApi.homePrograms.create);
+  const createProgram = useMutation(api.homePrograms.create);
 
   const [title, setTitle] = useState("");
   const [instructions, setInstructions] = useState("");
@@ -64,6 +62,10 @@ export function HomeProgramForm({ open, onOpenChange, patientId }: HomeProgramFo
     }
     if (!startDate) {
       toast.error("Start date is required");
+      return;
+    }
+    if (endDate && endDate < startDate) {
+      toast.error("End date must be on or after start date");
       return;
     }
 
