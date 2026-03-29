@@ -12,6 +12,7 @@ import { SessionNotesList } from "@/features/session-notes/components/session-no
 import { GoalsList } from "@/features/goals/components/goals-list";
 import { AssignedMaterials } from "./assigned-materials";
 import { CaregiverInfo } from "./caregiver-info";
+import { HomeProgramsWidget } from "./home-programs-widget";
 import { QuickNotes } from "./quick-notes";
 import { CreateMaterialButton } from "./create-material-button";
 import type { Id } from "../../../../convex/_generated/dataModel";
@@ -65,6 +66,7 @@ export function PatientDetailPage({ paramsPromise }: PatientDetailPageProps) {
         <div className="flex flex-col gap-6">
           <AssignedMaterials patientId={patient._id} />
           <CaregiverInfo patientId={patient._id} />
+          <HomeProgramsWidget patientId={patient._id} />
         </div>
       </div>
 
