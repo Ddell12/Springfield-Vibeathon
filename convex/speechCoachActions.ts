@@ -155,6 +155,7 @@ Respond with a JSON object matching this exact shape:
       overallEngagement: analysis.overallEngagement,
       recommendedNextFocus: analysis.recommendedNextFocus,
       summary: analysis.summary,
+      analyzedAt: Date.now(),
     });
 
     // 6. Auto-log practice
@@ -182,7 +183,7 @@ Respond with a JSON object matching this exact shape:
       await ctx.runMutation(internal.speechCoach.saveGoalProgress, {
         homeProgramId: session.homeProgramId,
         patientId: session.patientId,
-        sessionId: args.sessionId as string,
+        sourceId: args.sessionId as string,
         accuracy: avgAccuracy,
         date: new Date().toISOString().slice(0, 10),
       });
