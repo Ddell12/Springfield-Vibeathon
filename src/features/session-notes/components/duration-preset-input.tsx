@@ -39,7 +39,7 @@ export function DurationPresetInput({ value, onChange, disabled }: DurationPrese
           className={cn(
             "min-w-[52px]",
             value === preset &&
-              "bg-gradient-to-br from-[#00595c] to-[#0d7377] text-white hover:from-[#00595c]/90 hover:to-[#0d7377]/90",
+              "bg-primary-gradient text-white hover:opacity-90",
           )}
         >
           {preset}

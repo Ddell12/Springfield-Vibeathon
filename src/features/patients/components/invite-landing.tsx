@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useEffect, useState } from "react";
+import { use, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useUser } from "@clerk/nextjs";
@@ -20,10 +20,12 @@ export function InviteLanding({ paramsPromise }: InviteLandingProps) {
   const { isSignedIn, isLoaded } = useUser();
   const router = useRouter();
   const [isAccepting, setIsAccepting] = useState(false);
+  const acceptAttemptedRef = useRef(false);
 
   // Auto-accept if user is already signed in (came back from sign-up)
   useEffect(() => {
-    if (isLoaded && isSignedIn && inviteInfo && !isAccepting) {
+    if (isLoaded && isSignedIn && inviteInfo && !isAccepting && !acceptAttemptedRef.current) {
+      acceptAttemptedRef.current = true;
       setIsAccepting(true);
       acceptInvite({ token })
         .then(() => {

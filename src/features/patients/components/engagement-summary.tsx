@@ -4,8 +4,6 @@ import { useConvexAuth, useQuery } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 
-const extendedApi = api as any;
-
 interface EngagementSummaryProps {
   patientId: Id<"patients">;
 }
@@ -44,7 +42,7 @@ export function EngagementSummary({ patientId }: EngagementSummaryProps) {
   const today = getTodayIso();
 
   const logs = useQuery(
-    extendedApi.practiceLog.listByPatientDateRange,
+    api.practiceLog.listByPatientDateRange,
     isAuthenticated ? { patientId, startDate: monday, endDate: today } : "skip"
   );
 
@@ -67,6 +65,11 @@ export function EngagementSummary({ patientId }: EngagementSummaryProps) {
   // Days practiced this week (unique dates)
   const uniqueDates = new Set(logs.map((l: { date: string }) => l.date));
   const daysPracticed = uniqueDates.size;
+
+  // Elapsed days since Monday (Mon=1 … Sun=7)
+  const now = new Date();
+  const dayOfWeek = now.getDay(); // 0=Sun, 1=Mon, ...
+  const elapsedDays = dayOfWeek === 0 ? 7 : dayOfWeek;
 
   // Average confidence (non-null values only)
   const confidenceValues = logs
@@ -92,7 +95,7 @@ export function EngagementSummary({ patientId }: EngagementSummaryProps) {
       <div className="rounded-lg bg-muted/40 px-4 py-3">
         <p className="text-xs text-muted-foreground">
           Parent practiced{" "}
-          <span className="font-semibold text-foreground">{daysPracticed}/7</span>{" "}
+          <span className="font-semibold text-foreground">{daysPracticed}/{elapsedDays}</span>{" "}
           days this week
           {avgConfidence !== null && (
             <>

@@ -77,6 +77,9 @@ export function SessionNoteEditor({
   const [currentNoteId, setCurrentNoteId] = useState<Id<"sessionNotes"> | null>(
     typedNoteId
   );
+  // Ref to avoid stale closure in setTimeout-based auto-save
+  const currentNoteIdRef = useRef(currentNoteId);
+  useEffect(() => { currentNoteIdRef.current = currentNoteId; }, [currentNoteId]);
 
   // ── Initialize from existing note ──────────────────────────────────────────
   const hasInitialized = useRef(false);
@@ -163,10 +166,10 @@ export function SessionNoteEditor({
         clearTimeout(autoSaveTimeout.current);
       }
       autoSaveTimeout.current = setTimeout(() => {
-        doSave(date, duration, type, data, currentNoteId);
+        doSave(date, duration, type, data, currentNoteIdRef.current);
       }, 1000);
     },
-    [doSave, currentNoteId]
+    [doSave]
   );
 
   // Clean up timeout on unmount
@@ -363,7 +366,7 @@ export function SessionNoteEditor({
               soap.status === "generating" ||
               !currentNoteId
             }
-            className="w-full bg-gradient-to-br from-[#00595c] to-[#0d7377] text-white transition-opacity duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] hover:opacity-90"
+            className="w-full bg-primary-gradient text-white transition-opacity duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] hover:opacity-90"
           >
             <MaterialIcon icon="auto_awesome" size="sm" />
             {soap.status === "generating"
@@ -432,7 +435,7 @@ export function SessionNoteEditor({
                       size="sm"
                       onClick={handleSign}
                       disabled={!canSign}
-                      className="bg-gradient-to-br from-[#00595c] to-[#0d7377] text-white transition-opacity duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] hover:opacity-90"
+                      className="bg-primary-gradient text-white transition-opacity duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] hover:opacity-90"
                     >
                       <MaterialIcon icon="verified" size="xs" />
                       Sign Note

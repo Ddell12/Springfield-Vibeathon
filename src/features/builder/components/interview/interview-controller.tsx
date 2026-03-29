@@ -256,7 +256,7 @@ export function InterviewController({
           <button
             type="button"
             onClick={chooseSkip}
-            className="rounded-xl bg-gradient-to-r from-[#00595c] to-[#0d7377] px-5 py-2.5 text-sm font-semibold text-white shadow-md transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5"
+            className="rounded-xl bg-primary-gradient px-5 py-2.5 text-sm font-semibold text-white shadow-md transition-all duration-300 hover:opacity-90 hover:shadow-lg hover:-translate-y-0.5"
           >
             Show me the plan
           </button>

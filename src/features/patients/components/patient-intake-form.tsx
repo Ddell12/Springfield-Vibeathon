@@ -18,15 +18,12 @@ import {
 import { Textarea } from "@/shared/components/ui/textarea";
 import { MaterialIcon } from "@/shared/components/material-icon";
 import { toast } from "sonner";
+import { DIAGNOSIS_VALUES, DIAGNOSIS_LABELS, type DiagnosisValue } from "@/shared/lib/diagnosis";
 
-const DIAGNOSES = [
-  { value: "articulation", label: "Articulation" },
-  { value: "language", label: "Language" },
-  { value: "fluency", label: "Fluency" },
-  { value: "voice", label: "Voice" },
-  { value: "aac-complex", label: "AAC/Complex Communication" },
-  { value: "other", label: "Other" },
-] as const;
+const DIAGNOSES = DIAGNOSIS_VALUES.map((value) => ({
+  value,
+  label: DIAGNOSIS_LABELS[value],
+}));
 
 const COMMUNICATION_LEVELS = [
   { value: "pre-verbal", label: "Pre-verbal" },
@@ -35,7 +32,7 @@ const COMMUNICATION_LEVELS = [
   { value: "sentences", label: "Sentences" },
 ] as const;
 
-type Diagnosis = (typeof DIAGNOSES)[number]["value"];
+type Diagnosis = DiagnosisValue;
 type CommLevel = (typeof COMMUNICATION_LEVELS)[number]["value"];
 
 export function PatientIntakeForm() {

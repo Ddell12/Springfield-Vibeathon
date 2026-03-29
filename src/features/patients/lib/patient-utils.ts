@@ -10,14 +10,21 @@ export function calculateAge(dateOfBirth: string): number {
 }
 
 export function formatAge(dateOfBirth: string): string {
-  const age = calculateAge(dateOfBirth);
-  if (age < 2) {
-    const dob = new Date(dateOfBirth);
-    const months = (new Date().getFullYear() - dob.getFullYear()) * 12 +
-      (new Date().getMonth() - dob.getMonth());
-    return `${months}mo`;
+  const dob = new Date(dateOfBirth);
+  const now = new Date();
+  let years = now.getFullYear() - dob.getFullYear();
+  let months = now.getMonth() - dob.getMonth();
+  if (months < 0 || (months === 0 && now.getDate() < dob.getDate())) {
+    years--;
+    months += 12;
   }
-  return `${age}y`;
+  if (now.getDate() < dob.getDate()) {
+    months--;
+    if (months < 0) months += 12;
+  }
+  if (years < 1) return `${months}mo`;
+  if (months === 0) return `${years}y`;
+  return `${years}y ${months}mo`;
 }
 
 export function getInitials(firstName: string, lastName: string): string {
