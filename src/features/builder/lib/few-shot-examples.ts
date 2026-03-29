@@ -66,7 +66,7 @@ export default function App() {
                 <Trophy className="h-8 w-8 text-yellow-500" />
               </div>
             </div>
-            <CardTitle className="text-3xl font-bold font-[Nunito] text-white">
+            <CardTitle className="text-3xl font-bold font-[Fraunces] text-white">
               My Star Board
             </CardTitle>
           </CardHeader>
@@ -187,7 +187,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-primary/10 to-white flex flex-col">
       <header className="bg-gradient-to-r from-primary to-primary/80 px-4 py-5 text-center shadow-lg">
-        <h1 className="text-2xl font-bold font-[Nunito] text-white">Snack Time!</h1>
+        <h1 className="text-2xl font-bold font-[Fraunces] text-white">Snack Time!</h1>
         <p className="mt-1 text-sm text-white/80">Tap what you want</p>
       </header>
 

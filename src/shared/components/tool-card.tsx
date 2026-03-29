@@ -48,7 +48,7 @@ export function ToolCard({
 
         {/* Content */}
         <div className="p-5 flex flex-col flex-grow">
-          <h3 className="font-headline font-bold text-xl text-on-surface mb-1">
+          <h3 className="font-headline font-medium text-xl text-on-surface mb-1">
             {title}
           </h3>
 

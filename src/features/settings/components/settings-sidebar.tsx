@@ -33,7 +33,7 @@ export function SettingsSidebar({
       </Link>
 
       <div className="mb-8 px-4">
-        <h2 className="font-headline font-bold text-lg text-primary">Settings</h2>
+        <h2 className="font-headline font-medium text-lg text-primary">Settings</h2>
         <p className="text-xs text-on-surface-variant font-medium">Manage your sanctuary</p>
       </div>
 

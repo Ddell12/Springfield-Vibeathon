@@ -36,7 +36,7 @@ export function MyToolsPage() {
       <div className="max-w-7xl mx-auto px-8 pt-12 pb-24 flex flex-col items-center justify-center gap-6 min-h-[60vh]">
         <div className="text-center">
           <MaterialIcon icon="dashboard_customize" className="text-6xl text-primary/40 mb-4" />
-          <h1 className="font-headline font-bold text-3xl text-on-surface mb-3">
+          <h1 className="font-headline font-normal text-3xl text-on-surface mb-3">
             No apps yet
           </h1>
           <p className="text-on-surface-variant text-lg mb-8">
@@ -58,7 +58,7 @@ export function MyToolsPage() {
     <div className="max-w-7xl mx-auto px-8 pt-12 pb-24">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
         <div>
-          <h1 className="font-headline font-bold text-4xl md:text-5xl text-on-surface tracking-tight mb-2">
+          <h1 className="font-headline font-normal text-4xl md:text-5xl text-on-surface tracking-tight mb-2">
             My Apps
           </h1>
           <p className="text-on-surface-variant text-lg">
@@ -95,7 +95,7 @@ export function MyToolsPage() {
       <section className="mt-20 p-10 rounded-xl bg-surface-container-lowest ring-1 ring-outline-variant/10 relative overflow-hidden flex flex-col md:flex-row items-center gap-10">
         <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -mr-20 -mt-20" />
         <div className="relative z-10 md:w-2/3">
-          <h2 className="font-headline font-bold text-3xl text-on-surface mb-4">
+          <h2 className="font-headline font-normal text-3xl text-on-surface mb-4">
             Need a custom app?
           </h2>
           <p className="text-on-surface-variant text-lg max-w-xl">

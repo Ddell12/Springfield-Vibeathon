@@ -13,7 +13,7 @@ export function CtaSection() {
           <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center">
             <MaterialIcon icon="auto_awesome" className="text-white text-3xl" />
           </div>
-          <h2 className="font-headline text-3xl md:text-4xl font-extrabold text-white leading-tight">
+          <h2 className="font-headline text-3xl md:text-4xl font-normal text-white leading-tight">
             Start building therapy apps today — for free.
           </h2>
           <p className="text-white/80 text-lg max-w-lg leading-relaxed">
@@ -21,7 +21,7 @@ export function CtaSection() {
           </p>
           <Link
             href="/builder"
-            className="bg-white text-primary px-10 py-4 rounded-xl text-lg font-bold font-headline hover:bg-white/90 transition-colors active:scale-95 inline-flex items-center gap-2 group focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-primary"
+            className="bg-white text-primary px-10 py-4 rounded-lg text-lg font-bold hover:bg-white/90 transition-colors active:scale-95 inline-flex items-center gap-2 group focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-primary"
           >
             Build Your First App
             <MaterialIcon

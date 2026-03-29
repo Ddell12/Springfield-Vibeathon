@@ -76,10 +76,18 @@ Key files:
 - Use semantic tokens: `bg-background`, `text-foreground`, `border-border`
 
 ### Design System
-- Dual fonts: **Manrope** (headlines) + **Inter** (body)
+Always read `DESIGN.md` before making any visual or UI decisions.
+All font choices, colors, spacing, and aesthetic direction are defined there.
+Do not deviate without explicit user approval.
+In QA mode, flag any code that doesn't match DESIGN.md.
+
+Key tokens (see DESIGN.md for full system):
+- Display font: **Fraunces** (variable serif) / Body: **Instrument Sans** / Mono: **Commit Mono**
+- Canvas: `#F6F3EE` (warm off-white) / Primary: `#00595c` (teal)
 - No 1px borders for sectioning — use tonal background shifts instead
 - Primary CTA: gradient from `#00595c` to `#0d7377` at 135deg
 - All animations use `cubic-bezier(0.4, 0, 0.2, 1)`, minimum 300ms duration
+- Minimal-functional motion only — autistic users can be motion-sensitive
 
 ## Terminology
 
@@ -114,15 +122,23 @@ Clerk v7 handles all user authentication. The integration spans three layers:
 
 Unauthenticated users can explore templates and use the builder. Protected routes (like My Apps) require sign-in.
 
-### Test User Sign-In (Headless Browsers)
+### E2E Test Users
 
-Password auth fails in headless browsers (Clerk flags new devices). Use the **email code flow**:
+Two dedicated Clerk test users exist for role-based E2E testing. Both use `+clerk_test` emails (Clerk dev feature: email code is always `424242`).
 
-1. Go to `/sign-in`, enter `e2e+clerk_test@bridges.ai`, click Continue
-2. Click **"Use another method"** → **"Email code"**
-3. Enter code **`424242`** (always works for `+clerk_test` emails in dev mode)
+| Role | Email | Env Vars | Clerk publicMetadata |
+|------|-------|----------|---------------------|
+| **SLP** | `e2e+clerk_test+slp@bridges.ai` | `E2E_SLP_EMAIL`, `E2E_SLP_PASSWORD` | `{ role: "slp" }` |
+| **Caregiver** | `e2e+clerk_test+caregiver@bridges.ai` | `E2E_CAREGIVER_EMAIL`, `E2E_CAREGIVER_PASSWORD` | `{ role: "caregiver" }` |
 
-The `+clerk_test` suffix is a Clerk dev feature: no real email sent, code is always `424242`.
+**Test fixtures** (`tests/e2e/fixtures.ts`):
+- `slpPage` — authenticated as SLP
+- `caregiverPage` — authenticated as caregiver
+- `authedPage` — legacy default user (backward-compatible)
+
+**Sign-in strategies:**
+1. **Password** (primary): `@clerk/testing/playwright` `clerk.signIn` with password strategy
+2. **Email code** (fallback for headless): Enter email → "Use another method" → "Email code" → code `424242`
 
 ## Deployment Verification
 
@@ -184,3 +200,13 @@ Convex agent skills for common tasks can be installed by running `npx convex ai-
 | `docs/ai/prompt-library.md` | System prompts, tool schemas, RAG config |
 | `docs/product-vision.md` | Brand voice, audience personas, strategy |
 | `docs/prd.md` | Full product requirements document |
+
+## gstack
+
+Use the `/browse` skill from gstack for all web browsing. Never use `mcp__claude-in-chrome__*` tools directly.
+
+If gstack skills aren't working, run `cd .claude/skills/gstack && ./setup` to build the binary and register skills.
+
+### Available Skills
+
+`/office-hours` `/plan-ceo-review` `/plan-eng-review` `/plan-design-review` `/design-consultation` `/design-shotgun` `/review` `/ship` `/land-and-deploy` `/canary` `/benchmark` `/browse` `/connect-chrome` `/qa` `/qa-only` `/design-review` `/setup-browser-cookies` `/setup-deploy` `/retro` `/investigate` `/document-release` `/codex` `/cso` `/autoplan` `/careful` `/freeze` `/guard` `/unfreeze` `/gstack-upgrade`

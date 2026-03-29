@@ -7,7 +7,7 @@ export function AccountSection() {
   return (
     <div className="flex flex-col gap-8">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-headline font-bold text-primary">Account</h2>
+        <h2 className="text-2xl font-headline font-normal text-primary">Account</h2>
         <span className="text-xs font-bold uppercase tracking-widest text-on-surface-variant bg-surface-container-high px-2 py-1 rounded">
           Advanced
         </span>
@@ -19,7 +19,7 @@ export function AccountSection() {
             <MaterialIcon icon="warning" size="sm" className="text-error" />
           </div>
           <div>
-            <h3 className="font-headline font-bold text-on-surface mb-1">
+            <h3 className="font-headline font-medium text-on-surface mb-1">
               Danger Zone
             </h3>
             <p className="text-sm text-on-surface-variant">

@@ -10,7 +10,7 @@ export default function ToolNotFound() {
           <MaterialIcon icon="search_off" size="lg" />
         </div>
         <div className="space-y-2">
-          <h1 className="font-headline font-bold text-2xl text-on-surface">
+          <h1 className="font-headline font-normal text-2xl text-on-surface">
             This tool isn&apos;t available
           </h1>
           <p className="text-on-surface-variant text-sm">
@@ -20,7 +20,7 @@ export default function ToolNotFound() {
         </div>
         <Link
           href="/builder"
-          className="inline-flex items-center gap-2 bg-primary text-white px-6 py-2.5 rounded-xl font-semibold hover:opacity-90 transition-opacity duration-300"
+          className="inline-flex items-center gap-2 bg-primary text-white px-6 py-2.5 rounded-lg font-semibold hover:opacity-90 transition-opacity duration-300"
         >
           Build your own
           <MaterialIcon icon="arrow_forward" size="sm" />

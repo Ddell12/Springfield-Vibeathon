@@ -215,7 +215,7 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
       {showPromptScreen ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-6 overflow-y-auto p-6">
           <div className="text-center">
-            <h1 className="font-headline text-3xl font-semibold text-foreground">
+            <h1 className="font-headline text-3xl font-normal text-foreground">
               What would you like to build?
             </h1>
             <p className="mt-2 text-base text-on-surface-variant">
