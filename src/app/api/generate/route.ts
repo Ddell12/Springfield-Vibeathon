@@ -2,27 +2,24 @@
 // process requires it at runtime but Next.js can't trace child process imports.
 import "esbuild";
 
+import { rmSync } from "fs";
 import Anthropic from "@anthropic-ai/sdk";
-import { auth } from "@clerk/nextjs/server";
-import { ConvexHttpClient } from "convex/browser";
-import { existsSync, mkdtempSync, rmSync } from "fs";
-import { cp } from "fs/promises";
-import { tmpdir } from "os";
-import { join } from "path";
-
-import { extractErrorMessage, settleInBatches } from "@/core/utils";
-import { buildSystemPrompt } from "@/features/builder/lib/agent-prompt";
-import { createAgentTools } from "@/features/builder/lib/agent-tools";
-// Design review pass removed — main prompt has extensive design rules already
 import { GenerateInputSchema } from "@/features/builder/lib/schemas/generate";
-import { buildFlashcardSystemPrompt } from "@/features/flashcards/lib/flashcard-prompt";
-import { createFlashcardTools } from "@/features/flashcards/lib/flashcard-tools";
-
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
-import { acquireBuildSlot } from "./build-limiter";
-import { runBundleWorker } from "./run-bundle-worker";
 import { sseEncode } from "./sse";
+import { authenticate } from "./lib/authenticate";
+import {
+  createOrReuseSession,
+  startGeneration,
+  persistUserMessage,
+  completeSession,
+  failSession,
+} from "./lib/session-lifecycle";
+import { streamGeneration } from "./lib/stream-generation";
+import { bundleFiles, persistFiles } from "./lib/bundle-and-persist";
+
+export const runtime = "nodejs";
 
 if (!process.env.NEXT_PUBLIC_CONVEX_URL) {
   throw new Error("NEXT_PUBLIC_CONVEX_URL is required for /api/generate");
@@ -31,17 +28,7 @@ if (!process.env.ANTHROPIC_API_KEY) {
   throw new Error("ANTHROPIC_API_KEY is required for /api/generate");
 }
 
-const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL);
-
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-});
-
-export const runtime = "nodejs";
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
+const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 function jsonErrorResponse(message: string, status: number): Response {
   return new Response(JSON.stringify({ error: message }), {
@@ -50,70 +37,53 @@ function jsonErrorResponse(message: string, status: number): Response {
   });
 }
 
-// ---------------------------------------------------------------------------
-// Route handler
-// ---------------------------------------------------------------------------
-
 export async function POST(request: Request): Promise<Response> {
-  // Try Clerk auth if available, but don't block generation
-  try {
-    const { userId: clerkUserId, getToken } = await auth();
-    if (clerkUserId) {
-      const token = await getToken({ template: "convex" });
-      if (token) convex.setAuth(token);
-    }
-  } catch {
-    // Auth not configured yet — allow unauthenticated generation for demo
-  }
+  // 1. Auth
+  const { convex } = await authenticate();
 
+  // 2. Validate body
   let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
+  try { body = await request.json(); } catch {
     return jsonErrorResponse("Invalid JSON", 400);
   }
-
   const parsed = GenerateInputSchema.safeParse(body);
   if (!parsed.success) {
     return jsonErrorResponse(parsed.error.issues[0]?.message ?? "Invalid request", 400);
   }
 
+  // 3. Rate limit
   const ip = request.headers.get("x-real-ip")
-      ?? request.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
-      ?? "anonymous";
+    ?? request.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
+    ?? "anonymous";
   try {
     await convex.mutation(api.rate_limit_check.checkGenerateLimit, { key: ip });
   } catch (e) {
     return jsonErrorResponse(e instanceof Error ? e.message : "Rate limited", 429);
   }
 
+  // 4. Extract input
   const query = parsed.data.query ?? parsed.data.prompt!;
   const blueprintData = parsed.data.blueprint;
-  const mode = parsed.data.mode;
+  const isFlashcardMode = parsed.data.mode === "flashcards";
   const providedSessionId = parsed.data.sessionId as Id<"sessions"> | undefined;
 
-  const isFlashcardMode = mode === "flashcards";
-  const sessionId: Id<"sessions"> =
-    providedSessionId ??
-    (await convex.mutation(api.sessions.create, {
-      title: query.slice(0, 60),
-      query,
-      type: isFlashcardMode ? "flashcards" as const : "builder" as const,
-    }));
+  // 5. Session
+  const sessionId = await createOrReuseSession({
+    convex,
+    existingSessionId: providedSessionId,
+    title: query.slice(0, 60),
+    query,
+    type: isFlashcardMode ? "flashcards" : "builder",
+  });
 
+  // 6. Stream
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
     async start(controller) {
-      // Check if client has disconnected (navigation away, tab close, etc.)
       const isAborted = () => request.signal.aborted;
-
-      const send = (eventType: string, data: object) => {
+      const send = (event: string, data: object) => {
         if (isAborted()) return;
-        try {
-          controller.enqueue(encoder.encode(sseEncode(eventType, data)));
-        } catch {
-          // Client disconnected — normal for tab close, navigation away, etc.
-        }
+        try { controller.enqueue(encoder.encode(sseEncode(event, data))); } catch {}
       };
 
       let buildDir: string | undefined;
@@ -123,173 +93,47 @@ export async function POST(request: Request): Promise<Response> {
         send("session", { sessionId });
 
         if (!providedSessionId) {
-          await convex.mutation(api.messages.create, {
-            sessionId,
-            role: "user",
-            content: query,
-            timestamp: Date.now(),
-          });
+          await persistUserMessage(convex, sessionId, query);
         }
 
-        await convex.mutation(api.sessions.startGeneration, { sessionId });
+        await startGeneration(convex, sessionId);
         send("status", { status: "generating" });
         send("activity", { type: "thinking", message: "Understanding your request..." });
 
-        const systemPrompt = isFlashcardMode
-          ? buildFlashcardSystemPrompt()
-          : buildSystemPrompt();
+        const result = await streamGeneration({
+          anthropic, convex, sessionId, query, blueprintData,
+          isFlashcardMode, send, isAborted,
+        });
+        buildDir = result.buildDir;
 
-        const collectedFiles = new Map<string, string>();
-
-        if (!isFlashcardMode) {
-          // Copy WAB scaffold to temp dir for this build
-          buildDir = mkdtempSync(join(tmpdir(), "bridges-build-"));
-          await cp(join(process.cwd(), "artifacts/wab-scaffold"), buildDir, { recursive: true });
+        if (!isFlashcardMode && buildDir && result.collectedFiles.size > 0) {
+          const bundle = await bundleFiles({
+            convex, sessionId, collectedFiles: result.collectedFiles, buildDir, send,
+          });
+          buildSucceeded = bundle.succeeded;
         }
 
-        const tools = isFlashcardMode
-          ? createFlashcardTools({ send, sessionId, convex })
-          : createAgentTools({ send, sessionId, collectedFiles, convex, buildDir: buildDir! });
-
-        // Generation pass — tool runner handles the multi-turn loop automatically
-        const runner = anthropic.beta.messages.toolRunner({
-          model: "claude-sonnet-4-6",
-          max_tokens: isFlashcardMode ? 4096 : 32768,
-          system: systemPrompt,
-          tools,
-          messages: [{
-            role: "user",
-            content: blueprintData
-              ? `## Pre-Approved Blueprint\n\n${JSON.stringify(blueprintData, null, 2)}\n\n## User Request\n\n${query}`
-              : query,
-          }],
-          stream: true,
-          max_iterations: 10,
+        const fileArray = await persistFiles({
+          convex, sessionId, collectedFiles: result.collectedFiles,
         });
 
-        for await (const messageStream of runner) {
-          if (isAborted()) break;
-          for await (const event of messageStream) {
-            if (isAborted()) break;
-            if (
-              event.type === "content_block_delta" &&
-              event.delta.type === "text_delta"
-            ) {
-              send("token", { token: event.delta.text });
-            }
-          }
-        }
-
-        if (!isFlashcardMode) {
-          // Bundle with esbuild in a child process (memory isolated from Next.js heap)
-          if (buildDir && collectedFiles.size > 0) {
-            send("status", { status: "bundling" });
-            send("activity", { type: "thinking", message: "Bundling your app..." });
-
-            const release = await acquireBuildSlot();
-            try {
-              let bundleHtml: string;
-              try {
-                bundleHtml = await runBundleWorker(buildDir!);
-                if (bundleHtml.length < 200) throw new Error("bundle HTML is suspiciously small");
-              } catch (firstError) {
-                // First failure — retry silently after 1s
-                const firstMsg = firstError instanceof Error ? firstError.message : String(firstError);
-                console.error("[generate] Bundle worker failed (attempt 1):", firstMsg.slice(0, 500));
-
-                await new Promise((r) => setTimeout(r, 1000));
-
-                try {
-                  bundleHtml = await runBundleWorker(buildDir!);
-                  if (bundleHtml.length < 200) throw new Error("bundle HTML is suspiciously small");
-                } catch (secondError) {
-                  // Second failure — give up gracefully
-                  const secondMsg = secondError instanceof Error ? secondError.message : String(secondError);
-                  console.error("[generate] Bundle worker failed (attempt 2):", secondMsg.slice(0, 500));
-                  send("activity", { type: "complete", message: "We're having a little trouble — your app may need a small tweak" });
-                  bundleHtml = ""; // signal no bundle
-                }
-              }
-
-              if (bundleHtml && bundleHtml.length >= 200) {
-                send("activity", { type: "thinking", message: "Almost ready..." });
-                send("bundle", { html: bundleHtml });
-                buildSucceeded = true;
-
-                // Persist bundle for session resume
-                try {
-                  await convex.mutation(api.generated_files.upsertAutoVersion, {
-                    sessionId,
-                    path: "_bundle.html",
-                    contents: bundleHtml,
-                  });
-                } catch (err) {
-                  console.error("[generate] Failed to persist bundle:", err);
-                }
-              }
-            } finally {
-              release();
-            }
-          }
-        }
-
-        // Convert Map to array for persistence and done event
-        const fileArray = [...collectedFiles.entries()].map(([path, contents]) => ({
-          path,
-          contents,
-        }));
-
-        // Persist files in batches of 10 — prevents rate limit overload
-        const mutationThunks = fileArray.map(
-          ({ path, contents }) =>
-            () =>
-              convex.mutation(api.generated_files.upsertAutoVersion, {
-                sessionId,
-                path,
-                contents,
-              }),
-        );
-        const settled =
-          mutationThunks.length <= 20
-            ? await Promise.allSettled(mutationThunks.map((fn) => fn()))
-            : await settleInBatches(mutationThunks, 10);
-        const failures = settled.filter((r) => r.status === "rejected");
-        if (failures.length > 0) {
-          console.error(`[generate] ${failures.length} file persistence failure(s)`);
-        }
-
-        const postLlmPromises: Promise<unknown>[] = [];
-
-        // Persist a friendly summary instead of raw Claude reasoning text
-        if (fileArray.length > 0 || isFlashcardMode) {
-          const friendlyMsg = isFlashcardMode
-            ? "Your flashcards are ready! Swipe through them in the preview panel."
-            : buildSucceeded
-              ? "Your app is ready! Try it out and let me know if you'd like any changes."
-              : "I created your app but the preview needs a small fix. Try sending a follow-up message.";
-          postLlmPromises.push(
-            convex.mutation(api.messages.create, {
-              sessionId,
-              role: "assistant",
-              content: friendlyMsg,
-              timestamp: Date.now(),
-            }),
-          );
-        }
-
-        // Persist messages — failures don't prevent going live
-        await Promise.allSettled(postLlmPromises);
-        // Always transition to live
-        await convex.mutation(api.sessions.setLive, { sessionId });
+        await completeSession(convex, sessionId, {
+          isFlashcardMode,
+          buildSucceeded,
+          hasFiles: fileArray.length > 0,
+        });
 
         send("activity", {
           type: "complete",
           message: buildSucceeded ? "App is live and ready!" : "Code generated — preview build had issues",
         });
         send("status", { status: "live" });
-        send("done", { sessionId, files: fileArray, buildFailed: !buildSucceeded && collectedFiles.size > 0 });
+        send("done", {
+          sessionId,
+          files: fileArray,
+          buildFailed: !buildSucceeded && result.collectedFiles.size > 0,
+        });
       } catch (error) {
-        // Always log the error for debugging — even client disconnects can mask real issues
         const errSummary = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
         const isClientDisconnect =
           isAborted() ||
@@ -302,16 +146,7 @@ export async function POST(request: Request): Promise<Response> {
           console.log(`[generate] Client disconnected: ${errSummary.slice(0, 200)}`);
         } else {
           console.error("[generate] Error:", error instanceof Error ? error.stack : error);
-
-          try {
-            await convex.mutation(api.sessions.setFailed, {
-              sessionId,
-              error: extractErrorMessage(error),
-            });
-          } catch (persistError) {
-            console.error("[generate] Failed to persist error state:", persistError);
-          }
-
+          await failSession(convex, sessionId, error);
           send("error", { message: "Generation failed — please try again" });
         }
       } finally {
