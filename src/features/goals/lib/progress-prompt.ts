@@ -116,12 +116,21 @@ export interface ParsedReport {
 
 export function parseReportResponse(text: string): ParsedReport | null {
   try {
-    const jsonMatch = text.match(/```json\s*([\s\S]*?)```/) ?? text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) return null;
-    const json = jsonMatch[1] ?? jsonMatch[0];
-    const parsed = JSON.parse(json);
-    if (!parsed.goalSummaries || !parsed.overallNarrative) return null;
-    return parsed as ParsedReport;
+    // Try fenced JSON block first (```json ... ```)
+    const fencedMatch = text.match(/```(?:json)?\s*\n?([\s\S]*?)```/);
+    if (fencedMatch?.[1]) {
+      const parsed = JSON.parse(fencedMatch[1].trim());
+      if (parsed.goalSummaries && parsed.overallNarrative) return parsed as ParsedReport;
+    }
+
+    // Try bare JSON object
+    const braceMatch = text.match(/\{[\s\S]*\}/);
+    if (braceMatch) {
+      const parsed = JSON.parse(braceMatch[0]);
+      if (parsed.goalSummaries && parsed.overallNarrative) return parsed as ParsedReport;
+    }
+
+    return null;
   } catch {
     return null;
   }
