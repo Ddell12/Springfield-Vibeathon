@@ -1,6 +1,9 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { auth } from "@clerk/nextjs/server";
 import { ConvexHttpClient } from "convex/browser";
+import { z } from "zod";
+
+const SoapInputSchema = z.object({ sessionNoteId: z.string().min(1) });
 
 import {
   buildSoapPrompt,
@@ -40,9 +43,17 @@ export async function POST(request: Request): Promise<Response> {
   }
   convex.setAuth(token);
 
-  const { sessionNoteId } = (await request.json()) as {
-    sessionNoteId: string;
-  };
+  let rawBody: unknown;
+  try {
+    rawBody = await request.json();
+  } catch {
+    return new Response(JSON.stringify({ error: "Invalid JSON" }), { status: 400, headers: { "Content-Type": "application/json" } });
+  }
+  const parsedBody = SoapInputSchema.safeParse(rawBody);
+  if (!parsedBody.success) {
+    return new Response(JSON.stringify({ error: parsedBody.error.issues[0]?.message ?? "Invalid request" }), { status: 400, headers: { "Content-Type": "application/json" } });
+  }
+  const { sessionNoteId } = parsedBody.data;
   const noteId = sessionNoteId as Id<"sessionNotes">;
 
   // Fetch note first to get patientId, then patient + previous SOAP in parallel

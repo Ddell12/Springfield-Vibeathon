@@ -158,10 +158,11 @@ export const listByPatient = query({
       if (!link) return [];
     }
 
-    return await ctx.db
+    const links = await ctx.db
       .query("caregiverLinks")
       .withIndex("by_patientId", (q) => q.eq("patientId", args.patientId))
       .take(50);
+    return links.map(({ inviteToken, ...rest }) => rest);
   },
 });
 

@@ -1,6 +1,14 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { auth } from "@clerk/nextjs/server";
 import { ConvexHttpClient } from "convex/browser";
+import { z } from "zod";
+
+const ReportInputSchema = z.object({
+  patientId: z.string().min(1),
+  reportType: z.enum(["weekly-summary", "monthly-summary", "iep-progress-report"]),
+  periodStart: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  periodEnd: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+});
 
 import {
   buildReportPrompt,
@@ -41,12 +49,17 @@ export async function POST(request: Request): Promise<Response> {
   }
   convex.setAuth(token);
 
-  const { patientId, reportType, periodStart, periodEnd } = (await request.json()) as {
-    patientId: string;
-    reportType: "weekly-summary" | "monthly-summary" | "iep-progress-report";
-    periodStart: string;
-    periodEnd: string;
-  };
+  let rawBody: unknown;
+  try {
+    rawBody = await request.json();
+  } catch {
+    return new Response(JSON.stringify({ error: "Invalid JSON" }), { status: 400, headers: { "Content-Type": "application/json" } });
+  }
+  const parsedBody = ReportInputSchema.safeParse(rawBody);
+  if (!parsedBody.success) {
+    return new Response(JSON.stringify({ error: parsedBody.error.issues[0]?.message ?? "Invalid request" }), { status: 400, headers: { "Content-Type": "application/json" } });
+  }
+  const { patientId, reportType, periodStart, periodEnd } = parsedBody.data;
 
   const pid = patientId as Id<"patients">;
 

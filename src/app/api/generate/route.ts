@@ -62,6 +62,8 @@ export async function POST(request: Request): Promise<Response> {
   let clerkUserId: string | undefined;
   const { userId, getToken } = await auth();
   clerkUserId = userId ?? undefined;
+  // DEV ONLY: Allows unauthenticated access to the generate endpoint for local testing.
+  // NEVER set this in production — it bypasses all auth and exposes unbounded AI generation.
   if (!clerkUserId && process.env.ALLOW_UNAUTHENTICATED_GENERATE !== "true") {
     return jsonErrorResponse("Authentication required", 401);
   }
@@ -82,6 +84,10 @@ export async function POST(request: Request): Promise<Response> {
     return jsonErrorResponse(parsed.error.issues[0]?.message ?? "Invalid request", 400);
   }
 
+  // Rate limit key: prefer authenticated userId, fall back to x-real-ip (set by Vercel),
+  // then first x-forwarded-for entry. The "anonymous" fallback is a shared bucket.
+  // NOTE: For unauthenticated mode (ALLOW_UNAUTHENTICATED_GENERATE), consider requiring
+  // CAPTCHA before enabling in production — IP-based limiting alone is spoofable.
   const rateLimitKey = clerkUserId
       ?? request.headers.get("x-real-ip")
       ?? request.headers.get("x-forwarded-for")?.split(",")[0]?.trim()

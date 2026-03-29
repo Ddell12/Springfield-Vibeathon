@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
@@ -102,6 +103,8 @@ export function GoalForm({ patientId, open, onOpenChange, editGoal }: GoalFormPr
         });
       }
       onOpenChange(false);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to save goal");
     } finally {
       setSaving(false);
     }

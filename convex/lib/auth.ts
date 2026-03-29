@@ -85,11 +85,13 @@ export async function assertCaregiverAccess(
   if (!userId) throw new ConvexError("Not authenticated");
   const link = await ctx.db
     .query("caregiverLinks")
-    .withIndex("by_caregiverUserId", (q) => q.eq("caregiverUserId", userId))
-    .filter((q) => q.eq(q.field("patientId"), patientId))
-    .filter((q) => q.eq(q.field("inviteStatus"), "accepted"))
+    .withIndex("by_caregiverUserId_patientId", (q) =>
+      q.eq("caregiverUserId", userId).eq("patientId", patientId)
+    )
     .first();
-  if (!link) throw new ConvexError("Not authorized to access this patient");
+  if (!link || link.inviteStatus !== "accepted") {
+    throw new ConvexError("Not authorized to access this patient");
+  }
   return userId;
 }
 

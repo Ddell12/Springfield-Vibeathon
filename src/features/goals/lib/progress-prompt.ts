@@ -1,3 +1,5 @@
+const trunc = (s: string, max = 500) => s.length > max ? s.slice(0, max) + "…" : s;
+
 interface PatientContext {
   firstName: string;
   lastName: string;
@@ -46,6 +48,7 @@ export function buildReportPrompt(
 
 Generate a progress report for the following patient and goals.
 
+<patient_data>
 ## Patient
 - Name: ${patient.firstName} ${patient.lastName}
 - Diagnosis: ${patient.diagnosis}`;
@@ -54,8 +57,10 @@ Generate a progress report for the following patient and goals.
     prompt += `\n- Communication Level: ${patient.communicationLevel}`;
   }
   if (patient.interests?.length) {
-    prompt += `\n- Interests: ${patient.interests.join(", ")}`;
+    prompt += `\n- Interests: ${trunc(patient.interests.join(", "))}`;
   }
+
+  prompt += `\n</patient_data>`;
 
   prompt += `\n\n## Report Period: ${periodStart} to ${periodEnd}
 ## Report Type: ${reportType}
@@ -66,7 +71,7 @@ ${reportTypeInstructions[reportType]}
 
   for (const goal of goals) {
     prompt += `\n### ${goal.shortDescription} (${goal.domain})
-- Full goal: ${goal.fullGoalText}
+- Full goal: ${trunc(goal.fullGoalText)}
 - Target accuracy: ${goal.targetAccuracy}%
 - Status: ${goal.status}
 - Data points in period: ${goal.dataPoints.length}

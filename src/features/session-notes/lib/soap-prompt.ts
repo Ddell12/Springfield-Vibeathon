@@ -1,5 +1,7 @@
 import { calculateAccuracy } from "./session-utils";
 
+const trunc = (s: string, max = 500) => s.length > max ? s.slice(0, max) + "…" : s;
+
 export interface SoapPatient {
   firstName: string;
   lastName: string;
@@ -49,16 +51,18 @@ export function buildSoapPrompt(
   previousSoap: PreviousSoap | null
 ): string {
   const patientContext = [
+    `<patient_data>`,
     `Patient: ${patient.firstName} ${patient.lastName}`,
     `DOB: ${patient.dateOfBirth}`,
     `Diagnosis: ${patient.diagnosis}`,
     patient.communicationLevel
       ? `Communication Level: ${patient.communicationLevel}`
       : null,
-    patient.sensoryNotes ? `Sensory Notes: ${patient.sensoryNotes}` : null,
+    patient.sensoryNotes ? `Sensory Notes: ${trunc(patient.sensoryNotes)}` : null,
     patient.behavioralNotes
-      ? `Behavioral Notes: ${patient.behavioralNotes}`
+      ? `Behavioral Notes: ${trunc(patient.behavioralNotes)}`
       : null,
+    `</patient_data>`,
   ]
     .filter(Boolean)
     .join("\n");
@@ -83,17 +87,17 @@ export function buildSoapPrompt(
         );
       }
       if (t.promptLevel) parts.push(`  Prompt Level: ${t.promptLevel}`);
-      if (t.notes) parts.push(`  Notes: ${t.notes}`);
+      if (t.notes) parts.push(`  Notes: ${trunc(t.notes)}`);
       return parts.join("\n");
     })
     .join("\n");
 
   const additionalNotes = [
     session.structuredData.behaviorNotes
-      ? `Behavior Notes: ${session.structuredData.behaviorNotes}`
+      ? `Behavior Notes: ${trunc(session.structuredData.behaviorNotes)}`
       : null,
     session.structuredData.parentFeedback
-      ? `Parent Feedback: ${session.structuredData.parentFeedback}`
+      ? `Parent Feedback: ${trunc(session.structuredData.parentFeedback)}`
       : null,
     session.structuredData.homeworkAssigned
       ? `Homework Assigned: ${session.structuredData.homeworkAssigned}`
