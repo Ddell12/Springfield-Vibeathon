@@ -1,7 +1,9 @@
-import { KidModeAppView } from "@/features/family/components/kid-mode-app-view";
+import { AppViewer } from "@/features/play/components/app-viewer";
 
-export default function KidModeAppPage(props: {
+export default function PlayAppPage({
+  params,
+}: {
   params: Promise<{ patientId: string; appId: string }>;
 }) {
-  return <KidModeAppView paramsPromise={props.params} />;
+  return <AppViewer paramsPromise={params} />;
 }

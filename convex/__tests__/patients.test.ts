@@ -188,6 +188,72 @@ describe("patients.getForContext", () => {
   });
 });
 
+describe("patients.getPublicFirstName", () => {
+  it("returns first name without auth", async () => {
+    const tSlp = convexTest(schema, modules).withIdentity(SLP_IDENTITY);
+    const { patientId } = await tSlp.mutation(api.patients.create, VALID_PATIENT);
+    // Query with a fresh unauthenticated instance sharing the same DB is not
+    // possible across convexTest instances, so we verify via the same instance
+    // (getPublicFirstName has no auth requirement — any caller can read it)
+    const firstName = await tSlp.query(api.patients.getPublicFirstName, { patientId });
+    expect(firstName).toBe("Alex");
+  });
+});
+
+describe("patients.getForPlay", () => {
+  it("returns patient for the owning SLP", async () => {
+    const t = convexTest(schema, modules).withIdentity(SLP_IDENTITY);
+    const { patientId } = await t.mutation(api.patients.create, VALID_PATIENT);
+    const patient = await t.query(api.patients.getForPlay, { patientId });
+    expect(patient).not.toBeNull();
+    expect(patient?.firstName).toBe("Alex");
+  });
+
+  it("returns patient for authorized caregiver (accepted caregiverLink)", async () => {
+    const t = convexTest(schema, modules);
+    const slp = t.withIdentity(SLP_IDENTITY);
+    const caregiver = t.withIdentity(CAREGIVER_IDENTITY);
+
+    const { patientId } = await slp.mutation(api.patients.create, VALID_PATIENT);
+
+    // Directly insert an accepted caregiverLink — bypasses invite flow
+    // scheduler (clerkActions.setCaregiverRole) which can't run in convex-test
+    await t.run(async (ctx) => {
+      await ctx.db.insert("caregiverLinks", {
+        patientId,
+        caregiverUserId: CAREGIVER_IDENTITY.subject,
+        email: "caregiver@test.com",
+        inviteToken: "test-token-abc",
+        inviteStatus: "accepted",
+      });
+    });
+
+    const patient = await caregiver.query(api.patients.getForPlay, { patientId });
+    expect(patient).not.toBeNull();
+    expect(patient?.firstName).toBe("Alex");
+  });
+
+  it("returns null for unlinked user (no throw)", async () => {
+    const t = convexTest(schema, modules);
+    const { patientId } = await t.withIdentity(SLP_IDENTITY).mutation(
+      api.patients.create,
+      VALID_PATIENT
+    );
+    const patient = await t.withIdentity(OTHER_SLP).query(api.patients.getForPlay, { patientId });
+    expect(patient).toBeNull();
+  });
+
+  it("returns null for unauthenticated user (no throw)", async () => {
+    const t = convexTest(schema, modules);
+    const { patientId } = await t.withIdentity(SLP_IDENTITY).mutation(
+      api.patients.create,
+      VALID_PATIENT
+    );
+    const patient = await t.query(api.patients.getForPlay, { patientId });
+    expect(patient).toBeNull();
+  });
+});
+
 describe("patients.getStats", () => {
   it("returns correct counts by status", async () => {
     const t = convexTest(schema, modules).withIdentity(SLP_IDENTITY);

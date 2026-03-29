@@ -1,7 +1,9 @@
-import { KidModeGrid } from "@/features/family/components/kid-mode-grid";
+import { PlayGrid } from "@/features/play/components/play-grid";
 
-export default function KidModePlayPage(props: {
+export default function PlayPage({
+  params,
+}: {
   params: Promise<{ patientId: string }>;
 }) {
-  return <KidModeGrid paramsPromise={props.params} />;
+  return <PlayGrid paramsPromise={params} />;
 }
