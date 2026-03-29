@@ -66,6 +66,10 @@ export function HomeProgramsWidget({ patientId }: HomeProgramsWidgetProps) {
                   title: string;
                   frequency: string;
                   status: string;
+                  type?: string;
+                  speechCoachConfig?: {
+                    targetSounds: string[];
+                  };
                 }) => (
                   <div
                     key={program._id}
@@ -75,7 +79,17 @@ export function HomeProgramsWidget({ patientId }: HomeProgramsWidgetProps) {
                       <p className="truncate text-sm font-medium text-foreground">
                         {program.title}
                       </p>
+                      {program.type === "speech-coach" && program.speechCoachConfig && (
+                        <p className="truncate text-xs text-muted-foreground">
+                          {program.speechCoachConfig.targetSounds.join(", ")}
+                        </p>
+                      )}
                     </div>
+                    {program.type === "speech-coach" && (
+                      <Badge variant="outline" className="shrink-0 text-[10px]">
+                        Voice
+                      </Badge>
+                    )}
                     <Badge variant="secondary" className="shrink-0 text-[10px]">
                       {frequencyLabels[program.frequency] ?? program.frequency}
                     </Badge>

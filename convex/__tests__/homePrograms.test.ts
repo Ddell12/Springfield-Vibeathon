@@ -210,3 +210,78 @@ describe("homePrograms.update", () => {
     ).rejects.toThrow();
   });
 });
+
+// ── speech-coach type ───────────────────────────────────────────────────────
+
+describe("homePrograms.create — speech-coach type", () => {
+  it("creates speech-coach program with config", async () => {
+    const t = convexTest(schema, modules);
+    const slp = t.withIdentity(SLP_IDENTITY);
+    const { patientId } = await slp.mutation(api.patients.create, VALID_PATIENT);
+    const programId = await slp.mutation(api.homePrograms.create, {
+      patientId,
+      ...VALID_PROGRAM,
+      title: "Speech Coach - /s/ sounds",
+      instructions: "Practice /s/ sounds with the speech coach.",
+      type: "speech-coach",
+      speechCoachConfig: {
+        targetSounds: ["/s/", "/z/"],
+        ageRange: "2-4" as const,
+        defaultDurationMinutes: 5,
+      },
+    });
+    const programs = await slp.query(api.homePrograms.listByPatient, { patientId });
+    const program = programs.find((p: { _id: typeof programId }) => p._id === programId);
+    expect(program).toBeDefined();
+    expect(program.type).toBe("speech-coach");
+    expect(program.speechCoachConfig.targetSounds).toEqual(["/s/", "/z/"]);
+    expect(program.speechCoachConfig.ageRange).toBe("2-4");
+    expect(program.speechCoachConfig.defaultDurationMinutes).toBe(5);
+  });
+
+  it("rejects speech-coach type without speechCoachConfig", async () => {
+    const t = convexTest(schema, modules);
+    const slp = t.withIdentity(SLP_IDENTITY);
+    const { patientId } = await slp.mutation(api.patients.create, VALID_PATIENT);
+    await expect(
+      slp.mutation(api.homePrograms.create, {
+        patientId,
+        ...VALID_PROGRAM,
+        type: "speech-coach",
+      })
+    ).rejects.toThrow("speechCoachConfig is required");
+  });
+
+  it("rejects speechCoachConfig on standard type", async () => {
+    const t = convexTest(schema, modules);
+    const slp = t.withIdentity(SLP_IDENTITY);
+    const { patientId } = await slp.mutation(api.patients.create, VALID_PATIENT);
+    await expect(
+      slp.mutation(api.homePrograms.create, {
+        patientId,
+        ...VALID_PROGRAM,
+        type: "standard",
+        speechCoachConfig: {
+          targetSounds: ["/s/"],
+          ageRange: "2-4" as const,
+          defaultDurationMinutes: 5,
+        },
+      })
+    ).rejects.toThrow("speechCoachConfig is only valid");
+  });
+
+  it("standard program without type field still works (backward compat)", async () => {
+    const t = convexTest(schema, modules);
+    const slp = t.withIdentity(SLP_IDENTITY);
+    const { patientId } = await slp.mutation(api.patients.create, VALID_PATIENT);
+    const programId = await slp.mutation(api.homePrograms.create, {
+      patientId,
+      ...VALID_PROGRAM,
+    });
+    const programs = await slp.query(api.homePrograms.listByPatient, { patientId });
+    const program = programs.find((p: { _id: typeof programId }) => p._id === programId);
+    expect(program).toBeDefined();
+    expect(program.type).toBeUndefined();
+    expect(program.speechCoachConfig).toBeUndefined();
+  });
+});

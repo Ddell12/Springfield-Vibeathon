@@ -23,6 +23,7 @@
     "@convex-dev/rate-limiter": "^0.3.2",
     "@convex-dev/stripe": "^0.1.4",
     "@dnd-kit/react": "^0.3.2",
+    "@elevenlabs/react": "^1.0.0",
     "@google/genai": "^1.46.0",
     "@hookform/resolvers": "^5.2.2",
     "@t3-oss/env-nextjs": "^0.13.11",
