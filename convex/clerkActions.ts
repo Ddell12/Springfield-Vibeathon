@@ -12,6 +12,20 @@ export const setCaregiverRole = internalAction({
       return;
     }
 
+    // Check existing role before overwriting
+    const userRes = await fetch(
+      `https://api.clerk.com/v1/users/${args.userId}`,
+      { headers: { Authorization: `Bearer ${clerkSecretKey}` } }
+    );
+    if (userRes.ok) {
+      const userData = await userRes.json();
+      const existingRole = userData.public_metadata?.role;
+      if (existingRole === "slp") {
+        console.warn(`Skipping setCaregiverRole: user ${args.userId} already has SLP role`);
+        return;
+      }
+    }
+
     const response = await fetch(
       `https://api.clerk.com/v1/users/${args.userId}/metadata`,
       {

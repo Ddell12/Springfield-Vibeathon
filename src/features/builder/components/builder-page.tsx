@@ -46,8 +46,14 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
     : null) as Id<"patients"> | null;
 
   const isMobile = useIsMobile();
-  const [viewMode, setViewMode] = useState<ViewMode>("preview");
-  const [deviceSize, setDeviceSize] = useState<DeviceSize>("desktop");
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
+    if (typeof window === "undefined") return "preview";
+    return (localStorage.getItem("bridges-viewMode") as ViewMode) || "preview";
+  });
+  const [deviceSize, setDeviceSize] = useState<DeviceSize>(() => {
+    if (typeof window === "undefined") return "desktop";
+    return (localStorage.getItem("bridges-deviceSize") as DeviceSize) || "desktop";
+  });
   const [mobilePanel, setMobilePanel] = useState<"chat" | "preview">("chat");
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [continueDismissed, setContinueDismissed] = useState(false);
@@ -64,6 +70,9 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
   const lastPromptRef = useRef("");
   const promptInputRef = useRef<HTMLInputElement>(null);
   const [showFreeformInput, setShowFreeformInput] = useState(false);
+
+  useEffect(() => { localStorage.setItem("bridges-viewMode", viewMode); }, [viewMode]);
+  useEffect(() => { localStorage.setItem("bridges-deviceSize", deviceSize); }, [deviceSize]);
 
   const {
     status,
@@ -98,12 +107,16 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
   useEffect(() => {
     if (recoveredBundle?.contents && !bundleHtml && !bundleRecoveredRef.current) {
       bundleRecoveredRef.current = true;
-      resumeSession({
-        sessionId: activeSessionId_forQuery!,
-        files: files,
-        blueprint: blueprint ?? null,
-        bundleHtml: recoveredBundle.contents,
-      });
+      try {
+        resumeSession({
+          sessionId: activeSessionId_forQuery!,
+          files: files,
+          blueprint: blueprint ?? null,
+          bundleHtml: recoveredBundle.contents,
+        });
+      } catch {
+        bundleRecoveredRef.current = false;
+      }
     }
   }, [recoveredBundle, bundleHtml, activeSessionId_forQuery, files, blueprint, resumeSession]);
 
@@ -199,10 +212,6 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
             toast.error("Failed to assign material");
           }
         },
-      },
-      cancel: {
-        label: "Skip",
-        onClick: () => {},
       },
     });
   }, [status, patientId, sessionId, patientData?.firstName, assignMaterial]);

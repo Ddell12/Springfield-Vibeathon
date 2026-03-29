@@ -50,7 +50,7 @@ describe("PreviewPanel — blob URL iframe", () => {
     expect(screen.getByText(/your app will appear here/i)).toBeTruthy();
   });
 
-  it("mobile device size applies w-[375px] class to iframe", () => {
+  it("mobile device size applies w-[390px] class to iframe", () => {
     const { container } = render(
       <PreviewPanel
         bundleHtml="<html><body>Hello</body></html>"
@@ -58,7 +58,7 @@ describe("PreviewPanel — blob URL iframe", () => {
         deviceSize="mobile"
       />
     );
-    const mobileIframe = container.querySelector(".w-\\[375px\\]");
+    const mobileIframe = container.querySelector(".w-\\[390px\\]");
     expect(mobileIframe).toBeTruthy();
   });
 

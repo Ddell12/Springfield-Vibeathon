@@ -30,7 +30,14 @@ export function FlashcardSwiper({ cards }: FlashcardSwiperProps) {
     target?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
   }, [currentIndex]);
 
-  if (cards.length === 0) return null;
+  if (cards.length === 0) {
+    return (
+      <div className="flex h-full flex-col items-center justify-center gap-3 text-center p-6">
+        <MaterialIcon icon="style" size="lg" className="text-on-surface-variant/40" />
+        <p className="text-sm text-on-surface-variant">No cards yet</p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-full flex-col items-center justify-center gap-4">

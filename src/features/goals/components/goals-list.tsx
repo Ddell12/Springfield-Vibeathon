@@ -48,7 +48,8 @@ export function GoalsList({ patientId }: GoalsListProps) {
               href={`/patients/${patientId}/goals/${goal._id}`}
               className={cn(
                 "flex items-center gap-3 rounded-lg p-3 transition-colors duration-300",
-                "hover:bg-muted/50"
+                "hover:bg-muted/50",
+                "focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
               )}
             >
               <span className={cn("rounded-full px-2 py-0.5 text-xs font-medium", domainColor(goal.domain))}>

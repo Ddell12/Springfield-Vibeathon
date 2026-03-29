@@ -1,9 +1,11 @@
 "use client";
 
+import { useClerk } from "@clerk/nextjs";
 import { MaterialIcon } from "@/shared/components/material-icon";
 import { Button } from "@/shared/components/ui/button";
 
 export function AccountSection() {
+  const { signOut } = useClerk();
   return (
     <div className="flex flex-col gap-8">
       <div className="flex items-center justify-between">
@@ -11,6 +13,18 @@ export function AccountSection() {
         <span className="text-xs font-bold uppercase tracking-widest text-on-surface-variant bg-surface-container-high px-2 py-1 rounded">
           Advanced
         </span>
+      </div>
+
+      <div className="bg-surface-container-low p-6 rounded-xl">
+        <h3 className="font-headline font-bold text-on-surface mb-3">Session</h3>
+        <Button
+          variant="outline"
+          onClick={() => signOut({ redirectUrl: "/" })}
+          className="w-full py-3 rounded-lg"
+        >
+          <MaterialIcon icon="logout" size="sm" className="mr-2" />
+          Sign out
+        </Button>
       </div>
 
       <div className="bg-surface-container-low p-8 rounded-xl space-y-6">

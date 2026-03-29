@@ -80,15 +80,18 @@ export const getUnreadCount = query({
 
     // TODO(perf): For scale, denormalize into a counter on caregiverLinks.
     // Current approach is fine for <100 messages per patient.
-    const messages = await ctx.db
+    const unread = await ctx.db
       .query("patientMessages")
       .withIndex("by_patientId_timestamp", (q) =>
         q.eq("patientId", args.patientId)
       )
-      .take(500);
-
-    return messages.filter(
-      (m) => m.senderUserId !== userId && m.readAt === undefined
-    ).length;
+      .filter((q) =>
+        q.and(
+          q.neq(q.field("senderUserId"), userId),
+          q.eq(q.field("readAt"), undefined)
+        )
+      )
+      .collect();
+    return unread.length;
   },
 });

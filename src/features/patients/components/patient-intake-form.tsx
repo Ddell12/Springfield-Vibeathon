@@ -1,6 +1,7 @@
 "use client";
 
 import { useMutation } from "convex/react";
+import { ConvexError } from "convex/values";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { api } from "../../../../convex/_generated/api";
@@ -102,7 +103,12 @@ export function PatientIntakeForm() {
       setCreatedResult(result);
       toast.success("Patient added to your caseload");
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Failed to create patient";
+      let msg = "Failed to create patient";
+      if (err instanceof ConvexError) {
+        msg = typeof err.data === "string" ? err.data : msg;
+      } else if (err instanceof Error) {
+        msg = err.message;
+      }
       toast.error(msg);
     } finally {
       setIsSubmitting(false);
