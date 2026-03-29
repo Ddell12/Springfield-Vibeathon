@@ -9,6 +9,7 @@ export const assign = mutation({
     sessionId: v.optional(v.id("sessions")),
     appId: v.optional(v.id("apps")),
     notes: v.optional(v.string()),
+    goalId: v.optional(v.id("goals")),
   },
   handler: async (ctx, args) => {
     const slpUserId = await assertSLP(ctx);
@@ -28,6 +29,7 @@ export const assign = mutation({
       assignedBy: slpUserId,
       assignedAt: now,
       notes: args.notes,
+      goalId: args.goalId,
     });
 
     await ctx.db.insert("activityLog", {
