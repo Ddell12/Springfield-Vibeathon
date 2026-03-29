@@ -250,6 +250,11 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
     <div className="flex flex-1 flex-col overflow-hidden">
       {showPromptScreen ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-6 overflow-y-auto p-6">
+          {patientId && (
+            <div className="w-full max-w-2xl">
+              <PatientContextCard patientId={patientId} />
+            </div>
+          )}
           <div className="text-center">
             <h1 className="font-headline text-3xl font-semibold text-foreground">
               What would you like to build?
