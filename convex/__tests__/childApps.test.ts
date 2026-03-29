@@ -9,6 +9,11 @@ const modules = import.meta.glob("../**/*.*s");
 suppressSchedulerErrors();
 
 const SLP_IDENTITY = { subject: "slp-user-123", issuer: "clerk" };
+const CAREGIVER_IDENTITY = {
+  subject: "caregiver-789",
+  issuer: "clerk",
+  public_metadata: JSON.stringify({ role: "caregiver" }),
+};
 const STRANGER = { subject: "stranger-000", issuer: "clerk" };
 
 async function setupPatientWithApp(t: ReturnType<typeof convexTest>) {
@@ -99,6 +104,62 @@ describe("childApps.getBundleForApp", () => {
 
     const bundle = await slp.query(api.childApps.getBundleForApp, { patientId, appId });
     expect(bundle).toBeNull();
+  });
+});
+
+describe("childApps.setPIN and verifyPIN", () => {
+  it("caregiver can set and verify PIN", async () => {
+    const t = convexTest(schema, modules);
+    const slp = t.withIdentity(SLP_IDENTITY);
+    const { patientId } = await slp.mutation(api.patients.create, {
+      firstName: "Ace",
+      lastName: "Smith",
+      dateOfBirth: "2020-06-15",
+      diagnosis: "articulation" as const,
+    });
+    const token = await slp.mutation(api.caregivers.createInvite, {
+      patientId,
+      email: "parent@test.com",
+    });
+    const caregiver = t.withIdentity(CAREGIVER_IDENTITY);
+    await caregiver.mutation(api.caregivers.acceptInvite, { token });
+
+    await caregiver.mutation(api.childApps.setPIN, {
+      patientId,
+      pin: "1234",
+    });
+
+    const valid = await caregiver.mutation(api.childApps.verifyPIN, {
+      patientId,
+      pin: "1234",
+    });
+    expect(valid).toBe(true);
+
+    const invalid = await caregiver.mutation(api.childApps.verifyPIN, {
+      patientId,
+      pin: "0000",
+    });
+    expect(invalid).toBe(false);
+  });
+
+  it("hasPIN returns false when no PIN set", async () => {
+    const t = convexTest(schema, modules);
+    const slp = t.withIdentity(SLP_IDENTITY);
+    const { patientId } = await slp.mutation(api.patients.create, {
+      firstName: "Ace",
+      lastName: "Smith",
+      dateOfBirth: "2020-06-15",
+      diagnosis: "articulation" as const,
+    });
+    const token = await slp.mutation(api.caregivers.createInvite, {
+      patientId,
+      email: "parent@test.com",
+    });
+    const caregiver = t.withIdentity(CAREGIVER_IDENTITY);
+    await caregiver.mutation(api.caregivers.acceptInvite, { token });
+
+    const has = await caregiver.query(api.childApps.hasPIN, { patientId });
+    expect(has).toBe(false);
   });
 });
 
