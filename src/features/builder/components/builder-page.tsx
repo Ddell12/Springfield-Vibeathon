@@ -39,7 +39,11 @@ interface BuilderPageProps {
 export function BuilderPage({ initialSessionId }: BuilderPageProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const patientId = searchParams.get("patientId") as Id<"patients"> | null;
+  const rawPatientId = searchParams.get("patientId");
+  // Validate patientId format to prevent Convex query crashes on invalid IDs
+  const patientId = (rawPatientId && /^[a-z0-9]{32}$/.test(rawPatientId)
+    ? rawPatientId
+    : null) as Id<"patients"> | null;
 
   const isMobile = useIsMobile();
   const [viewMode, setViewMode] = useState<ViewMode>("preview");
@@ -51,7 +55,7 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
   const ensureApp = useMutation(api.apps.ensureForSession);
   const assignMaterial = useMutation(api.patientMaterials.assign);
   const patientData = useQuery(
-    api.patients.get,
+    api.patients.getForContext,
     patientId ? { patientId } : "skip",
   );
   const [isEditingName, setIsEditingName] = useState(false);

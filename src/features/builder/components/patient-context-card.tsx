@@ -15,14 +15,26 @@ interface PatientContextCardProps {
   patientId: Id<"patients">;
 }
 
+// Convex IDs are alphanumeric strings of a specific length — skip query for obviously invalid ones
+function isPlausibleConvexId(id: string): boolean {
+  return /^[a-z0-9]{32}$/.test(id);
+}
+
 export function PatientContextCard({ patientId }: PatientContextCardProps) {
   // On mobile, start collapsed; on larger screens start expanded
   const [isExpanded, setIsExpanded] = useState(
     typeof window !== "undefined" ? window.innerWidth >= 768 : true
   );
 
-  const patient = useQuery(api.patients.get, { patientId });
-  const goals = useQuery(api.goals.listActive, { patientId });
+  const validId = isPlausibleConvexId(patientId);
+  // Use getForContext instead of patients.get — it returns null on auth failure
+  // instead of throwing, preventing error boundaries during Clerk→Convex auth race
+  const patient = useQuery(api.patients.getForContext, validId ? { patientId } : "skip");
+  // Only fetch goals after patient is confirmed (avoids assertSLP throw during auth race)
+  const goals = useQuery(
+    api.goals.listActive,
+    validId && patient ? { patientId } : "skip",
+  );
 
   if (patient === undefined || goals === undefined) return null;
   if (patient === null) return null;
