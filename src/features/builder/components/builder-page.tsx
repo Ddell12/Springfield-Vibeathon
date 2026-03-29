@@ -273,7 +273,7 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
             </div>
           )}
           <div className="text-center">
-            <h1 className="font-headline text-3xl font-semibold text-foreground">
+            <h1 className="font-headline text-3xl font-normal text-foreground">
               What would you like to build?
             </h1>
             <p className="mt-2 text-base text-on-surface-variant">

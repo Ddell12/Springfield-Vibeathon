@@ -40,7 +40,7 @@ export function BlueprintCard({ blueprint }: BlueprintCardProps) {
 
         {/* Content */}
         <div className="p-6 space-y-5">
-          <h2 className="font-headline font-bold text-xl text-primary leading-tight">
+          <h2 className="font-headline font-normal text-xl text-primary leading-tight">
             {title}
           </h2>
 

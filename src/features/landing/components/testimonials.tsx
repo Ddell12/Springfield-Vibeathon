@@ -29,7 +29,7 @@ export function Testimonials() {
   return (
     <section className="py-20 md:py-28 px-6 max-w-7xl mx-auto">
       <div className="mb-16 text-center md:text-left">
-        <h2 className="font-headline text-3xl md:text-4xl font-extrabold text-on-surface mb-4">
+        <h2 className="font-headline text-3xl md:text-4xl font-normal text-on-surface mb-4">
           Families &amp; Therapists Love Bridges
         </h2>
         <div className="h-1.5 w-24 bg-primary rounded-full mx-auto md:mx-0" />

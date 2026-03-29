@@ -5,7 +5,7 @@ export function LandingFooter() {
     <footer className="bg-surface-container-low py-12">
       <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-4">
         <div className="flex flex-col items-center md:items-start gap-2">
-          <span className="text-lg font-bold text-primary font-headline">
+          <span className="text-lg font-medium text-primary font-headline">
             Bridges
           </span>
           <span className="text-xs text-on-surface-variant">

@@ -52,7 +52,7 @@ export function CategoryPicker({ onSelect, onEscapeHatch }: CategoryPickerProps)
               <MaterialIcon icon={category.icon} size="sm" />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="font-headline font-bold text-foreground">{category.label}</p>
+              <p className="font-headline font-semibold text-foreground">{category.label}</p>
               <p className="mt-0.5 text-sm text-on-surface-variant">{category.description}</p>
             </div>
           </button>

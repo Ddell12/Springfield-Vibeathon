@@ -88,7 +88,7 @@ export function TemplatesPage() {
     <div className="max-w-5xl mx-auto px-6 py-12">
       {/* Header */}
       <section className="mb-12 text-center">
-        <h1 className="font-headline font-extrabold text-4xl md:text-5xl tracking-tight text-on-surface mb-4">
+        <h1 className="font-headline font-normal text-4xl md:text-5xl tracking-tight text-on-surface mb-4">
           Start with a Template
         </h1>
         <p className="text-on-surface-variant text-lg leading-relaxed max-w-2xl mx-auto">
@@ -190,7 +190,7 @@ export function TemplatesPage() {
 
                 {/* Card footer */}
                 <div className="p-5">
-                  <h3 className="font-headline font-bold text-lg text-on-surface group-hover:text-primary transition-colors">
+                  <h3 className="font-headline font-medium text-lg text-on-surface group-hover:text-primary transition-colors">
                     {template.title}
                   </h3>
                   <div className="flex items-center justify-between mt-1">
@@ -209,7 +209,7 @@ export function TemplatesPage() {
       {/* CTA Section */}
       <section className="p-12 bg-surface-container-low rounded-2xl relative overflow-hidden">
         <div className="relative z-10 max-w-xl">
-          <h2 className="font-headline font-bold text-3xl text-on-surface mb-4">
+          <h2 className="font-headline font-normal text-3xl text-on-surface mb-4">
             Have something else in mind?
           </h2>
           <p className="text-on-surface-variant text-lg mb-8">

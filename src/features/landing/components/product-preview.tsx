@@ -29,7 +29,7 @@ export function ProductPreview() {
             <span className="px-3 py-1 bg-primary-container text-on-primary-container rounded-full text-xs font-bold mb-4 inline-block">
               MOST POPULAR
             </span>
-            <h3 className="text-3xl font-headline font-extrabold mb-2 text-on-surface">
+            <h3 className="text-3xl font-headline font-medium mb-2 text-on-surface">
               Visual Schedules
             </h3>
             <p className="text-on-surface-variant max-w-md">
@@ -45,7 +45,7 @@ export function ProductPreview() {
             <MaterialIcon icon="grid_view" />
           </div>
           <div>
-            <h3 className="text-2xl font-headline font-extrabold mb-2">
+            <h3 className="text-2xl font-headline font-medium mb-2">
               Communication Boards
             </h3>
             <p className="opacity-80">

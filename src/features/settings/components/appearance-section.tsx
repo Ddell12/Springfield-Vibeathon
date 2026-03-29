@@ -10,7 +10,7 @@ export function AppearanceSection() {
 
   return (
     <div className="flex flex-col gap-8">
-      <h2 className="text-2xl font-headline font-bold text-primary">Appearance</h2>
+      <h2 className="text-2xl font-headline font-normal text-primary">Appearance</h2>
 
       <div className="grid grid-cols-3 gap-4">
         {/* Light Theme Card */}

@@ -64,7 +64,7 @@ export function DashboardView() {
           >
             <MaterialIcon icon="menu" size="md" className="text-primary" />
           </button>
-          <span className="font-headline font-bold tracking-tight text-lg text-primary">
+          <span className="font-headline font-medium tracking-tight text-lg text-primary">
             Bridges
           </span>
         </div>
@@ -80,7 +80,7 @@ export function DashboardView() {
       {/* Desktop Top Nav Bar */}
       <header className="sticky top-0 z-30 hidden h-16 w-full items-center justify-between bg-background/70 px-8 backdrop-blur-xl md:flex">
         <div className="flex items-center gap-3">
-          <h1 className="font-headline text-xl font-extrabold tracking-tight text-primary">
+          <h1 className="font-headline text-xl font-normal tracking-tight text-primary">
             {APP_BRAND}
           </h1>
         </div>
@@ -94,7 +94,7 @@ export function DashboardView() {
       {/* Hero Section */}
       <section className="relative overflow-hidden mx-auto max-w-4xl px-6 pb-16 pt-20 text-center">
         <div className="pointer-events-none absolute -top-20 left-1/2 -translate-x-1/2 h-[300px] w-[600px] rounded-full bg-primary/3 blur-[80px]" />
-        <h2 className="relative z-10 mb-4 font-headline text-5xl font-bold tracking-tight text-on-surface">
+        <h2 className="relative z-10 mb-4 font-headline text-5xl font-normal tracking-tight text-on-surface">
           What would you like to build?
         </h2>
         <p className="relative z-10 mb-10 font-body text-lg text-on-surface-variant">

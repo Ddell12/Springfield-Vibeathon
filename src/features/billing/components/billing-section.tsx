@@ -42,7 +42,7 @@ export function BillingSection() {
   if (isLoading) {
     return (
       <section>
-        <h3 className="font-headline text-lg font-bold text-on-surface mb-6">
+        <h3 className="font-headline text-lg font-medium text-on-surface mb-6">
           Billing
         </h3>
         <div className="animate-pulse h-32 rounded-2xl bg-surface-container" />
@@ -52,7 +52,7 @@ export function BillingSection() {
 
   return (
     <section className="space-y-6">
-      <h3 className="font-headline text-lg font-bold text-on-surface">
+      <h3 className="font-headline text-lg font-medium text-on-surface mb-6">
         Billing
       </h3>
 
