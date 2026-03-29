@@ -33,7 +33,7 @@ export interface ResumeSessionArgs {
 export interface UseStreamingReturn {
   status: StreamingStatus;
   files: StreamingFile[];
-  generate: (prompt: string, blueprint?: TherapyBlueprint) => Promise<void>;
+  generate: (prompt: string, blueprint?: TherapyBlueprint, patientId?: string) => Promise<void>;
   resumeSession: (args: ResumeSessionArgs) => void;
   blueprint: TherapyBlueprint | null;
   appName: string | null;

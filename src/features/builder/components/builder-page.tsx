@@ -27,6 +27,7 @@ import type { TherapyBlueprint } from "../lib/schemas";
 import { BuilderToolbar, type DeviceSize, type ViewMode } from "./builder-toolbar";
 import { ChatPanel } from "./chat-panel";
 import { CodePanel } from "./code-panel";
+import { PatientContextCard } from "./patient-context-card";
 import { ContinueCard } from "./continue-card";
 import { InterviewController } from "./interview/interview-controller";
 import { PreviewPanel } from "./preview-panel";
@@ -38,6 +39,7 @@ interface BuilderPageProps {
 export function BuilderPage({ initialSessionId }: BuilderPageProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const patientId = searchParams.get("patientId") as Id<"patients"> | null;
 
   const isMobile = useIsMobile();
   const [viewMode, setViewMode] = useState<ViewMode>("preview");
@@ -47,6 +49,11 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
   const [continueDismissed, setContinueDismissed] = useState(false);
   const updateTitle = useMutation(api.sessions.updateTitle);
   const ensureApp = useMutation(api.apps.ensureForSession);
+  const assignMaterial = useMutation(api.patientMaterials.assign);
+  const patientData = useQuery(
+    api.patients.get,
+    patientId ? { patientId } : "skip",
+  );
   const [isEditingName, setIsEditingName] = useState(false);
   const [promptInput, setPromptInput] = useState("");
   const [pendingPrompt, setPendingPrompt] = useState<string | null>(null);
@@ -118,14 +125,14 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
   const handleGenerate = useCallback((prompt: string, blueprint?: TherapyBlueprint) => {
     lastPromptRef.current = prompt;
     setPendingPrompt(prompt);
-    generate(prompt, blueprint);
-  }, [generate]);
+    generate(prompt, blueprint ?? undefined, patientId ?? undefined);
+  }, [generate, patientId]);
 
   const handleRetry = useCallback(() => {
     if (lastPromptRef.current) {
-      generate(lastPromptRef.current);
+      generate(lastPromptRef.current, undefined, patientId ?? undefined);
     }
-  }, [generate]);
+  }, [generate, patientId]);
 
   // Session resume & URL sync
   const {
@@ -166,6 +173,35 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
       toast.error("Failed to rename app");
     }
   };
+
+  // Assignment toast: prompt to link the built app to a patient's materials
+  const assignToastShownRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (status !== "live" || !patientId || !sessionId) return;
+    if (assignToastShownRef.current === sessionId) return;
+    assignToastShownRef.current = sessionId;
+
+    const firstName = patientData?.firstName ?? "patient";
+
+    toast(`App ready · Assign to ${firstName}'s materials?`, {
+      duration: 15_000,
+      action: {
+        label: "Assign",
+        onClick: async () => {
+          try {
+            await assignMaterial({ patientId, sessionId: sessionId as Id<"sessions"> });
+            toast.success(`Added to ${firstName}'s materials`);
+          } catch {
+            toast.error("Failed to assign material");
+          }
+        },
+      },
+      cancel: {
+        label: "Skip",
+        onClick: () => {},
+      },
+    });
+  }, [status, patientId, sessionId, patientData?.firstName, assignMaterial]);
 
   // Auto-save to My Apps when generation completes
   const autoSavedRef = useRef(false);
@@ -317,7 +353,8 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
               /* Mobile: single-panel view toggled via toolbar */
               <div className="h-full">
                 {mobilePanel === "chat" ? (
-                  <div className="h-full overflow-hidden rounded-2xl bg-surface-container-lowest">
+                  <div className="flex h-full flex-col overflow-hidden rounded-2xl bg-surface-container-lowest">
+                    {patientId && <PatientContextCard patientId={patientId} />}
                     <ChatPanel
                       sessionId={sessionId}
                       status={status}
@@ -350,7 +387,8 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
               /* Desktop: resizable side-by-side panels */
               <ResizablePanelGroup orientation="horizontal" className="h-full">
                 <ResizablePanel defaultSize={30} minSize={20}>
-                  <div className="h-full overflow-hidden rounded-2xl bg-surface-container-lowest">
+                  <div className="flex h-full flex-col overflow-hidden rounded-2xl bg-surface-container-lowest">
+                    {patientId && <PatientContextCard patientId={patientId} />}
                     <ChatPanel
                       sessionId={sessionId}
                       status={status}
