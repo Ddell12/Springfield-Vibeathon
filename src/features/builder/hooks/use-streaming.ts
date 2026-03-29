@@ -339,7 +339,7 @@ export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn 
   );
 
   const generate = useCallback(
-    async (prompt: string, blueprint?: TherapyBlueprint): Promise<void> => {
+    async (prompt: string, blueprint?: TherapyBlueprint, patientId?: string): Promise<void> => {
       if (abortRef.current) {
         abortRef.current.abort();
         if (rafIdRef.current) {
@@ -361,6 +361,7 @@ export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn 
             prompt,
             sessionId: sessionIdRef.current ?? undefined,
             ...(blueprint ? { blueprint } : {}),
+            ...(patientId ? { patientId } : {}),
           }),
           signal: controller.signal,
         });
