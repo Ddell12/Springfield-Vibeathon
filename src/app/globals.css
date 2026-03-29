@@ -162,6 +162,12 @@ body {
 /* assistant-ui 0.12.x: primitives are unstyled, colors applied via Tailwind
    in src/features/builder/components/chat/bridges-chat.tsx */
 
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-8px); }
+  40%, 80% { transform: translateX(8px); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
