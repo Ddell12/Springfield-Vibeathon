@@ -189,8 +189,7 @@ patientId: z.string().optional()
 
 | Scenario | Behavior |
 |---|---|
-| Invalid/missing patient | Ignore patientId, generate without context (graceful degradation) |
-| Auth mismatch | 403 with generic "Not authorized" — no patient details in response |
+| Invalid/missing patient or auth mismatch | `getForContext` returns null — ignore patientId, generate without context (graceful degradation) |
 | Convex fetch failure | Log error without PII, proceed without context |
 | Goals fetch failure | Proceed with patient context but no goals listed |
 
