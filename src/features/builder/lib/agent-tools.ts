@@ -167,6 +167,10 @@ export function createAgentTools(ctx: ToolContext) {
       }),
       run: async ({ directory }) => {
         const fullPath = join(ctx.buildDir, directory);
+        const resolved = resolve(fullPath);
+        if (!resolved.startsWith(resolve(ctx.buildDir))) {
+          throw new ToolError(`Path traversal blocked: ${directory}`);
+        }
         if (!existsSync(fullPath)) return "Directory not found";
         const entries = readdirSync(fullPath, { withFileTypes: true });
         return entries
