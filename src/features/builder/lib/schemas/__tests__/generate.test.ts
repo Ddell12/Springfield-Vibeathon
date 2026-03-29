@@ -54,4 +54,31 @@ describe("GenerateInputSchema", () => {
     const result = GenerateInputSchema.safeParse({ query: "a".repeat(10_000) });
     expect(result.success).toBe(true);
   });
+
+  describe("patientId field", () => {
+    it("accepts a valid patientId string", () => {
+      const result = GenerateInputSchema.safeParse({
+        prompt: "Build an AAC board",
+        patientId: "abc123def456",
+      });
+      expect(result.success).toBe(true);
+      if (result.success) expect(result.data.patientId).toBe("abc123def456");
+    });
+
+    it("accepts undefined patientId", () => {
+      const result = GenerateInputSchema.safeParse({
+        prompt: "Build a card game",
+      });
+      expect(result.success).toBe(true);
+      if (result.success) expect(result.data.patientId).toBeUndefined();
+    });
+
+    it("rejects non-string patientId", () => {
+      const result = GenerateInputSchema.safeParse({
+        prompt: "Build something",
+        patientId: 12345,
+      });
+      expect(result.success).toBe(false);
+    });
+  });
 });
