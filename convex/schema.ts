@@ -54,11 +54,15 @@ export default defineSchema({
     previewUrl: v.optional(v.string()),
     createdAt: v.number(),
     updatedAt: v.number(),
+    featured: v.optional(v.boolean()),
+    featuredOrder: v.optional(v.number()),
+    featuredCategory: v.optional(v.string()),
   })
     .index("by_share_slug", ["shareSlug"])
     .index("by_session", ["sessionId"])
     .index("by_created", ["createdAt"])
-    .index("by_user", ["userId"]),
+    .index("by_user", ["userId"])
+    .index("by_featured_order", ["featured", "featuredOrder"]),
 
   appState: defineTable({
     appId: v.string(),
