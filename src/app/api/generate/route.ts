@@ -35,8 +35,6 @@ if (!process.env.ANTHROPIC_API_KEY) {
   throw new Error("ANTHROPIC_API_KEY is required for /api/generate");
 }
 
-const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL);
-
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
@@ -59,6 +57,7 @@ function jsonErrorResponse(message: string, status: number): Response {
 // ---------------------------------------------------------------------------
 
 export async function POST(request: Request): Promise<Response> {
+  const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
   // Authenticate via Clerk — required unless demo mode is enabled
   let clerkUserId: string | undefined;
   const { userId, getToken } = await auth();
