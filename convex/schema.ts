@@ -6,9 +6,16 @@ export default defineSchema({
     userId: v.optional(v.string()),
     title: v.string(),
     query: v.string(),
-    // Active states: idle, generating, live, failed
-    // Legacy pipeline states also exist in DB (blueprinting, planning, phase_implementing, etc.)
-    state: v.string(),
+    state: v.union(
+      v.literal("idle"),
+      v.literal("generating"),
+      v.literal("live"),
+      v.literal("failed"),
+      // Legacy states — existing documents only, not created by new code
+      v.literal("blueprinting"),
+      v.literal("planning"),
+      v.literal("phase_implementing"),
+    ),
     stateMessage: v.optional(v.string()),
     error: v.optional(v.string()),
     blueprint: v.optional(v.any()), // Validated via Zod at app layer
@@ -417,3 +424,6 @@ export default defineSchema({
   })
     .index("by_patientId_timestamp", ["patientId", "timestamp"]),
 });
+
+/** Active session states used by current code. Legacy states are read-only. */
+export type SessionState = "idle" | "generating" | "live" | "failed";
