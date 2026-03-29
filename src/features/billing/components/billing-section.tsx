@@ -1,17 +1,20 @@
 "use client";
 
-import { useAction, useQuery } from "convex/react";
+import { useAction } from "convex/react";
 import { useState } from "react";
 
 import { useEntitlements } from "@/core/hooks/use-entitlements";
 import { Button } from "@/shared/components/ui/button";
 
 import { api } from "../../../../convex/_generated/api";
+import { BillingHistory } from "./billing-history";
+import { DowngradeWarningDialog } from "./downgrade-warning-dialog";
+import { PlanComparisonCard } from "./plan-comparison-card";
+import { UpgradeConfirmationDialog } from "./upgrade-confirmation-dialog";
+import { UsageMeter } from "./usage-meter";
 
 export function BillingSection() {
-  const { plan, limits, isPremium, isLoading } = useEntitlements();
-  const apps = useQuery(api.apps.list) ?? [];
-  const decks = useQuery(api.flashcard_decks.list) ?? [];
+  const { isPremium, isLoading } = useEntitlements();
   const createCheckout = useAction(api.subscriptions.createCheckoutSession);
   const createPortal = useAction(api.subscriptions.createPortalSession);
   const [actionLoading, setActionLoading] = useState(false);
@@ -48,12 +51,16 @@ export function BillingSection() {
   }
 
   return (
-    <section>
-      <h3 className="font-headline text-lg font-bold text-on-surface mb-6">
+    <section className="space-y-6">
+      <h3 className="font-headline text-lg font-bold text-on-surface">
         Billing
       </h3>
 
-      <div className="rounded-2xl bg-surface-container p-6 space-y-4">
+      <PlanComparisonCard />
+
+      <UsageMeter />
+
+      <div className="rounded-2xl bg-surface-container p-6">
         <div className="flex items-center justify-between">
           <div>
             <p className="font-headline font-semibold text-on-surface">
@@ -64,41 +71,34 @@ export function BillingSection() {
             )}
           </div>
           {isPremium ? (
-            <Button
-              variant="outline"
-              onClick={handleManage}
-              disabled={actionLoading}
-            >
-              {actionLoading ? "Loading..." : "Manage Subscription"}
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                onClick={handleManage}
+                disabled={actionLoading}
+              >
+                {actionLoading ? "Loading..." : "Manage Subscription"}
+              </Button>
+              <DowngradeWarningDialog>
+                <Button variant="ghost" className="text-destructive">
+                  Cancel
+                </Button>
+              </DowngradeWarningDialog>
+            </div>
           ) : (
-            <Button
-              onClick={handleUpgrade}
-              disabled={actionLoading}
-              className="bg-gradient-135 text-white"
-            >
-              {actionLoading ? "Redirecting..." : "Upgrade to Premium"}
-            </Button>
+            <UpgradeConfirmationDialog>
+              <Button
+                className="bg-gradient-135 text-white"
+                disabled={actionLoading}
+              >
+                {actionLoading ? "Redirecting..." : "Upgrade to Premium"}
+              </Button>
+            </UpgradeConfirmationDialog>
           )}
         </div>
-
-        {!isPremium && (
-          <div className="border-t border-outline-variant pt-4 space-y-2">
-            <div className="flex justify-between text-sm">
-              <span className="text-on-surface-variant">Apps</span>
-              <span className="font-medium text-on-surface">
-                {apps.length} / {limits.maxApps}
-              </span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-on-surface-variant">Flashcard Decks</span>
-              <span className="font-medium text-on-surface">
-                {decks.length} / {limits.maxDecks}
-              </span>
-            </div>
-          </div>
-        )}
       </div>
+
+      <BillingHistory />
     </section>
   );
 }
