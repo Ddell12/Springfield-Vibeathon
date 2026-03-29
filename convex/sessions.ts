@@ -38,11 +38,12 @@ export const list = query({
   handler: async (ctx) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) return [];
-    return await ctx.db
+    const sessions = await ctx.db
       .query("sessions")
       .withIndex("by_user", (q) => q.eq("userId", identity.subject))
       .order("desc")
-      .take(50);
+      .take(100);
+    return sessions.filter((s) => s.archived !== true);
   },
 });
 
@@ -212,5 +213,29 @@ export const setBlueprint = mutation({
   handler: async (ctx, args) => {
     await assertSessionOwner(ctx, args.sessionId);
     await ctx.db.patch(args.sessionId, { blueprint: args.blueprint });
+  },
+});
+
+export const archive = mutation({
+  args: { sessionId: v.id("sessions") },
+  handler: async (ctx, args) => {
+    await assertSessionOwner(ctx, args.sessionId);
+    await ctx.db.patch(args.sessionId, { archived: true });
+  },
+});
+
+export const duplicateSession = mutation({
+  args: { sessionId: v.id("sessions") },
+  handler: async (ctx, args) => {
+    const session = (await assertSessionOwner(ctx, args.sessionId))!;
+    const newSessionId = await ctx.db.insert("sessions", {
+      userId: session.userId,
+      title: `${session.title} (copy)`,
+      query: session.query,
+      state: SESSION_STATES.IDLE,
+      type: session.type,
+      blueprint: session.blueprint,
+    });
+    return newSessionId;
   },
 });

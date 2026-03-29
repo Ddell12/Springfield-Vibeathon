@@ -45,10 +45,14 @@ export function ProjectCard({
   project,
   index = 0,
   onDelete,
+  onRename,
+  onDuplicate,
 }: {
   project: ProjectData;
   index?: number;
   onDelete?: () => void;
+  onRename?: () => void;
+  onDuplicate?: () => void;
 }) {
   const router = useRouter();
   const gradient = GRADIENTS[index % GRADIENTS.length];
@@ -104,7 +108,31 @@ export function ProjectCard({
                   <MaterialIcon icon="more_vert" size="sm" />
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="min-w-[140px]">
+              <DropdownMenuContent align="end" className="min-w-[160px]">
+                {onRename && (
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      onRename();
+                    }}
+                  >
+                    <MaterialIcon icon="edit" size="sm" className="mr-2" />
+                    Rename
+                  </DropdownMenuItem>
+                )}
+                {onDuplicate && (
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      onDuplicate();
+                    }}
+                  >
+                    <MaterialIcon icon="content_copy" size="sm" className="mr-2" />
+                    Duplicate
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem
                   onClick={(e) => {
                     e.preventDefault();
