@@ -214,7 +214,9 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
       autoSavedRef.current = true;
       ensureApp({ sessionId: activeSessionId as Id<"sessions">, title: appName })
         .then(() => toast.success("Saved to My Apps!"))
-        .catch(() => {}); // Silently fail — user can retry with Save button
+        .catch((err) => {
+          console.warn("[builder] Auto-save failed:", err);
+        });
     }
     if (status === "generating") autoSavedRef.current = false;
   }, [status, activeSessionId, appRecord, appName, ensureApp]);

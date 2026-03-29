@@ -27,9 +27,8 @@ export function FamilyDashboard({ paramsPromise }: FamilyDashboardProps) {
     isAuthenticated ? { patientId: patientId as Id<"patients"> } : "skip"
   );
 
-  const extendedApi = api as any;
   const goals = useQuery(
-    extendedApi.goals.listByPatient,
+    api.goals.listByPatient,
     isAuthenticated ? { patientId: patientId as Id<"patients"> } : "skip"
   );
 

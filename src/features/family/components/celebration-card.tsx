@@ -79,7 +79,8 @@ export function CelebrationCard({ childName, currentStreak, goals }: Celebration
         try {
           return !localStorage.getItem(c.storageKey);
         } catch {
-          return true;
+          console.warn("[celebration] localStorage unavailable");
+          return false;
         }
       })
     : [];
@@ -88,7 +89,7 @@ export function CelebrationCard({ childName, currentStreak, goals }: Celebration
     try {
       localStorage.setItem(storageKey, "1");
     } catch {
-      // localStorage may be unavailable
+      console.warn("[celebration] Could not persist dismissal");
     }
     setDismissed((prev) => new Set(prev).add(storageKey));
   }

@@ -77,7 +77,14 @@ export function useReportGeneration() {
             if (line.startsWith("event: ")) {
               const eventType = line.slice(7);
               if (i + 1 < lines.length && lines[i + 1].startsWith("data: ")) {
-                const data = JSON.parse(lines[i + 1].slice(6));
+                let data;
+                try {
+                  data = JSON.parse(lines[i + 1].slice(6));
+                } catch {
+                  console.warn("[report] Malformed SSE data, skipping");
+                  i++;
+                  continue;
+                }
                 i++;
                 if (eventType === "report-chunk") {
                   setState((prev) => ({

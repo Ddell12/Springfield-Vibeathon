@@ -151,8 +151,9 @@ export const listByPatient = query({
     if (patient.slpUserId !== userId) {
       const link = await ctx.db
         .query("caregiverLinks")
-        .withIndex("by_caregiverUserId", (q) => q.eq("caregiverUserId", userId))
-        .filter((q) => q.eq(q.field("patientId"), args.patientId))
+        .withIndex("by_caregiverUserId_patientId", (q) =>
+          q.eq("caregiverUserId", userId).eq("patientId", args.patientId)
+        )
         .filter((q) => q.eq(q.field("inviteStatus"), "accepted"))
         .first();
       if (!link) return [];

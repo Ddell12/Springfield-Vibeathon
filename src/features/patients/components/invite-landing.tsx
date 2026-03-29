@@ -32,8 +32,9 @@ export function InviteLanding({ paramsPromise }: InviteLandingProps) {
           toast.success("You're connected!");
           router.push("/dashboard");
         })
-        .catch(() => {
-          toast.error("Failed to accept invite");
+        .catch((err) => {
+          console.error("[invite] Failed to accept:", err);
+          toast.error("Failed to accept invite. Please try again.");
           setIsAccepting(false);
         });
     }

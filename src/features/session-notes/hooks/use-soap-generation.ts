@@ -101,8 +101,15 @@ export function useSoapGeneration() {
                 i + 1 < lines.length &&
                 lines[i + 1].startsWith("data: ")
               ) {
-                const data = JSON.parse(lines[i + 1].slice(6));
-                i++; // skip the data line
+                let data;
+                try {
+                  data = JSON.parse(lines[i + 1].slice(6));
+                } catch {
+                  console.warn("[soap] Malformed SSE data, skipping");
+                  i++;
+                  continue;
+                }
+                i++;
 
                 if (eventType === "soap-chunk") {
                   setState((prev) => ({
