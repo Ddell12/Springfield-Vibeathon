@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
-import { useMutation, useQuery } from "convex/react";
+import { useConvexAuth, useMutation, useQuery } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 
@@ -121,11 +121,13 @@ export function useReportGeneration() {
 }
 
 export function useReport(reportId: Id<"progressReports"> | null) {
-  return useQuery(api.progressReports.get, reportId ? { reportId } : "skip");
+  const { isAuthenticated } = useConvexAuth();
+  return useQuery(api.progressReports.get, isAuthenticated && reportId ? { reportId } : "skip");
 }
 
 export function useReports(patientId: Id<"patients">) {
-  return useQuery(api.progressReports.list, { patientId });
+  const { isAuthenticated } = useConvexAuth();
+  return useQuery(api.progressReports.list, isAuthenticated ? { patientId } : "skip");
 }
 
 export function useMarkReportReviewed() {

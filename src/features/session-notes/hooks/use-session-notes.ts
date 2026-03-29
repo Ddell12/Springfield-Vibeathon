@@ -1,18 +1,20 @@
 "use client";
 
-import { useMutation, useQuery } from "convex/react";
+import { useConvexAuth, useMutation, useQuery } from "convex/react";
 
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 
 export function useSessionNotes(patientId: Id<"patients">, limit?: number) {
-  return useQuery(api.sessionNotes.list, { patientId, limit });
+  const { isAuthenticated } = useConvexAuth();
+  return useQuery(api.sessionNotes.list, isAuthenticated ? { patientId, limit } : "skip");
 }
 
 export function useSessionNote(sessionNoteId: Id<"sessionNotes"> | null) {
+  const { isAuthenticated } = useConvexAuth();
   return useQuery(
     api.sessionNotes.get,
-    sessionNoteId ? { noteId: sessionNoteId } : "skip"
+    isAuthenticated && sessionNoteId ? { noteId: sessionNoteId } : "skip"
   );
 }
 

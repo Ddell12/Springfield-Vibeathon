@@ -196,6 +196,7 @@ export async function POST(request: Request): Promise<Response> {
                 // First failure — retry silently after 1s
                 const firstMsg = firstError instanceof Error ? firstError.message : String(firstError);
                 console.error("[generate] Bundle worker failed (attempt 1):", firstMsg.slice(0, 500));
+                send("activity", { type: "thinking", message: "Preview build hiccup — retrying..." });
 
                 await new Promise((r) => setTimeout(r, 1000));
 
@@ -206,7 +207,7 @@ export async function POST(request: Request): Promise<Response> {
                   // Second failure — give up gracefully
                   const secondMsg = secondError instanceof Error ? secondError.message : String(secondError);
                   console.error("[generate] Bundle worker failed (attempt 2):", secondMsg.slice(0, 500));
-                  send("activity", { type: "complete", message: "We're having a little trouble — your app may need a small tweak" });
+                  send("activity", { type: "complete", message: "Preview couldn't be built — your code is saved. Send a follow-up message to fix it." });
                   bundleHtml = ""; // signal no bundle
                 }
               }

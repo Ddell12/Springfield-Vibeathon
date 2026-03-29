@@ -1,23 +1,27 @@
 "use client";
 
-import { useMutation, useQuery } from "convex/react";
+import { useConvexAuth, useMutation, useQuery } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 
 export function useGoals(patientId: Id<"patients">) {
-  return useQuery(api.goals.list, { patientId });
+  const { isAuthenticated } = useConvexAuth();
+  return useQuery(api.goals.list, isAuthenticated ? { patientId } : "skip");
 }
 
 export function useActiveGoals(patientId: Id<"patients">) {
-  return useQuery(api.goals.listActive, { patientId });
+  const { isAuthenticated } = useConvexAuth();
+  return useQuery(api.goals.listActive, isAuthenticated ? { patientId } : "skip");
 }
 
 export function useGoal(goalId: Id<"goals"> | null) {
-  return useQuery(api.goals.get, goalId ? { goalId } : "skip");
+  const { isAuthenticated } = useConvexAuth();
+  return useQuery(api.goals.get, isAuthenticated && goalId ? { goalId } : "skip");
 }
 
 export function useGoalWithProgress(goalId: Id<"goals"> | null) {
-  return useQuery(api.goals.getWithProgress, goalId ? { goalId } : "skip");
+  const { isAuthenticated } = useConvexAuth();
+  return useQuery(api.goals.getWithProgress, isAuthenticated && goalId ? { goalId } : "skip");
 }
 
 export function useCreateGoal() {
