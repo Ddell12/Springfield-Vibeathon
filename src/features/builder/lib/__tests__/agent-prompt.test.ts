@@ -122,4 +122,19 @@ describe("buildSystemPrompt — therapy-domain system prompt", () => {
     expect(prompt).toMatch(/src\/components\/ui\//);
     expect(prompt).toMatch(/src\/lib\/utils\.ts/);
   });
+
+  it("appends patient context block when provided", () => {
+    const patientBlock = "## Patient Context\nYou are building for Alex.";
+    const prompt = buildSystemPrompt(patientBlock);
+    expect(prompt).toContain("## Patient Context");
+    expect(prompt).toContain("building for Alex");
+    expect(prompt).toMatch(/therapy/i);
+  });
+
+  it("returns standard prompt when no patient context provided", () => {
+    const withContext = buildSystemPrompt("## Patient Context\nTest");
+    const without = buildSystemPrompt();
+    expect(without).not.toContain("## Patient Context");
+    expect(withContext.length).toBeGreaterThan(without.length);
+  });
 });

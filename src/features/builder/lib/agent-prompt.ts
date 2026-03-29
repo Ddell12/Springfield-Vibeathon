@@ -539,6 +539,7 @@ export default function App() {
  *
  * Returns a cached constant; no dynamic content.
  */
-export function buildSystemPrompt(): string {
-  return SYSTEM_PROMPT;
+export function buildSystemPrompt(patientContextBlock?: string): string {
+  if (!patientContextBlock) return SYSTEM_PROMPT;
+  return `${SYSTEM_PROMPT}\n\n${patientContextBlock}`;
 }
