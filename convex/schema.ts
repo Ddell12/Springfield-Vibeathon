@@ -205,6 +205,7 @@ export default defineSchema({
       v.literal("revoked")
     ),
     relationship: v.optional(v.string()),
+    kidModePIN: v.optional(v.string()),
   }).index("by_patientId", ["patientId"])
     .index("by_caregiverUserId", ["caregiverUserId"])
     .index("by_caregiverUserId_patientId", ["caregiverUserId", "patientId"])
@@ -446,6 +447,17 @@ export default defineSchema({
     readAt: v.optional(v.number()),
   })
     .index("by_patientId_timestamp", ["patientId", "timestamp"]),
+
+  childApps: defineTable({
+    patientId: v.id("patients"),
+    appId: v.id("apps"),
+    assignedBy: v.string(),
+    assignedByRole: v.union(v.literal("slp"), v.literal("caregiver")),
+    label: v.optional(v.string()),
+    sortOrder: v.optional(v.number()),
+  })
+    .index("by_patientId", ["patientId"])
+    .index("by_appId", ["appId"]),
 });
 
 /** Active session states used by current code. Legacy states are read-only. */
