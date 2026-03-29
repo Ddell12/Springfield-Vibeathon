@@ -38,9 +38,9 @@ describe("FlashcardSwiper", () => {
     { _id: "3", label: "Bird", sortOrder: 2 },
   ];
 
-  it("returns null for empty cards array", () => {
-    const { container } = render(<FlashcardSwiper cards={[]} />);
-    expect(container.innerHTML).toBe("");
+  it("shows empty state for empty cards array", () => {
+    render(<FlashcardSwiper cards={[]} />);
+    expect(screen.getByText(/no cards yet/i)).toBeInTheDocument();
   });
 
   it("renders cards", () => {

@@ -106,11 +106,25 @@ describe("InviteLanding", () => {
     );
   });
 
-  it("auto-accepts invite when user is signed in and invite is valid", async () => {
+  it("shows SLP guard when therapist visits invite link", async () => {
     vi.mocked(useUser).mockReturnValue({
       isSignedIn: true,
       isLoaded: true,
-      user: { id: "user_1" },
+      user: { id: "user_1", publicMetadata: {} },
+    } as ReturnType<typeof useUser>);
+
+    mockInviteInfo.mockReturnValue({ patientFirstName: "Alex" });
+    await renderWithSuspense("valid-token");
+
+    expect(screen.getByText(/This invite is for caregivers/i)).toBeInTheDocument();
+    expect(mockAcceptInvite).not.toHaveBeenCalled();
+  });
+
+  it("auto-accepts invite when caregiver is signed in and invite is valid", async () => {
+    vi.mocked(useUser).mockReturnValue({
+      isSignedIn: true,
+      isLoaded: true,
+      user: { id: "user_1", publicMetadata: { role: "caregiver" } },
     } as ReturnType<typeof useUser>);
 
     mockInviteInfo.mockReturnValue({ patientFirstName: "Alex" });
@@ -132,7 +146,7 @@ describe("InviteLanding", () => {
     vi.mocked(useUser).mockReturnValue({
       isSignedIn: true,
       isLoaded: true,
-      user: { id: "user_1" },
+      user: { id: "user_1", publicMetadata: { role: "caregiver" } },
     } as ReturnType<typeof useUser>);
 
     mockInviteInfo.mockReturnValue({ patientFirstName: "Alex" });
@@ -151,7 +165,7 @@ describe("InviteLanding", () => {
     vi.mocked(useUser).mockReturnValue({
       isSignedIn: true,
       isLoaded: true,
-      user: { id: "user_1" },
+      user: { id: "user_1", publicMetadata: { role: "caregiver" } },
     } as ReturnType<typeof useUser>);
 
     mockInviteInfo.mockReturnValue({ patientFirstName: "Alex" });
