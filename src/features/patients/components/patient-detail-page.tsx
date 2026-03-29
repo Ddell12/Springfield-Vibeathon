@@ -1,6 +1,6 @@
 "use client";
 
-import { use } from "react";
+import { use, type ReactNode } from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/shared/components/ui/button";
@@ -8,8 +8,6 @@ import { MaterialIcon } from "@/shared/components/material-icon";
 import { usePatient } from "../hooks/use-patients";
 import { PatientProfileWidget } from "./patient-profile-widget";
 import { ActivityTimeline } from "./activity-timeline";
-import { SessionNotesList } from "@/features/session-notes/components/session-notes-list";
-import { GoalsList } from "@/features/goals/components/goals-list";
 import { AssignedMaterials } from "./assigned-materials";
 import { CaregiverInfo } from "./caregiver-info";
 import { HomeProgramsWidget } from "./home-programs-widget";
@@ -19,9 +17,10 @@ import type { Id } from "../../../../convex/_generated/dataModel";
 
 interface PatientDetailPageProps {
   paramsPromise: Promise<{ id: string }>;
+  clinicalWidgets?: (patientId: Id<"patients">) => ReactNode;
 }
 
-export function PatientDetailPage({ paramsPromise }: PatientDetailPageProps) {
+export function PatientDetailPage({ paramsPromise, clinicalWidgets }: PatientDetailPageProps) {
   const { id } = use(paramsPromise);
   const patient = usePatient(id as Id<"patients">);
 
@@ -39,7 +38,6 @@ export function PatientDetailPage({ paramsPromise }: PatientDetailPageProps) {
 
   return (
     <div className="flex flex-col gap-6 p-4 sm:p-6 lg:p-8">
-      {/* Header with back link + actions */}
       <div className="flex items-center justify-between">
         <Button asChild variant="ghost" size="sm" className="w-fit">
           <Link href="/patients">
@@ -50,19 +48,14 @@ export function PatientDetailPage({ paramsPromise }: PatientDetailPageProps) {
         <CreateMaterialButton patientId={patient._id} />
       </div>
 
-      {/* Profile card (full width) */}
       <PatientProfileWidget patient={patient} />
 
-      {/* Two-column widget grid */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {/* Left column */}
         <div className="flex flex-col gap-6">
-          <GoalsList patientId={patient._id} />
-          <SessionNotesList patientId={patient._id} />
+          {clinicalWidgets?.(patient._id)}
           <ActivityTimeline patientId={patient._id} />
         </div>
 
-        {/* Right column */}
         <div className="flex flex-col gap-6">
           <AssignedMaterials patientId={patient._id} />
           <CaregiverInfo patientId={patient._id} />
@@ -70,7 +63,6 @@ export function PatientDetailPage({ paramsPromise }: PatientDetailPageProps) {
         </div>
       </div>
 
-      {/* Notes (full width) */}
       <QuickNotes patient={patient} />
     </div>
   );

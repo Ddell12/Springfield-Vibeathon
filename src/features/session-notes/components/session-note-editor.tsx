@@ -7,7 +7,7 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { Button } from "@/shared/components/ui/button";
 import { MaterialIcon } from "@/shared/components/material-icon";
-import { usePatient } from "@/features/patients/hooks/use-patients";
+import { usePatient } from "@/shared/clinical";
 import {
   useSessionNote,
   useCreateSessionNote,

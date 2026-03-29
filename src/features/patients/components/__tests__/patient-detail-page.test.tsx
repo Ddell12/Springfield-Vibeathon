@@ -32,12 +32,6 @@ vi.mock("../patient-profile-widget", () => ({
 vi.mock("../activity-timeline", () => ({
   ActivityTimeline: () => <div data-testid="activity-timeline">Timeline</div>,
 }));
-vi.mock("@/features/session-notes/components/session-notes-list", () => ({
-  SessionNotesList: () => <div data-testid="session-notes">Notes</div>,
-}));
-vi.mock("@/features/goals/components/goals-list", () => ({
-  GoalsList: () => <div data-testid="goals-list">Goals</div>,
-}));
 vi.mock("../assigned-materials", () => ({
   AssignedMaterials: () => <div data-testid="assigned-materials">Materials</div>,
 }));
@@ -78,7 +72,17 @@ describe("PatientDetailPage", () => {
 
   it("renders all child widgets when patient exists", () => {
     mockUsePatient.mockReturnValue(createMockPatient());
-    render(<PatientDetailPage paramsPromise={paramsPromise} />);
+    render(
+      <PatientDetailPage
+        paramsPromise={paramsPromise}
+        clinicalWidgets={() => (
+          <>
+            <div data-testid="goals-list">Goals</div>
+            <div data-testid="session-notes">Notes</div>
+          </>
+        )}
+      />
+    );
 
     expect(screen.getByTestId("profile-widget")).toBeInTheDocument();
     expect(screen.getByTestId("activity-timeline")).toBeInTheDocument();
