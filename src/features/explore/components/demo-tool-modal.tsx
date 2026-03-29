@@ -19,8 +19,8 @@ import {
   SheetDescription,
 } from "@/shared/components/ui/sheet";
 
-function useIsDesktop() {
-  const [isDesktop, setIsDesktop] = useState(false);
+function useIsDesktop(): boolean | undefined {
+  const [isDesktop, setIsDesktop] = useState<boolean | undefined>(undefined);
   useEffect(() => {
     const mq = window.matchMedia("(min-width: 768px)");
     setIsDesktop(mq.matches);
@@ -85,6 +85,9 @@ export function DemoToolModal({
   prompt,
 }: DemoToolModalProps) {
   const isDesktop = useIsDesktop();
+
+  // Don't render until client determines viewport — prevents SSR hydration mismatch
+  if (isDesktop === undefined) return null;
 
   if (isDesktop) {
     return (

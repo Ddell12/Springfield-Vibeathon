@@ -77,7 +77,7 @@ describe("DemoToolModal", () => {
     render(<DemoToolModal {...defaultProps} />);
     const iframe = screen.getByTitle("Communication Board");
     expect(iframe).toHaveAttribute("src", "/api/tool/feat-comm");
-    expect(iframe).toHaveAttribute("sandbox", "allow-scripts");
+    expect(iframe).toHaveAttribute("sandbox", "allow-scripts allow-same-origin");
   });
 
   test("renders 'Customize This' link with encoded prompt", () => {

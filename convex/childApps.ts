@@ -94,14 +94,14 @@ export const getBundleForApp = query({
   },
 });
 
-/** Simple hash for PIN. Threat model: child-proofing, not security. */
-function hashPIN(pin: string): string {
+/** SHA-256 hash for PIN. Threat model: child-proofing, not security. */
+async function hashPIN(pin: string): Promise<string> {
   const salted = `bridges-kid-mode:${pin}`;
-  let hash = 5381;
-  for (let i = 0; i < salted.length; i++) {
-    hash = ((hash << 5) + hash + salted.charCodeAt(i)) >>> 0;
-  }
-  return hash.toString(16);
+  const encoded = new TextEncoder().encode(salted);
+  const digest = await crypto.subtle.digest("SHA-256", encoded);
+  return Array.from(new Uint8Array(digest))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
 }
 
 export const setPIN = mutation({
@@ -115,7 +115,7 @@ export const setPIN = mutation({
       throw new Error("PIN must be exactly 4 digits");
     }
 
-    const hashed = hashPIN(args.pin);
+    const hashed = await hashPIN(args.pin);
 
     const userId = (await ctx.auth.getUserIdentity())!.subject;
     const link = await ctx.db
@@ -148,7 +148,7 @@ export const verifyPIN = mutation({
       .first();
     if (!link?.kidModePIN) return false;
 
-    const hashed = hashPIN(args.pin);
+    const hashed = await hashPIN(args.pin);
     return hashed === link.kidModePIN;
   },
 });

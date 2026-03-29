@@ -8,6 +8,8 @@ import {
 } from "@elevenlabs/react";
 import { useCallback, useEffect, useRef } from "react";
 
+import { toast } from "sonner";
+
 import { Button } from "@/shared/components/ui/button";
 import { cn } from "@/core/utils";
 
@@ -54,6 +56,9 @@ function ActiveSessionInner({
       },
       onError: (message) => {
         console.error("[SpeechCoach] Conversation error:", message);
+        toast.error("Speech session interrupted", {
+          description: "The connection was lost. Please try again.",
+        });
         onEnd();
       },
     });
@@ -84,7 +89,7 @@ function ActiveSessionInner({
       <div className="relative flex items-center justify-center">
         <div
           className={cn(
-            "h-32 w-32 rounded-full transition-all duration-500",
+            "h-32 w-32 rounded-full transition-all duration-300",
             isSpeaking
               ? "scale-110 bg-primary/20 shadow-lg shadow-primary/10"
               : "scale-100 bg-muted/50"
@@ -92,7 +97,7 @@ function ActiveSessionInner({
         />
         <div
           className={cn(
-            "absolute h-20 w-20 rounded-full transition-all duration-500",
+            "absolute h-20 w-20 rounded-full transition-all duration-300",
             isSpeaking
               ? "scale-110 bg-primary/40"
               : "scale-95 bg-muted"
