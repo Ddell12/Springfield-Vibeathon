@@ -78,6 +78,8 @@ export const getUnreadCount = query({
   handler: async (ctx, args) => {
     const { userId } = await assertPatientAccess(ctx, args.patientId);
 
+    // TODO(perf): For scale, denormalize into a counter on caregiverLinks.
+    // Current approach is fine for <100 messages per patient.
     const messages = await ctx.db
       .query("patientMessages")
       .withIndex("by_patientId_timestamp", (q) =>
