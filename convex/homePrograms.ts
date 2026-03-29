@@ -90,6 +90,12 @@ export const create = mutation({
     frequency: frequencyValidator,
     startDate: v.string(),
     endDate: v.optional(v.string()),
+    type: v.optional(v.union(v.literal("standard"), v.literal("speech-coach"))),
+    speechCoachConfig: v.optional(v.object({
+      targetSounds: v.array(v.string()),
+      ageRange: v.union(v.literal("2-4"), v.literal("5-7")),
+      defaultDurationMinutes: v.number(),
+    })),
   },
   handler: async (ctx, args) => {
     const slpUserId = await assertSLP(ctx);
@@ -104,6 +110,15 @@ export const create = mutation({
       endDate: args.endDate,
     });
 
+    // Speech coach type validation
+    const programType = args.type;
+    if (programType === "speech-coach" && !args.speechCoachConfig) {
+      throw new ConvexError("speechCoachConfig is required for speech-coach type");
+    }
+    if (programType !== "speech-coach" && args.speechCoachConfig) {
+      throw new ConvexError("speechCoachConfig is only valid for speech-coach type");
+    }
+
     const programId = await ctx.db.insert("homePrograms", {
       patientId: args.patientId,
       slpUserId,
@@ -115,6 +130,8 @@ export const create = mutation({
       status: "active",
       startDate: args.startDate,
       endDate: args.endDate,
+      type: programType,
+      speechCoachConfig: args.speechCoachConfig,
     });
 
     await ctx.db.insert("activityLog", {
@@ -137,6 +154,11 @@ export const update = mutation({
     frequency: v.optional(frequencyValidator),
     status: v.optional(statusValidator),
     endDate: v.optional(v.string()),
+    speechCoachConfig: v.optional(v.object({
+      targetSounds: v.array(v.string()),
+      ageRange: v.union(v.literal("2-4"), v.literal("5-7")),
+      defaultDurationMinutes: v.number(),
+    })),
   },
   handler: async (ctx, args) => {
     const slpUserId = await assertSLP(ctx);
@@ -153,12 +175,17 @@ export const update = mutation({
       endDate: args.endDate,
     });
 
+    if (args.speechCoachConfig && program.type !== "speech-coach") {
+      throw new ConvexError("speechCoachConfig is only valid for speech-coach type");
+    }
+
     const updates: Record<string, unknown> = {};
     if (args.title !== undefined) updates.title = args.title.trim();
     if (args.instructions !== undefined) updates.instructions = args.instructions.trim();
     if (args.frequency !== undefined) updates.frequency = args.frequency;
     if (args.status !== undefined) updates.status = args.status;
     if (args.endDate !== undefined) updates.endDate = args.endDate;
+    if (args.speechCoachConfig !== undefined) updates.speechCoachConfig = args.speechCoachConfig;
 
     await ctx.db.patch(args.id, updates);
   },
