@@ -47,6 +47,12 @@ export async function POST(request: Request): Promise<Response> {
 
   // Fetch note first to get patientId, then patient + previous SOAP in parallel
   const note = await convex.query(api.sessionNotes.get, { noteId });
+  if (!note) {
+    return new Response(JSON.stringify({ error: "Session note not found" }), {
+      status: 404,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
   if (note.status === "signed") {
     return new Response(
       JSON.stringify({ error: "Cannot generate SOAP for a signed note" }),
