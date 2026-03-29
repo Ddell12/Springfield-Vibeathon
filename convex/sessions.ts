@@ -1,4 +1,4 @@
-import { v } from "convex/values";
+import { ConvexError, v } from "convex/values";
 
 import { mutation, query } from "./_generated/server";
 import { assertSessionOwner, getAuthUserId } from "./lib/auth";
@@ -213,6 +213,9 @@ export const setBlueprint = mutation({
   },
   handler: async (ctx, args) => {
     await assertSessionOwner(ctx, args.sessionId);
+    if (args.blueprint !== null && typeof args.blueprint !== "object") {
+      throw new ConvexError("Blueprint must be an object");
+    }
     await ctx.db.patch(args.sessionId, { blueprint: args.blueprint });
   },
 });
