@@ -29,6 +29,7 @@ interface BuilderToolbarProps {
   mobilePanel?: "chat" | "preview";
   onMobilePanelChange?: (panel: "chat" | "preview") => void;
   hasFiles?: boolean;
+  onFullscreen?: () => void;
 }
 
 const DEVICE_OPTIONS: { key: DeviceSize; icon: string; label: string }[] = [
@@ -54,6 +55,7 @@ export function BuilderToolbar({
   mobilePanel,
   onMobilePanelChange,
   hasFiles,
+  onFullscreen,
 }: BuilderToolbarProps) {
   const isGenerating = status === "generating";
 
@@ -206,6 +208,19 @@ export function BuilderToolbar({
 
       {/* Right section: View Source + Share */}
       <div className="flex flex-shrink-0 items-center gap-2">
+        {!isGenerating && hasFiles && onFullscreen && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="min-h-[44px] gap-1.5 rounded-md px-3 text-xs font-semibold text-on-surface-variant transition-all active:scale-95"
+            onClick={onFullscreen}
+            aria-label="Fullscreen"
+            title="View app fullscreen"
+          >
+            <MaterialIcon icon="fullscreen" size="sm" />
+            <span className="hidden sm:inline">Fullscreen</span>
+          </Button>
+        )}
         {!isGenerating && hasFiles && (
           <Button
             variant="ghost"
