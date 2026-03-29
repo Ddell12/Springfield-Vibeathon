@@ -16,6 +16,7 @@ export default defineSchema({
     previewUrl: v.optional(v.string()),
     publishedUrl: v.optional(v.string()),
     type: v.optional(v.union(v.literal("builder"), v.literal("flashcards"))),
+    archived: v.optional(v.boolean()),
   }).index("by_user", ["userId"])
     .index("by_state", ["state"])
     .index("by_state_user", ["state", "userId"]),
@@ -100,6 +101,7 @@ export default defineSchema({
     category: v.string(),
     starterPrompt: v.string(),
     sortOrder: v.number(),
+    usageCount: v.optional(v.number()),
     thumbnailStorageId: v.optional(v.id("_storage")),
     thumbnailUrl: v.optional(v.string()),
   })
