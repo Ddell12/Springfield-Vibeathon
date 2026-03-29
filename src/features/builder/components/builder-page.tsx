@@ -6,6 +6,7 @@ import { startTransition, useCallback, useEffect, useRef, useState } from "react
 import { toast } from "sonner";
 
 import { useIsMobile } from "@/core/hooks/use-mobile";
+import { FullscreenAppView } from "@/shared/components/fullscreen-app-view";
 import { ShareDialog } from "@/shared/components/share-dialog";
 import { MaterialIcon } from "@/shared/components/material-icon";
 import { SuggestionChips } from "@/shared/components/suggestion-chips";
@@ -56,6 +57,7 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
   });
   const [mobilePanel, setMobilePanel] = useState<"chat" | "preview">("chat");
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const [continueDismissed, setContinueDismissed] = useState(false);
   const updateTitle = useMutation(api.sessions.updateTitle);
   const ensureApp = useMutation(api.apps.ensureForSession);
@@ -366,6 +368,7 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
             mobilePanel={mobilePanel}
             onMobilePanelChange={setMobilePanel}
             hasFiles={files.length > 0}
+            onFullscreen={bundleHtml ? () => setIsFullscreen(true) : undefined}
           />
 
           <div className="min-h-0 flex-1 bg-surface-container-low p-2">
@@ -457,6 +460,13 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
             )}
           </div>
         </>
+      )}
+
+      {isFullscreen && bundleHtml && (
+        <FullscreenAppView
+          bundleHtml={bundleHtml}
+          onExit={() => setIsFullscreen(false)}
+        />
       )}
 
       <ShareDialog

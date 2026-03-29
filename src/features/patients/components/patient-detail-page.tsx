@@ -13,6 +13,7 @@ import { CaregiverInfo } from "./caregiver-info";
 import { HomeProgramsWidget } from "./home-programs-widget";
 import { QuickNotes } from "./quick-notes";
 import { CreateMaterialButton } from "./create-material-button";
+import { ChildAppsSection } from "@/features/family/components/child-apps-section";
 import type { Id } from "../../../../convex/_generated/dataModel";
 
 interface PatientDetailPageProps {
@@ -60,6 +61,7 @@ export function PatientDetailPage({ paramsPromise, clinicalWidgets }: PatientDet
           <AssignedMaterials patientId={patient._id} />
           <CaregiverInfo patientId={patient._id} />
           <HomeProgramsWidget patientId={patient._id} />
+          <ChildAppsSection patientId={patient._id} />
         </div>
       </div>
 

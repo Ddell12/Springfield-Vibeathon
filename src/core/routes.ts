@@ -17,4 +17,6 @@ export const ROUTES = {
   FAMILY: "/family",
   FAMILY_CHILD: (patientId: string) => `/family/${patientId}` as const,
   FAMILY_MESSAGES: (patientId: string) => `/family/${patientId}/messages` as const,
+  FAMILY_PLAY: (patientId: string) => `/family/${patientId}/play` as const,
+  FAMILY_PLAY_APP: (patientId: string, appId: string) => `/family/${patientId}/play/${appId}` as const,
 } as const;

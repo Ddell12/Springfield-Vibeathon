@@ -32,7 +32,7 @@ export function HomeProgramForm({ open, onOpenChange, patientId }: HomeProgramFo
 
   const [title, setTitle] = useState("");
   const [instructions, setInstructions] = useState("");
-  const [frequency, setFrequency] = useState<string>("");
+  const [frequency, setFrequency] = useState<"daily" | "3x-week" | "weekly" | "as-needed" | "">("");
   const [startDate, setStartDate] = useState(todayIso());
   const [endDate, setEndDate] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -75,7 +75,7 @@ export function HomeProgramForm({ open, onOpenChange, patientId }: HomeProgramFo
         patientId,
         title: title.trim(),
         instructions: instructions.trim(),
-        frequency,
+        frequency: frequency as "daily" | "3x-week" | "weekly" | "as-needed",
         startDate,
         endDate: endDate || undefined,
       });
@@ -141,7 +141,7 @@ export function HomeProgramForm({ open, onOpenChange, patientId }: HomeProgramFo
             <select
               id="hp-frequency"
               value={frequency}
-              onChange={(e) => setFrequency(e.target.value)}
+              onChange={(e) => setFrequency(e.target.value as "daily" | "3x-week" | "weekly" | "as-needed" | "")}
               className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
               required
             >

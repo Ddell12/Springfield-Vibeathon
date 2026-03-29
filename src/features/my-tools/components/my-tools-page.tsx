@@ -7,6 +7,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { cn } from "@/core/utils";
 import { DeleteConfirmationDialog } from "@/shared/components/delete-confirmation-dialog";
+import { FullscreenAppView } from "@/shared/components/fullscreen-app-view";
 import { MaterialIcon } from "@/shared/components/material-icon";
 import { ProjectCard } from "@/shared/components/project-card";
 import { Input } from "@/shared/components/ui/input";
@@ -30,10 +31,18 @@ export function MyToolsPage() {
 
   const [deleteTarget, setDeleteTarget] = useState<{ id: Id<"sessions">; title: string } | null>(null);
   const [renamingId, setRenamingId] = useState<Id<"sessions"> | null>(null);
+  const [fullscreenSessionId, setFullscreenSessionId] = useState<Id<"sessions"> | null>(null);
   const [renameValue, setRenameValue] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("recent");
+
+  const fullscreenBundle = useQuery(
+    api.generated_files.getByPath,
+    fullscreenSessionId
+      ? { sessionId: fullscreenSessionId, path: "_bundle.html" }
+      : "skip"
+  );
 
   const renameInputRef = useRef<HTMLInputElement>(null);
 
@@ -212,23 +221,36 @@ export function MyToolsPage() {
                   />
                 </div>
               ) : (
-                <ProjectCard
-                  project={{
-                    id: session._id,
-                    title: session.title,
-                    thumbnail: null,
-                    updatedAt: session._creationTime,
-                    userInitial: session.title.charAt(0).toUpperCase(),
-                    userColor: "bg-tertiary-fixed text-on-surface",
-                  }}
-                  index={i}
-                  onDelete={() => setDeleteTarget({ id: session._id, title: session.title })}
-                  onRename={() => {
-                    setRenamingId(session._id);
-                    setRenameValue(session.title);
-                  }}
-                  onDuplicate={() => handleDuplicate(session._id)}
-                />
+                <>
+                  <ProjectCard
+                    project={{
+                      id: session._id,
+                      title: session.title,
+                      thumbnail: null,
+                      updatedAt: session._creationTime,
+                      userInitial: session.title.charAt(0).toUpperCase(),
+                      userColor: "bg-tertiary-fixed text-on-surface",
+                    }}
+                    index={i}
+                    onDelete={() => setDeleteTarget({ id: session._id, title: session.title })}
+                    onRename={() => {
+                      setRenamingId(session._id);
+                      setRenameValue(session.title);
+                    }}
+                    onDuplicate={() => handleDuplicate(session._id)}
+                  />
+                  {!renamingId && (
+                    <button
+                      onClick={() => setFullscreenSessionId(session._id)}
+                      className="absolute bottom-4 right-4 flex items-center gap-1.5 rounded-full bg-primary-gradient px-4 py-2 text-xs font-semibold text-white shadow-lg transition-all hover:shadow-xl active:scale-95"
+                      aria-label="Play app fullscreen"
+                      title="Play fullscreen"
+                    >
+                      <MaterialIcon icon="play_arrow" size="sm" />
+                      Play
+                    </button>
+                  )}
+                </>
               )}
             </div>
           ))}
@@ -266,6 +288,13 @@ export function MyToolsPage() {
           </div>
         </div>
       </section>
+
+      {fullscreenSessionId && fullscreenBundle?.contents && (
+        <FullscreenAppView
+          bundleHtml={fullscreenBundle.contents}
+          onExit={() => setFullscreenSessionId(null)}
+        />
+      )}
 
       <DeleteConfirmationDialog
         open={deleteTarget !== null}

@@ -152,6 +152,23 @@ export const revokeInvite = mutation({
   },
 });
 
+export const revokeInviteById = mutation({
+  args: { linkId: v.id("caregiverLinks") },
+  handler: async (ctx, args) => {
+    const slpUserId = await assertSLP(ctx);
+
+    const link = await ctx.db.get(args.linkId);
+    if (!link) throw new ConvexError("Caregiver link not found");
+
+    const patient = await ctx.db.get(link.patientId);
+    if (!patient || patient.slpUserId !== slpUserId) {
+      throw new ConvexError("Not authorized");
+    }
+
+    await ctx.db.patch(link._id, { inviteStatus: "revoked" });
+  },
+});
+
 export const listByPatient = query({
   args: { patientId: v.id("patients") },
   handler: async (ctx, args) => {

@@ -17,6 +17,7 @@ import type * as apps from "../apps.js";
 import type * as billing from "../billing.js";
 import type * as billingActions from "../billingActions.js";
 import type * as caregivers from "../caregivers.js";
+import type * as childApps from "../childApps.js";
 import type * as clerkActions from "../clerkActions.js";
 import type * as entitlements from "../entitlements.js";
 import type * as explore_seed from "../explore_seed.js";
@@ -49,6 +50,8 @@ import type * as seeds_backfill_legacy_sessions from "../seeds/backfill_legacy_s
 import type * as seeds_image_seeds from "../seeds/image_seeds.js";
 import type * as sessionNotes from "../sessionNotes.js";
 import type * as sessions from "../sessions.js";
+import type * as speechCoach from "../speechCoach.js";
+import type * as speechCoachActions from "../speechCoachActions.js";
 import type * as stt from "../stt.js";
 import type * as subscriptions from "../subscriptions.js";
 import type * as templates_queries from "../templates/queries.js";
@@ -73,6 +76,7 @@ declare const fullApi: ApiFromModules<{
   billing: typeof billing;
   billingActions: typeof billingActions;
   caregivers: typeof caregivers;
+  childApps: typeof childApps;
   clerkActions: typeof clerkActions;
   entitlements: typeof entitlements;
   explore_seed: typeof explore_seed;
@@ -105,6 +109,8 @@ declare const fullApi: ApiFromModules<{
   "seeds/image_seeds": typeof seeds_image_seeds;
   sessionNotes: typeof sessionNotes;
   sessions: typeof sessions;
+  speechCoach: typeof speechCoach;
+  speechCoachActions: typeof speechCoachActions;
   stt: typeof stt;
   subscriptions: typeof subscriptions;
   "templates/queries": typeof templates_queries;

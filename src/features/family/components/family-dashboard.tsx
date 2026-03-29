@@ -1,19 +1,24 @@
 "use client";
 
-import { use } from "react";
+import { use, useState } from "react";
 import Link from "next/link";
-import { useQuery, useConvexAuth } from "convex/react";
+import { useRouter } from "next/navigation";
+import { useQuery, useConvexAuth, useMutation } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
+import { Gamepad2, Settings2 } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
 import { Skeleton } from "@/shared/components/ui/skeleton";
 import { Separator } from "@/shared/components/ui/separator";
 import { MaterialIcon } from "@/shared/components/material-icon";
+import { ROUTES } from "@/core/routes";
 import { useFamilyData } from "../hooks/use-family-data";
 import { StreakTracker } from "./streak-tracker";
 import { WeeklyProgress } from "./weekly-progress";
 import { CelebrationCard } from "./celebration-card";
 import { TodayActivities } from "./today-activities";
+import { PinSetupModal } from "./pin-setup-modal";
+import { AppPicker } from "./app-picker";
 
 interface FamilyDashboardProps {
   paramsPromise: Promise<{ patientId: string }>;
@@ -36,6 +41,29 @@ export function FamilyDashboard({ paramsPromise }: FamilyDashboardProps) {
   const { streakData, unreadCount, isLoading } = useFamilyData(
     patientId as Id<"patients">
   );
+
+  const router = useRouter();
+  const [showPinSetup, setShowPinSetup] = useState(false);
+  const [showAppPicker, setShowAppPicker] = useState(false);
+  const hasPIN = useQuery(
+    api.childApps.hasPIN,
+    isAuthenticated ? { patientId: patientId as Id<"patients"> } : "skip"
+  );
+  const setPINMutation = useMutation(api.childApps.setPIN);
+
+  function handleKidMode() {
+    if (hasPIN === false) {
+      setShowPinSetup(true);
+    } else {
+      router.push(ROUTES.FAMILY_PLAY(patientId));
+    }
+  }
+
+  async function handlePinSet(pin: string) {
+    await setPINMutation({ patientId: patientId as Id<"patients">, pin });
+    setShowPinSetup(false);
+    router.push(ROUTES.FAMILY_PLAY(patientId));
+  }
 
   // Loading state
   if (patient === undefined || isLoading) {
@@ -63,6 +91,40 @@ export function FamilyDashboard({ paramsPromise }: FamilyDashboardProps) {
           Track progress and stay connected with the therapy team.
         </p>
       </div>
+
+      {/* Kid Mode entry */}
+      <div className="flex items-center gap-3">
+        <Button
+          onClick={handleKidMode}
+          className="flex-1 gap-2 bg-gradient-to-r from-primary to-primary-container py-6 text-lg font-bold text-white shadow-lg"
+          size="lg"
+        >
+          <Gamepad2 className="h-6 w-6" />
+          Kid Mode
+        </Button>
+        <Button
+          variant="outline"
+          size="icon"
+          className="h-14 w-14"
+          onClick={() => setShowAppPicker(true)}
+          aria-label="Manage apps"
+          title="Manage apps for Kid Mode"
+        >
+          <Settings2 className="h-5 w-5" />
+        </Button>
+      </div>
+
+      <PinSetupModal
+        open={showPinSetup}
+        onOpenChange={setShowPinSetup}
+        onPinSet={handlePinSet}
+      />
+
+      <AppPicker
+        open={showAppPicker}
+        onOpenChange={setShowAppPicker}
+        patientId={patientId as Id<"patients">}
+      />
 
       {/* Celebration card (conditionally rendered) */}
       {streakData && (

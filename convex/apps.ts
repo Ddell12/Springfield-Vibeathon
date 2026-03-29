@@ -171,6 +171,18 @@ export const listFeatured = query({
   },
 });
 
+export const listMine = query({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return [];
+    return await ctx.db
+      .query("apps")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .collect();
+  },
+});
+
 // Used by publishApp action and potential publish UI checks
 export const getBySession = query({
   args: { sessionId: v.id("sessions") },
