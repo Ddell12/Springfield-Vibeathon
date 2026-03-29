@@ -13,6 +13,7 @@ import { GoalsList } from "@/features/goals/components/goals-list";
 import { AssignedMaterials } from "./assigned-materials";
 import { CaregiverInfo } from "./caregiver-info";
 import { QuickNotes } from "./quick-notes";
+import { CreateMaterialButton } from "./create-material-button";
 import type { Id } from "../../../../convex/_generated/dataModel";
 
 interface PatientDetailPageProps {
@@ -37,13 +38,16 @@ export function PatientDetailPage({ paramsPromise }: PatientDetailPageProps) {
 
   return (
     <div className="flex flex-col gap-6 p-4 sm:p-6 lg:p-8">
-      {/* Back link */}
-      <Button asChild variant="ghost" size="sm" className="w-fit">
-        <Link href="/patients">
-          <MaterialIcon icon="arrow_back" size="sm" />
-          Back to Caseload
-        </Link>
-      </Button>
+      {/* Header with back link + actions */}
+      <div className="flex items-center justify-between">
+        <Button asChild variant="ghost" size="sm" className="w-fit">
+          <Link href="/patients">
+            <MaterialIcon icon="arrow_back" size="sm" />
+            Back to Caseload
+          </Link>
+        </Button>
+        <CreateMaterialButton patientId={patient._id} />
+      </div>
 
       {/* Profile card (full width) */}
       <PatientProfileWidget patient={patient} />

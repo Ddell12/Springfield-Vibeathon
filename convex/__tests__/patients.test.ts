@@ -142,6 +142,52 @@ describe("patients.updateStatus", () => {
   });
 });
 
+describe("patients.getForContext", () => {
+  it("returns only allowlisted fields for the owning SLP", async () => {
+    const t = convexTest(schema, modules).withIdentity(SLP_IDENTITY);
+    const { patientId } = await t.mutation(api.patients.create, {
+      ...VALID_PATIENT,
+      interests: ["dinosaurs", "trains"],
+      communicationLevel: "single-words" as const,
+      sensoryNotes: "Sensitive to loud sounds",
+      behavioralNotes: "Responds well to visual timers",
+    });
+
+    const context = await t.query(api.patients.getForContext, { patientId });
+    expect(context).not.toBeNull();
+    expect(context!.firstName).toBe("Alex");
+    expect(context!.diagnosis).toBe("articulation");
+    expect(context!.communicationLevel).toBe("single-words");
+    expect(context!.interests).toEqual(["dinosaurs", "trains"]);
+    expect(context!.sensoryNotes).toBe("Sensitive to loud sounds");
+    expect(context!.behavioralNotes).toBe("Responds well to visual timers");
+    // PII fields excluded
+    expect((context as Record<string, unknown>).lastName).toBeUndefined();
+    expect((context as Record<string, unknown>).dateOfBirth).toBeUndefined();
+    expect((context as Record<string, unknown>).parentEmail).toBeUndefined();
+    expect((context as Record<string, unknown>).slpUserId).toBeUndefined();
+    expect((context as Record<string, unknown>)._id).toBeUndefined();
+  });
+
+  it("returns null for non-owning SLP (same DB, different identity)", async () => {
+    const t = convexTest(schema, modules);
+    const asOwner = t.withIdentity(SLP_IDENTITY);
+    const asOther = t.withIdentity(OTHER_SLP);
+    const { patientId } = await asOwner.mutation(api.patients.create, VALID_PATIENT);
+    const context = await asOther.query(api.patients.getForContext, { patientId });
+    expect(context).toBeNull();
+  });
+
+  it("throws for unauthenticated users", async () => {
+    const t = convexTest(schema, modules);
+    const asSlp = t.withIdentity(SLP_IDENTITY);
+    const { patientId } = await asSlp.mutation(api.patients.create, VALID_PATIENT);
+    await expect(
+      t.query(api.patients.getForContext, { patientId })
+    ).rejects.toThrow();
+  });
+});
+
 describe("patients.getStats", () => {
   it("returns correct counts by status", async () => {
     const t = convexTest(schema, modules).withIdentity(SLP_IDENTITY);

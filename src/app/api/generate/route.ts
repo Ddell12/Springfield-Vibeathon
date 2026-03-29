@@ -13,6 +13,10 @@ import { join } from "path";
 import { extractErrorMessage, settleInBatches } from "@/core/utils";
 import { buildSystemPrompt } from "@/features/builder/lib/agent-prompt";
 import { createAgentTools } from "@/features/builder/lib/agent-tools";
+import {
+  sanitizePatientContext,
+  buildPatientContextBlock,
+} from "@/features/builder/lib/patient-context";
 // Design review pass removed — main prompt has extensive design rules already
 import { GenerateInputSchema } from "@/features/builder/lib/schemas/generate";
 import { buildFlashcardSystemPrompt } from "@/features/flashcards/lib/flashcard-prompt";
@@ -91,6 +95,26 @@ export async function POST(request: Request): Promise<Response> {
   const blueprintData = parsed.data.blueprint;
   const mode = parsed.data.mode;
   const providedSessionId = parsed.data.sessionId as Id<"sessions"> | undefined;
+  const patientId = parsed.data.patientId as Id<"patients"> | undefined;
+
+  // ── Patient context (optional, graceful degradation) ──────────────────
+  let patientContextBlock: string | undefined;
+  if (patientId) {
+    try {
+      const [patientCtx, activeGoals] = await Promise.all([
+        convex.query(api.patients.getForContext, { patientId }),
+        convex.query(api.goals.listActive, { patientId }),
+      ]);
+      if (patientCtx) {
+        const { patient, goals } = sanitizePatientContext(patientCtx, activeGoals ?? []);
+        patientContextBlock = buildPatientContextBlock(patient, goals);
+      }
+    } catch {
+      // Graceful degradation — generate without patient context
+      // Don't log patient details (HIPAA-forward)
+      console.warn("[generate] Failed to fetch patient context, proceeding without it");
+    }
+  }
 
   const isFlashcardMode = mode === "flashcards";
   const sessionId: Id<"sessions"> =
@@ -99,6 +123,7 @@ export async function POST(request: Request): Promise<Response> {
       title: query.slice(0, 60),
       query,
       type: isFlashcardMode ? "flashcards" as const : "builder" as const,
+      ...(patientId ? { patientId } : {}),
     }));
 
   const encoder = new TextEncoder();
@@ -137,7 +162,7 @@ export async function POST(request: Request): Promise<Response> {
 
         const systemPrompt = isFlashcardMode
           ? buildFlashcardSystemPrompt()
-          : buildSystemPrompt();
+          : buildSystemPrompt(patientContextBlock);
 
         const collectedFiles = new Map<string, string>();
 
