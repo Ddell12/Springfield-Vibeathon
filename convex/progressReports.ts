@@ -58,7 +58,7 @@ export const list = query({
       .query("progressReports")
       .withIndex("by_patientId", (q) => q.eq("patientId", args.patientId))
       .order("desc")
-      .collect();
+      .take(100);
   },
 });
 

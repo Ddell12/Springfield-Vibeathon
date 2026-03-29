@@ -83,7 +83,7 @@ export const getUnreadCount = query({
       .withIndex("by_patientId_timestamp", (q) =>
         q.eq("patientId", args.patientId)
       )
-      .collect();
+      .take(500);
 
     return messages.filter(
       (m) => m.senderUserId !== userId && m.readAt === undefined

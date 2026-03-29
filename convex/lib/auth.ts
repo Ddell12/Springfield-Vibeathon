@@ -28,7 +28,8 @@ export async function assertSessionOwner(
     throw new Error("Session not found");
   }
 
-  // Legacy/demo sessions (no owner) are accessible to everyone
+  // TODO(cleanup): Legacy/demo sessions created before auth. Migrate to
+  // a demo user or delete, then remove this world-readable branch.
   if (!session.userId) {
     return session;
   }
@@ -57,6 +58,13 @@ export async function getAuthRole(
   return (metadata?.role as UserRole) ?? null;
 }
 
+/**
+ * Assert the caller has SLP privileges.
+ * Design: null role (no Clerk metadata) defaults to SLP because new
+ * sign-ups start as SLPs. Caregivers get role set via acceptInvite →
+ * clerkActions.setCaregiverRole. Patient ownership checks in every
+ * SLP-only mutation provide a secondary gate.
+ */
 export async function assertSLP(
   ctx: QueryCtx | MutationCtx,
 ): Promise<string> {
@@ -66,7 +74,6 @@ export async function assertSLP(
   if (role !== null && role !== "slp") {
     throw new ConvexError("Only SLPs can perform this action");
   }
-  // If role is null (no metadata set yet), treat as SLP (default role)
   return userId;
 }
 

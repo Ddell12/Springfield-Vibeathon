@@ -22,7 +22,7 @@ export const create = mutation({
       const userApps = await ctx.db
         .query("apps")
         .withIndex("by_user", (q) => q.eq("userId", identity.subject))
-        .collect();
+        .take(FREE_LIMITS.maxApps);
       if (userApps.length >= FREE_LIMITS.maxApps) {
         throw new Error(
           "Free plan limit reached. Upgrade to Premium for unlimited apps.",
@@ -78,7 +78,7 @@ export const update = mutation({
     if (!identity) throw new Error("Not authenticated");
     const app = await ctx.db.get(args.appId);
     if (!app) throw new Error("App not found");
-    if (app.userId && app.userId !== identity.subject) throw new Error("Not authorized");
+    if (!app.userId || app.userId !== identity.subject) throw new Error("Not authorized");
 
     const { appId, ...fields } = args;
     const patch: Record<string, unknown> = { updatedAt: Date.now() };
@@ -121,7 +121,7 @@ export const ensureForSession = mutation({
         const userApps = await ctx.db
           .query("apps")
           .withIndex("by_user", (q) => q.eq("userId", identity.subject))
-          .collect();
+          .take(FREE_LIMITS.maxApps);
         if (userApps.length >= FREE_LIMITS.maxApps) {
           throw new Error(
             "Free plan limit reached. Upgrade to Premium for unlimited apps.",

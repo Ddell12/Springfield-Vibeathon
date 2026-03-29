@@ -61,7 +61,7 @@ export const listByPatient = query({
     return await ctx.db
       .query("homePrograms")
       .withIndex("by_patientId", (q) => q.eq("patientId", args.patientId))
-      .collect();
+      .take(100);
   },
 });
 
@@ -74,7 +74,7 @@ export const getActiveByPatient = query({
       .withIndex("by_patientId_status", (q) =>
         q.eq("patientId", args.patientId).eq("status", "active")
       )
-      .collect();
+      .take(100);
   },
 });
 

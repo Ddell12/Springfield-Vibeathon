@@ -59,15 +59,16 @@ function jsonErrorResponse(message: string, status: number): Response {
 // ---------------------------------------------------------------------------
 
 export async function POST(request: Request): Promise<Response> {
-  // Try Clerk auth if available, but don't block generation
-  try {
-    const { userId: clerkUserId, getToken } = await auth();
-    if (clerkUserId) {
-      const token = await getToken({ template: "convex" });
-      if (token) convex.setAuth(token);
-    }
-  } catch {
-    // Auth not configured yet — allow unauthenticated generation for demo
+  // Authenticate via Clerk — required unless demo mode is enabled
+  let clerkUserId: string | undefined;
+  const { userId, getToken } = await auth();
+  clerkUserId = userId ?? undefined;
+  if (!clerkUserId && process.env.ALLOW_UNAUTHENTICATED_GENERATE !== "true") {
+    return jsonErrorResponse("Authentication required", 401);
+  }
+  if (clerkUserId) {
+    const token = await getToken({ template: "convex" });
+    if (token) convex.setAuth(token);
   }
 
   let body: unknown;
@@ -82,11 +83,12 @@ export async function POST(request: Request): Promise<Response> {
     return jsonErrorResponse(parsed.error.issues[0]?.message ?? "Invalid request", 400);
   }
 
-  const ip = request.headers.get("x-real-ip")
+  const rateLimitKey = clerkUserId
+      ?? request.headers.get("x-real-ip")
       ?? request.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
       ?? "anonymous";
   try {
-    await convex.mutation(api.rate_limit_check.checkGenerateLimit, { key: ip });
+    await convex.mutation(api.rate_limit_check.checkGenerateLimit, { key: rateLimitKey });
   } catch (e) {
     return jsonErrorResponse(e instanceof Error ? e.message : "Rate limited", 429);
   }

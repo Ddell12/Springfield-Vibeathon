@@ -70,7 +70,7 @@ export const list = query({
     const patients = await ctx.db
       .query("patients")
       .withIndex("by_slpUserId", (q) => q.eq("slpUserId", userId))
-      .collect();
+      .take(500);
 
     if (args.status) {
       return patients.filter((p) => p.status === args.status);
@@ -280,7 +280,7 @@ export const getStats = query({
     const patients = await ctx.db
       .query("patients")
       .withIndex("by_slpUserId", (q) => q.eq("slpUserId", userId))
-      .collect();
+      .take(500);
 
     return {
       active: patients.filter((p) => p.status === "active").length,

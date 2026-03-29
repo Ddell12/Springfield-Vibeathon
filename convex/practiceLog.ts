@@ -69,7 +69,7 @@ export const listByProgram = query({
         q.eq("homeProgramId", args.homeProgramId)
       )
       .order("desc")
-      .collect();
+      .take(200);
   },
 });
 
@@ -90,7 +90,7 @@ export const listByPatientDateRange = query({
           .gte("date", args.startDate)
           .lte("date", args.endDate)
       )
-      .collect();
+      .take(200);
   },
 });
 
@@ -115,7 +115,7 @@ export const getStreakData = query({
           .gte("date", startStr)
           .lte("date", todayStr)
       )
-      .collect();
+      .take(200);
 
     // Deduplicate by date
     const practicedDates = new Set(logs.map((l) => l.date));

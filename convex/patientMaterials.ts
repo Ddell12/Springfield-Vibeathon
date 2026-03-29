@@ -22,6 +22,15 @@ export const assign = mutation({
       throw new ConvexError("Either sessionId or appId must be provided");
     }
 
+    if (args.goalId) {
+      const goal = await ctx.db.get(args.goalId);
+      if (!goal) throw new ConvexError("Goal not found");
+      if (goal.patientId !== args.patientId)
+        throw new ConvexError("Goal does not belong to this patient");
+      if (goal.slpUserId !== slpUserId)
+        throw new ConvexError("Not authorized to use this goal");
+    }
+
     const now = Date.now();
     await ctx.db.insert("patientMaterials", {
       patientId: args.patientId,
@@ -64,7 +73,7 @@ export const listByPatient = query({
     const materials = await ctx.db
       .query("patientMaterials")
       .withIndex("by_patientId", (q) => q.eq("patientId", args.patientId))
-      .collect();
+      .take(200);
 
     return await Promise.all(
       materials.map(async (m) => {

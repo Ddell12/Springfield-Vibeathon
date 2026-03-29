@@ -24,7 +24,7 @@ export const listByGoal = query({
       .query("progressData")
       .withIndex("by_goalId_date", (q) => q.eq("goalId", args.goalId))
       .order("desc")
-      .collect();
+      .take(200);
   },
 });
 
@@ -47,7 +47,7 @@ export const listByPatient = query({
           .gte("date", args.periodStart)
           .lte("date", args.periodEnd)
       )
-      .collect();
+      .take(200);
   },
 });
 

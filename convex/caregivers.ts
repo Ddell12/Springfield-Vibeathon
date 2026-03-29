@@ -79,6 +79,8 @@ export const acceptInvite = mutation({
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new ConvexError("Not authenticated");
 
+    // Convex mutations run with serializable isolation — concurrent calls
+    // are serialized per-document, so only one can pass the status checks.
     const link = await ctx.db
       .query("caregiverLinks")
       .withIndex("by_inviteToken", (q) => q.eq("inviteToken", args.token))
@@ -159,7 +161,7 @@ export const listByPatient = query({
     return await ctx.db
       .query("caregiverLinks")
       .withIndex("by_patientId", (q) => q.eq("patientId", args.patientId))
-      .collect();
+      .take(50);
   },
 });
 
@@ -173,7 +175,7 @@ export const listByCaregiver = query({
       .query("caregiverLinks")
       .withIndex("by_caregiverUserId", (q) => q.eq("caregiverUserId", userId))
       .filter((q) => q.eq(q.field("inviteStatus"), "accepted"))
-      .collect();
+      .take(50);
 
     return links;
   },

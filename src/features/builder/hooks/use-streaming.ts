@@ -259,7 +259,16 @@ export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn 
           }
           break;
 
-        case "token":
+        case "token": {
+          const MAX_BUFFER = 512 * 1024; // 500KB safety limit
+          if (tokenBufferRef.current.length + sseEvent.token.length > MAX_BUFFER) {
+            dispatch({ type: "SET_STREAMING_TEXT", text: tokenBufferRef.current });
+            tokenBufferRef.current = "";
+            if (rafIdRef.current) {
+              cancelAnimationFrame(rafIdRef.current);
+              rafIdRef.current = undefined;
+            }
+          }
           tokenBufferRef.current += sseEvent.token;
           if (!rafIdRef.current) {
             rafIdRef.current = requestAnimationFrame(() => {
@@ -268,6 +277,7 @@ export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn 
             });
           }
           break;
+        }
 
         case "activity":
           addActivity(sseEvent.type, sseEvent.message, sseEvent.path);
