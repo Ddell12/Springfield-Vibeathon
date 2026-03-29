@@ -55,9 +55,9 @@ describe("formatAge", () => {
     expect(result).toMatch(/^\d+mo$/);
   });
 
-  it("formats exactly 1 year old as 12mo", () => {
+  it("formats exactly 1 year old as 1y", () => {
     const result = formatAge(yearsAgo(1));
-    expect(result).toMatch(/^\d+mo$/);
+    expect(result).toBe("1y");
   });
 
   it("formats a 2-year-old as 2y", () => {
