@@ -133,16 +133,21 @@ Do not include the child's name in the app title or any visible text
 unless the therapist explicitly asks for it.
 ```
 
-### `patients.getForContext` — Internal Query
+### `patients.getForContext` — Public Query (Auth-Enforced)
 
-New `internalQuery` in `convex/patients.ts`. Returns only allowlisted fields so sanitization happens at the data layer, not just the route. Even if someone passes a raw patient object, sensitive fields were never fetched.
+New `query` in `convex/patients.ts`. Returns only allowlisted fields so sanitization happens at the data layer, not just the route. Even if someone passes a raw patient object, sensitive fields were never fetched.
+
+**Why public query, not internalQuery:** The `/api/generate` route uses `ConvexHttpClient`, which can only call public functions (`api.*`), not internal ones (`internal.*`). Auth enforcement inside the handler ensures only the owning SLP can call it. This is acceptable because the SLP already has full access to this patient data on the patient detail page — no new data exposure.
 
 ```typescript
-export const getForContext = internalQuery({
+export const getForContext = query({
   args: { patientId: v.id("patients") },
   handler: async (ctx, { patientId }) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Not authenticated");
     const patient = await ctx.db.get(patientId);
     if (!patient) return null;
+    if (patient.slpUserId !== identity.subject) return null; // auth boundary
     return {
       firstName: patient.firstName,
       diagnosis: patient.diagnosis,
@@ -150,13 +155,12 @@ export const getForContext = internalQuery({
       interests: patient.interests,
       sensoryNotes: patient.sensoryNotes,
       behavioralNotes: patient.behavioralNotes,
-      slpUserId: patient.slpUserId, // for auth check only, not sent to AI
     };
   },
 });
 ```
 
-Note: `slpUserId` is returned for the auth check in the route handler but is NOT passed to `sanitizePatientContext()`.
+Note: `slpUserId` is used for the auth check inside the handler but is NOT returned in the result or passed to `sanitizePatientContext()`.
 
 ---
 
@@ -175,8 +179,8 @@ patientId: z.string().optional()
 ### Route Handler Logic (when patientId present)
 
 1. **Validate** — confirm patientId is a non-empty string (Convex ID format)
-2. **Fetch** — server-side calls to `patients.getForContext(patientId)` and `goals.listActive(patientId)` via Convex client
-3. **Auth check** — verify `auth.userId === patient.slpUserId`. If mismatch → 403 generic "Not authorized" (no patient details in error body)
+2. **Fetch** — server-side calls to `patients.getForContext(patientId)` and `goals.listActive(patientId)` via `ConvexHttpClient` (public queries)
+3. **Auth check** — `getForContext` enforces auth internally (returns null for non-owning SLPs). Route handler treats null return as "patient not found" → graceful degradation
 4. **Sanitize** — `sanitizePatientContext(patient, goals)` produces the allowlisted object
 5. **Inject** — `buildPatientContextBlock()` returns the prompt string, appended to system prompt
 6. **Persist** — pass `patientId` to session create/update mutation
@@ -313,8 +317,8 @@ Navigates to `/builder?patientId={id}` using Next.js `<Link>`.
 
 | File | Change |
 |---|---|
-| `convex/schema.ts` | Add optional `patientId` to sessions, `goalId` to patientMaterials |
-| `convex/patients.ts` | Add `getForContext` internalQuery |
+| `convex/schema.ts` | Add optional `patientId` to sessions, `goalId` to patientMaterials, `material-generated-for-patient` to activityLog action union |
+| `convex/patients.ts` | Add `getForContext` public query (auth-enforced, allowlisted fields) |
 | `convex/sessions.ts` | Accept optional `patientId` in create/update |
 | `convex/patientMaterials.ts` | Accept optional `goalId` in assign (future-proof) |
 | `src/app/api/generate/route.ts` | Fetch patient context, inject into prompt, pass patientId to session |
@@ -340,7 +344,7 @@ Navigates to `/builder?patientId={id}` using Next.js `<Link>`.
 
 | Test | What it verifies |
 |---|---|
-| `patients.getForContext` | Returns only allowlisted fields; returns null for invalid ID; includes slpUserId for auth |
+| `patients.getForContext` | Returns only allowlisted fields; returns null for invalid ID; returns null for non-owning SLP (auth boundary) |
 | `sessions.create` with patientId | patientId persisted on session document |
 | `patientMaterials.assign` with goalId | goalId persisted (future-proof field) |
 
@@ -367,9 +371,9 @@ Navigates to `/builder?patientId={id}` using Next.js `<Link>`.
 These decisions are made now to minimize future rework when pursuing BAA coverage:
 
 1. **Allowlist, not blocklist** — `sanitizePatientContext()` explicitly names every field sent to the AI. New fields are blocked by default.
-2. **Data layer sanitization** — `patients.getForContext` (internalQuery) returns only safe fields. The route handler never sees full patient records.
+2. **Data layer sanitization** — `patients.getForContext` returns only safe fields. The route handler never sees full patient records. Auth is enforced inside the handler (returns null for non-owning SLPs).
 3. **No PII in generated output** — System prompt instructs Claude not to include the child's name in visible app text unless explicitly asked.
 4. **No PII in logs** — Error handlers strip patient details before logging. Only `patientId` (an opaque Convex ID) appears in logs.
 5. **No PII persisted on sessions** — Only the `patientId` foreign key is stored. Full context is fetched fresh at generation time and stays in server memory.
-6. **Auth boundary** — Patient context only accessible to the owning SLP. Auth check compares Clerk user ID to `patient.slpUserId`.
-7. **Internal query** — `getForContext` is `internalQuery`, not callable from client SDK. Patient context flows only through the server-side route.
+6. **Auth boundary** — Patient context only accessible to the owning SLP. Auth check inside `getForContext` compares Clerk identity to `patient.slpUserId`. Route handler also validates before proceeding.
+7. **No new client exposure** — `getForContext` is a public query (required by `ConvexHttpClient`), but it returns the same subset of data the SLP already sees on the patient detail page. Auth enforcement prevents cross-SLP access.
