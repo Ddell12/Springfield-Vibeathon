@@ -420,6 +420,12 @@ export default defineSchema({
     ),
     startDate: v.string(),
     endDate: v.optional(v.string()),
+    type: v.optional(v.union(v.literal("standard"), v.literal("speech-coach"))),
+    speechCoachConfig: v.optional(v.object({
+      targetSounds: v.array(v.string()),
+      ageRange: v.union(v.literal("2-4"), v.literal("5-7")),
+      defaultDurationMinutes: v.number(),
+    })),
   })
     .index("by_patientId", ["patientId"])
     .index("by_patientId_status", ["patientId", "status"]),
@@ -446,6 +452,61 @@ export default defineSchema({
     readAt: v.optional(v.number()),
   })
     .index("by_patientId_timestamp", ["patientId", "timestamp"]),
+
+  speechCoachSessions: defineTable({
+    patientId: v.id("patients"),
+    homeProgramId: v.id("homePrograms"),
+    caregiverUserId: v.string(),
+    agentId: v.string(),
+    conversationId: v.optional(v.string()),
+    status: v.union(
+      v.literal("configuring"),
+      v.literal("active"),
+      v.literal("completed"),
+      v.literal("analyzed"),
+      v.literal("failed")
+    ),
+    config: v.object({
+      targetSounds: v.array(v.string()),
+      ageRange: v.union(v.literal("2-4"), v.literal("5-7")),
+      durationMinutes: v.number(),
+      focusArea: v.optional(v.string()),
+    }),
+    startedAt: v.optional(v.number()),
+    endedAt: v.optional(v.number()),
+    transcriptStorageId: v.optional(v.id("_storage")),
+    errorMessage: v.optional(v.string()),
+  })
+    .index("by_patientId_startedAt", ["patientId", "startedAt"])
+    .index("by_homeProgramId", ["homeProgramId"]),
+
+  speechCoachProgress: defineTable({
+    sessionId: v.id("speechCoachSessions"),
+    patientId: v.id("patients"),
+    caregiverUserId: v.string(),
+    soundsAttempted: v.array(
+      v.object({
+        sound: v.string(),
+        wordsAttempted: v.number(),
+        approximateSuccessRate: v.union(
+          v.literal("high"),
+          v.literal("medium"),
+          v.literal("low")
+        ),
+        notes: v.string(),
+      })
+    ),
+    overallEngagement: v.union(
+      v.literal("high"),
+      v.literal("medium"),
+      v.literal("low")
+    ),
+    recommendedNextFocus: v.array(v.string()),
+    summary: v.string(),
+    analyzedAt: v.number(),
+  })
+    .index("by_patientId", ["patientId"])
+    .index("by_sessionId", ["sessionId"]),
 });
 
 /** Active session states used by current code. Legacy states are read-only. */
