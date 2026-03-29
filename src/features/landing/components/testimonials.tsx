@@ -39,7 +39,7 @@ export function Testimonials() {
         {testimonials.map((t) => (
           <div
             key={t.name}
-            className="bg-surface-container-lowest rounded-xl p-8 sanctuary-shadow flex flex-col gap-6"
+            className="bg-surface-container-lowest rounded-xl p-8 sanctuary-shadow flex flex-col gap-6 hover:-translate-y-1 hover:shadow-md transition-all duration-300"
           >
             <p className="text-on-surface-variant leading-relaxed text-sm italic flex-1">
               &ldquo;{t.quote}&rdquo;

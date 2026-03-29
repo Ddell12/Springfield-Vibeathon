@@ -29,7 +29,7 @@ export function PatientRow({ patient, isExpanded, onToggle }: PatientRowProps) {
 
       {/* Name + Age */}
       <div className="min-w-0 flex-1">
-        <p className="truncate font-medium text-foreground">
+        <p className="truncate font-medium text-on-surface">
           {patient.firstName} {patient.lastName}
         </p>
         <p className="text-xs text-on-surface-variant">{formatAge(patient.dateOfBirth)}</p>

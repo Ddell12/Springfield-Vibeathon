@@ -18,7 +18,7 @@ export function SessionNotesList({ patientId }: SessionNotesListProps) {
     <div className="rounded-2xl bg-surface-container/30 p-5">
       {/* Header */}
       <div className="mb-4 flex items-center justify-between">
-        <h3 className="font-manrope text-base font-semibold text-foreground">
+        <h3 className="font-headline text-base font-semibold text-on-surface">
           Session Notes
         </h3>
         <Button asChild size="sm">

@@ -92,7 +92,7 @@ export function MyToolsPage() {
         ))}
       </div>
 
-      <section className="mt-20 p-10 rounded-xl bg-surface-container-lowest ring-1 ring-outline-variant/10 relative overflow-hidden flex flex-col md:flex-row items-center gap-10">
+      <section className="mt-20 p-10 rounded-xl bg-surface-container-lowest relative overflow-hidden flex flex-col md:flex-row items-center gap-10">
         <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -mr-20 -mt-20" />
         <div className="relative z-10 md:w-2/3">
           <h2 className="font-headline font-bold text-3xl text-on-surface mb-4">
@@ -105,13 +105,13 @@ export function MyToolsPage() {
           <div className="mt-8 flex gap-4">
             <Link
               href="/builder"
-              className="bg-primary text-on-primary px-6 py-3 rounded-lg font-semibold hover:bg-primary-container transition-colors"
+              className="bg-primary-gradient text-on-primary px-6 py-3 rounded-lg font-semibold hover:opacity-90 transition-colors duration-300"
             >
               Start Building
             </Link>
             <Link
               href="/templates"
-              className="text-primary font-semibold px-6 py-3 rounded-lg hover:bg-surface-container-high transition-colors"
+              className="text-primary font-semibold px-6 py-3 rounded-lg hover:bg-surface-container-high transition-colors duration-300"
             >
               Browse Templates
             </Link>

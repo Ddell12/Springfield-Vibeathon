@@ -4,8 +4,12 @@ import { MaterialIcon } from "@/shared/components/material-icon";
 
 export function HeroSection() {
   return (
-    <section className="max-w-7xl mx-auto px-6 py-20 md:py-32">
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+    <section className="relative overflow-hidden max-w-7xl mx-auto px-6 py-20 md:py-32">
+      {/* Atmospheric depth */}
+      <div className="pointer-events-none absolute -top-32 -right-32 h-[500px] w-[500px] rounded-full bg-primary/5 blur-[100px]" />
+      <div className="pointer-events-none absolute -bottom-48 -left-48 h-[400px] w-[400px] rounded-full bg-secondary/5 blur-[100px]" />
+
+      <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
         {/* Left Column */}
         <div className="lg:col-span-6 space-y-8">
           <div className="inline-flex items-center gap-2 bg-tertiary-fixed text-on-tertiary-fixed px-4 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider">

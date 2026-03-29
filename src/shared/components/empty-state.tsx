@@ -126,12 +126,12 @@ export function EmptyState({
       </div>
 
       {/* Title */}
-      <h2 className="font-headline text-xl font-semibold text-foreground">
+      <h2 className="font-headline text-xl font-semibold text-on-surface">
         {title}
       </h2>
 
       {/* Description */}
-      <p className="max-w-sm text-sm text-muted">
+      <p className="max-w-sm text-sm text-on-surface-variant">
         {description}
       </p>
 

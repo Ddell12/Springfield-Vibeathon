@@ -71,7 +71,7 @@ export function FlashcardPreviewPanel({
     <div className="flex h-full flex-col">
       {/* Deck context header */}
       {deck && (
-        <div className="flex shrink-0 items-center justify-between border-b border-border/30 px-4 py-2">
+        <div className="flex shrink-0 items-center justify-between bg-surface-container-low px-4 py-2">
           <div className="flex items-center gap-2">
             <MaterialIcon icon="collections_bookmark" size="xs" className="text-primary" />
             <span className="truncate text-sm font-medium text-on-surface">

@@ -6,8 +6,8 @@ export function CtaSection() {
   return (
     <section className="px-6 py-16 max-w-7xl mx-auto">
       <div className="bg-primary-gradient rounded-3xl px-10 py-16 text-center flex flex-col items-center gap-6 relative overflow-hidden">
-        <div className="absolute -top-24 -right-24 w-64 h-64 rounded-full border border-white/10" />
-        <div className="absolute -bottom-16 -left-16 w-48 h-48 rounded-full border border-white/10" />
+        <div className="pointer-events-none absolute -top-24 -right-24 w-64 h-64 rounded-full border border-white/10" />
+        <div className="pointer-events-none absolute -bottom-16 -left-16 w-48 h-48 rounded-full border border-white/10" />
 
         <div className="relative z-10 flex flex-col items-center gap-6 max-w-2xl">
           <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center">
@@ -21,7 +21,7 @@ export function CtaSection() {
           </p>
           <Link
             href="/builder"
-            className="bg-white text-primary px-10 py-4 rounded-xl text-lg font-bold font-headline hover:bg-white/90 transition-colors active:scale-95 inline-flex items-center gap-2 group focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-primary"
+            className="bg-white text-primary px-10 py-4 rounded-xl text-lg font-bold font-headline hover:bg-white/90 transition-colors duration-300 active:scale-95 inline-flex items-center gap-2 group focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-primary"
           >
             Build Your First App
             <MaterialIcon

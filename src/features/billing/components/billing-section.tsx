@@ -83,7 +83,7 @@ export function BillingSection() {
         </div>
 
         {!isPremium && (
-          <div className="border-t border-outline-variant pt-4 space-y-2">
+          <div className="bg-surface-container-low rounded-lg pt-4 px-3 space-y-2">
             <div className="flex justify-between text-sm">
               <span className="text-on-surface-variant">Apps</span>
               <span className="font-medium text-on-surface">

@@ -61,7 +61,7 @@ export function ShareDialog({
           <button
             type="button"
             onClick={() => onOpenChange(false)}
-            className="p-1 hover:bg-surface-container transition-colors rounded-full text-on-surface-variant"
+            className="p-1 hover:bg-surface-container transition-colors duration-300 rounded-full text-on-surface-variant"
             aria-label="Close"
           >
             <MaterialIcon icon="close" size="sm" />

@@ -116,7 +116,7 @@ export function FlashcardChatPanel({
 
       <form
         onSubmit={handleSubmit}
-        className="border-t border-border/40 bg-surface-container-lowest px-4 pt-3 pb-4"
+        className="bg-surface-container-low px-4 pt-3 pb-4"
       >
         <div className="flex items-center gap-2">
           <VoiceInput

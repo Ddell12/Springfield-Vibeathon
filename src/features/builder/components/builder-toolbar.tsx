@@ -129,7 +129,7 @@ export function BuilderToolbar({
             aria-selected={mobilePanel === "chat"}
             onClick={() => onMobilePanelChange("chat")}
             className={cn(
-              "min-h-[44px] rounded-md px-3 py-1 text-[13px] font-semibold transition-colors duration-200",
+              "min-h-[44px] rounded-md px-3 py-1 text-[13px] font-semibold transition-colors duration-300",
               mobilePanel === "chat"
                 ? "bg-white text-primary shadow-sm dark:bg-surface-container-lowest"
                 : "text-on-surface-variant hover:text-primary"
@@ -142,7 +142,7 @@ export function BuilderToolbar({
             aria-selected={mobilePanel === "preview"}
             onClick={() => onMobilePanelChange("preview")}
             className={cn(
-              "min-h-[44px] rounded-md px-3 py-1 text-[13px] font-semibold transition-colors duration-200",
+              "min-h-[44px] rounded-md px-3 py-1 text-[13px] font-semibold transition-colors duration-300",
               mobilePanel === "preview"
                 ? "bg-white text-primary shadow-sm dark:bg-surface-container-lowest"
                 : "text-on-surface-variant hover:text-primary"
@@ -162,7 +162,7 @@ export function BuilderToolbar({
             aria-selected={view === "preview"}
             onClick={() => onViewChange("preview")}
             className={cn(
-              "rounded-md px-3 py-1 text-[13px] font-semibold transition-colors duration-200",
+              "rounded-md px-3 py-1 text-[13px] font-semibold transition-colors duration-300",
               view === "preview"
                 ? "bg-white text-primary shadow-sm"
                 : "text-on-surface-variant hover:text-primary"

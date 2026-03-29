@@ -50,7 +50,7 @@ export function FamilyDashboard({ paramsPromise }: FamilyDashboardProps) {
   }
 
   const childName = patient?.firstName ?? "your child";
-  const metGoals = goals?.filter((g) => g.status === "met") ?? [];
+  const metGoals = goals?.filter((g: { status: string }) => g.status === "met") ?? [];
 
   return (
     <div className="flex flex-col gap-6 p-4 sm:p-6">
@@ -69,7 +69,7 @@ export function FamilyDashboard({ paramsPromise }: FamilyDashboardProps) {
         <CelebrationCard
           childName={childName}
           currentStreak={streakData.currentStreak}
-          goals={metGoals.map((g) => ({
+          goals={metGoals.map((g: { status: string; shortDescription: string }) => ({
             status: g.status,
             shortDescription: g.shortDescription,
           }))}

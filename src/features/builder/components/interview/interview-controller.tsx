@@ -43,7 +43,7 @@ function AnsweredQuestions({
         return (
           <div key={q.id} className="flex flex-col gap-2">
             <div className="flex justify-start">
-              <div className="max-w-[85%] break-words rounded-2xl rounded-bl-md border border-outline-variant/15 bg-surface-container px-4 py-3">
+              <div className="max-w-[85%] break-words rounded-2xl rounded-bl-md bg-surface-container px-4 py-3">
                 <p className="text-sm text-foreground">{q.text}</p>
               </div>
             </div>
@@ -246,7 +246,7 @@ export function InterviewController({
         <AnsweredQuestions questions={answeredEssentialQuestions} answers={state.answers} />
 
         <div className="flex justify-start">
-          <div className="max-w-[85%] break-words rounded-2xl rounded-bl-md border border-outline-variant/15 bg-surface-container px-4 py-3">
+          <div className="max-w-[85%] break-words rounded-2xl rounded-bl-md bg-surface-container px-4 py-3">
             <p className="text-sm text-foreground">
               I have enough to get started! Want to customize further?
             </p>

@@ -325,7 +325,7 @@ export function SessionNoteEditor({
         </Link>
 
         <div className="flex items-center justify-between">
-          <h1 className="font-[family-name:var(--font-manrope)] text-2xl font-bold text-foreground">
+          <h1 className="font-headline text-2xl font-bold text-on-surface">
             {noteId ? "Edit Session Note" : "New Session Note"}
           </h1>
 

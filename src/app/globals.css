@@ -60,6 +60,25 @@
   --color-muted: oklch(0.370 0.018 195);
   --color-border: oklch(0.818 0.014 199);
 
+  /* shadcn-compat aliases — map to Material 3 surface hierarchy */
+  --color-card: oklch(1 0 0);
+  --color-card-foreground: oklch(0.192 0.020 255);
+  --color-popover: oklch(1 0 0);
+  --color-popover-foreground: oklch(0.192 0.020 255);
+  --color-primary-foreground: oklch(1 0 0);
+  --color-secondary-foreground: oklch(1 0 0);
+  --color-accent: oklch(0.958 0.012 268);
+  --color-accent-foreground: oklch(0.192 0.020 255);
+  --color-destructive: oklch(0.454 0.170 25);
+  --color-destructive-foreground: oklch(1 0 0);
+  --color-muted-foreground: oklch(0.370 0.018 195);
+  --color-ring: oklch(0.352 0.055 192);
+  --color-input: oklch(0.920 0.014 262);
+  --color-sidebar-background: oklch(0.940 0.014 265);
+  --color-sidebar-foreground: oklch(0.192 0.020 255);
+  --color-sidebar-accent: oklch(0.958 0.012 268);
+  --color-sidebar-accent-foreground: oklch(0.192 0.020 255);
+
   /* Font tokens */
   --font-headline: 'Manrope', system-ui, sans-serif;
   --font-body: 'Inter', system-ui, sans-serif;
@@ -89,6 +108,25 @@
   --color-muted: oklch(0.778 0.016 220);
   --color-border: oklch(0.339 0.017 237);
   --color-background: oklch(0.155 0.015 260);
+
+  /* shadcn-compat dark overrides */
+  --color-card: oklch(0.230 0.020 260);
+  --color-card-foreground: oklch(0.928 0.014 268);
+  --color-popover: oklch(0.230 0.020 260);
+  --color-popover-foreground: oklch(0.928 0.014 268);
+  --color-primary-foreground: oklch(1 0 0);
+  --color-secondary-foreground: oklch(1 0 0);
+  --color-accent: oklch(0.280 0.018 260);
+  --color-accent-foreground: oklch(0.928 0.014 268);
+  --color-destructive: oklch(0.600 0.170 25);
+  --color-destructive-foreground: oklch(1 0 0);
+  --color-muted-foreground: oklch(0.778 0.016 220);
+  --color-ring: oklch(0.441 0.063 190);
+  --color-input: oklch(0.280 0.018 260);
+  --color-sidebar-background: oklch(0.190 0.017 260);
+  --color-sidebar-foreground: oklch(0.928 0.014 268);
+  --color-sidebar-accent: oklch(0.280 0.018 260);
+  --color-sidebar-accent-foreground: oklch(0.928 0.014 268);
 }
 
 /* Utility classes */
@@ -103,6 +141,10 @@
 .glass-effect {
   background: oklch(1 0 0 / 0.8);
   backdrop-filter: blur(20px);
+}
+
+.dark .glass-effect {
+  background: oklch(0.155 0.015 260 / 0.8);
 }
 
 .safe-space-container {

@@ -41,7 +41,7 @@ export function MarketingHeader() {
                 className={cn(
                   "font-headline font-bold text-lg tracking-tight transition-colors rounded-lg px-3 py-1",
                   pathname === href
-                    ? "text-primary border-b-2 border-primary pb-1"
+                    ? "text-primary bg-primary/10"
                     : "text-on-surface-variant hover:text-primary hover:bg-surface-container-low"
                 )}
               >

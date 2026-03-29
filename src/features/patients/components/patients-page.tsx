@@ -40,7 +40,7 @@ export function PatientsPage() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-foreground">My Caseload</h1>
+          <h1 className="text-2xl font-semibold text-on-surface font-headline">My Caseload</h1>
           {stats && (
             <p className="text-sm text-on-surface-variant">
               {stats.active} active patient{stats.active !== 1 ? "s" : ""}
@@ -63,7 +63,7 @@ export function PatientsPage() {
               key={f.label}
               onClick={() => setStatusFilter(f.value)}
               className={cn(
-                "shrink-0 rounded-full px-3 py-1.5 text-sm font-medium transition-colors",
+                "shrink-0 rounded-full px-3 py-1.5 text-sm font-medium transition-colors duration-300",
                 statusFilter === f.value
                   ? "bg-primary text-white"
                   : "bg-surface-container text-on-surface-variant hover:bg-surface-container-high"
@@ -91,7 +91,7 @@ export function PatientsPage() {
           <div className="flex h-16 w-16 items-center justify-center rounded-full bg-surface-container">
             <MaterialIcon icon="group" size="lg" className="text-on-surface-variant" />
           </div>
-          <p className="text-lg font-medium text-foreground">
+          <p className="text-lg font-medium text-on-surface">
             {search ? "No patients match your search" : "No patients yet"}
           </p>
           {!search && (

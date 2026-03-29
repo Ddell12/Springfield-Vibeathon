@@ -26,7 +26,7 @@ export function SettingsSidebar({
       {/* Back to dashboard */}
       <Link
         href="/dashboard"
-        className="mb-4 flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors"
+        className="mb-4 flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors duration-300"
       >
         <MaterialIcon icon="arrow_back" className="text-sm" />
         <span>Back</span>

@@ -32,7 +32,7 @@ export function AccountSection() {
         <Button
           variant="outline"
           disabled
-          className="w-full py-3 px-6 rounded-lg border-2 border-error/20 text-error font-bold text-sm hover:bg-error/5 transition-colors h-auto"
+          className="w-full py-3 px-6 rounded-lg border-2 border-error/20 text-error font-bold text-sm hover:bg-error/5 transition-colors duration-300 h-auto"
         >
           Delete account
         </Button>

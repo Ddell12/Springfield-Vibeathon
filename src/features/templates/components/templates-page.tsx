@@ -38,7 +38,7 @@ export function TemplatesPage() {
             <Link
               key={template.id}
               href={`/builder?prompt=${encodeURIComponent(template.prompt)}`}
-              className="group relative overflow-hidden rounded-2xl bg-surface-container-lowest transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
+              className="group relative overflow-hidden rounded-2xl bg-surface-container-lowest transition-all duration-300 hover:shadow-xl hover:-translate-y-1.5 hover:scale-[1.01]"
             >
               {/* Gradient thumbnail */}
               <div
@@ -59,7 +59,7 @@ export function TemplatesPage() {
 
               {/* Card footer */}
               <div className="p-5">
-                <h3 className="font-headline font-bold text-lg text-on-surface group-hover:text-primary transition-colors">
+                <h3 className="font-headline font-bold text-lg text-on-surface group-hover:text-primary transition-colors duration-300">
                   {template.title}
                 </h3>
                 <p className="text-on-surface-variant text-sm mt-1">Click to build</p>

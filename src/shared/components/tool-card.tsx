@@ -37,7 +37,7 @@ export function ToolCard({
 
   return (
     <>
-      <div className="group bg-surface-container-lowest rounded-xl ring-1 ring-outline-variant/10 sanctuary-shadow overflow-hidden transition-all duration-300 hover:translate-y-[-4px] hover:shadow-lg flex flex-col">
+      <div className="group bg-surface-container-lowest rounded-xl sanctuary-shadow overflow-hidden transition-all duration-300 hover:translate-y-[-4px] hover:shadow-lg flex flex-col">
         {/* Image area */}
         <div className="aspect-[4/3] bg-surface-container-low relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-primary-fixed/20 to-surface-container-low transition-transform duration-500 group-hover:scale-105" />

@@ -233,7 +233,7 @@ export function PatientIntakeForm() {
         <button
           type="button"
           onClick={() => setShowOptional(!showOptional)}
-          className="flex items-center gap-2 text-sm font-medium text-on-surface-variant hover:text-foreground transition-colors"
+          className="flex items-center gap-2 text-sm font-medium text-on-surface-variant hover:text-on-surface transition-colors duration-300"
         >
           <MaterialIcon
             icon={showOptional ? "expand_less" : "expand_more"}
@@ -255,7 +255,7 @@ export function PatientIntakeForm() {
                       communicationLevel === level.value ? "" : level.value
                     )}
                     className={cn(
-                      "rounded-lg px-3 py-1.5 text-sm font-medium transition-colors",
+                      "rounded-lg px-3 py-1.5 text-sm font-medium transition-colors duration-300",
                       communicationLevel === level.value
                         ? "bg-primary text-white"
                         : "bg-surface-container-high text-on-surface-variant hover:bg-surface-container-highest"

@@ -45,7 +45,7 @@ export function HowItWorks() {
           {steps.map((step) => (
             <div
               key={step.title}
-              className="bg-surface-container-lowest rounded-xl p-8 sanctuary-shadow hover:shadow-md transition-shadow group"
+              className="bg-surface-container-lowest rounded-xl p-8 sanctuary-shadow hover:shadow-md hover:-translate-y-1 transition-all duration-300 group"
             >
               <div
                 className={`w-14 h-14 ${step.bg} rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform`}

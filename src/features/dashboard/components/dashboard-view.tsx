@@ -57,7 +57,7 @@ export function DashboardView() {
         <div className="flex items-center gap-3">
           <button
             onClick={() => setDrawerOpen(true)}
-            className="flex h-11 w-11 items-center justify-center rounded-lg hover:bg-surface-container-low transition-colors active:scale-95"
+            className="flex h-11 w-11 items-center justify-center rounded-lg hover:bg-surface-container-low transition-colors duration-300 active:scale-95"
             aria-label="Open navigation menu"
           >
             <MaterialIcon icon="menu" size="md" className="text-primary" />
@@ -90,11 +90,12 @@ export function DashboardView() {
       </header>
 
       {/* Hero Section */}
-      <section className="mx-auto max-w-4xl px-6 pb-16 pt-20 text-center">
-        <h2 className="mb-4 font-headline text-5xl font-bold tracking-tight text-on-surface">
+      <section className="relative overflow-hidden mx-auto max-w-4xl px-6 pb-16 pt-20 text-center">
+        <div className="pointer-events-none absolute -top-20 left-1/2 -translate-x-1/2 h-[300px] w-[600px] rounded-full bg-primary/3 blur-[80px]" />
+        <h2 className="relative z-10 mb-4 font-headline text-5xl font-bold tracking-tight text-on-surface">
           What would you like to build?
         </h2>
-        <p className="mb-10 font-body text-lg text-on-surface-variant">
+        <p className="relative z-10 mb-10 font-body text-lg text-on-surface-variant">
           Describe your idea, and Bridges will build it instantly.
         </p>
 
@@ -107,7 +108,7 @@ export function DashboardView() {
             <button
               key={chip}
               onClick={() => router.push(`/builder?prompt=${encodeURIComponent(`Build a ${chip} for a child`)}`)}
-              className="min-h-[44px] rounded-full bg-surface-container-low px-5 py-2 font-body text-sm text-on-surface-variant ring-1 ring-outline-variant/10 transition-colors hover:bg-surface-container-high"
+              className="min-h-[44px] rounded-full bg-surface-container-low px-5 py-2 font-body text-sm text-on-surface-variant transition-colors duration-300 hover:bg-surface-container-high"
             >
               {chip}
             </button>
@@ -118,7 +119,7 @@ export function DashboardView() {
       {/* Tab & Grid Container */}
       <section className="mt-8 min-h-full rounded-t-[3rem] bg-surface-container-low px-12 pt-16">
         <Tabs value={activeTab} onValueChange={handleTabChange}>
-          <TabsList variant="line" className="mb-10 gap-10 border-b border-outline-variant/10">
+          <TabsList variant="line" className="mb-10 gap-10">
             <TabsTrigger
               value="recent"
               className="min-h-[44px] pb-4 font-body text-sm data-[state=active]:font-bold data-[state=active]:text-primary data-[state=active]:after:bg-primary"
