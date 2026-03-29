@@ -6,7 +6,7 @@ import { startTransition, useCallback, useEffect, useRef, useState } from "react
 import { toast } from "sonner";
 
 import { useIsMobile } from "@/core/hooks/use-mobile";
-import { ShareDialog } from "@/features/sharing/components/share-dialog";
+import { ShareDialog } from "@/shared/components/share-dialog";
 import { MaterialIcon } from "@/shared/components/material-icon";
 import { SuggestionChips } from "@/shared/components/suggestion-chips";
 import { Button } from "@/shared/components/ui/button";
