@@ -16,6 +16,7 @@ export default defineSchema({
     previewUrl: v.optional(v.string()),
     publishedUrl: v.optional(v.string()),
     type: v.optional(v.union(v.literal("builder"), v.literal("flashcards"))),
+    patientId: v.optional(v.id("patients")),
   }).index("by_user", ["userId"])
     .index("by_state", ["state"])
     .index("by_state_user", ["state", "userId"]),
@@ -185,6 +186,7 @@ export default defineSchema({
     assignedBy: v.string(),
     assignedAt: v.number(),
     notes: v.optional(v.string()),
+    goalId: v.optional(v.id("goals")),
   }).index("by_patientId", ["patientId"])
     .index("by_sessionId", ["sessionId"]),
 
@@ -204,7 +206,8 @@ export default defineSchema({
       v.literal("goal-created"),
       v.literal("goal-met"),
       v.literal("goal-modified"),
-      v.literal("report-generated")
+      v.literal("report-generated"),
+      v.literal("material-generated-for-patient")
     ),
     details: v.optional(v.string()),
     timestamp: v.number(),
