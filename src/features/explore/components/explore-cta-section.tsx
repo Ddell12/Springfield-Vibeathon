@@ -19,7 +19,7 @@ export function ExploreCtaSection() {
         </Link>
         <Link
           href="/templates"
-          className="px-8 py-4 rounded-lg font-semibold text-lg text-on-surface-variant border border-outline-variant/20 hover:bg-surface-container transition-all duration-300"
+          className="px-8 py-4 rounded-lg font-semibold text-lg text-on-surface-variant bg-surface-container hover:bg-surface-container-low transition-all duration-300"
         >
           Browse Templates
         </Link>

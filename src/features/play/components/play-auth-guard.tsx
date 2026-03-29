@@ -50,7 +50,7 @@ export function PlayAuthGuard({ patientId, children }: PlayAuthGuardProps) {
     return (
       <div className="flex h-screen flex-col items-center justify-center gap-4 bg-background p-8 text-center">
         <div className="text-4xl">🔒</div>
-        <h1 className="text-xl font-semibold text-foreground font-[family-name:var(--font-manrope)]">
+        <h1 className="text-xl font-semibold text-foreground font-headline">
           No access
         </h1>
         <p className="max-w-sm text-muted-foreground">

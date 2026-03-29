@@ -42,7 +42,7 @@ interface DemoToolModalProps {
 
 function ModalHeader({ title, description, prompt }: { title: string; description: string; prompt: string }) {
   return (
-    <div className="flex items-center justify-between px-5 py-3 border-b border-outline-variant/10 bg-surface sticky top-0 z-10">
+    <div className="flex items-center justify-between px-5 py-3 bg-surface-container-low sticky top-0 z-10">
       <div className="min-w-0">
         <h2 className="font-headline font-bold text-lg text-on-surface truncate">
           {title}
@@ -69,7 +69,7 @@ function ModalIframe({ shareSlug, title }: { shareSlug: string; title: string })
       <iframe
         src={`/api/tool/${shareSlug}`}
         title={title}
-        sandbox="allow-scripts"
+        sandbox="allow-scripts allow-same-origin"
         className="w-full h-full border-0"
       />
     </div>

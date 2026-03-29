@@ -10,6 +10,8 @@ import { Button } from "@/shared/components/ui/button";
 import {
   Sheet,
   SheetContent,
+  SheetDescription,
+  SheetTitle,
   SheetTrigger,
 } from "@/shared/components/ui/sheet";
 
@@ -82,6 +84,8 @@ export function MarketingHeader() {
                 </Button>
               </SheetTrigger>
               <SheetContent side="right" className="w-64">
+                <SheetTitle className="sr-only">Navigation</SheetTitle>
+                <SheetDescription className="sr-only">Main navigation menu</SheetDescription>
                 <nav className="flex flex-col gap-2 mt-8">
                   {navLinks.map(({ href, label }) => (
                     <Link

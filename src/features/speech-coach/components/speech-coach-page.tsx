@@ -40,7 +40,7 @@ export function SpeechCoachPage({ patientId, homeProgramId }: Props) {
   if (!isAuthenticated) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-4 p-8 text-center">
-        <h2 className="font-manrope text-2xl font-bold text-foreground">Speech Coach</h2>
+        <h2 className="font-headline text-2xl font-bold text-foreground">Speech Coach</h2>
         <p className="text-muted-foreground">Sign in to start a speech coaching session.</p>
       </div>
     );
@@ -71,7 +71,7 @@ export function SpeechCoachPage({ patientId, homeProgramId }: Props) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-6 p-8">
         <p className="text-4xl" aria-hidden="true">{"\uD83C\uDF89"}</p>
-        <h2 className="font-manrope text-2xl font-bold text-foreground">Great job!</h2>
+        <h2 className="font-headline text-2xl font-bold text-foreground">Great job!</h2>
         <p className="text-muted-foreground">
           {session.phase === "ending" ? "Reviewing the session..." : "Session complete!"}
         </p>
@@ -95,7 +95,7 @@ export function SpeechCoachPage({ patientId, homeProgramId }: Props) {
   if (session.phase === "error") {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-4 p-8 text-center">
-        <h2 className="font-manrope text-xl font-bold text-foreground">Something went wrong</h2>
+        <h2 className="font-headline text-xl font-bold text-foreground">Something went wrong</h2>
         <p className="text-sm text-muted-foreground">{session.error}</p>
         <button
           type="button"
@@ -117,15 +117,15 @@ export function SpeechCoachPage({ patientId, homeProgramId }: Props) {
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
-      <div className="border-b border-border/50 px-6 pt-6 pb-4">
-        <h1 className="font-manrope text-2xl font-bold text-foreground">Speech Coach</h1>
+      <div className="bg-surface-container-low px-6 pt-6 pb-4">
+        <h1 className="font-headline text-2xl font-bold text-foreground">Speech Coach</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Interactive voice sessions to help practice speech sounds
         </p>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 border-b border-border/50 px-6">
+      <div className="flex gap-1 bg-surface-container-low px-6">
         {TABS.map((tab) => (
           <button
             key={tab.id}

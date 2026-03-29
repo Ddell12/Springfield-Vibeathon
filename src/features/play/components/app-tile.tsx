@@ -39,7 +39,7 @@ export function AppTile({ appId, patientId, title, index, hasPracticeProgram }: 
       )}
     >
       <span className="text-4xl" role="img" aria-hidden="true">{icon}</span>
-      <span className="text-center text-sm font-semibold text-foreground line-clamp-2 font-[family-name:var(--font-manrope)]">
+      <span className="text-center text-sm font-semibold text-foreground line-clamp-2 font-headline">
         {title}
       </span>
       {hasPracticeProgram && (
