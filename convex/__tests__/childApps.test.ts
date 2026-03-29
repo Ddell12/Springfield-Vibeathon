@@ -193,3 +193,54 @@ describe("childApps schema", () => {
     expect(link?.kidModePIN).toBe("hashed-pin-value");
   });
 });
+
+describe("childApps — full integration flow", () => {
+  it("assign → listByPatient → getBundleForApp → remove", async () => {
+    const t = convexTest(schema, modules);
+    const { patientId, appId } = await setupPatientWithApp(t);
+    const slp = t.withIdentity(SLP_IDENTITY);
+
+    // Assign
+    const childAppId = await slp.mutation(api.childApps.assign, {
+      patientId,
+      appId,
+      label: "Fun Practice Game",
+    });
+
+    // List — should include enriched data
+    const list = await slp.query(api.childApps.listByPatient, { patientId });
+    expect(list).toHaveLength(1);
+    expect(list[0].label).toBe("Fun Practice Game");
+    expect(list[0].appTitle).toBe("Test Therapy App");
+
+    // Get bundle
+    const bundle = await slp.query(api.childApps.getBundleForApp, {
+      patientId,
+      appId,
+    });
+    expect(bundle).toContain("<html>");
+
+    // Remove
+    await slp.mutation(api.childApps.remove, { childAppId });
+    const afterRemove = await slp.query(api.childApps.listByPatient, { patientId });
+    expect(afterRemove).toHaveLength(0);
+
+    // Bundle should return null after removal
+    const bundleAfter = await slp.query(api.childApps.getBundleForApp, {
+      patientId,
+      appId,
+    });
+    expect(bundleAfter).toBeNull();
+  });
+
+  it("prevents duplicate assignment", async () => {
+    const t = convexTest(schema, modules);
+    const { patientId, appId } = await setupPatientWithApp(t);
+    const slp = t.withIdentity(SLP_IDENTITY);
+
+    await slp.mutation(api.childApps.assign, { patientId, appId });
+    await expect(
+      slp.mutation(api.childApps.assign, { patientId, appId })
+    ).rejects.toThrow("already assigned");
+  });
+});
