@@ -37,7 +37,7 @@ function AppViewerInner({ patientId, appId }: { patientId: string; appId: string
     }
 
     const url = URL.createObjectURL(
-      new Blob([bundle.html], { type: "text/html" })
+      new Blob([bundle], { type: "text/html" })
     );
     setBlobUrl(url);
 
