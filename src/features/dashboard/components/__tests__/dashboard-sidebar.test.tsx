@@ -5,6 +5,7 @@ import { DashboardSidebar } from "../dashboard-sidebar";
 vi.mock("@clerk/nextjs", () => ({
   UserButton: () => <div data-testid="user-button" />,
   Show: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  useUser: () => ({ user: { publicMetadata: {} } }),
 }));
 
 vi.mock("next/link", () => ({
@@ -18,6 +19,7 @@ vi.mock("next/link", () => ({
 vi.mock("next/navigation", () => ({
   usePathname: () => "/",
   useSearchParams: () => ({ get: () => null }),
+  useRouter: () => ({ replace: vi.fn() }),
 }));
 
 vi.mock("@/shared/components/material-icon", () => ({
@@ -34,6 +36,10 @@ vi.mock("@/shared/lib/navigation", () => ({
   NAV_ITEMS: [
     { icon: "home", label: "Home", href: "/dashboard" },
     { icon: "auto_awesome", label: "Builder", href: "/builder" },
+  ],
+  CAREGIVER_NAV_ITEMS: [
+    { icon: "home", label: "Home", href: "/family" },
+    { icon: "settings", label: "Settings", href: "/settings" },
   ],
   isNavActive: vi.fn((href: string) => href === "/dashboard"),
 }));

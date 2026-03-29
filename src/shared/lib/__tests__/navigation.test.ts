@@ -1,14 +1,15 @@
 import { isNavActive, NAV_ITEMS } from "../navigation";
 
 describe("NAV_ITEMS", () => {
-  it("exports an array with 6 items", () => {
-    expect(NAV_ITEMS).toHaveLength(6);
+  it("exports an array with 7 items", () => {
+    expect(NAV_ITEMS).toHaveLength(7);
     expect(NAV_ITEMS[0].href).toBe("/dashboard");
-    expect(NAV_ITEMS[1].href).toBe("/builder");
-    expect(NAV_ITEMS[2].href).toBe("/flashcards");
-    expect(NAV_ITEMS[3].href).toBe("/templates");
-    expect(NAV_ITEMS[4].href).toBe("/my-tools");
-    expect(NAV_ITEMS[5].href).toBe("/settings");
+    expect(NAV_ITEMS[1].href).toBe("/patients");
+    expect(NAV_ITEMS[2].href).toBe("/builder");
+    expect(NAV_ITEMS[3].href).toBe("/flashcards");
+    expect(NAV_ITEMS[4].href).toBe("/templates");
+    expect(NAV_ITEMS[5].href).toBe("/my-tools");
+    expect(NAV_ITEMS[6].href).toBe("/settings");
   });
 });
 
@@ -62,6 +63,20 @@ describe("isNavActive", () => {
 
     it("returns false for /my-tools when on /templates", () => {
       expect(isNavActive("/my-tools", "/templates", null)).toBe(false);
+    });
+  });
+
+  describe("family branch (/family)", () => {
+    it("returns true for /family path", () => {
+      expect(isNavActive("/family", "/family", null)).toBe(true);
+    });
+
+    it("returns true for nested family paths", () => {
+      expect(isNavActive("/family", "/family/abc123", null)).toBe(true);
+    });
+
+    it("returns false when pathname is not /family", () => {
+      expect(isNavActive("/family", "/patients", null)).toBe(false);
     });
   });
 
