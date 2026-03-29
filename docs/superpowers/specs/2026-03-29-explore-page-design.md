@@ -40,7 +40,7 @@ Landing page → /explore → "Try It" modal → "Customize This" → /builder?p
 
 ### Schema Change — `apps` table
 
-Add 3 optional fields:
+Add 3 optional fields and a compound index:
 
 ```typescript
 apps: defineTable({
@@ -48,9 +48,11 @@ apps: defineTable({
   featured: v.optional(v.boolean()),
   featuredOrder: v.optional(v.number()),       // Display order (1-6)
   featuredCategory: v.optional(v.string()),    // "communication" | "schedule" | "reward" | "social-story" | "emotional" | "speech"
-}).index("by_featured", ["featured"])
+}).index("by_featured_order", ["featured", "featuredOrder"])
   // ...existing indexes unchanged...
 ```
+
+Note: The compound index `["featured", "featuredOrder"]` enables querying `featured === true` with results sorted by `featuredOrder` in a single indexed scan.
 
 ### New Query — `apps.listFeatured`
 
@@ -91,7 +93,7 @@ export default function Page() { return <ExplorePage />; }
 **`demo-tool-grid`**
 - Calls `useQuery(api.apps.listFeatured)`
 - Loading state: 6 skeleton cards (animated pulse)
-- Error/empty fallback: renders from static `EXPLORE_DEMO_TOOLS` constant (graceful degradation)
+- Error/empty fallback: renders static cards from `EXPLORE_DEMO_TOOLS` constant with "Try It" buttons disabled and a "Coming Soon" badge — cards still show title/description/category for visual appeal, but no iframe interaction without real share slugs
 
 **`demo-tool-card`**
 - Static — no iframe loaded until user clicks
@@ -103,9 +105,10 @@ export default function Page() { return <ExplorePage />; }
 - Built on shadcn `Dialog` with full-viewport `DialogContent`
 - Live iframe: `<iframe src="/api/tool/{shareSlug}" sandbox="allow-scripts" />`
 - Loading skeleton while iframe loads
-- "Customize This" → `/builder?prompt={encodedPrompt}`
+- "Customize This" → `/builder?prompt={encodedPrompt}` (builder already reads `?prompt=` query param via `searchParams.get("prompt")` in `builder-page.tsx`)
 - Close (X) top-right
 - Accessible: `DialogTitle` + `DialogDescription`
+- **Mobile:** On screens < `md`, modal renders as a shadcn `Sheet` (bottom drawer, 90vh height) instead of centered dialog — avoids scroll-fighting with the iframe. CTA buttons pinned above the iframe in a sticky bar.
 
 **`explore-cta-section`**
 - Primary: "Start Building — It's Free" → `/builder` (gradient button)
@@ -124,12 +127,14 @@ export default function Page() { return <ExplorePage />; }
 
 | # | Tool | Category | Prompt Source |
 |---|------|----------|---------------|
-| 1 | Communication Board | communication | Existing `THERAPY_SEED_PROMPTS[0]` |
-| 2 | Morning Routine | schedule | Existing `THERAPY_SEED_PROMPTS[1]` |
-| 3 | 5-Star Reward Board | reward | Existing `THERAPY_SEED_PROMPTS[2]` |
-| 4 | Going to the Dentist | social-story | Existing `THERAPY_SEED_PROMPTS[3]` |
+| 1 | Communication Board | communication | Copied from `THERAPY_SEED_PROMPTS[0]` in `convex/templates/therapy_seeds.ts` |
+| 2 | Morning Routine | schedule | Copied from `THERAPY_SEED_PROMPTS[1]` |
+| 3 | 5-Star Reward Board | reward | Copied from `THERAPY_SEED_PROMPTS[2]` |
+| 4 | Going to the Dentist | social-story | Copied from `THERAPY_SEED_PROMPTS[3]` |
 | 5 | Emotion Check-In | emotional | **New** (see below) |
 | 6 | Articulation Practice | speech | **New** (see below) |
+
+**Prompt canonical source:** All 6 prompts (4 existing + 2 new) are stored together in `src/features/explore/lib/demo-tools.ts` as the `EXPLORE_DEMO_TOOLS` constant. The first 4 prompts are copied from `therapy_seeds.ts` (not imported — explore owns its own copy so the two features evolve independently). `therapy_seeds.ts` is not modified.
 
 ### New Prompts
 
@@ -185,16 +190,22 @@ export const markFeatured = internalMutation({
 ```
 
 - Run once after generating the 6 tools
-- Demo tools created without a userId (or under a system account) so they don't appear in any user's "My Apps"
+- **Generation account:** Demo tools are generated while signed in as the admin/developer account. After generation, the seed mutation sets `featured: true`. The `apps.list` query filters by `userId === identity.subject`, so featured apps only appear in the admin's "My Apps" — not in any other user's list. No need to null out userId, since valid sessions with files are required for bundle serving.
 
 ## Navigation & Landing Page Integration
 
 ### Marketing Header
 
-Add "Explore" to the landing page header nav:
+Add "Explore" to the existing `navLinks` array in `src/shared/components/marketing-header.tsx`. The current array is `[Builder, Flashcards, Templates, My Apps]`. Insert "Explore" as the first item:
 
-```
-[Logo: Bridges]                    [Explore]  [Templates]  [Sign In]  [Start Building →]
+```typescript
+const navLinks = [
+  { href: "/explore", label: "Explore" },   // NEW
+  { href: "/builder", label: "Builder" },
+  { href: "/flashcards", label: "Flashcards" },
+  { href: "/templates", label: "Templates" },
+  { href: "/my-tools", label: "My Apps" },
+];
 ```
 
 ### ProductPreview Section
@@ -219,6 +230,21 @@ Add a CTA within the existing `ProductPreview` component on the landing page: "S
 - Click "Customize This" — navigates to `/builder?prompt=...`
 - Click "Start Building" bottom CTA — navigates to `/builder`
 - Mobile responsive — cards stack to single column
+
+## Required Change — CSP `frame-ancestors`
+
+The `/api/tool/[slug]/route.ts` currently sets `frame-ancestors 'none'` in its Content-Security-Policy header (line 35). This blocks iframes from embedding the HTML response — which breaks the explore page modal.
+
+**Fix:** Change `frame-ancestors 'none'` to `frame-ancestors 'self'` in the CSP header. This allows the same-origin `/explore` page to embed the tool in an iframe while still preventing third-party sites from framing it.
+
+```typescript
+// Before:
+"Content-Security-Policy": "... frame-ancestors 'none';"
+// After:
+"Content-Security-Policy": "... frame-ancestors 'self';"
+```
+
+This also benefits the existing `shared-tool-page.tsx` which embeds tools in an iframe — currently this only works because it uses `/api/tool/{slug}` as the iframe `src` (same origin). The explicit `'self'` makes the intent clear.
 
 ## Out of Scope
 
