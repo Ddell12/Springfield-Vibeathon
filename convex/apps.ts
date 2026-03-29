@@ -94,12 +94,11 @@ export const list = query({
   handler: async (ctx) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) return [];
-    const all = await ctx.db
+    return await ctx.db
       .query("apps")
-      .withIndex("by_created")
+      .withIndex("by_user", (q) => q.eq("userId", identity.subject))
       .order("desc")
       .take(50);
-    return all.filter((app) => app.userId === identity.subject);
   },
 });
 

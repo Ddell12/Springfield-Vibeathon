@@ -67,15 +67,18 @@ export const list = query({
     const userId = await getAuthUserId(ctx);
     if (!userId) return [];
 
-    const patients = await ctx.db
+    if (args.status) {
+      return await ctx.db
+        .query("patients")
+        .withIndex("by_slpUserId_status", (q) =>
+          q.eq("slpUserId", userId).eq("status", args.status!)
+        )
+        .take(500);
+    }
+    return await ctx.db
       .query("patients")
       .withIndex("by_slpUserId", (q) => q.eq("slpUserId", userId))
       .take(500);
-
-    if (args.status) {
-      return patients.filter((p) => p.status === args.status);
-    }
-    return patients;
   },
 });
 
@@ -277,16 +280,23 @@ export const getStats = query({
     const userId = await getAuthUserId(ctx);
     if (!userId) return { active: 0, onHold: 0, discharged: 0, pendingIntake: 0 };
 
-    const patients = await ctx.db
-      .query("patients")
-      .withIndex("by_slpUserId", (q) => q.eq("slpUserId", userId))
-      .take(500);
-
+    const statuses = ["active", "on-hold", "discharged", "pending-intake"] as const;
+    const counts = await Promise.all(
+      statuses.map(async (status) => {
+        const results = await ctx.db
+          .query("patients")
+          .withIndex("by_slpUserId_status", (q) =>
+            q.eq("slpUserId", userId).eq("status", status)
+          )
+          .collect();
+        return results.length;
+      })
+    );
     return {
-      active: patients.filter((p) => p.status === "active").length,
-      onHold: patients.filter((p) => p.status === "on-hold").length,
-      discharged: patients.filter((p) => p.status === "discharged").length,
-      pendingIntake: patients.filter((p) => p.status === "pending-intake").length,
+      active: counts[0],
+      onHold: counts[1],
+      discharged: counts[2],
+      pendingIntake: counts[3],
     };
   },
 });

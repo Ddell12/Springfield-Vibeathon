@@ -161,7 +161,8 @@ export default defineSchema({
     sensoryNotes: v.optional(v.string()),
     behavioralNotes: v.optional(v.string()),
     notes: v.optional(v.string()),
-  }).index("by_slpUserId", ["slpUserId"]),
+  }).index("by_slpUserId", ["slpUserId"])
+    .index("by_slpUserId_status", ["slpUserId", "status"]),
 
   caregiverLinks: defineTable({
     patientId: v.id("patients"),
