@@ -12,6 +12,7 @@ import { useFamilyData } from "../hooks/use-family-data";
 import { StreakTracker } from "./streak-tracker";
 import { WeeklyProgress } from "./weekly-progress";
 import { CelebrationCard } from "./celebration-card";
+import { TodayActivities } from "./today-activities";
 
 interface FamilyDashboardProps {
   paramsPromise: Promise<{ patientId: string }>;
@@ -83,15 +84,8 @@ export function FamilyDashboard({ paramsPromise }: FamilyDashboardProps) {
 
       <Separator />
 
-      {/* Today's Activities placeholder — Task 8 will replace this */}
-      <div className="rounded-xl bg-muted/50 p-5">
-        <p className="font-headline text-base font-semibold text-foreground">
-          Today&apos;s Activities
-        </p>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Practice activities will appear here.
-        </p>
-      </div>
+      {/* Today's Activities */}
+      <TodayActivities patientId={patientId as Id<"patients">} />
 
       <Separator />
 
