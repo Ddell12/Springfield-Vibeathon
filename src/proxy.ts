@@ -10,6 +10,7 @@ const isProtectedRoute = createRouteMatcher([
 
 const isPublicApiRoute = createRouteMatcher([
   "/api/tool/(.*)",
+  "/family/(.*)/play/manifest.json",
 ]);
 
 export default clerkMiddleware(async (auth, req) => {
