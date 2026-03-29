@@ -1,4 +1,4 @@
-import { calculateAge, formatAge, getInitials, formatFullName } from "../patient-utils";
+import { calculateAge, formatAge, getInitials } from "../patient-utils";
 
 // Helper: build an ISO date string N years ago from today
 function yearsAgo(years: number, extraMonths = 0): string {
@@ -83,12 +83,3 @@ describe("getInitials", () => {
   });
 });
 
-describe("formatFullName", () => {
-  it("joins first and last name with a space", () => {
-    expect(formatFullName("Alice", "Brown")).toBe("Alice Brown");
-  });
-
-  it("handles names with existing spaces", () => {
-    expect(formatFullName("Mary Jane", "Watson")).toBe("Mary Jane Watson");
-  });
-});

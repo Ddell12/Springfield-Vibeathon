@@ -10,8 +10,6 @@ import { HomeProgramForm } from "./home-program-form";
 import { EngagementSummary } from "./engagement-summary";
 import type { Id } from "../../../../convex/_generated/dataModel";
 
-const extendedApi = api as any;
-
 interface HomeProgramsWidgetProps {
   patientId: Id<"patients">;
 }
@@ -34,7 +32,7 @@ export function HomeProgramsWidget({ patientId }: HomeProgramsWidgetProps) {
   const [formOpen, setFormOpen] = useState(false);
 
   const programs = useQuery(
-    extendedApi.homePrograms.listByPatient,
+    api.homePrograms.listByPatient,
     isAuthenticated ? { patientId } : "skip"
   );
 

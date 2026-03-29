@@ -138,20 +138,6 @@
   box-shadow: 0px 12px 32px oklch(0.192 0.020 255 / 0.06);
 }
 
-.glass-effect {
-  background: oklch(1 0 0 / 0.8);
-  backdrop-filter: blur(20px);
-}
-
-.dark .glass-effect {
-  background: oklch(0.155 0.015 260 / 0.8);
-}
-
-.safe-space-container {
-  border-radius: 1.5rem;
-  border: 1px solid oklch(0.818 0.014 199 / 0.1);
-}
-
 .material-symbols-outlined {
   font-family: 'Material Symbols Outlined' !important;
   font-weight: normal;

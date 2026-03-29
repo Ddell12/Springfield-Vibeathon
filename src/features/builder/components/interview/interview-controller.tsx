@@ -136,8 +136,12 @@ export function InterviewController({
         }
 
         const data = await res.json();
-        const followUps = data.followUps ?? [];
-        const draftBlueprint = data.blueprint ?? null;
+        if (cancelled) return;
+        const followUps = Array.isArray(data.followUps) ? data.followUps : [];
+        const draftBlueprint =
+          data.blueprint != null && typeof data.blueprint === "object"
+            ? data.blueprint
+            : null;
 
         if (followUps.length > 0) {
           setFollowUps(followUps, draftBlueprint);
@@ -149,8 +153,9 @@ export function InterviewController({
           );
           showReview(blueprint, richPrompt);
         }
-      } catch {
+      } catch (err) {
         if (cancelled) return;
+        console.warn("[interview] Follow-up fetch failed:", err);
         toast.error("Couldn't load suggestions, building with your answers.");
         try {
           const { blueprint, richPrompt } = assembleBlueprint(
