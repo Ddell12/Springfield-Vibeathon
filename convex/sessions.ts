@@ -13,6 +13,7 @@ export const create = mutation({
     title: v.string(),
     query: v.string(),
     type: v.optional(v.union(v.literal("builder"), v.literal("flashcards"))),
+    patientId: v.optional(v.id("patients")),
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
@@ -22,6 +23,7 @@ export const create = mutation({
       query: args.query,
       state: SESSION_STATES.IDLE,
       type: args.type,
+      ...(args.patientId ? { patientId: args.patientId } : {}),
     });
   },
 });
