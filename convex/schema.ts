@@ -116,6 +116,15 @@ export default defineSchema({
   }).index("by_user", ["userId"])
     .index("by_session", ["sessionId"]),
 
+  usage: defineTable({
+    userId: v.string(),
+    periodStart: v.number(),
+    generationCount: v.number(),
+    appCount: v.number(),
+  })
+    .index("by_userId", ["userId"])
+    .index("by_userId_period", ["userId", "periodStart"]),
+
   flashcards: defineTable({
     deckId: v.id("flashcardDecks"),
     label: v.string(),
