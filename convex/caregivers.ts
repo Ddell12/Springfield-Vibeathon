@@ -2,7 +2,7 @@ import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { ConvexError } from "convex/values";
-import { getAuthUserId, assertSLP } from "./lib/auth";
+import { getAuthUserId, getAuthRole, assertSLP } from "./lib/auth";
 
 function generateInviteToken(): string {
   const bytes = new Uint8Array(16);
@@ -78,6 +78,18 @@ export const acceptInvite = mutation({
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new ConvexError("Not authenticated");
+
+    // Prevent SLPs from accepting caregiver invites
+    const role = await getAuthRole(ctx);
+    if (role === "slp" || role === null) {
+      const ownsPatients = await ctx.db
+        .query("patients")
+        .withIndex("by_slpUserId", (q) => q.eq("slpUserId", userId))
+        .first();
+      if (ownsPatients) {
+        throw new ConvexError("Therapists cannot accept caregiver invites. Please use a separate account.");
+      }
+    }
 
     // Convex mutations run with serializable isolation — concurrent calls
     // are serialized per-document, so only one can pass the status checks.

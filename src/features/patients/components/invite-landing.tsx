@@ -17,14 +17,17 @@ export function InviteLanding({ paramsPromise }: InviteLandingProps) {
   const { token } = use(paramsPromise);
   const inviteInfo = useInviteInfo(token);
   const acceptInvite = useAcceptInvite();
-  const { isSignedIn, isLoaded } = useUser();
+  const { isSignedIn, isLoaded, user } = useUser();
   const router = useRouter();
   const [isAccepting, setIsAccepting] = useState(false);
   const acceptAttemptedRef = useRef(false);
 
+  const userRole = (user?.publicMetadata as { role?: string } | undefined)?.role;
+  const isSLP = !userRole || userRole === "slp";
+
   // Auto-accept if user is already signed in (came back from sign-up)
   useEffect(() => {
-    if (isLoaded && isSignedIn && inviteInfo && !isAccepting && !acceptAttemptedRef.current) {
+    if (isLoaded && isSignedIn && !isSLP && inviteInfo && !isAccepting && !acceptAttemptedRef.current) {
       acceptAttemptedRef.current = true;
       setIsAccepting(true);
       acceptInvite({ token })
@@ -38,7 +41,7 @@ export function InviteLanding({ paramsPromise }: InviteLandingProps) {
           setIsAccepting(false);
         });
     }
-  }, [isLoaded, isSignedIn, inviteInfo, token, acceptInvite, router, isAccepting]);
+  }, [isLoaded, isSignedIn, isSLP, inviteInfo, token, acceptInvite, router, isAccepting]);
 
   // Loading state
   if (inviteInfo === undefined) {
@@ -73,6 +76,29 @@ export function InviteLanding({ paramsPromise }: InviteLandingProps) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background p-4">
         <p className="text-on-surface-variant">Connecting you...</p>
+      </div>
+    );
+  }
+
+  // SLP users should not accept caregiver invites
+  if (isLoaded && isSignedIn && isSLP) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background p-4">
+        <div className="mx-auto max-w-sm text-center">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+            <MaterialIcon icon="info" size="lg" className="text-primary" />
+          </div>
+          <h1 className="mb-2 text-xl font-semibold text-foreground">
+            This invite is for caregivers
+          </h1>
+          <p className="mb-6 text-sm text-on-surface-variant">
+            You&apos;re signed in as a therapist. Share this link with the
+            caregiver instead.
+          </p>
+          <Button asChild className="w-full">
+            <Link href="/dashboard">Back to Dashboard</Link>
+          </Button>
+        </div>
       </div>
     );
   }

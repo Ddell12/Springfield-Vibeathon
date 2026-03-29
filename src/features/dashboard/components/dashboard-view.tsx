@@ -8,6 +8,7 @@ import { useState } from "react";
 import { DeleteConfirmationDialog } from "@/shared/components/delete-confirmation-dialog";
 import { EmptyState } from "@/shared/components/empty-state";
 import { MaterialIcon } from "@/shared/components/material-icon";
+import { Skeleton } from "@/shared/components/ui/skeleton";
 import { MobileNavDrawer } from "@/shared/components/mobile-nav-drawer";
 import { ProjectCard } from "@/shared/components/project-card";
 import { Button } from "@/shared/components/ui/button";
@@ -180,10 +181,7 @@ export function DashboardView() {
               /* Loading state */
               <div className="grid grid-cols-1 gap-8 pb-20 md:grid-cols-2 lg:grid-cols-3">
                 {[0, 1, 2].map((i) => (
-                  <div
-                    key={i}
-                    className="h-64 animate-pulse rounded-2xl bg-surface-container-low"
-                  />
+                  <Skeleton key={i} className="h-64 rounded-2xl" />
                 ))}
               </div>
             )}
@@ -219,10 +217,7 @@ export function DashboardView() {
             ) : (
               <div className="grid grid-cols-1 gap-8 pb-20 md:grid-cols-2 lg:grid-cols-3">
                 {[0, 1, 2].map((i) => (
-                  <div
-                    key={i}
-                    className="h-64 animate-pulse rounded-2xl bg-surface-container-low"
-                  />
+                  <Skeleton key={i} className="h-64 rounded-2xl" />
                 ))}
               </div>
             )}

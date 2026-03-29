@@ -96,7 +96,7 @@ export function PracticeLogForm({
           {/* Confidence stars */}
           <div className="flex flex-col gap-1.5">
             <Label className="text-sm font-medium">How did it go?</Label>
-            <div className="flex gap-1" role="group" aria-label="Confidence rating">
+            <div className="flex gap-1" role="radiogroup" aria-label="How did it go? Confidence rating">
               {[1, 2, 3, 4, 5].map((star) => (
                 <button
                   key={star}

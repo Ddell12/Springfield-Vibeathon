@@ -20,6 +20,7 @@ export function PatientRow({ patient, isExpanded, onToggle }: PatientRowProps) {
     <button
       onClick={onToggle}
       aria-expanded={isExpanded}
+      aria-label={`Toggle details for ${patient.firstName} ${patient.lastName}`}
       className="flex w-full items-center gap-4 rounded-xl bg-surface-container px-4 py-3 text-left transition-all duration-300 hover:bg-surface-container-high"
     >
       {/* Avatar */}
