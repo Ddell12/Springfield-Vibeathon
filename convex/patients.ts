@@ -256,6 +256,37 @@ export const updateStatus = mutation({
   },
 });
 
+/** Returns just the patient's first name without auth. Used by the PWA manifest
+ *  route handler which runs server-side without a user session. */
+export const getPublicFirstName = query({
+  args: { patientId: v.id("patients") },
+  handler: async (ctx, args) => {
+    const patient = await ctx.db.get(args.patientId);
+    return patient?.firstName ?? null;
+  },
+});
+
+/** Soft-fail variant of get — returns null instead of throwing when unauthorized. */
+export const getForPlay = query({
+  args: { patientId: v.id("patients") },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return null;
+    const patient = await ctx.db.get(args.patientId);
+    if (!patient) return null;
+    if (patient.slpUserId === userId) return patient;
+    const link = await ctx.db
+      .query("caregiverLinks")
+      .withIndex("by_caregiverUserId_patientId", (q) =>
+        q.eq("caregiverUserId", userId).eq("patientId", args.patientId)
+      )
+      .filter((q) => q.eq(q.field("inviteStatus"), "accepted"))
+      .first();
+    if (link) return patient;
+    return null;
+  },
+});
+
 export const getForContext = query({
   args: { patientId: v.id("patients") },
   handler: async (ctx, { patientId }) => {

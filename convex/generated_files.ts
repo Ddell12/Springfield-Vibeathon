@@ -102,6 +102,23 @@ export const getByPath = query({
   },
 });
 
+/** Public query — serves bundle HTML by appId. Used by play grid viewer. */
+export const getBundleByAppId = query({
+  args: { appId: v.id("apps") },
+  handler: async (ctx, args) => {
+    const app = await ctx.db.get(args.appId);
+    const sessionId = app?.sessionId;
+    if (!sessionId) return null;
+    const file = await ctx.db
+      .query("files")
+      .withIndex("by_session_path", (q) =>
+        q.eq("sessionId", sessionId).eq("path", "_bundle.html")
+      )
+      .first();
+    return file?.contents ?? null;
+  },
+});
+
 /** Public query — serves bundle HTML for shared apps. No auth required. */
 export const getPublicBundle = query({
   args: { shareSlug: v.string() },
