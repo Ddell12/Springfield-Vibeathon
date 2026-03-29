@@ -20,10 +20,10 @@ if (!process.env.ANTHROPIC_API_KEY) {
   throw new Error("ANTHROPIC_API_KEY is required for /api/generate-soap");
 }
 
-const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL);
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 export async function POST(request: Request): Promise<Response> {
+  const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
   const { userId, getToken } = await auth();
   if (!userId) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
@@ -47,6 +47,12 @@ export async function POST(request: Request): Promise<Response> {
 
   // Fetch note first to get patientId, then patient + previous SOAP in parallel
   const note = await convex.query(api.sessionNotes.get, { noteId });
+  if (!note) {
+    return new Response(JSON.stringify({ error: "Session note not found" }), {
+      status: 404,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
   if (note.status === "signed") {
     return new Response(
       JSON.stringify({ error: "Cannot generate SOAP for a signed note" }),

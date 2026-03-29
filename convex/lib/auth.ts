@@ -13,7 +13,7 @@ export async function getAuthUserId(
 /**
  * Verify the caller owns the given session.
  *
- * - Legacy sessions (userId === undefined) are allowed through.
+ * - Legacy sessions (userId === undefined) are rejected.
  * - `soft: true` → return null instead of throwing (use in queries).
  * - Default → throw on failure (use in mutations).
  */
@@ -28,10 +28,10 @@ export async function assertSessionOwner(
     throw new Error("Session not found");
   }
 
-  // TODO(cleanup): Legacy/demo sessions created before auth. Migrate to
-  // a demo user or delete, then remove this world-readable branch.
+  // Legacy sessions without a userId are not accessible.
   if (!session.userId) {
-    return session;
+    if (opts?.soft) return null;
+    throw new Error("Session has no owner — legacy session access denied");
   }
 
   // Owned sessions require matching auth
