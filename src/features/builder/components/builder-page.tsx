@@ -189,7 +189,7 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
         label: "Assign",
         onClick: async () => {
           try {
-            await assignMaterial({ patientId, sessionId: sessionId as Id<"sessions"> });
+            await assignMaterial({ patientId, sessionId: sessionId as Id<"sessions">, fromGeneration: true });
             toast.success(`Added to ${firstName}'s materials`);
           } catch {
             toast.error("Failed to assign material");
