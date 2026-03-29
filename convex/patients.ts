@@ -252,6 +252,25 @@ export const updateStatus = mutation({
   },
 });
 
+export const getForContext = query({
+  args: { patientId: v.id("patients") },
+  handler: async (ctx, { patientId }) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new ConvexError("Not authenticated");
+    const patient = await ctx.db.get(patientId);
+    if (!patient) return null;
+    if (patient.slpUserId !== identity.subject) return null;
+    return {
+      firstName: patient.firstName,
+      diagnosis: patient.diagnosis,
+      communicationLevel: patient.communicationLevel,
+      interests: patient.interests,
+      sensoryNotes: patient.sensoryNotes,
+      behavioralNotes: patient.behavioralNotes,
+    };
+  },
+});
+
 export const getStats = query({
   args: {},
   handler: async (ctx) => {
