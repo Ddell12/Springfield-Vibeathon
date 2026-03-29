@@ -22,6 +22,12 @@ export function useTTS() {
       const data = e.data;
       if (!data || typeof data !== "object") return;
 
+      if (data.type === "bridges:tts-ack") {
+        // Parent bridge confirmed alive — cancel browser fallback immediately
+        bridgeAvailableRef.current = true;
+        if (fallbackTimerRef.current) clearTimeout(fallbackTimerRef.current);
+      }
+
       if (data.type === "bridges:tts-playing") {
         bridgeAvailableRef.current = true;
         if (fallbackTimerRef.current) clearTimeout(fallbackTimerRef.current);
