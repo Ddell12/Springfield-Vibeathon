@@ -8,6 +8,7 @@ import type { Id } from "../../../../convex/_generated/dataModel";
 import { Button } from "@/shared/components/ui/button";
 import { Skeleton } from "@/shared/components/ui/skeleton";
 import { Separator } from "@/shared/components/ui/separator";
+import { MaterialIcon } from "@/shared/components/material-icon";
 import { useFamilyData } from "../hooks/use-family-data";
 import { StreakTracker } from "./streak-tracker";
 import { WeeklyProgress } from "./weekly-progress";
@@ -87,6 +88,9 @@ export function FamilyDashboard({ paramsPromise }: FamilyDashboardProps) {
       {/* Today's Activities */}
       <TodayActivities patientId={patientId as Id<"patients">} />
 
+      {/* Speech Coach programs */}
+      <SpeechCoachCards patientId={patientId as Id<"patients">} />
+
       <Separator />
 
       {/* Weekly progress */}
@@ -115,6 +119,42 @@ export function FamilyDashboard({ paramsPromise }: FamilyDashboardProps) {
           <Link href={`/family/${patientId}/messages`}>Message Therapist</Link>
         </Button>
       </div>
+    </div>
+  );
+}
+
+function SpeechCoachCards({ patientId }: { patientId: Id<"patients"> }) {
+  const programs = useQuery(api.homePrograms.getActiveByPatient, { patientId });
+
+  if (!programs) return null;
+
+  const speechCoachPrograms = programs.filter(
+    (p: { type?: string }) => p.type === "speech-coach"
+  );
+
+  if (speechCoachPrograms.length === 0) return null;
+
+  return (
+    <div className="flex flex-col gap-3">
+      <h2 className="font-headline text-lg font-semibold text-foreground">Speech Coach</h2>
+      {speechCoachPrograms.map((program) => (
+        <Link
+          key={program._id}
+          href={`/family/${patientId}/speech-coach?program=${program._id}`}
+          className="flex items-center gap-4 rounded-xl bg-muted/50 p-4 transition-colors hover:bg-muted/70"
+        >
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+            <MaterialIcon icon="record_voice_over" className="text-primary" />
+          </div>
+          <div className="flex-1">
+            <p className="text-sm font-medium text-foreground">{program.title}</p>
+            <p className="text-xs text-muted-foreground">
+              {(program as { speechCoachConfig?: { targetSounds?: string[] } }).speechCoachConfig?.targetSounds?.join(", ") ?? "Voice coaching"}
+            </p>
+          </div>
+          <MaterialIcon icon="chevron_right" className="text-muted-foreground" />
+        </Link>
+      ))}
     </div>
   );
 }
