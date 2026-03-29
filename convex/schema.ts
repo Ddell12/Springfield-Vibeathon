@@ -176,6 +176,7 @@ export default defineSchema({
     relationship: v.optional(v.string()),
   }).index("by_patientId", ["patientId"])
     .index("by_caregiverUserId", ["caregiverUserId"])
+    .index("by_caregiverUserId_patientId", ["caregiverUserId", "patientId"])
     .index("by_inviteToken", ["inviteToken"])
     .index("by_email", ["email"]),
 
@@ -207,7 +208,10 @@ export default defineSchema({
       v.literal("goal-met"),
       v.literal("goal-modified"),
       v.literal("report-generated"),
-      v.literal("material-generated-for-patient")
+      v.literal("material-generated-for-patient"),
+      v.literal("practice-logged"),
+      v.literal("message-sent"),
+      v.literal("home-program-assigned")
     ),
     details: v.optional(v.string()),
     timestamp: v.number(),
@@ -364,4 +368,51 @@ export default defineSchema({
   })
     .index("by_patientId", ["patientId"])
     .index("by_patientId_reportType", ["patientId", "reportType"]),
+
+  homePrograms: defineTable({
+    patientId: v.id("patients"),
+    slpUserId: v.string(),
+    title: v.string(),
+    instructions: v.string(),
+    materialId: v.optional(v.id("patientMaterials")),
+    goalId: v.optional(v.id("goals")),
+    frequency: v.union(
+      v.literal("daily"),
+      v.literal("3x-week"),
+      v.literal("weekly"),
+      v.literal("as-needed")
+    ),
+    status: v.union(
+      v.literal("active"),
+      v.literal("paused"),
+      v.literal("completed")
+    ),
+    startDate: v.string(),
+    endDate: v.optional(v.string()),
+  })
+    .index("by_patientId", ["patientId"])
+    .index("by_patientId_status", ["patientId", "status"]),
+
+  practiceLog: defineTable({
+    homeProgramId: v.id("homePrograms"),
+    patientId: v.id("patients"),
+    caregiverUserId: v.string(),
+    date: v.string(),
+    duration: v.optional(v.number()),
+    confidence: v.optional(v.number()),
+    notes: v.optional(v.string()),
+    timestamp: v.number(),
+  })
+    .index("by_homeProgramId", ["homeProgramId"])
+    .index("by_patientId_date", ["patientId", "date"]),
+
+  patientMessages: defineTable({
+    patientId: v.id("patients"),
+    senderUserId: v.string(),
+    senderRole: v.union(v.literal("slp"), v.literal("caregiver")),
+    content: v.string(),
+    timestamp: v.number(),
+    readAt: v.optional(v.number()),
+  })
+    .index("by_patientId_timestamp", ["patientId", "timestamp"]),
 });

@@ -85,3 +85,23 @@ export async function assertCaregiverAccess(
   if (!link) throw new ConvexError("Not authorized to access this patient");
   return userId;
 }
+
+export async function assertPatientAccess(
+  ctx: QueryCtx | MutationCtx,
+  patientId: Id<"patients">,
+): Promise<{ userId: string; role: UserRole }> {
+  const userId = await getAuthUserId(ctx);
+  if (!userId) throw new ConvexError("Not authenticated");
+  const patient = await ctx.db.get(patientId);
+  if (!patient) throw new ConvexError("Patient not found");
+  if (patient.slpUserId === userId) return { userId, role: "slp" };
+  const link = await ctx.db
+    .query("caregiverLinks")
+    .withIndex("by_caregiverUserId_patientId", (q) =>
+      q.eq("caregiverUserId", userId).eq("patientId", patientId)
+    )
+    .filter((q) => q.eq(q.field("inviteStatus"), "accepted"))
+    .first();
+  if (link) return { userId, role: "caregiver" };
+  throw new ConvexError("Not authorized");
+}
