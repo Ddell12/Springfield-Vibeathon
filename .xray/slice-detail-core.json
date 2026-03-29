@@ -1,0 +1,197 @@
+{
+  "name": "core",
+  "path": "/Users/desha/Springfield-Vibeathon/src/core/",
+  "files": [
+    {
+      "path": "/Users/desha/Springfield-Vibeathon/src/core/__tests__/utils.test.ts",
+      "language": "TypeScript",
+      "loc": 77,
+      "comments": 0,
+      "blanks": 14,
+      "lastModified": "2026-03-25 20:50:17 -0500"
+    },
+    {
+      "path": "/Users/desha/Springfield-Vibeathon/src/core/hooks/__tests__/use-mobile.test.ts",
+      "language": "TypeScript",
+      "loc": 56,
+      "comments": 0,
+      "blanks": 8,
+      "lastModified": "2026-03-26 08:09:08 -0500"
+    },
+    {
+      "path": "/Users/desha/Springfield-Vibeathon/src/core/__tests__/clipboard.test.ts",
+      "language": "TypeScript",
+      "loc": 48,
+      "comments": 1,
+      "blanks": 12,
+      "lastModified": "2026-03-25 20:08:32 -0500"
+    },
+    {
+      "path": "/Users/desha/Springfield-Vibeathon/src/core/sse-events.ts",
+      "language": "TypeScript",
+      "loc": 47,
+      "comments": 5,
+      "blanks": 2,
+      "lastModified": "2026-03-26 14:06:52 -0500"
+    },
+    {
+      "path": "/Users/desha/Springfield-Vibeathon/src/core/hooks/__tests__/use-entitlements.test.ts",
+      "language": "TypeScript",
+      "loc": 41,
+      "comments": 0,
+      "blanks": 6,
+      "lastModified": "2026-03-27 11:50:34 -0500"
+    },
+    {
+      "path": "/Users/desha/Springfield-Vibeathon/src/core/sse-utils.ts",
+      "language": "TypeScript",
+      "loc": 28,
+      "comments": 4,
+      "blanks": 0,
+      "lastModified": "2026-03-27 08:49:43 -0500"
+    },
+    {
+      "path": "/Users/desha/Springfield-Vibeathon/src/core/providers.tsx",
+      "language": "TypeScript",
+      "loc": 22,
+      "comments": 0,
+      "blanks": 3,
+      "lastModified": "2026-03-26 12:35:56 -0500"
+    },
+    {
+      "path": "/Users/desha/Springfield-Vibeathon/src/core/utils.ts",
+      "language": "TypeScript",
+      "loc": 22,
+      "comments": 2,
+      "blanks": 3,
+      "lastModified": "2026-03-25 19:41:19 -0500"
+    },
+    {
+      "path": "/Users/desha/Springfield-Vibeathon/src/core/routes.ts",
+      "language": "TypeScript",
+      "loc": 20,
+      "comments": 0,
+      "blanks": 0,
+      "lastModified": "2026-03-29 00:22:59 -0500"
+    },
+    {
+      "path": "/Users/desha/Springfield-Vibeathon/src/core/hooks/use-entitlements.ts",
+      "language": "TypeScript",
+      "loc": 15,
+      "comments": 0,
+      "blanks": 5,
+      "lastModified": "2026-03-27 11:50:34 -0500"
+    },
+    {
+      "path": "/Users/desha/Springfield-Vibeathon/src/core/hooks/use-mobile.ts",
+      "language": "TypeScript",
+      "loc": 14,
+      "comments": 0,
+      "blanks": 4,
+      "lastModified": "2026-03-25 19:41:19 -0500"
+    },
+    {
+      "path": "/Users/desha/Springfield-Vibeathon/src/core/clipboard.ts",
+      "language": "TypeScript",
+      "loc": 12,
+      "comments": 0,
+      "blanks": 1,
+      "lastModified": "2026-03-25 14:10:04 -0500"
+    },
+    {
+      "path": "/Users/desha/Springfield-Vibeathon/src/core/config.ts",
+      "language": "TypeScript",
+      "loc": 2,
+      "comments": 0,
+      "blanks": 0,
+      "lastModified": "2026-03-25 00:48:27 -0500"
+    }
+  ],
+  "testFiles": [
+    {
+      "path": "/Users/desha/Springfield-Vibeathon/src/core//__tests__/utils.test.ts",
+      "loc": 91
+    },
+    {
+      "path": "/Users/desha/Springfield-Vibeathon/src/core//__tests__/clipboard.test.ts",
+      "loc": 61
+    }
+  ],
+  "exports": [],
+  "gitHistory": [
+    {
+      "hash": "cc71871",
+      "message": "feat(family): add caregiver routes, conditional sidebar nav, and route placeholders",
+      "date": "2026-03-29 00:22:59 -0500",
+      "author": "Ddell12"
+    },
+    {
+      "hash": "0b1b66f",
+      "message": "feat: add patient routes, navigation, proxy, utilities, and hooks",
+      "date": "2026-03-28 12:36:36 -0500",
+      "author": "Ddell12"
+    },
+    {
+      "hash": "775a176",
+      "message": "fix: split entitlements query from subscriptions actions",
+      "date": "2026-03-27 11:50:34 -0500",
+      "author": "Ddell12"
+    },
+    {
+      "hash": "fa7706c",
+      "message": "feat: add useEntitlements hook, limit enforcement, and UpgradePrompt",
+      "date": "2026-03-27 11:09:19 -0500",
+      "author": "Ddell12"
+    },
+    {
+      "hash": "97293c7",
+      "message": "fix: log SSE parse failures instead of silently swallowing them",
+      "date": "2026-03-27 08:49:43 -0500",
+      "author": "Ddell12"
+    }
+  ],
+  "todos": [],
+  "depsOutbound": [
+    {
+      "slice": "utils",
+      "importCount": 1
+    },
+    {
+      "slice": "use-mobile",
+      "importCount": 1
+    },
+    {
+      "slice": "use-entitlements",
+      "importCount": 1
+    },
+    {
+      "slice": "clipboard",
+      "importCount": 1
+    },
+    {
+      "slice": "..",
+      "importCount": 1
+    }
+  ],
+  "depsInbound": [
+    {
+      "slice": "features",
+      "importCount": 47
+    },
+    {
+      "slice": "shared",
+      "importCount": 33
+    },
+    {
+      "slice": "app",
+      "importCount": 2
+    }
+  ],
+  "busEvents": {
+    "emits": [],
+    "subscribes": []
+  },
+  "mcpTools": [],
+  "schemaTables": [],
+  "dashboardRoutes": []
+}

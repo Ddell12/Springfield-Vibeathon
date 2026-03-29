@@ -1,25 +1,31 @@
 {
   "file_ages": [
-    {"file":".agents/skills/convex-create-component/SKILL.md","last_modified":"2026-03-23T17:32:54-05:00"},
+    {"file":".agents/skills/clerk-nextjs-patterns/SKILL.md","last_modified":"2026-03-26T12:33:16-05:00"},
+    {"file":".agents/skills/clerk-nextjs-patterns/references/api-routes.md","last_modified":"2026-03-26T12:33:16-05:00"},
+    {"file":".agents/skills/clerk-nextjs-patterns/references/caching-auth.md","last_modified":"2026-03-26T12:33:16-05:00"},
+    {"file":".agents/skills/clerk-nextjs-patterns/references/middleware-strategies.md","last_modified":"2026-03-26T12:33:16-05:00"},
+    {"file":".agents/skills/clerk-nextjs-patterns/references/server-actions.md","last_modified":"2026-03-26T12:33:16-05:00"},
+    {"file":".agents/skills/clerk-nextjs-patterns/references/server-vs-client.md","last_modified":"2026-03-26T12:33:16-05:00"},
+    {"file":".agents/skills/convex-create-component/SKILL.md","last_modified":"2026-03-29T00:38:10-05:00"},
     {"file":".agents/skills/convex-create-component/agents/openai.yaml","last_modified":"2026-03-23T17:32:54-05:00"},
     {"file":".agents/skills/convex-create-component/assets/icon.svg","last_modified":"2026-03-23T17:32:54-05:00"},
     {"file":".agents/skills/convex-create-component/references/hybrid-components.md","last_modified":"2026-03-23T17:32:54-05:00"},
     {"file":".agents/skills/convex-create-component/references/local-components.md","last_modified":"2026-03-23T17:32:54-05:00"},
     {"file":".agents/skills/convex-create-component/references/packaged-components.md","last_modified":"2026-03-23T17:32:54-05:00"},
-    {"file":".agents/skills/convex-migration-helper/SKILL.md","last_modified":"2026-03-23T17:32:54-05:00"},
+    {"file":".agents/skills/convex-migration-helper/SKILL.md","last_modified":"2026-03-29T00:38:10-05:00"},
     {"file":".agents/skills/convex-migration-helper/agents/openai.yaml","last_modified":"2026-03-23T17:32:54-05:00"},
     {"file":".agents/skills/convex-migration-helper/assets/icon.svg","last_modified":"2026-03-23T17:32:54-05:00"},
-    {"file":".agents/skills/convex-performance-audit/SKILL.md","last_modified":"2026-03-23T17:32:54-05:00"},
+    {"file":".agents/skills/convex-performance-audit/SKILL.md","last_modified":"2026-03-29T00:38:10-05:00"},
     {"file":".agents/skills/convex-performance-audit/agents/openai.yaml","last_modified":"2026-03-23T17:32:54-05:00"},
     {"file":".agents/skills/convex-performance-audit/assets/icon.svg","last_modified":"2026-03-23T17:32:54-05:00"},
     {"file":".agents/skills/convex-performance-audit/references/function-budget.md","last_modified":"2026-03-23T17:32:54-05:00"},
-    {"file":".agents/skills/convex-performance-audit/references/hot-path-rules.md","last_modified":"2026-03-23T17:32:54-05:00"},
+    {"file":".agents/skills/convex-performance-audit/references/hot-path-rules.md","last_modified":"2026-03-29T00:38:10-05:00"},
     {"file":".agents/skills/convex-performance-audit/references/occ-conflicts.md","last_modified":"2026-03-23T17:32:54-05:00"},
     {"file":".agents/skills/convex-performance-audit/references/subscription-cost.md","last_modified":"2026-03-23T17:32:54-05:00"},
-    {"file":".agents/skills/convex-quickstart/SKILL.md","last_modified":"2026-03-23T17:32:54-05:00"},
+    {"file":".agents/skills/convex-quickstart/SKILL.md","last_modified":"2026-03-29T00:38:10-05:00"},
     {"file":".agents/skills/convex-quickstart/agents/openai.yaml","last_modified":"2026-03-23T17:32:54-05:00"},
     {"file":".agents/skills/convex-quickstart/assets/icon.svg","last_modified":"2026-03-23T17:32:54-05:00"},
-    {"file":".agents/skills/convex-setup-auth/SKILL.md","last_modified":"2026-03-23T17:32:54-05:00"},
+    {"file":".agents/skills/convex-setup-auth/SKILL.md","last_modified":"2026-03-29T00:38:10-05:00"},
     {"file":".agents/skills/convex-setup-auth/agents/openai.yaml","last_modified":"2026-03-23T17:32:54-05:00"},
     {"file":".agents/skills/convex-setup-auth/assets/icon.svg","last_modified":"2026-03-23T17:32:54-05:00"},
     {"file":".agents/skills/convex-setup-auth/references/auth0.md","last_modified":"2026-03-23T17:32:54-05:00"},
@@ -82,7 +88,6 @@
     {"file":".claude/blueprints/nextjs-convex-app.yaml","last_modified":"2026-03-23T16:54:52-05:00"},
     {"file":".claude/blueprints/nextjs-convex-feature.yaml","last_modified":"2026-03-23T16:54:52-05:00"},
     {"file":".claude/claude-agent-sdk-review.md","last_modified":"2026-03-23T16:54:52-05:00"},
-    {"file":".claude/command-audit.log","last_modified":"2026-03-23T17:11:21-05:00"},
     {"file":".claude/commands/commit.md","last_modified":"2026-03-23T16:54:52-05:00"},
     {"file":".claude/commands/create-rules.md","last_modified":"2026-03-23T16:54:52-05:00"},
     {"file":".claude/commands/execute.md","last_modified":"2026-03-23T16:54:52-05:00"},
@@ -419,9 +424,8 @@
     {"file":".claude/worktrees/implement-data-layer-types/node_modules/.vite/vitest/da39a3ee5e6b4b0d3255bfef95601890afd80709/results.json","last_modified":"2026-03-23T16:54:52-05:00"},
     {"file":".claude/worktrees/implement-data-layer-types/src/agency/__tests__/projects.test.ts","last_modified":"2026-03-24T00:43:05-05:00"},
     {"file":".env.example","last_modified":"2026-03-23T17:02:31-05:00"},
-    {"file":".github/workflows/ci.yml","last_modified":"2026-03-23T17:15:30-05:00"},
-    {"file":".github/workflows/deploy.yml","last_modified":"2026-03-23T17:15:30-05:00"},
-    {"file":".gitignore","last_modified":"2026-03-23T20:52:21-05:00"},
+    {"file":".github/workflows/ci.yml","last_modified":"2026-03-26T21:48:01-05:00"},
+    {"file":".gitignore","last_modified":"2026-03-26T12:30:37-05:00"},
     {"file":".prettierrc.json","last_modified":"2026-03-23T17:14:30-05:00"},
     {"file":".stitch/DESIGN.md","last_modified":"2026-03-23T19:34:53-05:00"},
     {"file":".stitch/SITE.md","last_modified":"2026-03-23T19:34:53-05:00"},
@@ -441,63 +445,58 @@
     {"file":".stitch/designs/07-templates.png","last_modified":"2026-03-23T19:34:53-05:00"},
     {"file":".stitch/designs/08-shared-tool-view.html","last_modified":"2026-03-23T19:34:53-05:00"},
     {"file":".stitch/designs/08-shared-tool-view.png","last_modified":"2026-03-23T19:34:53-05:00"},
-    {"file":".stitch/designs/INDEX.md","last_modified":"2026-03-23T19:34:53-05:00"},
-    {"file":".stitch/metadata.json","last_modified":"2026-03-23T19:34:53-05:00"},
-    {"file":".stitch/next-prompt.md","last_modified":"2026-03-23T19:34:53-05:00"},
-    {"file":".superpowers/brainstorm/88090-1774297888/.server-info","last_modified":"2026-03-23T16:54:52-05:00"},
-    {"file":".superpowers/brainstorm/88090-1774297888/approaches.html","last_modified":"2026-03-23T16:54:52-05:00"},
-    {"file":".superpowers/brainstorm/88090-1774297888/final-design.html","last_modified":"2026-03-23T16:54:52-05:00"},
-    {"file":".superpowers/brainstorm/88090-1774297888/library-audit.html","last_modified":"2026-03-23T16:54:52-05:00"},
-    {"file":".superpowers/brainstorm/88090-1774297888/waiting.html","last_modified":"2026-03-23T16:54:52-05:00"},
-    {"file":"CHANGELOG.md","last_modified":"2026-03-23T22:13:22-05:00"},
-    {"file":"CLAUDE.md","last_modified":"2026-03-24T10:26:16-05:00"},
-    {"file":"README.md","last_modified":"2026-03-23T22:13:22-05:00"},
-    {"file":"components.json","last_modified":"2026-03-23T17:01:39-05:00"}
+    {"file":".stitch/designs/09-dashboard-home.html","last_modified":"2026-03-25T10:14:50-05:00"},
+    {"file":".stitch/designs/09-dashboard-home.png","last_modified":"2026-03-25T10:14:50-05:00"},
+    {"file":".stitch/designs/10-settings.html","last_modified":"2026-03-25T10:14:50-05:00"},
+    {"file":".stitch/designs/10-settings.png","last_modified":"2026-03-25T10:14:50-05:00"},
+    {"file":".stitch/designs/11-builder-toolbar.html","last_modified":"2026-03-25T10:14:50-05:00"},
+    {"file":".stitch/designs/11-builder-toolbar.png","last_modified":"2026-03-25T10:14:50-05:00"},
+    {"file":".stitch/designs/12-code-view.html","last_modified":"2026-03-25T10:14:50-05:00"}
   ],
   "hotspots": [
-    {"changes":51,"file":""},
-    {"changes":8,"file":"package.json"},
-    {"changes":8,"file":"package-lock.json"},
-    {"changes":7,"file":"src/app/layout.tsx"},
-    {"changes":7,"file":"src/app/(app)/builder/page.tsx"},
-    {"changes":6,"file":"src/features/builder/components/chat/bridges-chat.tsx"},
-    {"changes":6,"file":"src/app/globals.css"},
-    {"changes":5,"file":"src/features/therapy-tools/components/tool-renderer.tsx"},
-    {"changes":5,"file":"src/features/therapy-tools/components/__tests__/tool-renderer.test.tsx"},
-    {"changes":5,"file":"CLAUDE.md"},
-    {"changes":4,"file":"vitest.config.ts"},
-    {"changes":4,"file":"src/features/builder/components/tool-preview.tsx"},
-    {"changes":4,"file":"src/features/builder/components/builder-layout.tsx"},
-    {"changes":4,"file":"src/core/providers.tsx"},
-    {"changes":4,"file":"src/app/(app)/layout.tsx"},
-    {"changes":4,"file":"convex/agents/bridges.ts"},
-    {"changes":4,"file":".gitignore"},
-    {"changes":3,"file":"tsconfig.json"},
-    {"changes":3,"file":"src/test/setup.ts"},
-    {"changes":3,"file":"src/shared/components/tool-card.tsx"}
+    {"changes":517,"file":""},
+    {"changes":51,"file":"src/app/api/generate/route.ts"},
+    {"changes":50,"file":"src/features/builder/components/builder-page.tsx"},
+    {"changes":30,"file":"src/features/builder/components/preview-panel.tsx"},
+    {"changes":28,"file":"src/features/builder/components/chat-panel.tsx"},
+    {"changes":28,"file":"convex/schema.ts"},
+    {"changes":27,"file":"convex/sessions.ts"},
+    {"changes":25,"file":"src/features/builder/hooks/use-streaming.ts"},
+    {"changes":24,"file":"package.json"},
+    {"changes":20,"file":"package-lock.json"},
+    {"changes":19,"file":"convex/_generated/api.d.ts"},
+    {"changes":17,"file":"src/features/builder/components/builder-toolbar.tsx"},
+    {"changes":17,"file":"src/features/builder/components/__tests__/builder-page.test.tsx"},
+    {"changes":16,"file":"src/features/builder/lib/agent-prompt.ts"},
+    {"changes":16,"file":"src/app/(app)/builder/page.tsx"},
+    {"changes":15,"file":"src/features/builder/components/code-panel.tsx"},
+    {"changes":15,"file":"CLAUDE.md"},
+    {"changes":14,"file":"src/features/dashboard/components/dashboard-view.tsx"},
+    {"changes":14,"file":"src/features/builder-v2/components/chat.tsx"},
+    {"changes":14,"file":"src/app/layout.tsx"}
   ],
   "recent_activity": {
-    "commits_30d": 52,
+    "commits_30d": 518,
     "contributors_30d": 1
   },
   "todo_count": 
-23352
+50288
 ,
   "test_files": 
-1217
+1909
 ,
   "recent_commits": [
-    {"hash":"16955f7","message":"fix: post-merge integration fixes for builder-v2 pivot","date":"4 minutes ago"}
+    {"hash":"6c46d24","message":"fix: harden auth, ownership validation, and query bounds across backend","date":"0 seconds ago"}
 ,
-    {"hash":"416848a","message":"merge: implement-builder-v2-pivot worktree — Builder V2 therapy-focused app builder","date":"78 minutes ago"}
+    {"hash":"1b7a8bc","message":"fix: caregiver portal bugs — dual-role goals query, scheduler noise, route protection, native select","date":"30 minutes ago"}
 ,
-    {"hash":"14eb0d8","message":"feat: implement builder-v2 pivot — therapy-focused AI app builder","date":"8 hours ago"}
+    {"hash":"3c242af","message":"fix: update existing tests for Subsystem 4 schema and sidebar changes","date":"80 minutes ago"}
 ,
-    {"hash":"c15d6bf","message":"merge: implement-phase5-polish worktree — Phase 5 landing page & polish","date":"10 hours ago"}
+    {"hash":"96af682","message":"test(family): add component tests for streak tracker, practice log form, and caregiver sidebar","date":"83 minutes ago"}
 ,
-    {"hash":"6fd0b57","message":"feat: Phase 5 — Landing page polish, error boundaries, a11y, responsive","date":"10 hours ago"}
+    {"hash":"418858f","message":"feat(patients): SLP-side home programs widget with engagement tracking","date":"85 minutes ago"}
 
   ],
-  "prev_test_files": 0,
-  "outdated_deps": 6
+  "prev_test_files": 1217,
+  "outdated_deps": 14
 }

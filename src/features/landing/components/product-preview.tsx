@@ -3,6 +3,7 @@ import { MaterialIcon } from "@/shared/components/material-icon";
 export function ProductPreview() {
   return (
     <section className="py-20 max-w-7xl mx-auto px-6">
+      <h2 className="sr-only">See What You Can Build</h2>
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Large card — Visual Schedules */}
         <div className="lg:col-span-8 bg-surface-container h-[400px] rounded-2xl p-8 relative overflow-hidden flex flex-col justify-end sanctuary-shadow">
@@ -26,9 +27,9 @@ export function ProductPreview() {
             <span className="px-3 py-1 bg-primary-container text-on-primary-container rounded-full text-xs font-bold mb-4 inline-block">
               MOST POPULAR
             </span>
-            <h4 className="text-3xl font-headline font-extrabold mb-2 text-on-surface">
+            <h3 className="text-3xl font-headline font-extrabold mb-2 text-on-surface">
               Visual Schedules
-            </h4>
+            </h3>
             <p className="text-on-surface-variant max-w-md">
               Reduce transition anxiety with step-by-step interactive flows
               customized for any routine.
@@ -42,9 +43,9 @@ export function ProductPreview() {
             <MaterialIcon icon="grid_view" />
           </div>
           <div>
-            <h4 className="text-2xl font-headline font-extrabold mb-2">
+            <h3 className="text-2xl font-headline font-extrabold mb-2">
               Communication Boards
-            </h4>
+            </h3>
             <p className="opacity-80">
               Give every child a voice with instant PECS-style boards based on
               their specific environment.

@@ -114,15 +114,23 @@ Clerk v7 handles all user authentication. The integration spans three layers:
 
 Unauthenticated users can explore templates and use the builder. Protected routes (like My Apps) require sign-in.
 
-### Test User Sign-In (Headless Browsers)
+### E2E Test Users
 
-Password auth fails in headless browsers (Clerk flags new devices). Use the **email code flow**:
+Two dedicated Clerk test users exist for role-based E2E testing. Both use `+clerk_test` emails (Clerk dev feature: email code is always `424242`).
 
-1. Go to `/sign-in`, enter `e2e+clerk_test@bridges.ai`, click Continue
-2. Click **"Use another method"** → **"Email code"**
-3. Enter code **`424242`** (always works for `+clerk_test` emails in dev mode)
+| Role | Email | Env Vars | Clerk publicMetadata |
+|------|-------|----------|---------------------|
+| **SLP** | `e2e+clerk_test+slp@bridges.ai` | `E2E_SLP_EMAIL`, `E2E_SLP_PASSWORD` | `{ role: "slp" }` |
+| **Caregiver** | `e2e+clerk_test+caregiver@bridges.ai` | `E2E_CAREGIVER_EMAIL`, `E2E_CAREGIVER_PASSWORD` | `{ role: "caregiver" }` |
 
-The `+clerk_test` suffix is a Clerk dev feature: no real email sent, code is always `424242`.
+**Test fixtures** (`tests/e2e/fixtures.ts`):
+- `slpPage` — authenticated as SLP
+- `caregiverPage` — authenticated as caregiver
+- `authedPage` — legacy default user (backward-compatible)
+
+**Sign-in strategies:**
+1. **Password** (primary): `@clerk/testing/playwright` `clerk.signIn` with password strategy
+2. **Email code** (fallback for headless): Enter email → "Use another method" → "Email code" → code `424242`
 
 ## Deployment Verification
 
