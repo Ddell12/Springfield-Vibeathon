@@ -139,13 +139,13 @@ After the parent closes/finishes, they see the practice log form.
 | `create` | mutation | patientId, title, instructions, materialId?, goalId?, frequency, startDate, endDate? | `assertSLP` + ownership | Creates program + `home-program-assigned` activity log |
 | `update` | mutation | id, partial fields | `assertSLP` + ownership | Edit title, instructions, frequency, status |
 | `listByPatient` | query | patientId | `assertPatientAccess` | Both SLP and caregiver |
-| `getActiveByPatient` | query | patientId | `assertCaregiverAccess` | Dashboard "Today's Activities" — filters `status === "active"` |
+| `getActiveByPatient` | query | patientId | `assertPatientAccess` | Dashboard "Today's Activities" — filters `status === "active"`. Both SLP (for widget) and caregiver (for dashboard) use this. |
 
 ### `convex/practiceLog.ts`
 
 | Function | Type | Args | Auth | Notes |
 |---|---|---|---|---|
-| `log` | mutation | homeProgramId, date, duration?, confidence?, notes? | `assertCaregiverAccess` (via patient lookup) | Creates log + `practice-logged` activity log |
+| `log` | mutation | homeProgramId, date, duration?, confidence?, notes? | `assertCaregiverAccess` (via patient lookup) | Derives `patientId` from `homeProgramId` lookup — never accept `patientId` from client. Creates log + `practice-logged` activity log |
 | `listByProgram` | query | homeProgramId | `assertPatientAccess` | SLP sees engagement per program |
 | `listByPatientDateRange` | query | patientId, startDate, endDate | `assertPatientAccess` | Streak and weekly summary |
 | `getStreakData` | query | patientId | `assertPatientAccess` | Returns `{ currentStreak: number, weeklyPracticeDays: number, weeklyTarget: number }` |
@@ -156,12 +156,12 @@ After the parent closes/finishes, they see the practice log form.
 |---|---|---|---|---|
 | `send` | mutation | patientId, content | `assertPatientAccess` | Auto-sets `senderRole` from auth. Logs `message-sent` |
 | `list` | query | patientId, limit? (default 50) | `assertPatientAccess` | Paginated by timestamp desc. Convex reactive = real-time |
-| `markRead` | mutation | messageId | Recipient only | Sets `readAt` timestamp |
+| `markRead` | mutation | messageId | `assertPatientAccess` + verify caller is not the sender | Sets `readAt` timestamp |
 | `getUnreadCount` | query | patientId | `assertPatientAccess` | Count where `readAt` undefined and sender isn't current user |
 
 ### New Auth Helper — `assertPatientAccess`
 
-Added to `convex/lib/auth.ts`:
+To be added to `convex/lib/auth.ts`:
 
 ```ts
 async function assertPatientAccess(
@@ -337,14 +337,14 @@ Playwright smoke test:
 
 ## File Summary
 
-### New Files (~18)
+### New Files (~23)
 
 **Convex (3 files):**
 - `convex/homePrograms.ts`
 - `convex/practiceLog.ts`
 - `convex/patientMessages.ts`
 
-**Feature slice (13 files):**
+**Feature slice (16 files):**
 - `src/features/family/components/` — 10 components
 - `src/features/family/hooks/` — 3 hooks
 - `src/features/family/lib/` — 3 utility files
@@ -360,8 +360,9 @@ Playwright smoke test:
 - `src/app/(app)/family/[patientId]/messages/page.tsx`
 - `src/app/(app)/family/layout.tsx` (optional — can inherit `(app)` layout directly)
 
-### Modified Files (~3)
+### Modified Files (~4)
 
-- `convex/schema.ts` — Add 3 new tables + 3 activity log action types
+- `convex/schema.ts` — Add 3 new tables + 3 activity log action types + compound index `by_caregiverUserId_patientId` on `caregiverLinks` (optimizes `assertPatientAccess` to direct lookup instead of scan+filter)
 - `convex/lib/auth.ts` — Add `assertPatientAccess` helper
 - `src/features/dashboard/components/dashboard-sidebar.tsx` — Conditional caregiver nav
+- `src/features/patients/components/patient-detail-page.tsx` — Add Home Programs widget
