@@ -1982,7 +1982,7 @@ git commit -m "feat(billing): add invoices action, payment failure handler, auto
 
 ---
 
-### Task 20: Add billing frontend components
+### Task 20: Add billing frontend components (SLICE-1 UI)
 
 **Files:**
 - Create: `src/features/billing/components/plan-comparison-card.tsx`
@@ -2034,7 +2034,7 @@ git commit -m "feat(billing): add plan comparison, usage meter, billing history,
 
 ---
 
-### Task 20: Add billing component tests
+### Task 21: Add billing component tests
 
 **Files:**
 - Create: `src/features/billing/components/__tests__/plan-comparison-card.test.tsx`
@@ -2065,7 +2065,7 @@ git commit -m "test(billing): add plan comparison and usage meter tests"
 
 > Runs sequentially after Phase 5.
 
-### Task 21: Expand templates page with filtering and search
+### Task 22: Expand templates page with filtering and search
 
 **Files:**
 - Modify: `src/features/templates/components/templates-page.tsx`
@@ -2110,7 +2110,7 @@ git commit -m "feat(templates): add category filter, search, sort, preview cards
 
 ---
 
-### Task 22: Expand my-tools page with actions
+### Task 23: Expand my-tools page with actions
 
 **Files:**
 - Modify: `src/features/my-tools/components/my-tools-page.tsx`
@@ -2162,7 +2162,7 @@ git commit -m "feat(my-tools): add search, sort, rename, delete, duplicate actio
 
 ---
 
-### Task 23: Add templates and my-tools tests
+### Task 24: Add templates and my-tools tests
 
 **Files:**
 - Create: `src/features/templates/components/__tests__/templates-page.test.tsx`
@@ -2196,7 +2196,7 @@ git commit -m "test: add templates and my-tools component tests"
 
 ## Final Verification
 
-### Task 24: Full verification pass
+### Task 25: Full verification pass
 
 - [ ] **Step 1: Run full test suite**
 
