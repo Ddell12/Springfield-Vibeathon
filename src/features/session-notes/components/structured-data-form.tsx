@@ -10,11 +10,8 @@ import {
 } from "@/shared/components/ui/radio-group";
 import { MaterialIcon } from "@/shared/components/material-icon";
 import { TargetEntry, type TargetData } from "./target-entry";
-// Accepted cross-feature dependency: session-notes depends on goals for target linking.
-// This is a hub-pattern import where session notes are the aggregation point.
-import { useActiveGoals } from "@/features/goals/hooks/use-goals";
+import { useActiveGoals, formatAge } from "@/shared/clinical";
 import { DurationPresetInput } from "./duration-preset-input";
-import { formatAge } from "@/features/patients/lib/patient-utils";
 import { DIAGNOSIS_LABELS } from "@/shared/lib/diagnosis";
 import type { Doc } from "../../../../convex/_generated/dataModel";
 
