@@ -76,10 +76,18 @@ Key files:
 - Use semantic tokens: `bg-background`, `text-foreground`, `border-border`
 
 ### Design System
-- Dual fonts: **Manrope** (headlines) + **Inter** (body)
+Always read `DESIGN.md` before making any visual or UI decisions.
+All font choices, colors, spacing, and aesthetic direction are defined there.
+Do not deviate without explicit user approval.
+In QA mode, flag any code that doesn't match DESIGN.md.
+
+Key tokens (see DESIGN.md for full system):
+- Display font: **Fraunces** (variable serif) / Body: **Instrument Sans** / Mono: **Commit Mono**
+- Canvas: `#F6F3EE` (warm off-white) / Primary: `#00595c` (teal)
 - No 1px borders for sectioning — use tonal background shifts instead
 - Primary CTA: gradient from `#00595c` to `#0d7377` at 135deg
 - All animations use `cubic-bezier(0.4, 0, 0.2, 1)`, minimum 300ms duration
+- Minimal-functional motion only — autistic users can be motion-sensitive
 
 ## Terminology
 
@@ -192,3 +200,13 @@ Convex agent skills for common tasks can be installed by running `npx convex ai-
 | `docs/ai/prompt-library.md` | System prompts, tool schemas, RAG config |
 | `docs/product-vision.md` | Brand voice, audience personas, strategy |
 | `docs/prd.md` | Full product requirements document |
+
+## gstack
+
+Use the `/browse` skill from gstack for all web browsing. Never use `mcp__claude-in-chrome__*` tools directly.
+
+If gstack skills aren't working, run `cd .claude/skills/gstack && ./setup` to build the binary and register skills.
+
+### Available Skills
+
+`/office-hours` `/plan-ceo-review` `/plan-eng-review` `/plan-design-review` `/design-consultation` `/design-shotgun` `/review` `/ship` `/land-and-deploy` `/canary` `/benchmark` `/browse` `/connect-chrome` `/qa` `/qa-only` `/design-review` `/setup-browser-cookies` `/setup-deploy` `/retro` `/investigate` `/document-release` `/codex` `/cso` `/autoplan` `/careful` `/freeze` `/guard` `/unfreeze` `/gstack-upgrade`

@@ -19,6 +19,7 @@ import type * as billingActions from "../billingActions.js";
 import type * as caregivers from "../caregivers.js";
 import type * as clerkActions from "../clerkActions.js";
 import type * as entitlements from "../entitlements.js";
+import type * as explore_seed from "../explore_seed.js";
 import type * as flashcard_cards from "../flashcard_cards.js";
 import type * as flashcard_decks from "../flashcard_decks.js";
 import type * as generated_files from "../generated_files.js";
@@ -74,6 +75,7 @@ declare const fullApi: ApiFromModules<{
   caregivers: typeof caregivers;
   clerkActions: typeof clerkActions;
   entitlements: typeof entitlements;
+  explore_seed: typeof explore_seed;
   flashcard_cards: typeof flashcard_cards;
   flashcard_decks: typeof flashcard_decks;
   generated_files: typeof generated_files;
