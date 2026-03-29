@@ -17,6 +17,7 @@ import type * as apps from "../apps.js";
 import type * as billing from "../billing.js";
 import type * as billingActions from "../billingActions.js";
 import type * as caregivers from "../caregivers.js";
+import type * as childApps from "../childApps.js";
 import type * as clerkActions from "../clerkActions.js";
 import type * as entitlements from "../entitlements.js";
 import type * as flashcard_cards from "../flashcard_cards.js";
@@ -72,6 +73,7 @@ declare const fullApi: ApiFromModules<{
   billing: typeof billing;
   billingActions: typeof billingActions;
   caregivers: typeof caregivers;
+  childApps: typeof childApps;
   clerkActions: typeof clerkActions;
   entitlements: typeof entitlements;
   flashcard_cards: typeof flashcard_cards;
