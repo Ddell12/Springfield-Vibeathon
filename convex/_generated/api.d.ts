@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as __tests___testHelpers from "../__tests__/testHelpers.js";
 import type * as activityLog from "../activityLog.js";
 import type * as ai from "../ai.js";
 import type * as aiActions from "../aiActions.js";
@@ -20,6 +21,7 @@ import type * as flashcard_cards from "../flashcard_cards.js";
 import type * as flashcard_decks from "../flashcard_decks.js";
 import type * as generated_files from "../generated_files.js";
 import type * as goals from "../goals.js";
+import type * as homePrograms from "../homePrograms.js";
 import type * as http from "../http.js";
 import type * as image_cache from "../image_cache.js";
 import type * as image_generation from "../image_generation.js";
@@ -29,10 +31,13 @@ import type * as knowledge_search from "../knowledge/search.js";
 import type * as knowledge_seed from "../knowledge/seed.js";
 import type * as lib_auth from "../lib/auth.js";
 import type * as lib_billing from "../lib/billing.js";
+import type * as lib_progress from "../lib/progress.js";
 import type * as lib_session_states from "../lib/session_states.js";
 import type * as messages from "../messages.js";
 import type * as patientMaterials from "../patientMaterials.js";
+import type * as patientMessages from "../patientMessages.js";
 import type * as patients from "../patients.js";
+import type * as practiceLog from "../practiceLog.js";
 import type * as progressData from "../progressData.js";
 import type * as progressReports from "../progressReports.js";
 import type * as rate_limit_check from "../rate_limit_check.js";
@@ -54,6 +59,7 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  "__tests__/testHelpers": typeof __tests___testHelpers;
   activityLog: typeof activityLog;
   ai: typeof ai;
   aiActions: typeof aiActions;
@@ -66,6 +72,7 @@ declare const fullApi: ApiFromModules<{
   flashcard_decks: typeof flashcard_decks;
   generated_files: typeof generated_files;
   goals: typeof goals;
+  homePrograms: typeof homePrograms;
   http: typeof http;
   image_cache: typeof image_cache;
   image_generation: typeof image_generation;
@@ -75,10 +82,13 @@ declare const fullApi: ApiFromModules<{
   "knowledge/seed": typeof knowledge_seed;
   "lib/auth": typeof lib_auth;
   "lib/billing": typeof lib_billing;
+  "lib/progress": typeof lib_progress;
   "lib/session_states": typeof lib_session_states;
   messages: typeof messages;
   patientMaterials: typeof patientMaterials;
+  patientMessages: typeof patientMessages;
   patients: typeof patients;
+  practiceLog: typeof practiceLog;
   progressData: typeof progressData;
   progressReports: typeof progressReports;
   rate_limit_check: typeof rate_limit_check;

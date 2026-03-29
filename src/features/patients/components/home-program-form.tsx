@@ -15,13 +15,6 @@ import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
 import { Textarea } from "@/shared/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/shared/components/ui/select";
 import type { Id } from "../../../../convex/_generated/dataModel";
 
 const extendedApi = api as any;
@@ -143,17 +136,19 @@ export function HomeProgramForm({ open, onOpenChange, patientId }: HomeProgramFo
           {/* Frequency */}
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="hp-frequency">Frequency</Label>
-            <Select value={frequency} onValueChange={setFrequency}>
-              <SelectTrigger id="hp-frequency">
-                <SelectValue placeholder="Select frequency" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="daily">Daily</SelectItem>
-                <SelectItem value="3x-week">3x per week</SelectItem>
-                <SelectItem value="weekly">Weekly</SelectItem>
-                <SelectItem value="as-needed">As needed</SelectItem>
-              </SelectContent>
-            </Select>
+            <select
+              id="hp-frequency"
+              value={frequency}
+              onChange={(e) => setFrequency(e.target.value)}
+              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              required
+            >
+              <option value="" disabled>Select frequency</option>
+              <option value="daily">Daily</option>
+              <option value="3x-week">3x per week</option>
+              <option value="weekly">Weekly</option>
+              <option value="as-needed">As needed</option>
+            </select>
           </div>
 
           {/* Dates */}

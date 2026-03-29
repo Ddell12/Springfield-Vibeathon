@@ -2,8 +2,11 @@ import { convexTest } from "convex-test";
 import { describe, expect, it } from "vitest";
 import { api } from "../_generated/api";
 import schema from "../schema";
+import { suppressSchedulerErrors } from "./testHelpers";
 
 const modules = import.meta.glob("../**/*.*s");
+
+suppressSchedulerErrors();
 
 const SLP_IDENTITY = { subject: "slp-user-123", issuer: "clerk" };
 const CAREGIVER_IDENTITY = {

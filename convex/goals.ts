@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { ConvexError } from "convex/values";
-import { assertSLP } from "./lib/auth";
+import { assertSLP, assertPatientAccess } from "./lib/auth";
 
 // ── Validators ──────────────────────────────────────────────────────────────
 
@@ -89,6 +89,18 @@ export const listActive = query({
       .withIndex("by_patientId_status", (q) =>
         q.eq("patientId", args.patientId).eq("status", "active")
       )
+      .collect();
+  },
+});
+
+/** Dual-role query: both SLP and linked caregiver can view goals. */
+export const listByPatient = query({
+  args: { patientId: v.id("patients") },
+  handler: async (ctx, args) => {
+    await assertPatientAccess(ctx, args.patientId);
+    return await ctx.db
+      .query("goals")
+      .withIndex("by_patientId", (q) => q.eq("patientId", args.patientId))
       .collect();
   },
 });
