@@ -18,7 +18,7 @@ interface CaregiverInfoProps {
 export function CaregiverInfo({ patientId }: CaregiverInfoProps) {
   const links = useCaregiverLinks(patientId);
   const createInvite = useMutation(api.caregivers.createInvite);
-  const revokeInvite = useMutation(api.caregivers.revokeInvite);
+  const revokeInviteById = useMutation(api.caregivers.revokeInviteById);
   const [showForm, setShowForm] = useState(false);
   const [email, setEmail] = useState("");
   const [isInviting, setIsInviting] = useState(false);
@@ -40,9 +40,9 @@ export function CaregiverInfo({ patientId }: CaregiverInfoProps) {
     }
   }
 
-  async function handleRevoke(token: string) {
+  async function handleRevoke(linkId: Id<"caregiverLinks">) {
     try {
-      await revokeInvite({ token });
+      await revokeInviteById({ linkId });
       toast.success("Invite revoked");
     } catch {
       toast.error("Failed to revoke invite");
@@ -79,7 +79,7 @@ export function CaregiverInfo({ patientId }: CaregiverInfoProps) {
                 </p>
               </div>
               {link.inviteStatus === "pending" && (
-                <Button size="sm" variant="ghost" onClick={() => handleRevoke(link.inviteToken)}>
+                <Button size="sm" variant="ghost" onClick={() => handleRevoke(link._id)}>
                   <MaterialIcon icon="close" size="sm" />
                 </Button>
               )}

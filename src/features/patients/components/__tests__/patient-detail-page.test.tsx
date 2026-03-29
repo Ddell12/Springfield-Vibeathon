@@ -47,6 +47,9 @@ vi.mock("../quick-notes", () => ({
 vi.mock("../create-material-button", () => ({
   CreateMaterialButton: () => <button>Create Material</button>,
 }));
+vi.mock("@/features/family/components/child-apps-section", () => ({
+  ChildAppsSection: () => null,
+}));
 
 // Mock React.use to return params synchronously (avoids Suspense complexity)
 vi.mock("react", async () => {
