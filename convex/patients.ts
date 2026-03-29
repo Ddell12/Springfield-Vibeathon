@@ -71,7 +71,7 @@ export const list = query({
       return await ctx.db
         .query("patients")
         .withIndex("by_slpUserId_status", (q) =>
-          q.eq("slpUserId", userId).eq("status", args.status!)
+          q.eq("slpUserId", userId).eq("status", args.status as "active" | "on-hold" | "discharged" | "pending-intake")
         )
         .take(500);
     }

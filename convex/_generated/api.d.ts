@@ -14,6 +14,8 @@ import type * as ai from "../ai.js";
 import type * as aiActions from "../aiActions.js";
 import type * as app_state from "../app_state.js";
 import type * as apps from "../apps.js";
+import type * as billing from "../billing.js";
+import type * as billingActions from "../billingActions.js";
 import type * as caregivers from "../caregivers.js";
 import type * as clerkActions from "../clerkActions.js";
 import type * as entitlements from "../entitlements.js";
@@ -42,6 +44,7 @@ import type * as progressData from "../progressData.js";
 import type * as progressReports from "../progressReports.js";
 import type * as rate_limit_check from "../rate_limit_check.js";
 import type * as rate_limits from "../rate_limits.js";
+import type * as seeds_backfill_legacy_sessions from "../seeds/backfill_legacy_sessions.js";
 import type * as seeds_image_seeds from "../seeds/image_seeds.js";
 import type * as sessionNotes from "../sessionNotes.js";
 import type * as sessions from "../sessions.js";
@@ -51,6 +54,7 @@ import type * as templates_queries from "../templates/queries.js";
 import type * as templates_seed from "../templates/seed.js";
 import type * as templates_therapy_seeds from "../templates/therapy_seeds.js";
 import type * as therapy_templates from "../therapy_templates.js";
+import type * as usage from "../usage.js";
 
 import type {
   ApiFromModules,
@@ -65,6 +69,8 @@ declare const fullApi: ApiFromModules<{
   aiActions: typeof aiActions;
   app_state: typeof app_state;
   apps: typeof apps;
+  billing: typeof billing;
+  billingActions: typeof billingActions;
   caregivers: typeof caregivers;
   clerkActions: typeof clerkActions;
   entitlements: typeof entitlements;
@@ -93,6 +99,7 @@ declare const fullApi: ApiFromModules<{
   progressReports: typeof progressReports;
   rate_limit_check: typeof rate_limit_check;
   rate_limits: typeof rate_limits;
+  "seeds/backfill_legacy_sessions": typeof seeds_backfill_legacy_sessions;
   "seeds/image_seeds": typeof seeds_image_seeds;
   sessionNotes: typeof sessionNotes;
   sessions: typeof sessions;
@@ -102,6 +109,7 @@ declare const fullApi: ApiFromModules<{
   "templates/seed": typeof templates_seed;
   "templates/therapy_seeds": typeof templates_therapy_seeds;
   therapy_templates: typeof therapy_templates;
+  usage: typeof usage;
 }>;
 
 /**
