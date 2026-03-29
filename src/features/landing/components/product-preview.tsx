@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { MaterialIcon } from "@/shared/components/material-icon";
 
 export function ProductPreview() {
@@ -52,6 +54,14 @@ export function ProductPreview() {
             </p>
           </div>
         </div>
+      </div>
+      <div className="mt-8 text-center">
+        <Link
+          href="/explore"
+          className="inline-flex items-center gap-2 text-primary font-headline font-bold text-lg hover:underline transition-colors"
+        >
+          See them in action →
+        </Link>
       </div>
     </section>
   );

@@ -153,6 +153,24 @@ export const ensureForSession = mutation({
   },
 });
 
+/** Public query — returns featured apps for the /explore page. No auth required. */
+export const listFeatured = query({
+  args: {},
+  handler: async (ctx) => {
+    const apps = await ctx.db
+      .query("apps")
+      .withIndex("by_featured_order", (q) => q.eq("featured", true))
+      .collect();
+    return apps.map((app) => ({
+      title: app.title,
+      description: app.description,
+      shareSlug: app.shareSlug,
+      featuredCategory: app.featuredCategory,
+      featuredOrder: app.featuredOrder,
+    }));
+  },
+});
+
 // Used by publishApp action and potential publish UI checks
 export const getBySession = query({
   args: { sessionId: v.id("sessions") },

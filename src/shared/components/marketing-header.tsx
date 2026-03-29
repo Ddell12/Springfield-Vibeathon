@@ -14,6 +14,7 @@ import {
 } from "@/shared/components/ui/sheet";
 
 const navLinks = [
+  { href: "/explore", label: "Explore" },
   { href: "/builder", label: "Builder" },
   { href: "/flashcards", label: "Flashcards" },
   { href: "/templates", label: "Templates" },
