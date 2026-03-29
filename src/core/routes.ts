@@ -14,4 +14,7 @@ export const ROUTES = {
   INVITE: (token: string) => `/invite/${token}` as const,
   SIGN_IN: "/sign-in",
   SIGN_UP: "/sign-up",
+  FAMILY: "/family",
+  FAMILY_CHILD: (patientId: string) => `/family/${patientId}` as const,
+  FAMILY_MESSAGES: (patientId: string) => `/family/${patientId}/messages` as const,
 } as const;
