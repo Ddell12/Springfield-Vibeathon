@@ -116,6 +116,14 @@ export default defineSchema({
   }).index("by_user", ["userId"])
     .index("by_session", ["sessionId"]),
 
+  userBilling: defineTable({
+    userId: v.string(),
+    billingStatus: v.optional(v.string()),
+    pastDueSince: v.optional(v.number()),
+  })
+    .index("by_userId", ["userId"])
+    .index("by_billingStatus", ["billingStatus"]),
+
   usage: defineTable({
     userId: v.string(),
     periodStart: v.number(),
