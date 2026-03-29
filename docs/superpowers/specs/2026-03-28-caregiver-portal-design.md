@@ -174,8 +174,8 @@ async function assertPatientAccess(
   if (!patient) throw new ConvexError("Patient not found");
   if (patient.slpUserId === userId) return { userId, role: "slp" };
   const link = await ctx.db.query("caregiverLinks")
-    .withIndex("by_caregiverUserId", q => q.eq("caregiverUserId", userId))
-    .filter(q => q.eq(q.field("patientId"), patientId))
+    .withIndex("by_caregiverUserId_patientId", q =>
+      q.eq("caregiverUserId", userId).eq("patientId", patientId))
     .filter(q => q.eq(q.field("inviteStatus"), "accepted"))
     .first();
   if (link) return { userId, role: "caregiver" };
@@ -337,7 +337,7 @@ Playwright smoke test:
 
 ## File Summary
 
-### New Files (~23)
+### New Files (~26)
 
 **Convex (3 files):**
 - `convex/homePrograms.ts`
