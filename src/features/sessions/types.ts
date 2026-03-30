@@ -28,7 +28,8 @@ export type ContentUpdate = {
 };
 
 export type ContentControl = {
-  type: "content-next" | "content-previous" | "content-clear";
+  type: "content-next" | "content-previous" | "content-clear" | "content-reveal";
+  revealed?: boolean; // only for "content-reveal"
 };
 
 export type Interaction = {

@@ -102,7 +102,7 @@ export function ContentPicker({
             <TabsTrigger value="apps" className="flex-1 font-body text-sm">
               Apps
             </TabsTrigger>
-            <TabsTrigger value="images" className="flex-1 font-body text-sm">
+            <TabsTrigger value="images" className="flex-1 font-body text-sm" disabled>
               Images
             </TabsTrigger>
           </TabsList>
@@ -127,30 +127,39 @@ export function ContentPicker({
               </div>
             ) : (
               <div className="flex flex-col gap-2">
-                {decks.map((deck) => (
-                  <button
-                    key={deck._id}
-                    type="button"
-                    onClick={() => handleSelectDeck(deck)}
-                    className={cn(
-                      "flex items-center gap-3 rounded-lg bg-white px-4 py-3 text-left",
-                      "transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]",
-                      "hover:bg-teal-50 hover:shadow-sm",
-                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00595c]",
-                    )}
-                  >
-                    <MaterialIcon icon="style" className="text-xl text-[#00595c]" />
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate font-body text-sm font-medium text-stone-800">
-                        {deck.title}
-                      </p>
-                      <p className="font-body text-xs text-stone-500">
-                        {deck.cardCount} card{deck.cardCount !== 1 ? "s" : ""}
-                      </p>
-                    </div>
-                    <MaterialIcon icon="chevron_right" className="text-lg text-stone-400" />
-                  </button>
-                ))}
+                {decks.map((deck) => {
+                  const isLoading = pendingDeckId === deck._id;
+                  return (
+                    <button
+                      key={deck._id}
+                      type="button"
+                      onClick={() => handleSelectDeck(deck)}
+                      disabled={isLoading}
+                      className={cn(
+                        "flex items-center gap-3 rounded-lg bg-white px-4 py-3 text-left",
+                        "transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]",
+                        "hover:bg-teal-50 hover:shadow-sm",
+                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00595c]",
+                        isLoading && "cursor-wait opacity-60",
+                      )}
+                    >
+                      <MaterialIcon icon="style" className="text-xl text-[#00595c]" />
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate font-body text-sm font-medium text-stone-800">
+                          {deck.title}
+                        </p>
+                        <p className="font-body text-xs text-stone-500">
+                          {deck.cardCount} card{deck.cardCount !== 1 ? "s" : ""}
+                        </p>
+                      </div>
+                      {isLoading ? (
+                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#00595c] border-t-transparent" />
+                      ) : (
+                        <MaterialIcon icon="chevron_right" className="text-lg text-stone-400" />
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             )}
           </TabsContent>

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import Image from "next/image";
 import { Button } from "@/shared/components/ui/button";
 import { MaterialIcon } from "@/shared/components/material-icon";
 import { cn } from "@/core/utils";
@@ -17,7 +18,14 @@ export function ContentRenderer({
   isSLP,
   onSLPInteraction,
 }: ContentRendererProps) {
-  const [cardRevealed, setCardRevealed] = useState(false);
+  const [cardRevealed, setCardRevealed] = useState(
+    () => Boolean(content?.payload?.revealed),
+  );
+
+  // Sync revealed state when a new content-update arrives from the data channel
+  useEffect(() => {
+    setCardRevealed(Boolean(content?.payload?.revealed));
+  }, [content?.payload?.revealed]);
 
   // Reset reveal state when content changes
   function getCardFront(): string {
@@ -87,6 +95,8 @@ export function ContentRenderer({
 
         {/* Card face */}
         <div
+          role="region"
+          aria-label="Flashcard"
           className={cn(
             "flex flex-1 flex-col items-center justify-center rounded-xl bg-white p-8 text-center shadow-sm",
             "min-h-[180px]",
@@ -128,7 +138,11 @@ export function ContentRenderer({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setCardRevealed((r) => !r)}
+                onClick={() => {
+                  const newRevealed = !cardRevealed;
+                  setCardRevealed(newRevealed);
+                  onSLPInteraction?.({ type: "content-reveal", revealed: newRevealed });
+                }}
                 className="flex-1 font-body"
               >
                 <MaterialIcon
@@ -200,12 +214,15 @@ export function ContentRenderer({
 
     return (
       <div className="flex h-full items-center justify-center rounded-xl bg-white p-4 shadow-sm">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={url}
-          alt={alt}
-          className="max-h-full max-w-full rounded-lg object-contain"
-        />
+        <div className="relative h-full w-full">
+          <Image
+            src={url}
+            alt={alt}
+            fill
+            className="rounded-lg object-contain"
+            unoptimized
+          />
+        </div>
       </div>
     );
   }

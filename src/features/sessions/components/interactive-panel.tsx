@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/shared/components/ui/button";
 import { MaterialIcon } from "@/shared/components/material-icon";
 import { cn } from "@/core/utils";
@@ -37,9 +37,10 @@ export function InteractivePanel({ isSLP, appointmentId: _appointmentId }: Inter
     };
   }, [lastInteraction]);
 
-  function handleSelectContent(content: ContentUpdate) {
+  const handleSelectContent = useCallback((content: ContentUpdate) => {
     sendContent(content);
-  }
+    setPickerOpen(false);
+  }, [sendContent]);
 
   function handleStopSharing() {
     sendContent({ type: "content-clear" });
@@ -50,7 +51,9 @@ export function InteractivePanel({ isSLP, appointmentId: _appointmentId }: Inter
       // Update the currentIndex in the current content payload
       if (currentContent?.contentType === "flashcard") {
         const currentIndex = Number(currentContent.payload.currentIndex ?? 0);
-        const cardCount = Number(currentContent.payload.cardCount ?? 0);
+        const cardCount = Array.isArray(currentContent.payload.cards)
+          ? (currentContent.payload.cards as unknown[]).length
+          : 0;
 
         const nextIndex =
           control.type === "content-next"
@@ -64,6 +67,15 @@ export function InteractivePanel({ isSLP, appointmentId: _appointmentId }: Inter
             ...currentContent.payload,
             currentIndex: nextIndex,
           },
+        });
+      }
+    } else if (control.type === "content-reveal") {
+      // Re-broadcast the current content with updated revealed flag
+      if (currentContent) {
+        sendContent({
+          type: "content-update",
+          contentType: currentContent.contentType,
+          payload: { ...currentContent.payload, revealed: control.revealed ?? false },
         });
       }
     } else {
