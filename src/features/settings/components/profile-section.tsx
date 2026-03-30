@@ -49,7 +49,7 @@ export function ProfileSection() {
 
       {/* Avatar */}
       <div className="flex flex-col items-start gap-6">
-        <div className="w-20 h-20 rounded-full bg-tertiary flex items-center justify-center text-on-tertiary text-3xl font-bold font-headline shadow-inner">
+        <div className="w-20 h-20 rounded-full bg-tertiary flex items-center justify-center text-on-tertiary text-3xl font-bold shadow-inner">
           {initial}
         </div>
       </div>

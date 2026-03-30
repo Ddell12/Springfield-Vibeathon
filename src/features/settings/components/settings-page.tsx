@@ -60,7 +60,7 @@ export function SettingsPage() {
           <Button
             variant="ghost"
             size="sm"
-            className="h-8 gap-1 text-sm font-semibold font-headline"
+            className="h-8 gap-1 text-sm font-semibold"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             aria-expanded={mobileMenuOpen}
             aria-haspopup="listbox"

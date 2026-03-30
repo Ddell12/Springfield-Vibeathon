@@ -45,7 +45,7 @@ export function SettingsSidebar({
               key={item.id}
               onClick={() => onSectionChange(item.id)}
               className={cn(
-                "flex w-full items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold font-headline tracking-wide text-left transition-all duration-200",
+                "flex w-full items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold tracking-wide text-left transition-all duration-200",
                 isActive
                   ? "bg-primary-container text-on-primary shadow-sm"
                   : "text-on-surface-variant hover:bg-surface-container-high hover:translate-x-1"
