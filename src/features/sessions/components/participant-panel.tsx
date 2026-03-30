@@ -4,11 +4,11 @@ import {
   ParticipantTile,
   TrackLoop,
   useTracks,
-  useParticipants,
 } from "@livekit/components-react";
 import { Track } from "livekit-client";
 
 import { cn } from "@/core/utils";
+import { MaterialIcon } from "@/shared/components/material-icon";
 
 type ParticipantPanelProps = {
   className?: string;
@@ -21,7 +21,7 @@ export function ParticipantPanel({ className }: ParticipantPanelProps) {
     { onlySubscribed: false },
   );
 
-  const participants = useParticipants();
+  const participantCount = new Set(tracks.map(t => t.participant.identity)).size;
 
   return (
     <div
@@ -35,21 +35,9 @@ export function ParticipantPanel({ className }: ParticipantPanelProps) {
         <div className="flex h-full min-h-[300px] items-center justify-center">
           <div className="text-center">
             <div className="mb-2 flex justify-center">
-              <span
-                aria-hidden="true"
-                className="material-symbols-outlined select-none text-5xl text-stone-500"
-                style={{
-                  fontFamily: "'Material Symbols Outlined'",
-                  fontVariationSettings: "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24",
-                }}
-              >
-                videocam_off
-              </span>
+              <MaterialIcon icon="videocam_off" size="lg" className="text-stone-500" />
             </div>
-            <p
-              className="text-sm text-stone-400"
-              style={{ fontFamily: "'Instrument Sans', sans-serif" }}
-            >
+            <p className="text-sm text-stone-400 font-body">
               Waiting for participants…
             </p>
           </div>
@@ -70,14 +58,13 @@ export function ParticipantPanel({ className }: ParticipantPanelProps) {
       )}
 
       {/* Participant count badge */}
-      {participants.length > 0 && (
+      {participantCount > 0 && (
         <div className="absolute left-3 top-3">
           <span
-            className="rounded-full bg-black/50 px-2 py-0.5 text-xs text-white backdrop-blur-sm"
-            style={{ fontFamily: "'Instrument Sans', sans-serif" }}
+            className="rounded-full bg-black/50 px-2 py-0.5 text-xs text-white backdrop-blur-sm font-body"
           >
-            {participants.length}{" "}
-            {participants.length === 1 ? "participant" : "participants"}
+            {participantCount}{" "}
+            {participantCount === 1 ? "participant" : "participants"}
           </span>
         </div>
       )}

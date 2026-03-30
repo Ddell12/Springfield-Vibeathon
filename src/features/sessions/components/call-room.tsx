@@ -2,8 +2,8 @@
 
 import "@livekit/components-styles";
 import { LiveKitRoom, RoomAudioRenderer } from "@livekit/components-react";
-import type { LocalUserChoices } from "@livekit/components-core";
-import { useEffect, useRef, useState } from "react";
+import type { LocalUserChoices } from "@livekit/components-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useCallRoom } from "../hooks/use-call-room";
 import { useInteractiveSync } from "../hooks/use-interactive-sync";
@@ -24,15 +24,19 @@ export function CallRoom({ appointmentId, onCallEnd }: CallRoomProps) {
   const getInteractionLogRef = useRef<() => string>(() => "{}");
 
   // Handles PreJoin submit — fetches token then transitions to the room
-  async function handleJoin(choices: LocalUserChoices) {
+  const handleJoin = useCallback(async (choices: LocalUserChoices) => {
     setUserChoices(choices);
     await fetchToken();
-  }
+  }, [fetchToken]);
 
-  function handleDisconnect() {
+  const handleDisconnect = useCallback(() => {
     handleDisconnected();
     onCallEnd(getDurationSeconds(), getInteractionLogRef.current());
-  }
+  }, [handleDisconnected, onCallEnd, getDurationSeconds]);
+
+  const handleGetInteractionLog = useCallback((fn: () => string) => {
+    getInteractionLogRef.current = fn;
+  }, []);
 
   // Show lobby until we have a valid token and serverUrl
   if (callState === "idle" || callState === "connecting" || !token || !serverUrl) {
@@ -55,8 +59,7 @@ export function CallRoom({ appointmentId, onCallEnd }: CallRoomProps) {
       className="flex min-h-screen flex-col bg-[#F6F3EE]"
     >
       <RoomContent
-        onDisconnected={handleDisconnect}
-        onGetInteractionLog={(fn) => { getInteractionLogRef.current = fn; }}
+        onGetInteractionLog={handleGetInteractionLog}
       />
       <RoomAudioRenderer />
     </LiveKitRoom>
@@ -65,10 +68,8 @@ export function CallRoom({ appointmentId, onCallEnd }: CallRoomProps) {
 
 // Separate inner component so hooks that require RoomContext work correctly
 function RoomContent({
-  onDisconnected,
   onGetInteractionLog,
 }: {
-  onDisconnected: () => void;
   onGetInteractionLog: (fn: () => string) => void;
 }) {
   // useInteractiveSync must be inside LiveKitRoom for data channel access
@@ -86,15 +87,14 @@ function RoomContent({
         <div className="min-h-[320px] flex-1">
           <ParticipantPanel className="h-full" />
         </div>
-        <CallControls onDisconnected={onDisconnected} />
+        <CallControls />
       </div>
 
       {/* Interactive panel placeholder — 1/3 width on desktop (Task 14) */}
       <div className="lg:col-span-1">
         <div className="flex h-full min-h-[200px] items-center justify-center rounded-xl border border-dashed border-stone-300 bg-white">
           <p
-            className="text-sm text-stone-400"
-            style={{ fontFamily: "'Instrument Sans', sans-serif" }}
+            className="text-sm text-stone-400 font-body"
           >
             Interactive panel coming soon
           </p>

@@ -1,7 +1,7 @@
 "use client";
 
 import { PreJoin } from "@livekit/components-react";
-import type { LocalUserChoices } from "@livekit/components-core";
+import type { LocalUserChoices } from "@livekit/components-react";
 
 import { cn } from "@/core/utils";
 
@@ -17,14 +17,12 @@ export function Lobby({ onJoin, isConnecting = false }: LobbyProps) {
         {/* Header */}
         <div className="mb-8 text-center">
           <h1
-            className="mb-2 text-3xl font-semibold tracking-tight text-[#00595c]"
-            style={{ fontFamily: "'Fraunces', serif" }}
+            className="mb-2 text-3xl font-semibold tracking-tight text-[#00595c] font-headline"
           >
             Join Your Session
           </h1>
           <p
-            className="text-base text-stone-500"
-            style={{ fontFamily: "'Instrument Sans', sans-serif" }}
+            className="text-base text-stone-500 font-body"
           >
             Check your camera and microphone before joining.
           </p>
@@ -50,8 +48,7 @@ export function Lobby({ onJoin, isConnecting = false }: LobbyProps) {
 
         {/* Reassurance note */}
         <p
-          className="mt-6 text-center text-sm text-stone-400"
-          style={{ fontFamily: "'Instrument Sans', sans-serif" }}
+          className="mt-6 text-center text-sm text-stone-400 font-body"
         >
           Your session is private and encrypted.
         </p>

@@ -8,11 +8,10 @@ import { MaterialIcon } from "@/shared/components/material-icon";
 import { cn } from "@/core/utils";
 
 type CallControlsProps = {
-  onDisconnected?: () => void;
   className?: string;
 };
 
-export function CallControls({ onDisconnected, className }: CallControlsProps) {
+export function CallControls({ className }: CallControlsProps) {
   return (
     <div
       className={cn(
@@ -55,7 +54,6 @@ export function CallControls({ onDisconnected, className }: CallControlsProps) {
       {/* End call */}
       <DisconnectButton
         stopTracks={true}
-        onClick={onDisconnected}
         className={cn(
           "flex h-11 items-center gap-2 rounded-full bg-red-600 px-5",
           "text-sm font-medium text-white transition-colors duration-200",
@@ -64,7 +62,7 @@ export function CallControls({ onDisconnected, className }: CallControlsProps) {
         )}
       >
         <MaterialIcon icon="call_end" size="sm" />
-        <span style={{ fontFamily: "'Instrument Sans', sans-serif" }}>
+        <span className="font-body">
           End call
         </span>
       </DisconnectButton>
