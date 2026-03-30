@@ -158,6 +158,18 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
     return () => window.removeEventListener("beforeunload", handler);
   }, [status]);
 
+  // Keyboard shortcut: Cmd/Ctrl + Shift + S toggles source/preview
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === "S") {
+        e.preventDefault();
+        setViewMode((prev) => (prev === "preview" ? "code" : "preview"));
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
+
   const handleNameEditEnd = async (name: string) => {
     setIsEditingName(false);
     const trimmed = name.trim();
