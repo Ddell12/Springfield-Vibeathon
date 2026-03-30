@@ -42,8 +42,20 @@ function formatDate(timestamp?: number): string {
   });
 }
 
-export function SessionHistory({ patientId }: { patientId: Id<"patients"> }) {
-  const sessions = useQuery(api.speechCoach.getSessionHistory, { patientId });
+type Props =
+  | { mode?: "clinical"; patientId: Id<"patients"> }
+  | { mode: "standalone" };
+
+export function SessionHistory(props: Props) {
+  const clinicalSessions = useQuery(
+    api.speechCoach.getSessionHistory,
+    props.mode === "standalone" ? "skip" : { patientId: props.patientId }
+  );
+  const standaloneSessions = useQuery(
+    api.speechCoach.getStandaloneHistory,
+    props.mode === "standalone" ? {} : "skip"
+  );
+  const sessions = props.mode === "standalone" ? standaloneSessions : clinicalSessions;
   const [expandedId, setExpandedId] = useState<Id<"speechCoachSessions"> | null>(null);
 
   if (!sessions) {

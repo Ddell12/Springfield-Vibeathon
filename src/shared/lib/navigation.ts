@@ -15,6 +15,7 @@ export const NAV_ITEMS = [
 // because the href requires a patientId which varies by active child.
 export const CAREGIVER_NAV_ITEMS = [
   { icon: "home", label: "Home", href: ROUTES.FAMILY },
+  { icon: "record_voice_over", label: "Speech Coach", href: ROUTES.SPEECH_COACH },
   { icon: "settings", label: "Settings", href: ROUTES.SETTINGS },
 ] as const;
 
@@ -28,5 +29,6 @@ export function isNavActive(
   if (href === "/builder")   return pathname.startsWith("/builder");
   if (href === "/flashcards") return pathname.startsWith("/flashcards");
   if (href === "/family")    return pathname.startsWith("/family");
+  if (href === "/speech-coach") return pathname.startsWith("/speech-coach");
   return pathname === href;
 }

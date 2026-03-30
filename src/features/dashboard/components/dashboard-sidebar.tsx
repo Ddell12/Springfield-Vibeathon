@@ -22,7 +22,7 @@ export function DashboardSidebar() {
 
   // Redirect caregivers away from SLP-only routes
   useEffect(() => {
-    if (isCaregiver && !pathname.startsWith("/family") && !pathname.startsWith("/settings")) {
+    if (isCaregiver && !pathname.startsWith("/family") && !pathname.startsWith("/settings") && !pathname.startsWith("/speech-coach")) {
       router.replace("/family");
     }
   }, [isCaregiver, pathname, router]);
