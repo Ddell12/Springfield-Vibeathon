@@ -46,14 +46,13 @@ export const getAvailableSlots = query({
 
     for (let dayOffset = 0; dayOffset < 7; dayOffset++) {
       const dayTimestamp = args.weekStart + dayOffset * 24 * 60 * 60 * 1000;
-      const date = new Date(dayTimestamp);
-      const dayOfWeek = date.getUTCDay();
+      const dayOfWeek = dayOffset; // dayOffset 0–6 = Sun–Sat, matches JS getDay()
 
       const daySlots = availability.filter((a) => {
         if (a.dayOfWeek !== dayOfWeek) return false;
         if (a.isRecurring) return true;
         if (a.effectiveDate) {
-          const dateStr = date.toISOString().split("T")[0];
+          const dateStr = new Date(dayTimestamp).toISOString().split("T")[0];
           return a.effectiveDate === dateStr;
         }
         return false;

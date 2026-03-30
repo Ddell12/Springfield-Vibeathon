@@ -49,7 +49,7 @@ export function MeetingNotesView({ appointmentId }: MeetingNotesViewProps) {
     return (
       <div className="flex items-center gap-2 py-4 text-on-surface-variant">
         <MaterialIcon icon="info" size="sm" />
-        <span className="font-body text-sm">Processing has not started.</span>
+        <span className="font-body text-sm">Notes will be ready after the session ends.</span>
       </div>
     );
   }

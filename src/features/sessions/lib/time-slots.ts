@@ -1,7 +1,7 @@
 export function getWeekStart(date: Date): number {
   const d = new Date(date);
-  d.setUTCHours(0, 0, 0, 0);
-  d.setUTCDate(d.getUTCDate() - d.getUTCDay());
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() - d.getDay());
   return d.getTime();
 }
 

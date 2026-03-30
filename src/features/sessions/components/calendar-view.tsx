@@ -59,18 +59,25 @@ export function CalendarView({
               (s) => s.timestamp >= dayStart && s.timestamp < dayEnd,
             ) ?? [];
 
-          const dow = dayDate.getUTCDay();
+          const dow = dayDate.getDay();
+          const todayStart = startOfUtcDay(new Date());
+          const isToday = dayStart === todayStart;
+          const isPast = dayStart < todayStart;
 
           return (
             <div
               key={dayStart}
-              className="flex min-h-[200px] flex-col gap-2 rounded-xl bg-surface-container p-3"
+              className={cn(
+                "flex min-h-[200px] flex-col gap-2 rounded-xl p-3",
+                isToday ? "bg-primary/5 ring-1 ring-primary/30" : "bg-surface-container",
+                isPast && "opacity-60",
+              )}
             >
-              <div className="border-b border-border pb-2">
+              <div className="pb-3">
                 <p className="text-xs font-medium uppercase tracking-wide text-on-surface-variant">
                   {DAY_NAMES[dow]}
                 </p>
-                <p className="text-sm font-semibold text-on-surface tabular-nums">
+                <p className={cn("text-sm font-semibold tabular-nums", isToday ? "text-primary" : "text-on-surface")}>
                   {dayDate.toLocaleDateString("en-US", {
                     month: "short",
                     day: "numeric",

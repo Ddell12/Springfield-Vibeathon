@@ -40,7 +40,7 @@ export function AppointmentCard({
       href={ROUTES.SESSION_DETAIL(appointment._id)}
       className={cn(
         "block rounded-lg px-3 py-2 transition-colors duration-300",
-        "bg-primary/10 hover:bg-primary/15",
+        "bg-primary/20 hover:bg-primary/25",
         isPast && "opacity-60",
         isCancelled && "line-through opacity-50",
         className,

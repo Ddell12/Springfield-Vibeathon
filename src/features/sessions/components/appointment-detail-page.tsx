@@ -164,6 +164,31 @@ export function AppointmentDetailPage({ paramsPromise }: AppointmentDetailPagePr
           </div>
         )}
 
+        {/* Join link */}
+        {appointment.joinLink && (
+          <div>
+            <h2 className="font-headline mb-1 text-sm font-semibold text-on-surface">Join link</h2>
+            <div className="flex items-center gap-2">
+              <code className="flex-1 truncate rounded-lg bg-surface-container-high px-3 py-2 font-mono text-xs text-on-surface-variant">
+                {typeof window !== "undefined" ? `${window.location.origin}${appointment.joinLink}` : appointment.joinLink}
+              </code>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => {
+                  const url = typeof window !== "undefined"
+                    ? `${window.location.origin}${appointment.joinLink}`
+                    : appointment.joinLink ?? "";
+                  void navigator.clipboard.writeText(url);
+                  toast.success("Link copied!");
+                }}
+              >
+                <MaterialIcon icon="content_copy" size="sm" />
+              </Button>
+            </div>
+          </div>
+        )}
+
         {/* Actions */}
         <div className="flex flex-wrap gap-2">
           {isSLP && appointment.status === "scheduled" && (

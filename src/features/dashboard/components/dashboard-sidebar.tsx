@@ -23,15 +23,15 @@ export function DashboardSidebar() {
 
   // Redirect caregivers away from SLP-only routes
   useEffect(() => {
-    if (isCaregiver && !pathname.startsWith("/family") && !pathname.startsWith("/settings") && !pathname.startsWith("/speech-coach")) {
+    if (isCaregiver && !pathname.startsWith("/family") && !pathname.startsWith("/settings") && !pathname.startsWith("/speech-coach") && !pathname.startsWith("/sessions")) {
       router.replace("/family");
     }
   }, [isCaregiver, pathname, router]);
 
   return (
-    <aside className="fixed left-0 top-0 z-50 hidden h-screen w-20 md:flex flex-col items-center bg-surface-container py-6">
+    <aside className="fixed left-0 top-0 z-50 hidden h-screen w-20 md:flex flex-col items-center bg-surface-container py-6 overflow-hidden">
       {/* Logo */}
-      <div className="mb-10">
+      <div className="mb-10 shrink-0">
         <Link
           href={isCaregiver ? "/family" : "/dashboard"}
           className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary-container text-lg font-bold text-white shadow-sm"
@@ -41,7 +41,7 @@ export function DashboardSidebar() {
       </div>
 
       {/* Main Nav */}
-      <nav className="flex flex-1 flex-col items-center gap-6">
+      <nav className="flex flex-col items-center gap-4 overflow-y-auto overflow-x-hidden" style={{ maxHeight: "calc(100vh - 13rem)" }}>
         {navItems.map((item) => {
           const isActive = isNavActive(item.href, pathname, tab);
 
@@ -66,7 +66,7 @@ export function DashboardSidebar() {
       </nav>
 
       {/* Bottom: User menu */}
-      <div className="mt-auto flex flex-col items-center gap-6">
+      <div className="hidden md:flex shrink-0 flex-col items-center gap-4 pt-4">
         <Show when="signed-in">
           <NotificationBell />
           <UserButton />

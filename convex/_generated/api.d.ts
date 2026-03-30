@@ -21,6 +21,7 @@ import type * as billingActions from "../billingActions.js";
 import type * as caregivers from "../caregivers.js";
 import type * as childApps from "../childApps.js";
 import type * as clerkActions from "../clerkActions.js";
+import type * as demo_seed from "../demo_seed.js";
 import type * as e2e_seed from "../e2e_seed.js";
 import type * as emailActions from "../emailActions.js";
 import type * as entitlements from "../entitlements.js";
@@ -88,6 +89,7 @@ declare const fullApi: ApiFromModules<{
   caregivers: typeof caregivers;
   childApps: typeof childApps;
   clerkActions: typeof clerkActions;
+  demo_seed: typeof demo_seed;
   e2e_seed: typeof e2e_seed;
   emailActions: typeof emailActions;
   entitlements: typeof entitlements;
