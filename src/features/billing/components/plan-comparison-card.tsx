@@ -50,7 +50,7 @@ export function PlanComparisonCard() {
       >
         <CardHeader>
           <div className="flex items-center gap-2">
-            <CardTitle className="font-headline text-lg">Free</CardTitle>
+            <CardTitle className="text-lg">Free</CardTitle>
             {!isPremium && (
               <Badge variant="secondary">Current Plan</Badge>
             )}
@@ -60,7 +60,7 @@ export function PlanComparisonCard() {
           </p>
         </CardHeader>
         <CardContent>
-          <p className="font-headline text-2xl font-bold mb-4">
+          <p className="text-2xl font-bold mb-4">
             $0<span className="text-sm font-normal text-muted-foreground">/month</span>
           </p>
           <ul className="space-y-2">
@@ -82,7 +82,7 @@ export function PlanComparisonCard() {
       >
         <CardHeader>
           <div className="flex items-center gap-2">
-            <CardTitle className="font-headline text-lg">Premium</CardTitle>
+            <CardTitle className="text-lg">Premium</CardTitle>
             {isPremium && (
               <Badge variant="default">Current Plan</Badge>
             )}
@@ -92,7 +92,7 @@ export function PlanComparisonCard() {
           </p>
         </CardHeader>
         <CardContent>
-          <p className="font-headline text-2xl font-bold mb-4">
+          <p className="text-2xl font-bold mb-4">
             $9.99<span className="text-sm font-normal text-muted-foreground">/month</span>
           </p>
           <ul className="space-y-2">

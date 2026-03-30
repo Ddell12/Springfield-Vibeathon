@@ -49,7 +49,7 @@ export function UpgradeConfirmationDialog({
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle className="font-headline">
+          <DialogTitle>
             Upgrade to Premium
           </DialogTitle>
           <DialogDescription>
@@ -58,7 +58,7 @@ export function UpgradeConfirmationDialog({
         </DialogHeader>
 
         <div className="space-y-3 py-2">
-          <p className="font-headline text-2xl font-bold">
+          <p className="text-2xl font-bold">
             $9.99<span className="text-sm font-normal text-muted-foreground">/month</span>
           </p>
           <ul className="space-y-2">

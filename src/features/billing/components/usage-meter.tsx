@@ -67,7 +67,7 @@ export function UsageMeter() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="font-headline text-base">Usage This Month</CardTitle>
+          <CardTitle className="text-base">Usage This Month</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="animate-pulse space-y-4">
@@ -82,7 +82,7 @@ export function UsageMeter() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="font-headline text-base">Usage This Month</CardTitle>
+        <CardTitle className="text-base">Usage This Month</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <UsageBar
