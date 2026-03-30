@@ -17,7 +17,7 @@ export function HeroSection() {
             AI-Powered Support
           </div>
 
-          <h1 className="font-headline text-4xl md:text-5xl lg:text-6xl font-normal text-on-surface leading-tight tracking-tight">
+          <h1 className="font-headline text-4xl md:text-5xl font-normal text-on-surface leading-tight tracking-tight">
             Build therapy apps for your child —{" "}
             <span className="text-primary">just describe what you need</span>
           </h1>
