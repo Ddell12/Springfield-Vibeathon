@@ -1,7 +1,7 @@
 export function ExploreHero() {
   return (
     <section className="text-center py-16 px-6">
-      <h1 className="font-headline font-extrabold text-4xl md:text-5xl text-on-surface mb-4">
+      <h1 className="font-headline font-normal text-4xl md:text-5xl text-on-surface mb-4">
         See What You Can Build
       </h1>
       <p className="text-on-surface-variant text-lg md:text-xl max-w-2xl mx-auto">
