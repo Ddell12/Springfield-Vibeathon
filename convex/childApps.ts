@@ -105,6 +105,16 @@ async function hashPIN(pin: string, salt: string): Promise<string> {
     .join("");
 }
 
+/** Constant-time string comparison to prevent timing attacks on PIN hashes. */
+function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let result = 0;
+  for (let i = 0; i < a.length; i++) {
+    result |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+  return result === 0;
+}
+
 /** Legacy hash format (static salt) for migration fallback. */
 async function hashPINLegacy(pin: string): Promise<string> {
   const salted = `bridges-kid-mode:${pin}`;
@@ -160,10 +170,10 @@ export const verifyPIN = mutation({
     if (!link?.kidModePIN) return false;
 
     const newHash = await hashPIN(args.pin, link._id);
-    if (newHash === link.kidModePIN) return true;
+    if (timingSafeEqual(newHash, link.kidModePIN)) return true;
     // Migration fallback: try old hash format
     const oldHash = await hashPINLegacy(args.pin);
-    return oldHash === link.kidModePIN;
+    return timingSafeEqual(oldHash, link.kidModePIN);
   },
 });
 

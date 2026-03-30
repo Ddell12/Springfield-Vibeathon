@@ -19,6 +19,9 @@ export async function POST(request: NextRequest) {
   if (!patientId || !pin) {
     return NextResponse.json({ valid: false }, { status: 400 });
   }
+  if (!/^[a-z0-9]{32}$/.test(patientId)) {
+    return NextResponse.json({ valid: false }, { status: 400 });
+  }
 
   try {
     const convex = new ConvexHttpClient(CONVEX_URL);

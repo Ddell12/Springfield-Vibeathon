@@ -7,6 +7,11 @@ import { parseSSEChunks } from "@/core/sse-utils";
 import { extractErrorMessage } from "@/core/utils";
 import { type TherapyBlueprint,TherapyBlueprintSchema } from "@/features/builder/lib/schemas";
 
+/** Hard limit on total generation time — prevents indefinite hangs. */
+const GENERATION_TIMEOUT_MS = 5 * 60 * 1000; // 5 min
+/** If no SSE events arrive within this window, treat the stream as dead. */
+const INACTIVITY_TIMEOUT_MS = 60 * 1000; // 60s
+
 export type StreamingStatus = "idle" | "generating" | "live" | "failed";
 
 export interface StreamingFile {
@@ -383,6 +388,7 @@ export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn 
       const isFollowUp = sessionIdRef.current != null && statusRef.current === "live";
       dispatch({ type: isFollowUp ? "START_FOLLOW_UP" : "START_GENERATION" });
       tokenBufferRef.current = "";
+      let timedOut = false;
 
       try {
         const response = await fetch("/api/generate", {
@@ -421,9 +427,19 @@ export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn 
         const decoder = new TextDecoder();
         let buffer = "";
 
+        // Timeout machinery — abort the stream if generation hangs
+        const abortOnTimeout = () => { timedOut = true; controller.abort(); };
+        const overallTimer = setTimeout(abortOnTimeout, GENERATION_TIMEOUT_MS);
+        let inactivityTimer = setTimeout(abortOnTimeout, INACTIVITY_TIMEOUT_MS);
+
+        try {
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
+
+          // Reset inactivity timer on every chunk
+          clearTimeout(inactivityTimer);
+          inactivityTimer = setTimeout(abortOnTimeout, INACTIVITY_TIMEOUT_MS);
 
           buffer += decoder.decode(value, { stream: true });
 
@@ -448,8 +464,18 @@ export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn 
             if (typed) handleEvent(typed);
           }
         }
+        } finally {
+          clearTimeout(overallTimer);
+          clearTimeout(inactivityTimer);
+        }
       } catch (err) {
-        if (err instanceof Error && err.name === "AbortError") return;
+        if (err instanceof Error && err.name === "AbortError") {
+          if (timedOut) {
+            flushTokenBuffer();
+            dispatch({ type: "ERROR_RESPONSE", error: "Generation timed out — please try again" });
+          }
+          return;
+        }
         flushTokenBuffer();
         dispatch({ type: "ERROR_RESPONSE", error: extractErrorMessage(err) });
       }

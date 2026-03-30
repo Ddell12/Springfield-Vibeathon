@@ -40,9 +40,9 @@ function validateDateOfBirth(dob: string): void {
   if (isNaN(date.getTime())) throw new ConvexError("Invalid date of birth");
   const now = new Date();
   if (date >= now) throw new ConvexError("Date of birth must be in the past");
-  const twentyOneYearsAgo = new Date();
-  twentyOneYearsAgo.setFullYear(twentyOneYearsAgo.getFullYear() - 21);
-  if (date < twentyOneYearsAgo) throw new ConvexError("Date of birth must be within the last 21 years");
+  const maxAge = new Date();
+  maxAge.setFullYear(maxAge.getFullYear() - 120);
+  if (date < maxAge) throw new ConvexError("Date of birth is unreasonably far in the past");
 }
 
 function validateEmail(email: string): string {

@@ -151,6 +151,18 @@ export const remove = mutation({
       }
     }
 
+    // Cascade-delete patient materials referencing this session
+    while (true) {
+      const batch = await ctx.db
+        .query("patientMaterials")
+        .withIndex("by_sessionId", (q) => q.eq("sessionId", args.sessionId))
+        .take(200);
+      if (batch.length === 0) break;
+      for (const mat of batch) {
+        await ctx.db.delete(mat._id);
+      }
+    }
+
     // Cascade-delete apps (typically 0-1 per session)
     const apps = await ctx.db
       .query("apps")

@@ -53,13 +53,16 @@ describe("patients.create", () => {
     ).rejects.toThrow();
   });
 
-  it("validates dateOfBirth is in the past and within 21 years", async () => {
+  it("validates dateOfBirth is in the past and within 120 years", async () => {
     const t = convexTest(schema, modules).withIdentity(SLP_IDENTITY);
     await expect(
       t.mutation(api.patients.create, { ...VALID_PATIENT, dateOfBirth: "2099-01-01" })
     ).rejects.toThrow();
+    // Adults (e.g. 26 years old) should be accepted
+    await t.mutation(api.patients.create, { ...VALID_PATIENT, dateOfBirth: "2000-01-01" });
+    // Unreasonably old (>120 years) should be rejected
     await expect(
-      t.mutation(api.patients.create, { ...VALID_PATIENT, dateOfBirth: "2000-01-01" })
+      t.mutation(api.patients.create, { ...VALID_PATIENT, dateOfBirth: "1800-01-01", firstName: "Ancient" })
     ).rejects.toThrow();
   });
 

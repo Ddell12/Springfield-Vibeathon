@@ -47,14 +47,18 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
     : null) as Id<"patients"> | null;
 
   const isMobile = useIsMobile();
-  const [viewMode, setViewMode] = useState<ViewMode>(() => {
-    if (typeof window === "undefined") return "preview";
-    return (localStorage.getItem("bridges-viewMode") as ViewMode) || "preview";
-  });
-  const [deviceSize, setDeviceSize] = useState<DeviceSize>(() => {
-    if (typeof window === "undefined") return "desktop";
-    return (localStorage.getItem("bridges-deviceSize") as DeviceSize) || "desktop";
-  });
+  const [viewMode, setViewMode] = useState<ViewMode>("preview");
+  const [deviceSize, setDeviceSize] = useState<DeviceSize>("desktop");
+
+  // Hydrate from localStorage after mount to avoid SSR/CSR mismatch
+  const hasMounted = useRef(false);
+  useEffect(() => {
+    const savedView = localStorage.getItem("bridges-viewMode") as ViewMode | null;
+    const savedDevice = localStorage.getItem("bridges-deviceSize") as DeviceSize | null;
+    if (savedView) setViewMode(savedView);
+    if (savedDevice) setDeviceSize(savedDevice);
+    hasMounted.current = true;
+  }, []);
   const [mobilePanel, setMobilePanel] = useState<"chat" | "preview">("chat");
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
