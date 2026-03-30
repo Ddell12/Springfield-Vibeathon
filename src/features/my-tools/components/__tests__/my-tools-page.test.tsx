@@ -51,6 +51,8 @@ vi.mock("@/shared/components/delete-confirmation-dialog", () => ({
 
 import * as convexReact from "convex/react";
 
+const mockUseQuery = vi.mocked(convexReact.useQuery);
+
 const mockSession = {
   _id: "session1" as Id<"sessions">,
   _creationTime: Date.now(),
@@ -126,5 +128,31 @@ describe("MyToolsPage", () => {
 
     expect(screen.getByText("My Schedule")).toBeInTheDocument();
     expect(screen.getByText("Token Board")).toBeInTheDocument();
+  });
+
+  it("shows Building badge for sessions in generating state", () => {
+    mockUseQuery.mockReturnValue([
+      {
+        _id: "session1",
+        title: "My Token Board",
+        state: "generating",
+        _creationTime: Date.now(),
+      },
+    ]);
+    render(<MyToolsPage />);
+    expect(screen.getByText("Building...")).toBeInTheDocument();
+  });
+
+  it("does not show Building badge for live sessions", () => {
+    mockUseQuery.mockReturnValue([
+      {
+        _id: "session1",
+        title: "My Token Board",
+        state: "live",
+        _creationTime: Date.now(),
+      },
+    ]);
+    render(<MyToolsPage />);
+    expect(screen.queryByText("Building...")).not.toBeInTheDocument();
   });
 });

@@ -76,19 +76,29 @@ export function MyToolsPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {sessions.map((session, i) => (
-          <ProjectCard
-            key={session._id}
-            project={{
-              id: session._id,
-              title: session.title,
-              thumbnail: null,
-              updatedAt: session._creationTime,
-              userInitial: session.title.charAt(0).toUpperCase(),
-              userColor: "bg-tertiary-fixed text-on-surface",
-            }}
-            index={i}
-            onDelete={() => setDeleteTarget({ id: session._id, title: session.title })}
-          />
+          <div key={session._id} className="relative">
+            <ProjectCard
+              project={{
+                id: session._id,
+                title: session.title,
+                thumbnail: null,
+                updatedAt: session._creationTime,
+                userInitial: session.title.charAt(0).toUpperCase(),
+                userColor: "bg-tertiary-fixed text-on-surface",
+              }}
+              index={i}
+              onDelete={() => setDeleteTarget({ id: session._id, title: session.title })}
+            />
+            {session.state === "generating" && (
+              <div className="absolute left-4 top-4 z-10 flex items-center gap-1.5 rounded-full bg-primary/90 px-3 py-1.5 text-xs font-semibold text-white shadow-md">
+                <span className="relative flex h-2 w-2">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white/60" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-white" />
+                </span>
+                Building...
+              </div>
+            )}
+          </div>
         ))}
       </div>
 
