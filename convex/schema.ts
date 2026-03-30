@@ -293,9 +293,88 @@ export default defineSchema({
     })),
     aiGenerated: v.boolean(),
     signedAt: v.optional(v.number()),
+    meetingRecordId: v.optional(v.id("meetingRecords")),
   })
     .index("by_patientId_sessionDate", ["patientId", "sessionDate"])
     .index("by_slpUserId", ["slpUserId"]),
+
+  availability: defineTable({
+    slpId: v.string(),
+    dayOfWeek: v.number(),
+    startTime: v.string(),
+    endTime: v.string(),
+    isRecurring: v.boolean(),
+    effectiveDate: v.optional(v.string()),
+    timezone: v.string(),
+  })
+    .index("by_slpId", ["slpId"])
+    .index("by_slpId_dayOfWeek", ["slpId", "dayOfWeek"]),
+
+  appointments: defineTable({
+    slpId: v.string(),
+    patientId: v.id("patients"),
+    caregiverId: v.optional(v.string()),
+    scheduledAt: v.number(),
+    duration: v.number(),
+    status: v.union(
+      v.literal("scheduled"),
+      v.literal("in-progress"),
+      v.literal("completed"),
+      v.literal("cancelled"),
+      v.literal("no-show"),
+    ),
+    cancelledBy: v.optional(v.string()),
+    livekitRoom: v.optional(v.string()),
+    joinLink: v.string(),
+    notes: v.optional(v.string()),
+    timezone: v.optional(v.string()),
+  })
+    .index("by_slpId", ["slpId"])
+    .index("by_patientId", ["patientId"])
+    .index("by_scheduledAt", ["scheduledAt"])
+    .index("by_status", ["status"])
+    .index("by_slpId_scheduledAt", ["slpId", "scheduledAt"]),
+
+  meetingRecords: defineTable({
+    appointmentId: v.id("appointments"),
+    slpId: v.string(),
+    patientId: v.id("patients"),
+    duration: v.number(),
+    audioFileId: v.optional(v.id("_storage")),
+    transcript: v.optional(v.string()),
+    transcriptFileId: v.optional(v.id("_storage")),
+    aiSummary: v.optional(v.string()),
+    soapNoteId: v.optional(v.id("sessionNotes")),
+    interactionLog: v.optional(v.string()),
+    status: v.union(
+      v.literal("processing"),
+      v.literal("transcribing"),
+      v.literal("summarizing"),
+      v.literal("complete"),
+      v.literal("failed"),
+    ),
+  })
+    .index("by_appointmentId", ["appointmentId"])
+    .index("by_slpId", ["slpId"])
+    .index("by_patientId", ["patientId"]),
+
+  notifications: defineTable({
+    userId: v.string(),
+    type: v.union(
+      v.literal("session-booked"),
+      v.literal("session-cancelled"),
+      v.literal("session-reminder"),
+      v.literal("session-starting"),
+      v.literal("notes-ready"),
+    ),
+    title: v.string(),
+    body: v.string(),
+    link: v.optional(v.string()),
+    read: v.boolean(),
+    appointmentId: v.optional(v.id("appointments")),
+  })
+    .index("by_userId", ["userId"])
+    .index("by_userId_read", ["userId", "read"]),
 
   goals: defineTable({
     patientId: v.id("patients"),
