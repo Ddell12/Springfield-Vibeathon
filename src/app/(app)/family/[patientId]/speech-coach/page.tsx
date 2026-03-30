@@ -5,19 +5,8 @@ import { useSearchParams } from "next/navigation";
 import { ErrorBoundary } from "react-error-boundary";
 
 import { SpeechCoachPage } from "@/features/speech-coach/components/speech-coach-page";
-import { Button } from "@/shared/components/ui/button";
-import type { Id } from "../../../../../convex/_generated/dataModel";
-
-function ErrorFallback({ resetErrorBoundary }: { resetErrorBoundary: () => void }) {
-  return (
-    <div className="flex h-full flex-col items-center justify-center gap-4 bg-surface text-on-surface">
-      <p className="text-lg font-semibold">Something went wrong</p>
-      <Button variant="outline" onClick={resetErrorBoundary}>
-        Try again
-      </Button>
-    </div>
-  );
-}
+import { GenericErrorFallback } from "@/shared/components/generic-error-fallback";
+import type { Id } from "../../../../../../convex/_generated/dataModel";
 
 export default function Page({ params }: { params: Promise<{ patientId: string }> }) {
   const { patientId } = use(params);
@@ -36,7 +25,7 @@ export default function Page({ params }: { params: Promise<{ patientId: string }
   }
 
   return (
-    <ErrorBoundary FallbackComponent={ErrorFallback}>
+    <ErrorBoundary FallbackComponent={GenericErrorFallback}>
       <SpeechCoachPage
         patientId={patientId as Id<"patients">}
         homeProgramId={programId as Id<"homePrograms">}

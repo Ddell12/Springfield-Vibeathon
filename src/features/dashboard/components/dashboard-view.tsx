@@ -3,7 +3,7 @@
 import { useMutation, useQuery } from "convex/react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import { DeleteConfirmationDialog } from "@/shared/components/delete-confirmation-dialog";
 import { EmptyState } from "@/shared/components/empty-state";
@@ -29,7 +29,11 @@ export function DashboardView() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const sessions = useQuery(api.sessions.list);
-  const liveSessions = useQuery(api.sessions.listByState, { state: "live" });
+  // Derive live sessions client-side instead of a second Convex subscription
+  const liveSessions = useMemo(
+    () => sessions?.filter((s) => s.state === "live") ?? [],
+    [sessions],
+  );
   const removeSession = useMutation(api.sessions.remove);
 
   const tabParam = searchParams.get("tab");

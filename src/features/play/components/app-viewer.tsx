@@ -69,7 +69,7 @@ function AppViewerInner({ patientId, appId }: { patientId: string; appId: string
         <iframe
           ref={iframeRef}
           src={blobUrl}
-          sandbox="allow-scripts allow-same-origin"
+          sandbox="allow-scripts"
           className="h-full w-full border-0"
           title="Therapy activity"
         />

@@ -71,10 +71,10 @@ export function PreviewPanel({ bundleHtml, state, error, deviceSize = "desktop",
             title="App preview"
             src={blobUrl}
             onLoad={() => setLoadedBlobUrl(blobUrl)}
-            // allow-same-origin is required: blob: URLs need same-origin context for
-            // inline scripts to execute. CSP meta tag in bundle.html restricts capabilities
-            // (no fetch, no nested frames, no form submissions). See inline-bundle.cjs.
-            sandbox="allow-scripts allow-same-origin"
+            // allow-scripts only — no allow-same-origin to prevent LLM-generated code
+            // from accessing parent DOM, cookies, or session tokens. Blob URLs run
+            // inline scripts fine with just allow-scripts + CSP unsafe-inline.
+            sandbox="allow-scripts"
             className={cn(
               "h-full border-0 bg-white transition-all duration-300",
               deviceSize === "mobile" ? "w-[390px] rounded-2xl shadow-xl" : "w-full",

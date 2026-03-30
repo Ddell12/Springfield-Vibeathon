@@ -110,7 +110,7 @@ describe("InviteLanding", () => {
     vi.mocked(useUser).mockReturnValue({
       isSignedIn: true,
       isLoaded: true,
-      user: { id: "user_1", publicMetadata: {} },
+      user: { id: "user_1", publicMetadata: { role: "slp" } },
     } as ReturnType<typeof useUser>);
 
     mockInviteInfo.mockReturnValue({ patientFirstName: "Alex" });
@@ -118,6 +118,23 @@ describe("InviteLanding", () => {
 
     expect(screen.getByText(/This invite is for caregivers/i)).toBeInTheDocument();
     expect(mockAcceptInvite).not.toHaveBeenCalled();
+  });
+
+  it("auto-accepts for users with no role set (new sign-ups)", async () => {
+    vi.mocked(useUser).mockReturnValue({
+      isSignedIn: true,
+      isLoaded: true,
+      user: { id: "user_1", publicMetadata: {} },
+    } as ReturnType<typeof useUser>);
+
+    mockInviteInfo.mockReturnValue({ patientFirstName: "Alex" });
+    mockAcceptInvite.mockResolvedValue(undefined);
+
+    await renderWithSuspense("valid-token");
+
+    await waitFor(() => {
+      expect(mockAcceptInvite).toHaveBeenCalledWith({ token: "valid-token" });
+    });
   });
 
   it("auto-accepts invite when caregiver is signed in and invite is valid", async () => {

@@ -361,11 +361,12 @@ export const getStandaloneHistory = query({
 
     const sessions = await ctx.db
       .query("speechCoachSessions")
-      .withIndex("by_userId_startedAt", (q) => q.eq("userId", userId))
+      .withIndex("by_userId_mode_startedAt", (q) =>
+        q.eq("userId", userId).eq("mode", "standalone"))
+      .order("desc")
       .take(50);
 
-    // Filter to standalone only (index doesn't filter by mode)
-    return sessions.filter((s) => s.mode === "standalone").reverse();
+    return sessions;
   },
 });
 

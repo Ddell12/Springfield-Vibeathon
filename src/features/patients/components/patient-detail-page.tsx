@@ -13,7 +13,7 @@ import { CaregiverInfo } from "./caregiver-info";
 import { HomeProgramsWidget } from "./home-programs-widget";
 import { QuickNotes } from "./quick-notes";
 import { CreateMaterialButton } from "./create-material-button";
-import { ChildAppsSection } from "@/features/family/components/child-apps-section";
+import { ChildAppsSection } from "@/shared/components/child-apps-section";
 import type { Id } from "../../../../convex/_generated/dataModel";
 
 interface PatientDetailPageProps {

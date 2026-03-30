@@ -3,7 +3,7 @@
 import { useMutation, useQuery } from "convex/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { cn } from "@/core/utils";
@@ -39,6 +39,14 @@ export function MyToolsPage() {
   const [sortBy, setSortBy] = useState<SortOption>("recent");
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const toggleSelection = useCallback((id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
 
   const fullscreenBundle = useQuery(
@@ -231,12 +239,7 @@ export function MyToolsPage() {
               onClick={selectionMode ? (e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                setSelectedIds((prev) => {
-                  const next = new Set(prev);
-                  if (next.has(session._id)) next.delete(session._id);
-                  else next.add(session._id);
-                  return next;
-                });
+                toggleSelection(session._id);
               } : undefined}
             >
               {renamingId === session._id ? (
@@ -262,12 +265,7 @@ export function MyToolsPage() {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        setSelectedIds((prev) => {
-                          const next = new Set(prev);
-                          if (next.has(session._id)) next.delete(session._id);
-                          else next.add(session._id);
-                          return next;
-                        });
+                        toggleSelection(session._id);
                       }}
                       className={cn(
                         "absolute left-3 top-3 z-20 flex h-6 w-6 items-center justify-center rounded-md border-2 shadow-sm transition-all",

@@ -23,7 +23,7 @@ export function InviteLanding({ paramsPromise }: InviteLandingProps) {
   const acceptAttemptedRef = useRef(false);
 
   const userRole = (user?.publicMetadata as { role?: string } | undefined)?.role;
-  const isSLP = !userRole || userRole === "slp";
+  const isSLP = userRole === "slp";
 
   // Auto-accept if user is already signed in (came back from sign-up)
   useEffect(() => {

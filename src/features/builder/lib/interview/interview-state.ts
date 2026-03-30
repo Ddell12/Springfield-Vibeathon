@@ -7,7 +7,7 @@ export type InterviewAction =
   | { type: "SHOW_GATE" }
   | { type: "CHOOSE_CUSTOMIZE" }
   | { type: "CHOOSE_SKIP" }
-  | { type: "SET_FOLLOWUPS"; followUpQuestions: InterviewQuestion[]; draftBlueprint: TherapyBlueprint }
+  | { type: "SET_FOLLOWUPS"; followUpQuestions: InterviewQuestion[]; draftBlueprint: TherapyBlueprint | null }
   | { type: "SHOW_REVIEW"; blueprint: TherapyBlueprint; richPrompt: string }
   | { type: "ADD_FREEFORM"; note: string }
   | { type: "RESET" }

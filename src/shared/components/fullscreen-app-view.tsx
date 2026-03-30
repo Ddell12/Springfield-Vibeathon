@@ -65,7 +65,7 @@ export function FullscreenAppView({
         ref={iframeRef}
         title="App fullscreen"
         src={blobUrl}
-        sandbox="allow-scripts allow-same-origin"
+        sandbox="allow-scripts"
         className="h-full w-full border-0"
       />
 

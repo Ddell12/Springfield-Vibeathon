@@ -45,6 +45,8 @@ export const list = query({
       .withIndex("by_user", (q) => q.eq("userId", identity.subject))
       .order("desc")
       .take(100);
+    // Post-filter: existing sessions may not have `archived` field (undefined !== true passes)
+    // TODO: backfill archived=false on existing sessions, then use by_user_archived index
     return sessions.filter((s) => s.archived !== true);
   },
 });

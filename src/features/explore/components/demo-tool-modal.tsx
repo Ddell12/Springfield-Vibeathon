@@ -69,7 +69,7 @@ function ModalIframe({ shareSlug, title }: { shareSlug: string; title: string })
       <iframe
         src={`/api/tool/${shareSlug}`}
         title={title}
-        sandbox="allow-scripts allow-same-origin"
+        sandbox="allow-scripts"
         className="w-full h-full border-0"
       />
     </div>

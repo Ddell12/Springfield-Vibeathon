@@ -30,7 +30,7 @@ export function useInterview() {
   }, []);
 
   const setFollowUps = useCallback(
-    (followUpQuestions: InterviewQuestion[], draftBlueprint: TherapyBlueprint) => {
+    (followUpQuestions: InterviewQuestion[], draftBlueprint: TherapyBlueprint | null) => {
       dispatch({ type: "SET_FOLLOWUPS", followUpQuestions, draftBlueprint });
     },
     [],

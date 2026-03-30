@@ -102,6 +102,17 @@ export function useSessionResume(
     }
   }, [initialSessionId, resumeSessionData, resumeFiles, router]);
 
+  // Timeout fallback: if queries haven't resolved after 10s, redirect to avoid stuck loading
+  useEffect(() => {
+    if (!initialSessionId) return;
+    const timeout = setTimeout(() => {
+      if (resumeSessionData === undefined && resumeFiles === undefined) {
+        router.replace("/builder");
+      }
+    }, 10_000);
+    return () => clearTimeout(timeout);
+  }, [initialSessionId, resumeSessionData, resumeFiles, router]);
+
   return {
     resumeSessionData,
     resumeFiles,
