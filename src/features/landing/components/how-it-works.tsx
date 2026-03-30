@@ -52,7 +52,7 @@ export function HowItWorks() {
               >
                 <MaterialIcon icon={step.icon} className="text-3xl" />
               </div>
-              <h3 className="text-2xl font-medium font-headline mb-4 text-on-surface">
+              <h3 className="text-2xl font-medium font-body mb-4 text-on-surface">
                 {step.title}
               </h3>
               <p className="text-on-surface-variant leading-relaxed">
