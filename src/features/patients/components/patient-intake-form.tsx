@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { api } from "../../../../convex/_generated/api";
 import { cn } from "@/core/utils";
+import { Badge } from "@/shared/components/ui/badge";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
@@ -17,6 +18,7 @@ import {
   SelectValue,
 } from "@/shared/components/ui/select";
 import { Textarea } from "@/shared/components/ui/textarea";
+import { ToggleGroup, ToggleGroupItem } from "@/shared/components/ui/toggle-group";
 import { MaterialIcon } from "@/shared/components/material-icon";
 import { toast } from "sonner";
 import { DIAGNOSIS_VALUES, DIAGNOSIS_LABELS, type DiagnosisValue } from "@/shared/lib/diagnosis";
@@ -233,7 +235,9 @@ export function PatientIntakeForm() {
         </div>
 
         {/* Step 2: Optional (collapsible) */}
-        <button
+        <Button
+          variant="ghost"
+          size="sm"
           type="button"
           onClick={() => setShowOptional(!showOptional)}
           className="flex items-center gap-2 text-sm font-medium text-on-surface-variant hover:text-on-surface transition-colors duration-300"
@@ -243,31 +247,32 @@ export function PatientIntakeForm() {
             size="sm"
           />
           Additional details (optional)
-        </button>
+        </Button>
 
         {showOptional && (
           <div className="flex flex-col gap-4 rounded-xl bg-surface-container p-6">
             <div>
               <Label>Communication level</Label>
-              <div className="mt-2 flex flex-wrap gap-2">
+              <ToggleGroup
+                type="single"
+                value={communicationLevel}
+                onValueChange={(value) => setCommunicationLevel(value as CommLevel | "")}
+                className="mt-2 flex flex-wrap gap-2"
+              >
                 {COMMUNICATION_LEVELS.map((level) => (
-                  <button
+                  <ToggleGroupItem
                     key={level.value}
-                    type="button"
-                    onClick={() => setCommunicationLevel(
-                      communicationLevel === level.value ? "" : level.value
-                    )}
+                    value={level.value}
                     className={cn(
                       "rounded-lg px-3 py-1.5 text-sm font-medium transition-colors duration-300",
-                      communicationLevel === level.value
-                        ? "bg-primary text-white"
-                        : "bg-surface-container-high text-on-surface-variant hover:bg-surface-container-highest"
+                      "bg-surface-container-high text-on-surface-variant hover:bg-surface-container-highest",
+                      "data-[state=on]:bg-primary data-[state=on]:text-white"
                     )}
                   >
                     {level.label}
-                  </button>
+                  </ToggleGroupItem>
                 ))}
-              </div>
+              </ToggleGroup>
             </div>
 
             <div>
@@ -289,15 +294,16 @@ export function PatientIntakeForm() {
               {interests.length > 0 && (
                 <div className="mt-2 flex flex-wrap gap-1.5">
                   {interests.map((interest, i) => (
-                    <span
+                    <Badge
                       key={i}
-                      className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary"
+                      variant="secondary"
+                      className="bg-primary/10 text-primary gap-1"
                     >
                       {interest}
-                      <Button type="button" variant="ghost" size="icon" className="h-4 w-4 hover:text-destructive" onClick={() => removeInterest(i)}>
+                      <Button variant="ghost" size="icon-xs" type="button" onClick={() => removeInterest(i)} className="hover:text-destructive">
                         <MaterialIcon icon="close" size="sm" />
                       </Button>
-                    </span>
+                    </Badge>
                   ))}
                 </div>
               )}

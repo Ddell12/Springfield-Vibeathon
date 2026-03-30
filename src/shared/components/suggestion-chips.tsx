@@ -1,5 +1,7 @@
 "use client";
 
+import { Button } from "@/shared/components/ui/button";
+
 interface SuggestionChipsProps {
   suggestions: string[];
   onSelect: (suggestion: string) => void;
@@ -11,13 +13,15 @@ export function SuggestionChips({ suggestions, onSelect }: SuggestionChipsProps)
   return (
     <div className="flex flex-wrap gap-2 px-4 pb-2">
       {suggestions.map((suggestion) => (
-        <button
+        <Button
           key={suggestion}
+          variant="outline"
+          size="sm"
           onClick={() => onSelect(suggestion)}
-          className="rounded-full bg-surface-container px-4 py-2 text-sm text-on-surface-variant transition-colors hover:bg-surface-container-low hover:text-on-surface min-h-[2.75rem]"
+          className="rounded-full bg-surface-container px-4 text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface"
         >
           {suggestion}
-        </button>
+        </Button>
       ))}
     </div>
   );

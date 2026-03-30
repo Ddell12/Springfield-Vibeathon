@@ -1,3 +1,4 @@
+import React from "react";
 import { fireEvent,render, screen } from "@testing-library/react";
 
 import { BuilderToolbar } from "../builder-toolbar";
@@ -14,6 +15,36 @@ vi.mock("@/shared/components/ui/button", () => ({
   Button: ({ children, onClick, disabled, asChild, ...props }: any) => {
     if (asChild) return <>{children}</>;
     return <button onClick={onClick} disabled={disabled} {...props}>{children}</button>;
+  },
+}));
+
+vi.mock("@/shared/components/ui/input", () => ({
+  Input: (props: any) => <input {...props} />,
+}));
+
+// ToggleGroup mock: uses React context to pass onValueChange to items
+const ToggleGroupContext = React.createContext<((v: string) => void) | undefined>(undefined);
+vi.mock("@/shared/components/ui/toggle-group", () => ({
+  ToggleGroup: ({ children, onValueChange, value, className, ...props }: any) => (
+    <ToggleGroupContext.Provider value={onValueChange}>
+      <div role="radiogroup" data-value={value} className={className} {...props}>
+        {children}
+      </div>
+    </ToggleGroupContext.Provider>
+  ),
+  ToggleGroupItem: ({ children, value, className, ...props }: any) => {
+    const onValueChange = React.useContext(ToggleGroupContext);
+    return (
+      <button
+        role="radio"
+        data-value={value}
+        className={className}
+        onClick={() => onValueChange?.(value)}
+        {...props}
+      >
+        {children}
+      </button>
+    );
   },
 }));
 
@@ -109,45 +140,44 @@ describe("BuilderToolbar", () => {
         onMobilePanelChange={onMobilePanelChange}
       />
     );
-    // Mobile panel toggle buttons — Chat only appears in the mobile toggle (not desktop)
-    const chatTab = screen.getByRole("tab", { name: "Chat" });
-    // Multiple Preview tabs exist (mobile + desktop), get all and use first
-    const previewTabs = screen.getAllByRole("tab", { name: "Preview" });
-    expect(chatTab).toBeInTheDocument();
-    expect(previewTabs.length).toBeGreaterThan(0);
-    fireEvent.click(previewTabs[0]);
+    // Mobile panel toggle — ToggleGroup renders items with role="radio"
+    const chatRadio = screen.getByRole("radio", { name: "Chat" });
+    const previewRadios = screen.getAllByRole("radio", { name: "Preview" });
+    expect(chatRadio).toBeInTheDocument();
+    expect(previewRadios.length).toBeGreaterThan(0);
+    fireEvent.click(previewRadios[0]);
     expect(onMobilePanelChange).toHaveBeenCalledWith("preview");
   });
 
   it("device size buttons call onDeviceSizeChange", () => {
     const onDeviceSizeChange = vi.fn();
     render(<BuilderToolbar {...baseProps} onDeviceSizeChange={onDeviceSizeChange} />);
-    const mobileBtn = screen.getByRole("button", { name: "Mobile" });
+    const mobileBtn = screen.getByRole("radio", { name: "Mobile" });
     fireEvent.click(mobileBtn);
     expect(onDeviceSizeChange).toHaveBeenCalledWith("mobile");
   });
 
   it("renders a segmented control with both Preview and Source tabs on desktop", () => {
     render(<BuilderToolbar {...baseProps} hasFiles={true} />);
-    const tabs = screen.getAllByRole("tab");
-    const tabLabels = tabs.map((t) => t.textContent);
-    expect(tabLabels).toContain("Preview");
-    expect(tabLabels).toContain("Source");
+    const radios = screen.getAllByRole("radio");
+    const radioLabels = radios.map((t) => t.textContent);
+    expect(radioLabels).toContain("Preview");
+    expect(radioLabels).toContain("Source");
   });
 
   it("calls onViewChange with 'code' when Source tab is clicked", () => {
     const onViewChange = vi.fn();
     render(<BuilderToolbar {...baseProps} hasFiles={true} onViewChange={onViewChange} />);
-    const sourceTab = screen.getAllByRole("tab").find((t) => t.textContent === "Source");
-    fireEvent.click(sourceTab!);
+    const sourceRadio = screen.getAllByRole("radio").find((t) => t.textContent === "Source");
+    fireEvent.click(sourceRadio!);
     expect(onViewChange).toHaveBeenCalledWith("code");
   });
 
   it("calls onViewChange with 'preview' when Preview tab is clicked", () => {
     const onViewChange = vi.fn();
     render(<BuilderToolbar {...baseProps} hasFiles={true} onViewChange={onViewChange} />);
-    const previewTab = screen.getAllByRole("tab").find((t) => t.textContent === "Preview");
-    fireEvent.click(previewTab!);
+    const previewRadio = screen.getAllByRole("radio").find((t) => t.textContent === "Preview");
+    fireEvent.click(previewRadio!);
     expect(onViewChange).toHaveBeenCalledWith("preview");
   });
 

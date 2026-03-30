@@ -4,6 +4,7 @@ import Link from "next/link";
 
 import { cn } from "@/core/utils";
 import { MaterialIcon } from "@/shared/components/material-icon";
+import { Button } from "@/shared/components/ui/button";
 
 import type { SettingsSection } from "./settings-page";
 
@@ -41,11 +42,12 @@ export function SettingsSidebar({
         {SECTIONS.map((item) => {
           const isActive = activeSection === item.id;
           return (
-            <button
+            <Button
               key={item.id}
+              variant="ghost"
               onClick={() => onSectionChange(item.id)}
               className={cn(
-                "flex w-full items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold tracking-wide text-left transition-all duration-200",
+                "flex w-full items-center justify-start gap-3 px-4 py-3 h-auto rounded-lg text-sm font-semibold tracking-wide text-left transition-all duration-200",
                 isActive
                   ? "bg-primary-container text-on-primary shadow-sm"
                   : "text-on-surface-variant hover:bg-surface-container-high hover:translate-x-1"
@@ -53,7 +55,7 @@ export function SettingsSidebar({
             >
               <MaterialIcon icon={item.icon} size="sm" filled={isActive} />
               <span>{item.label}</span>
-            </button>
+            </Button>
           );
         })}
       </nav>

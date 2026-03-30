@@ -5,6 +5,11 @@ import Link from "next/link";
 import { cn } from "@/core/utils";
 import { MaterialIcon } from "@/shared/components/material-icon";
 import { Button } from "@/shared/components/ui/button";
+import { Input } from "@/shared/components/ui/input";
+import {
+  ToggleGroup,
+  ToggleGroupItem,
+} from "@/shared/components/ui/toggle-group";
 
 import type { StreamingStatus } from "../hooks/use-streaming";
 
@@ -74,24 +79,26 @@ export function BuilderToolbar({
         </Link>
 
         {onNewChat && (
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={onNewChat}
-            className="flex min-h-[44px] min-w-[44px] flex-shrink-0 items-center justify-center rounded bg-surface-container-high text-on-surface-variant transition-all hover:bg-surface-container-highest hover:text-primary active:scale-90"
+            className="min-h-[44px] min-w-[44px] flex-shrink-0 rounded bg-surface-container-high text-on-surface-variant transition-all hover:bg-surface-container-highest hover:text-primary active:scale-90"
             aria-label="New chat"
             title="Start a new app"
           >
             <MaterialIcon icon="add" size="xs" />
-          </button>
+          </Button>
         )}
 
         <h1 className="min-w-0 max-w-[180px]">
           {isEditingName ? (
-            <input
+            <Input
               autoFocus
               defaultValue={projectName}
               maxLength={100}
               aria-label="Project name"
-              className="w-full truncate border-b border-primary/50 bg-transparent text-[13px] font-semibold tracking-tight text-primary outline-none"
+              className="h-auto rounded-none border-0 border-b-2 border-b-primary/50 bg-transparent px-0 py-0 text-[13px] font-semibold tracking-tight text-primary outline-none focus-visible:border-transparent focus-visible:border-b-primary focus-visible:bg-transparent"
               onBlur={(e) => onNameEditEnd?.(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "Enter") onNameEditEnd?.((e.target as HTMLInputElement).value);
@@ -99,13 +106,15 @@ export function BuilderToolbar({
               }}
             />
           ) : (
-            <button
+            <Button
+              variant="link"
+              size="sm"
               onClick={onNameEditStart}
-              className="block max-w-full truncate text-[13px] font-semibold tracking-tight text-primary transition-all hover:underline hover:underline-offset-2"
+              className="block h-auto max-w-full truncate px-0 text-[13px] font-semibold tracking-tight text-primary no-underline transition-all hover:underline hover:underline-offset-2"
               title="Click to rename"
             >
               {projectName}
-            </button>
+            </Button>
           )}
         </h1>
 
@@ -125,90 +134,107 @@ export function BuilderToolbar({
 
       {/* Center section: Mobile panel toggle (< lg) */}
       {isMobile && onMobilePanelChange && (
-        <div className="flex items-center rounded-lg bg-surface-container-high p-1" role="tablist">
-          <button
-            role="tab"
-            aria-selected={mobilePanel === "chat"}
-            onClick={() => onMobilePanelChange("chat")}
+        <ToggleGroup
+          type="single"
+          value={mobilePanel}
+          onValueChange={(value) => {
+            if (value) onMobilePanelChange(value as "chat" | "preview");
+          }}
+          className="rounded-lg bg-surface-container-high p-1"
+        >
+          <ToggleGroupItem
+            value="chat"
+            aria-label="Chat"
             className={cn(
               "min-h-[44px] rounded-md px-3 py-1 text-[13px] font-semibold transition-colors duration-300",
               mobilePanel === "chat"
                 ? "bg-white text-primary shadow-sm dark:bg-surface-container-lowest"
-                : "text-on-surface-variant hover:text-primary"
+                : "bg-transparent text-on-surface-variant hover:text-primary"
             )}
           >
             Chat
-          </button>
-          <button
-            role="tab"
-            aria-selected={mobilePanel === "preview"}
-            onClick={() => onMobilePanelChange("preview")}
+          </ToggleGroupItem>
+          <ToggleGroupItem
+            value="preview"
+            aria-label="Preview"
             className={cn(
               "min-h-[44px] rounded-md px-3 py-1 text-[13px] font-semibold transition-colors duration-300",
               mobilePanel === "preview"
                 ? "bg-white text-primary shadow-sm dark:bg-surface-container-lowest"
-                : "text-on-surface-variant hover:text-primary"
+                : "bg-transparent text-on-surface-variant hover:text-primary"
             )}
           >
             Preview
-          </button>
-        </div>
+          </ToggleGroupItem>
+        </ToggleGroup>
       )}
 
       {/* Center section: View toggle + Device sizes + URL bar (desktop) */}
       <div className="hidden min-w-0 flex-1 items-center justify-center gap-3 lg:flex">
         {/* Segmented control: Preview / Source toggle */}
-        <div className="flex items-center rounded-lg bg-surface-container-high p-1" role="tablist">
-          <button
-            role="tab"
-            aria-selected={view === "preview"}
-            onClick={() => onViewChange("preview")}
+        <ToggleGroup
+          type="single"
+          value={view}
+          onValueChange={(value) => {
+            if (value) onViewChange(value as ViewMode);
+          }}
+          className="rounded-lg bg-surface-container-high p-1"
+        >
+          <ToggleGroupItem
+            value="preview"
+            aria-label="Preview"
             className={cn(
               "rounded-md px-3 py-1 text-[13px] font-semibold transition-colors duration-300",
               view === "preview"
                 ? "bg-white text-primary shadow-sm dark:bg-surface-container-lowest"
-                : "text-on-surface-variant hover:text-primary"
+                : "bg-transparent text-on-surface-variant hover:text-primary"
             )}
           >
             Preview
-          </button>
-          <button
-            role="tab"
-            aria-selected={view === "code"}
-            onClick={() => onViewChange("code")}
+          </ToggleGroupItem>
+          <ToggleGroupItem
+            value="code"
+            aria-label="Source"
             className={cn(
               "rounded-md px-3 py-1 text-[13px] font-semibold transition-colors duration-300",
               view === "code"
                 ? "bg-white text-primary shadow-sm dark:bg-surface-container-lowest"
-                : "text-on-surface-variant hover:text-primary"
+                : "bg-transparent text-on-surface-variant hover:text-primary"
             )}
           >
             Source
-          </button>
-        </div>
+          </ToggleGroupItem>
+        </ToggleGroup>
 
         {/* Separator */}
         <div className="h-4 w-px bg-outline-variant/30" />
 
         {/* Device size icons */}
-        <div className="flex items-center gap-1">
+        <ToggleGroup
+          type="single"
+          value={deviceSize}
+          onValueChange={(value) => {
+            if (value) onDeviceSizeChange(value as DeviceSize);
+          }}
+          className="gap-1"
+        >
           {DEVICE_OPTIONS.map(({ key, icon, label }) => (
-            <button
+            <ToggleGroupItem
               key={key}
-              onClick={() => onDeviceSizeChange(key)}
-              className={cn(
-                "flex min-h-[44px] min-w-[44px] items-center justify-center rounded-md p-1.5 transition-all active:scale-95",
-                deviceSize === key
-                  ? "bg-surface-container-high text-primary"
-                  : "text-on-surface-variant hover:bg-surface-container-low hover:text-primary"
-              )}
+              value={key}
               aria-label={label}
               title={label}
+              className={cn(
+                "min-h-[44px] min-w-[44px] rounded-md p-1.5 transition-all active:scale-95",
+                deviceSize === key
+                  ? "bg-surface-container-high text-primary"
+                  : "bg-transparent text-on-surface-variant hover:bg-surface-container-low hover:text-primary"
+              )}
             >
               <MaterialIcon icon={icon} size="sm" />
-            </button>
+            </ToggleGroupItem>
           ))}
-        </div>
+        </ToggleGroup>
 
         {/* Separator */}
         <div className="h-4 w-px bg-outline-variant/30" />

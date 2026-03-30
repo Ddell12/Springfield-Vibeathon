@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
+import { cn } from "@/core/utils";
 import { MaterialIcon } from "@/shared/components/material-icon";
 import { Button } from "@/shared/components/ui/button";
 
@@ -72,22 +73,25 @@ export function SettingsPage() {
             <div className="absolute top-full left-0 z-50 mt-1 w-48 rounded-lg bg-surface-container-lowest p-1 shadow-lg" role="listbox">
               {(Object.entries(SECTION_LABELS) as [SettingsSection, string][]).map(
                 ([id, label]) => (
-                  <button
+                  <Button
                     key={id}
+                    variant="ghost"
+                    size="sm"
                     role="option"
                     aria-selected={section === id}
                     onClick={() => {
                       setSection(id);
                       setMobileMenuOpen(false);
                     }}
-                    className={`w-full rounded-md px-3 py-2 text-left text-sm transition-colors duration-300 ${
+                    className={cn(
+                      "w-full justify-start rounded-md px-3 py-2 text-left text-sm transition-colors duration-300",
                       section === id
                         ? "bg-primary/10 text-primary font-medium"
                         : "text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface"
-                    }`}
+                    )}
                   >
                     {label}
-                  </button>
+                  </Button>
                 )
               )}
             </div>

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 
 import { cn } from "@/core/utils";
+import { Avatar, AvatarFallback } from "@/shared/components/ui/avatar";
 import { MaterialIcon } from "@/shared/components/material-icon";
 import { Button } from "@/shared/components/ui/button";
 import {
@@ -63,9 +64,9 @@ export function MobileNavDrawer({ open, onOpenChange }: MobileNavDrawerProps) {
 
           {/* Profile area */}
           <div className="flex items-center gap-4 p-2">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-tertiary text-lg font-bold text-on-tertiary">
-              {userInitial}
-            </div>
+            <Avatar className="h-12 w-12">
+              <AvatarFallback className="bg-tertiary text-on-tertiary text-lg font-bold">{userInitial}</AvatarFallback>
+            </Avatar>
             <div className="flex flex-col">
               <span className="font-medium text-on-surface">
                 {userName}

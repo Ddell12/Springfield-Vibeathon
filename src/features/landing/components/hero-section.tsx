@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { MaterialIcon } from "@/shared/components/material-icon";
+import { Badge } from "@/shared/components/ui/badge";
 
 export function HeroSection() {
   return (
@@ -8,10 +9,10 @@ export function HeroSection() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
         {/* Left Column */}
         <div className="lg:col-span-6 space-y-8">
-          <div className="inline-flex items-center gap-2 bg-tertiary-fixed text-on-tertiary-fixed px-4 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider">
+          <Badge className="bg-tertiary-fixed text-on-tertiary-fixed uppercase tracking-wider gap-2 px-4 py-1.5 font-semibold">
             <MaterialIcon icon="auto_awesome" size="sm" />
             AI-Powered Support
-          </div>
+          </Badge>
 
           <h1 className="font-headline text-4xl md:text-5xl font-normal text-on-surface leading-tight tracking-tight">
             Build therapy apps for your child —{" "}

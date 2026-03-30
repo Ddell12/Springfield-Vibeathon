@@ -2,6 +2,9 @@
 
 import { cn } from "@/core/utils";
 import { MaterialIcon } from "@/shared/components/material-icon";
+import { Avatar, AvatarFallback } from "@/shared/components/ui/avatar";
+import { Badge } from "@/shared/components/ui/badge";
+import { Button } from "@/shared/components/ui/button";
 import { DIAGNOSIS_COLORS, STATUS_COLORS, getInitialsColor } from "../lib/diagnosis-colors";
 import { formatAge, getInitials } from "../lib/patient-utils";
 import type { Doc } from "../../../../convex/_generated/dataModel";
@@ -17,16 +20,19 @@ export function PatientRow({ patient, isExpanded, onToggle }: PatientRowProps) {
   const status = STATUS_COLORS[patient.status] ?? STATUS_COLORS.active;
 
   return (
-    <button
+    <Button
+      variant="ghost"
       onClick={onToggle}
       aria-expanded={isExpanded}
       aria-label={`Toggle details for ${patient.firstName} ${patient.lastName}`}
-      className="flex w-full items-center gap-4 rounded-xl bg-surface-container px-4 py-3 text-left transition-all duration-300 hover:bg-surface-container-high"
+      className="flex w-full items-center gap-4 rounded-xl bg-surface-container px-4 py-3 text-left transition-all duration-300 hover:bg-surface-container-high h-auto"
     >
       {/* Avatar */}
-      <div className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-semibold text-white", getInitialsColor(patient.diagnosis))}>
-        {getInitials(patient.firstName, patient.lastName)}
-      </div>
+      <Avatar size="lg">
+        <AvatarFallback className={cn(getInitialsColor(patient.diagnosis), "text-sm font-semibold text-white")}>
+          {getInitials(patient.firstName, patient.lastName)}
+        </AvatarFallback>
+      </Avatar>
 
       {/* Name + Age */}
       <div className="min-w-0 flex-1">
@@ -37,18 +43,20 @@ export function PatientRow({ patient, isExpanded, onToggle }: PatientRowProps) {
       </div>
 
       {/* Diagnosis chip */}
-      <span className={cn("hidden rounded-full px-2.5 py-0.5 text-xs font-medium sm:inline-block", diagnosis.bg, diagnosis.text)}
+      <Badge
+        className={cn(diagnosis.bg, diagnosis.text, "hidden sm:inline-block")}
         aria-label={`Diagnosis: ${diagnosis.label}`}
       >
         {diagnosis.label}
-      </span>
+      </Badge>
 
       {/* Status chip */}
-      <span className={cn("rounded-full px-2.5 py-0.5 text-xs font-medium", status.bg, status.text)}
+      <Badge
+        className={cn(status.bg, status.text)}
         aria-label={`Status: ${status.label}`}
       >
         {status.label}
-      </span>
+      </Badge>
 
       {/* Expand chevron */}
       <MaterialIcon
@@ -56,6 +64,6 @@ export function PatientRow({ patient, isExpanded, onToggle }: PatientRowProps) {
         size="sm"
         className="text-on-surface-variant transition-transform duration-300"
       />
-    </button>
+    </Button>
   );
 }
