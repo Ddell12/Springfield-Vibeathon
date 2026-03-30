@@ -1,16 +1,17 @@
 import { isNavActive, NAV_ITEMS } from "../navigation";
 
 describe("NAV_ITEMS", () => {
-  it("exports an array with 8 items", () => {
-    expect(NAV_ITEMS).toHaveLength(8);
+  it("exports an array with 9 items in order", () => {
+    expect(NAV_ITEMS).toHaveLength(9);
     expect(NAV_ITEMS[0].href).toBe("/dashboard");
     expect(NAV_ITEMS[1].href).toBe("/patients");
-    expect(NAV_ITEMS[2].href).toBe("/builder");
-    expect(NAV_ITEMS[3].href).toBe("/flashcards");
-    expect(NAV_ITEMS[4].href).toBe("/speech-coach");
-    expect(NAV_ITEMS[5].href).toBe("/templates");
-    expect(NAV_ITEMS[6].href).toBe("/my-tools");
-    expect(NAV_ITEMS[7].href).toBe("/settings");
+    expect(NAV_ITEMS[2].href).toBe("/sessions");
+    expect(NAV_ITEMS[3].href).toBe("/builder");
+    expect(NAV_ITEMS[4].href).toBe("/flashcards");
+    expect(NAV_ITEMS[5].href).toBe("/speech-coach");
+    expect(NAV_ITEMS[6].href).toBe("/templates");
+    expect(NAV_ITEMS[7].href).toBe("/my-tools");
+    expect(NAV_ITEMS[8].href).toBe("/settings");
   });
 });
 

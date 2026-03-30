@@ -32,6 +32,10 @@ vi.mock("@/core/utils", () => ({
   cn: (...classes: any[]) => classes.filter(Boolean).join(" "),
 }));
 
+vi.mock("@/features/sessions/components/notification-bell", () => ({
+  NotificationBell: () => <div data-testid="notification-bell" />,
+}));
+
 vi.mock("@/shared/lib/navigation", () => ({
   NAV_ITEMS: [
     { icon: "home", label: "Home", href: "/dashboard" },

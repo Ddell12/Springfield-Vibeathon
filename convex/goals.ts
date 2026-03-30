@@ -1,8 +1,9 @@
 import { v } from "convex/values";
 import { ConvexError } from "convex/values";
 
-import { internalQuery, mutation, query } from "./_generated/server";
-import { assertPatientAccess,assertSLP } from "./lib/auth";
+import { internalQuery, query } from "./_generated/server";
+import { assertPatientAccess } from "./lib/auth";
+import { slpMutation, slpQuery } from "./lib/customFunctions";
 
 // ── Validators ──────────────────────────────────────────────────────────────
 
@@ -62,10 +63,11 @@ function validateGoalFields(args: {
 
 // ── Queries ─────────────────────────────────────────────────────────────────
 
-export const list = query({
+export const list = slpQuery({
   args: { patientId: v.id("patients") },
   handler: async (ctx, args) => {
-    const slpUserId = await assertSLP(ctx);
+    const slpUserId = ctx.slpUserId;
+    if (!slpUserId) throw new ConvexError("Not authorized");
     const patient = await ctx.db.get(args.patientId);
     if (!patient) throw new ConvexError("Patient not found");
     if (patient.slpUserId !== slpUserId) throw new ConvexError("Not authorized");
@@ -77,10 +79,11 @@ export const list = query({
   },
 });
 
-export const listActive = query({
+export const listActive = slpQuery({
   args: { patientId: v.id("patients") },
   handler: async (ctx, args) => {
-    const slpUserId = await assertSLP(ctx);
+    const slpUserId = ctx.slpUserId;
+    if (!slpUserId) throw new ConvexError("Not authorized");
     const patient = await ctx.db.get(args.patientId);
     if (!patient) throw new ConvexError("Patient not found");
     if (patient.slpUserId !== slpUserId) throw new ConvexError("Not authorized");
@@ -116,10 +119,11 @@ export const listByPatientInternal = internalQuery({
   },
 });
 
-export const get = query({
+export const get = slpQuery({
   args: { goalId: v.id("goals") },
   handler: async (ctx, args) => {
-    const slpUserId = await assertSLP(ctx);
+    const slpUserId = ctx.slpUserId;
+    if (!slpUserId) throw new ConvexError("Not authorized");
     const goal = await ctx.db.get(args.goalId);
     if (!goal) throw new ConvexError("Goal not found");
     if (goal.slpUserId !== slpUserId) throw new ConvexError("Not authorized");
@@ -127,10 +131,11 @@ export const get = query({
   },
 });
 
-export const getWithProgress = query({
+export const getWithProgress = slpQuery({
   args: { goalId: v.id("goals") },
   handler: async (ctx, args) => {
-    const slpUserId = await assertSLP(ctx);
+    const slpUserId = ctx.slpUserId;
+    if (!slpUserId) throw new ConvexError("Not authorized");
     const goal = await ctx.db.get(args.goalId);
     if (!goal) throw new ConvexError("Goal not found");
     if (goal.slpUserId !== slpUserId) throw new ConvexError("Not authorized");
@@ -147,7 +152,7 @@ export const getWithProgress = query({
 
 // ── Mutations ───────────────────────────────────────────────────────────────
 
-export const create = mutation({
+export const create = slpMutation({
   args: {
     patientId: v.id("patients"),
     domain: domainValidator,
@@ -160,7 +165,7 @@ export const create = mutation({
     notes: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const slpUserId = await assertSLP(ctx);
+    const slpUserId = ctx.slpUserId;
     const patient = await ctx.db.get(args.patientId);
     if (!patient) throw new ConvexError("Patient not found");
     if (patient.slpUserId !== slpUserId) throw new ConvexError("Not authorized");
@@ -193,7 +198,7 @@ export const create = mutation({
   },
 });
 
-export const update = mutation({
+export const update = slpMutation({
   args: {
     goalId: v.id("goals"),
     domain: v.optional(domainValidator),
@@ -207,7 +212,7 @@ export const update = mutation({
     status: v.optional(statusValidator),
   },
   handler: async (ctx, args) => {
-    const slpUserId = await assertSLP(ctx);
+    const slpUserId = ctx.slpUserId;
     const goal = await ctx.db.get(args.goalId);
     if (!goal) throw new ConvexError("Goal not found");
     if (goal.slpUserId !== slpUserId) throw new ConvexError("Not authorized");
@@ -264,10 +269,10 @@ export const update = mutation({
   },
 });
 
-export const remove = mutation({
+export const remove = slpMutation({
   args: { goalId: v.id("goals") },
   handler: async (ctx, args) => {
-    const slpUserId = await assertSLP(ctx);
+    const slpUserId = ctx.slpUserId;
     const goal = await ctx.db.get(args.goalId);
     if (!goal) throw new ConvexError("Goal not found");
     if (goal.slpUserId !== slpUserId) throw new ConvexError("Not authorized");

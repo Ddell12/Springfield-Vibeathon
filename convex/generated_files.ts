@@ -125,7 +125,7 @@ export const getPublicBundle = query({
   handler: async (ctx, args) => {
     const app = await ctx.db
       .query("apps")
-      .withIndex("by_share_slug", (q) => q.eq("shareSlug", args.shareSlug))
+      .withIndex("by_shareSlug", (q) => q.eq("shareSlug", args.shareSlug))
       .first();
     const sessionId = app?.sessionId;
     if (!sessionId) return null;

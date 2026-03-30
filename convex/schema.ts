@@ -59,7 +59,7 @@ export default defineSchema({
     featuredOrder: v.optional(v.number()),
     featuredCategory: v.optional(v.string()),
   })
-    .index("by_share_slug", ["shareSlug"])
+    .index("by_shareSlug", ["shareSlug"])
     .index("by_session", ["sessionId"])
     .index("by_created", ["createdAt"])
     .index("by_user", ["userId"])
@@ -70,7 +70,7 @@ export default defineSchema({
     key: v.string(),
     value: v.any(), // Generic KV store — value shape varies by key, validated in application code
     updatedAt: v.number(),
-  }).index("by_app_key", ["appId", "key"]),
+  }).index("by_appKey", ["appId", "key"]),
 
   knowledgeBase: defineTable({
     content: v.string(),
@@ -94,7 +94,7 @@ export default defineSchema({
     voiceId: v.string(),
     audioUrl: v.string(),
     createdAt: v.number(),
-  }).index("by_text_voice", ["text", "voiceId"]),
+  }).index("by_textVoice", ["text", "voiceId"]),
 
   imageCache: defineTable({
     promptHash: v.string(),

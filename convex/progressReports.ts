@@ -1,8 +1,7 @@
 import { v } from "convex/values";
 import { ConvexError } from "convex/values";
 
-import { mutation, query } from "./_generated/server";
-import { assertSLP } from "./lib/auth";
+import { slpMutation, slpQuery } from "./lib/customFunctions";
 
 const domainValidator = v.union(
   v.literal("articulation"),
@@ -47,13 +46,12 @@ const goalSummaryValidator = v.object({
 
 // ── Queries ─────────────────────────────────────────────────────────────────
 
-export const list = query({
+export const list = slpQuery({
   args: { patientId: v.id("patients") },
   handler: async (ctx, args) => {
-    const slpUserId = await assertSLP(ctx);
     const patient = await ctx.db.get(args.patientId);
     if (!patient) throw new ConvexError("Patient not found");
-    if (patient.slpUserId !== slpUserId) throw new ConvexError("Not authorized");
+    if (patient.slpUserId !== ctx.slpUserId) throw new ConvexError("Not authorized");
 
     return await ctx.db
       .query("progressReports")
@@ -63,20 +61,19 @@ export const list = query({
   },
 });
 
-export const get = query({
+export const get = slpQuery({
   args: { reportId: v.id("progressReports") },
   handler: async (ctx, args) => {
-    const slpUserId = await assertSLP(ctx);
     const report = await ctx.db.get(args.reportId);
     if (!report) throw new ConvexError("Report not found");
-    if (report.slpUserId !== slpUserId) throw new ConvexError("Not authorized");
+    if (report.slpUserId !== ctx.slpUserId) throw new ConvexError("Not authorized");
     return report;
   },
 });
 
 // ── Mutations ───────────────────────────────────────────────────────────────
 
-export const create = mutation({
+export const create = slpMutation({
   args: {
     patientId: v.id("patients"),
     reportType: reportTypeValidator,
@@ -86,14 +83,13 @@ export const create = mutation({
     overallNarrative: v.string(),
   },
   handler: async (ctx, args) => {
-    const slpUserId = await assertSLP(ctx);
     const patient = await ctx.db.get(args.patientId);
     if (!patient) throw new ConvexError("Patient not found");
-    if (patient.slpUserId !== slpUserId) throw new ConvexError("Not authorized");
+    if (patient.slpUserId !== ctx.slpUserId) throw new ConvexError("Not authorized");
 
     return await ctx.db.insert("progressReports", {
       patientId: args.patientId,
-      slpUserId,
+      slpUserId: ctx.slpUserId,
       reportType: args.reportType,
       periodStart: args.periodStart,
       periodEnd: args.periodEnd,
@@ -104,17 +100,16 @@ export const create = mutation({
   },
 });
 
-export const updateNarrative = mutation({
+export const updateNarrative = slpMutation({
   args: {
     reportId: v.id("progressReports"),
     goalSummaries: v.optional(v.array(goalSummaryValidator)),
     overallNarrative: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const slpUserId = await assertSLP(ctx);
     const report = await ctx.db.get(args.reportId);
     if (!report) throw new ConvexError("Report not found");
-    if (report.slpUserId !== slpUserId) throw new ConvexError("Not authorized");
+    if (report.slpUserId !== ctx.slpUserId) throw new ConvexError("Not authorized");
     if (report.status === "signed") {
       throw new ConvexError("Cannot edit a signed report");
     }
@@ -126,13 +121,12 @@ export const updateNarrative = mutation({
   },
 });
 
-export const markReviewed = mutation({
+export const markReviewed = slpMutation({
   args: { reportId: v.id("progressReports") },
   handler: async (ctx, args) => {
-    const slpUserId = await assertSLP(ctx);
     const report = await ctx.db.get(args.reportId);
     if (!report) throw new ConvexError("Report not found");
-    if (report.slpUserId !== slpUserId) throw new ConvexError("Not authorized");
+    if (report.slpUserId !== ctx.slpUserId) throw new ConvexError("Not authorized");
     if (report.status !== "draft") {
       throw new ConvexError("Only draft reports can be marked as reviewed");
     }
@@ -140,13 +134,12 @@ export const markReviewed = mutation({
   },
 });
 
-export const sign = mutation({
+export const sign = slpMutation({
   args: { reportId: v.id("progressReports") },
   handler: async (ctx, args) => {
-    const slpUserId = await assertSLP(ctx);
     const report = await ctx.db.get(args.reportId);
     if (!report) throw new ConvexError("Report not found");
-    if (report.slpUserId !== slpUserId) throw new ConvexError("Not authorized");
+    if (report.slpUserId !== ctx.slpUserId) throw new ConvexError("Not authorized");
     if (report.status !== "reviewed") {
       throw new ConvexError("Only reviewed reports can be signed");
     }
@@ -159,7 +152,7 @@ export const sign = mutation({
 
     await ctx.db.insert("activityLog", {
       patientId: report.patientId,
-      actorUserId: slpUserId,
+      actorUserId: ctx.slpUserId,
       action: "report-generated",
       details: `Signed ${report.reportType} report (${report.periodStart} to ${report.periodEnd})`,
       timestamp: now,
@@ -167,13 +160,12 @@ export const sign = mutation({
   },
 });
 
-export const unsign = mutation({
+export const unsign = slpMutation({
   args: { reportId: v.id("progressReports") },
   handler: async (ctx, args) => {
-    const slpUserId = await assertSLP(ctx);
     const report = await ctx.db.get(args.reportId);
     if (!report) throw new ConvexError("Report not found");
-    if (report.slpUserId !== slpUserId) throw new ConvexError("Not authorized");
+    if (report.slpUserId !== ctx.slpUserId) throw new ConvexError("Not authorized");
     if (report.status !== "signed") {
       throw new ConvexError("Only signed reports can be unsigned");
     }

@@ -10,7 +10,7 @@ export const get = query({
   handler: async (ctx, args) => {
     return await ctx.db
       .query("appState")
-      .withIndex("by_app_key", (q) =>
+      .withIndex("by_appKey", (q) =>
         q.eq("appId", args.appId).eq("key", args.key)
       )
       .first();
@@ -26,7 +26,7 @@ export const set = mutation({
   handler: async (ctx, args) => {
     const existing = await ctx.db
       .query("appState")
-      .withIndex("by_app_key", (q) =>
+      .withIndex("by_appKey", (q) =>
         q.eq("appId", args.appId).eq("key", args.key)
       )
       .first();
@@ -52,7 +52,7 @@ export const getAll = query({
   handler: async (ctx, args) => {
     return await ctx.db
       .query("appState")
-      .withIndex("by_app_key", (q) => q.eq("appId", args.appId))
+      .withIndex("by_appKey", (q) => q.eq("appId", args.appId))
       .take(100);
   },
 });

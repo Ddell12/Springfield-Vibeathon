@@ -1,8 +1,9 @@
 import { v } from "convex/values";
 
 import { mutation, query } from "./_generated/server";
-import { assertSessionOwner, getAuthUserId } from "./lib/auth";
+import { assertSessionOwner } from "./lib/auth";
 import { checkPremiumStatus, FREE_LIMITS } from "./lib/billing";
+import { authedQuery } from "./lib/customFunctions";
 
 export const create = mutation({
   args: {
@@ -44,14 +45,13 @@ export const create = mutation({
   },
 });
 
-export const get = query({
+export const get = authedQuery({
   args: { appId: v.id("apps") },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) return null;
+    if (!ctx.userId) return null;
     const app = await ctx.db.get(args.appId);
     if (!app) return null;
-    if (app.userId && app.userId !== userId) return null;
+    if (app.userId && app.userId !== ctx.userId) return null;
     return app;
   },
 });
@@ -62,7 +62,7 @@ export const getByShareSlug = query({
   handler: async (ctx, args) => {
     return await ctx.db
       .query("apps")
-      .withIndex("by_share_slug", (q) => q.eq("shareSlug", args.shareSlug))
+      .withIndex("by_shareSlug", (q) => q.eq("shareSlug", args.shareSlug))
       .first();
   },
 });
@@ -171,14 +171,13 @@ export const listFeatured = query({
   },
 });
 
-export const listMine = query({
+export const listMine = authedQuery({
   args: {},
   handler: async (ctx) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) return [];
+    if (!ctx.userId) return [];
     return await ctx.db
       .query("apps")
-      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .withIndex("by_user", (q) => q.eq("userId", ctx.userId!))
       .take(200);
   },
 });

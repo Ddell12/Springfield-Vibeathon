@@ -1,7 +1,7 @@
 import { ConvexError, v } from "convex/values";
 
-import { internalMutation, query } from "./_generated/server";
-import { getAuthUserId } from "./lib/auth";
+import { internalMutation } from "./_generated/server";
+import { authedQuery } from "./lib/customFunctions";
 
 export const log = internalMutation({
   args: {
@@ -26,25 +26,24 @@ export const log = internalMutation({
   },
 });
 
-export const listByPatient = query({
+export const listByPatient = authedQuery({
   args: {
     patientId: v.id("patients"),
     limit: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new ConvexError("Not authenticated");
+    if (!ctx.userId) throw new ConvexError("Not authenticated");
 
     // Check access: must be the owning SLP or a linked caregiver
     const patient = await ctx.db.get(args.patientId);
     if (!patient) throw new ConvexError("Patient not found");
 
-    const isSLP = patient.slpUserId === userId;
+    const isSLP = patient.slpUserId === ctx.userId;
     if (!isSLP) {
       const link = await ctx.db
         .query("caregiverLinks")
         .withIndex("by_caregiverUserId_patientId", (q) =>
-          q.eq("caregiverUserId", userId).eq("patientId", args.patientId))
+          q.eq("caregiverUserId", ctx.userId!).eq("patientId", args.patientId))
         .filter((q) => q.eq(q.field("inviteStatus"), "accepted"))
         .first();
       if (!link) throw new ConvexError("Not authorized");
