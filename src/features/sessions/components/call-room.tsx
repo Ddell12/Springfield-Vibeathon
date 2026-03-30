@@ -10,13 +10,15 @@ import { useInteractiveSync } from "../hooks/use-interactive-sync";
 import { Lobby } from "./lobby";
 import { ParticipantPanel } from "./participant-panel";
 import { CallControls } from "./call-controls";
+import { InteractivePanel } from "./interactive-panel";
 
 type CallRoomProps = {
   appointmentId: string;
+  isSLP?: boolean;
   onCallEnd: (durationSeconds: number, interactionLog: string) => void;
 };
 
-export function CallRoom({ appointmentId, onCallEnd }: CallRoomProps) {
+export function CallRoom({ appointmentId, isSLP = false, onCallEnd }: CallRoomProps) {
   const { callState, token, serverUrl, fetchToken, getDurationSeconds, handleDisconnected } =
     useCallRoom(appointmentId);
 
@@ -59,6 +61,8 @@ export function CallRoom({ appointmentId, onCallEnd }: CallRoomProps) {
       className="flex min-h-screen flex-col bg-[#F6F3EE]"
     >
       <RoomContent
+        appointmentId={appointmentId}
+        isSLP={isSLP}
         onGetInteractionLog={handleGetInteractionLog}
       />
       <RoomAudioRenderer />
@@ -68,8 +72,12 @@ export function CallRoom({ appointmentId, onCallEnd }: CallRoomProps) {
 
 // Separate inner component so hooks that require RoomContext work correctly
 function RoomContent({
+  appointmentId,
+  isSLP,
   onGetInteractionLog,
 }: {
+  appointmentId: string;
+  isSLP: boolean;
   onGetInteractionLog: (fn: () => string) => void;
 }) {
   // useInteractiveSync must be inside LiveKitRoom for data channel access
@@ -90,15 +98,9 @@ function RoomContent({
         <CallControls />
       </div>
 
-      {/* Interactive panel placeholder — 1/3 width on desktop (Task 14) */}
+      {/* Interactive panel — 1/3 width on desktop */}
       <div className="lg:col-span-1">
-        <div className="flex h-full min-h-[200px] items-center justify-center rounded-xl border border-dashed border-stone-300 bg-white">
-          <p
-            className="text-sm text-stone-400 font-body"
-          >
-            Interactive panel coming soon
-          </p>
-        </div>
+        <InteractivePanel isSLP={isSLP} appointmentId={appointmentId} />
       </div>
     </div>
   );
