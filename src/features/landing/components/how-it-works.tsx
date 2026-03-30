@@ -1,8 +1,6 @@
-import { MaterialIcon } from "@/shared/components/material-icon";
-
 const steps = [
   {
-    icon: "chat_bubble",
+    number: "01",
     title: "Describe",
     description: (
       <>
@@ -12,52 +10,52 @@ const steps = [
         </span>
       </>
     ),
-    bg: "bg-primary-fixed text-on-primary-fixed",
   },
   {
-    icon: "auto_awesome",
+    number: "02",
     title: "Build",
     description:
       "AI creates an interactive therapy app in seconds, complete with vetted icons and clear structures designed for cognitive clarity.",
-    bg: "bg-secondary-fixed text-on-secondary-fixed",
   },
   {
-    icon: "share",
+    number: "03",
     title: "Share",
     description:
       "Use at home, school, or therapy — share with your team instantly via private link or high-quality printouts for physical use.",
-    bg: "bg-tertiary-fixed text-on-tertiary-fixed",
   },
 ];
 
 export function HowItWorks() {
   return (
     <section className="bg-surface-container-low py-20 md:py-28 px-6">
-      <div className="max-w-7xl mx-auto">
-        <div className="mb-16 text-center md:text-left">
+      <div className="max-w-5xl mx-auto">
+        <div className="mb-16 md:text-left">
           <h2 className="font-headline text-3xl md:text-[2rem] font-normal text-on-surface mb-4">
             How it Works
           </h2>
-          <div className="h-1.5 w-24 bg-primary rounded-full mb-6 mx-auto md:mx-0" />
+          <div className="h-1.5 w-24 bg-primary rounded-full mb-6" />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-          {steps.map((step) => (
-            <div
-              key={step.title}
-              className="bg-surface-container-lowest rounded-xl p-8 sanctuary-shadow hover:shadow-md hover:-translate-y-1 transition-all duration-300 group"
-            >
-              <div
-                className={`w-14 h-14 ${step.bg} rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform`}
-              >
-                <MaterialIcon icon={step.icon} className="text-3xl" />
+        <div className="flex flex-col gap-12 md:gap-0 md:flex-row md:items-start md:justify-between">
+          {steps.map((step, i) => (
+            <div key={step.title} className="flex-1 flex items-start gap-5 md:flex-col md:items-start md:px-6 relative">
+              {/* Connector line between steps (desktop only) */}
+              {i < steps.length - 1 && (
+                <div className="hidden md:block absolute top-3 left-[calc(50%+1rem)] w-[calc(100%-2rem)] h-px bg-border" />
+              )}
+
+              <span className="font-mono text-sm text-primary font-medium tracking-wider shrink-0 mt-0.5 md:mb-4">
+                {step.number}
+              </span>
+
+              <div>
+                <h3 className="text-xl font-medium font-body mb-2 text-on-surface">
+                  {step.title}
+                </h3>
+                <p className="text-on-surface-variant leading-relaxed text-[15px]">
+                  {step.description}
+                </p>
               </div>
-              <h3 className="text-2xl font-medium font-body mb-4 text-on-surface">
-                {step.title}
-              </h3>
-              <p className="text-on-surface-variant leading-relaxed">
-                {step.description}
-              </p>
             </div>
           ))}
         </div>
