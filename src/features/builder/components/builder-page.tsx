@@ -53,6 +53,7 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
   const lastPromptRef = useRef("");
   const promptInputRef = useRef<HTMLInputElement>(null);
   const [showFreeformInput, setShowFreeformInput] = useState(false);
+  const [generationStartTime, setGenerationStartTime] = useState<number>(Date.now());
 
   const {
     status,
@@ -118,6 +119,7 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
   const handleGenerate = useCallback((prompt: string, blueprint?: TherapyBlueprint) => {
     lastPromptRef.current = prompt;
     setPendingPrompt(prompt);
+    setGenerationStartTime(Date.now());
     generate(prompt, blueprint);
   }, [generate]);
 
@@ -330,6 +332,7 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
                       pendingPrompt={pendingPrompt}
                       onPendingPromptClear={() => setPendingPrompt(null)}
                       narrationMessage={narrationMessage}
+                      startTime={generationStartTime}
                     />
                   </div>
                 ) : (
@@ -363,6 +366,7 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
                       pendingPrompt={pendingPrompt}
                       onPendingPromptClear={() => setPendingPrompt(null)}
                       narrationMessage={narrationMessage}
+                      startTime={generationStartTime}
                     />
                   </div>
                 </ResizablePanel>

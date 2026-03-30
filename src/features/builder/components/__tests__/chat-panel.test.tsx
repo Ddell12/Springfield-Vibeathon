@@ -123,8 +123,8 @@ describe("ChatPanel — streaming builder contract", () => {
 
   it("shows 'live' or 'ready' indicator when status is 'live'", () => {
     render(<ChatPanel {...defaultProps} status="live" />);
-    const indicator = screen.queryByText(/live|ready|done/i);
-    expect(indicator).toBeTruthy();
+    const indicators = screen.queryAllByText(/live|ready|done/i);
+    expect(indicators.length).toBeGreaterThan(0);
   });
 
   it("shows Retry button when error is set and onRetry is provided", () => {
@@ -159,7 +159,7 @@ describe("ChatPanel — streaming builder contract", () => {
     mockUseQuery.mockReturnValue([]);
   });
 
-  it("shows narration pill when generating with no activities", () => {
+  it("shows progress card (role=status) when generating", () => {
     render(
       <ChatPanel
         {...defaultProps}
@@ -168,7 +168,7 @@ describe("ChatPanel — streaming builder contract", () => {
       />
     );
     expect(screen.getByRole("status")).toBeTruthy();
-    expect(screen.getByText(/reading your description/i)).toBeTruthy();
+    expect(screen.getByText("Building your app...")).toBeTruthy();
   });
 
   it("does NOT show raw file paths or activity messages during generation", () => {
@@ -184,7 +184,7 @@ describe("ChatPanel — streaming builder contract", () => {
     );
     expect(screen.queryByText(/App\.tsx/)).toBeNull();
     expect(screen.queryByText(/Edited/)).toBeNull();
-    expect(screen.getByText(/designing the layout/i)).toBeTruthy();
+    expect(screen.getByText("Building your app...")).toBeTruthy();
   });
 
   it("shows warm success message when live", () => {
@@ -210,5 +210,32 @@ describe("ChatPanel — streaming builder contract", () => {
     render(<ChatPanel {...defaultProps} status="idle" />);
     const input = screen.getByRole("textbox");
     expect((input as HTMLInputElement).placeholder).toMatch(/describe|build/i);
+  });
+
+  it("renders ProgressCard when status is generating", () => {
+    render(
+      <ChatPanel
+        {...defaultProps}
+        status="generating"
+        sessionId="session123"
+        activities={[
+          { id: "1", type: "thinking", message: "Thinking...", timestamp: Date.now() },
+        ]}
+      />
+    );
+    expect(screen.getByText("Building your app...")).toBeInTheDocument();
+  });
+
+  it("does not render old narration spinner when generating", () => {
+    render(
+      <ChatPanel
+        {...defaultProps}
+        status="generating"
+        sessionId="session123"
+        narrationMessage="Reading your description..."
+      />
+    );
+    expect(screen.queryByText("Reading your description...")).not.toBeInTheDocument();
+    expect(screen.getByText("Building your app...")).toBeInTheDocument();
   });
 });
