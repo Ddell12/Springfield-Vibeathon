@@ -1,11 +1,13 @@
 import { v } from "convex/values";
 import { ConvexError } from "convex/values";
 
+import type { Doc } from "./_generated/dataModel";
 import { internalQuery, mutation, query } from "./_generated/server";
 import { internal } from "./_generated/api";
 import {
   assertPatientAccess,
   assertSLP,
+  getAuthRole,
   getAuthUserId,
 } from "./lib/auth";
 
@@ -104,6 +106,64 @@ export const listBySlp = query({
         const patient = await ctx.db.get(apt.patientId);
         return { ...apt, patient };
       })
+    );
+
+    return enriched;
+  },
+});
+
+/** Appointments for all patients linked to the signed-in caregiver (accepted links). */
+export const listForCaregiver = query({
+  args: {
+    weekStart: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return [];
+
+    const role = await getAuthRole(ctx);
+    if (role !== "caregiver") return [];
+
+    const links = await ctx.db
+      .query("caregiverLinks")
+      .withIndex("by_caregiverUserId", (q) => q.eq("caregiverUserId", userId))
+      .collect();
+
+    const patientIds = links
+      .filter((l) => l.inviteStatus === "accepted")
+      .map((l) => l.patientId);
+
+    const merged: Doc<"appointments">[] = [];
+    const seen = new Set<string>();
+
+    for (const patientId of patientIds) {
+      const forPatient = await ctx.db
+        .query("appointments")
+        .withIndex("by_patientId", (q) => q.eq("patientId", patientId))
+        .collect();
+      for (const apt of forPatient) {
+        if (seen.has(apt._id)) continue;
+        seen.add(apt._id);
+        merged.push(apt);
+      }
+    }
+
+    let filtered = merged;
+    if (args.weekStart !== undefined) {
+      const weekEnd = args.weekStart + 7 * 24 * 60 * 60 * 1000;
+      filtered = merged.filter(
+        (a) =>
+          a.scheduledAt >= args.weekStart! && a.scheduledAt < weekEnd,
+      );
+    }
+
+    filtered.sort((a, b) => a.scheduledAt - b.scheduledAt);
+
+    const enriched = await Promise.all(
+      filtered.map(async (apt) => {
+        const patient = await ctx.db.get(apt.patientId);
+        return { ...apt, patient };
+      }),
     );
 
     return enriched;
