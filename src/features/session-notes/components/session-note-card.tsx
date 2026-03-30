@@ -32,16 +32,16 @@ const STATUS_STYLES: Record<
     text: "text-muted-foreground",
   },
   "in-progress": {
-    bg: "bg-yellow-100 dark:bg-yellow-900/30",
-    text: "text-yellow-700 dark:text-yellow-400",
+    bg: "bg-caution-container",
+    text: "text-on-caution-container",
   },
   complete: {
-    bg: "bg-blue-100 dark:bg-blue-900/30",
-    text: "text-blue-700 dark:text-blue-400",
+    bg: "bg-info-container",
+    text: "text-on-info-container",
   },
   signed: {
-    bg: "bg-green-100 dark:bg-green-900/30",
-    text: "text-green-700 dark:text-green-400",
+    bg: "bg-success-container",
+    text: "text-on-success-container",
     icon: "check",
   },
 };
