@@ -12,14 +12,14 @@ export function LandingFooter() {
             &copy; {new Date().getFullYear()} {APP_BRAND}. All rights reserved.
           </span>
         </div>
-        <div className="flex gap-8">
-          <a href="#" className="text-xs text-on-surface-variant hover:text-on-surface transition-colors">
+        <div className="flex gap-4">
+          <a href="#" className="text-sm text-on-surface-variant hover:text-on-surface transition-colors min-h-[44px] inline-flex items-center px-2">
             Privacy Policy
           </a>
-          <a href="#" className="text-xs text-on-surface-variant hover:text-on-surface transition-colors">
+          <a href="#" className="text-sm text-on-surface-variant hover:text-on-surface transition-colors min-h-[44px] inline-flex items-center px-2">
             Terms of Service
           </a>
-          <a href="#" className="text-xs text-on-surface-variant hover:text-on-surface transition-colors">
+          <a href="#" className="text-sm text-on-surface-variant hover:text-on-surface transition-colors min-h-[44px] inline-flex items-center px-2">
             Accessibility
           </a>
         </div>

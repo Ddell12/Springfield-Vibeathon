@@ -42,7 +42,7 @@ export function MarketingHeader() {
                 key={href}
                 href={href}
                 className={cn(
-                  "font-semibold text-lg tracking-tight transition-colors rounded-lg px-3 py-1",
+                  "font-semibold text-lg tracking-tight transition-colors rounded-lg px-3 py-2 min-h-[44px] inline-flex items-center",
                   pathname === href
                     ? "text-primary bg-primary/10"
                     : "text-on-surface-variant hover:text-primary hover:bg-surface-container-low"
@@ -58,7 +58,7 @@ export function MarketingHeader() {
           <Show when="signed-out">
             <Link
               href="/sign-in"
-              className="hidden md:flex items-center font-bold text-sm text-on-surface-variant hover:text-primary transition-colors"
+              className="hidden md:flex items-center font-bold text-sm text-on-surface-variant hover:text-primary transition-colors min-h-[44px] px-3"
             >
               Sign in
             </Link>
