@@ -45,7 +45,7 @@ export function DeleteConfirmationDialog({
 
         {/* Content */}
         <div className="space-y-4 mb-10">
-          <DialogTitle className="font-headline font-semibold text-2xl text-on-surface leading-tight tracking-tight">
+          <DialogTitle className="font-semibold text-2xl text-on-surface leading-tight tracking-tight">
             Delete &apos;{projectName}&apos;?
           </DialogTitle>
           <DialogDescription className="text-sm text-on-surface-variant leading-relaxed">

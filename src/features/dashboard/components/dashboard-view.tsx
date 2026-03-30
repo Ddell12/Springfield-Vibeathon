@@ -64,7 +64,7 @@ export function DashboardView() {
           >
             <MaterialIcon icon="menu" size="md" className="text-primary" />
           </button>
-          <span className="font-headline font-medium tracking-tight text-lg text-primary">
+          <span className="font-medium tracking-tight text-lg text-primary">
             Bridges
           </span>
         </div>

@@ -67,7 +67,7 @@ export function MobileNavDrawer({ open, onOpenChange }: MobileNavDrawerProps) {
               {userInitial}
             </div>
             <div className="flex flex-col">
-              <span className="font-headline font-medium text-on-surface">
+              <span className="font-medium text-on-surface">
                 {userName}
               </span>
               {userEmail && (
@@ -101,7 +101,7 @@ export function MobileNavDrawer({ open, onOpenChange }: MobileNavDrawerProps) {
                   size="sm"
                   filled={isActive}
                 />
-                <span className="font-headline">{item.label}</span>
+                <span className="">{item.label}</span>
               </Link>
             );
           })}
