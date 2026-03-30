@@ -6,7 +6,7 @@ import { useCallback,useState } from "react";
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 
-type SessionConfig = {
+export type SessionConfig = {
   targetSounds: string[];
   ageRange: "2-4" | "5-7";
   durationMinutes: number;
@@ -21,6 +21,7 @@ export function useSpeechSession(homeProgramId: Id<"homePrograms">) {
   const [signedUrl, setSignedUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [durationMinutes, setDurationMinutes] = useState<number>(5);
+  const [sessionConfig, setCurrentSessionConfig] = useState<SessionConfig | null>(null);
 
   const createSession = useMutation(api.speechCoach.createSession);
   const startSession = useMutation(api.speechCoach.startSession);
@@ -48,6 +49,7 @@ export function useSpeechSession(homeProgramId: Id<"homePrograms">) {
       id = await createSession({ homeProgramId, config });
       setSessionId(id ?? null);
       setDurationMinutes(config.durationMinutes);
+      setCurrentSessionConfig(config);
 
       // Get signed URL
       const { signedUrl: url } = await getSignedUrl({});
@@ -87,7 +89,8 @@ export function useSpeechSession(homeProgramId: Id<"homePrograms">) {
     setSessionId(null);
     setSignedUrl(null);
     setError(null);
+    setCurrentSessionConfig(null);
   }, []);
 
-  return { phase, sessionId, signedUrl, error, durationMinutes, begin, markActive, endSession, reset };
+  return { phase, sessionId, signedUrl, error, durationMinutes, sessionConfig, begin, markActive, endSession, reset };
 }

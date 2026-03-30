@@ -12,20 +12,29 @@ import { toast } from "sonner";
 import { cn } from "@/core/utils";
 import { Button } from "@/shared/components/ui/button";
 
+type SessionConfig = {
+  targetSounds: string[];
+  ageRange: "2-4" | "5-7";
+  durationMinutes: number;
+  focusArea?: string;
+};
+
 type Props = {
   signedUrl: string;
   onConversationStarted: (conversationId: string) => void;
   onEnd: () => void;
   durationMinutes: number;
+  sessionConfig?: SessionConfig;
 };
 
-export function ActiveSession({ signedUrl, onConversationStarted, onEnd, durationMinutes }: Props) {
+export function ActiveSession({ signedUrl, onConversationStarted, onEnd, durationMinutes, sessionConfig }: Props) {
   return (
     <ConversationProvider signedUrl={signedUrl}>
       <ActiveSessionInner
         onConversationStarted={onConversationStarted}
         onEnd={onEnd}
         durationMinutes={durationMinutes}
+        sessionConfig={sessionConfig}
       />
     </ConversationProvider>
   );
@@ -35,10 +44,12 @@ function ActiveSessionInner({
   onConversationStarted,
   onEnd,
   durationMinutes,
+  sessionConfig,
 }: Omit<Props, "signedUrl">) {
   const hasStarted = useRef(false);
   const wasConnected = useRef(false);
-  const { startSession, endSession } = useConversationControls();
+  const contextSent = useRef(false);
+  const { startSession, endSession, sendContextualUpdate } = useConversationControls();
   // status: "disconnected" | "connecting" | "connected" | "error"
   const { status } = useConversationStatus();
   // mode: "speaking" | "listening" — only valid while connected
@@ -50,6 +61,31 @@ function ActiveSessionInner({
   useEffect(() => {
     if (status === "connected") wasConnected.current = true;
   }, [status]);
+
+  // Send session context once the conversation is live.
+  //
+  // WHY: The ElevenLabs SDK dispatches first_message audio to outputListeners
+  // immediately after the WebSocket handshake, but outputListeners is only
+  // populated after setupInputOutput() completes (creating the AudioContext and
+  // loading the AudioWorklet). This race means the agent's opening greeting is
+  // silently dropped. Sending a contextual update when status reaches "connected"
+  // fires after outputListeners is ready, guaranteeing the agent responds and
+  // simultaneously gives it the session-specific context it needs.
+  useEffect(() => {
+    if (status !== "connected" || contextSent.current) return;
+    contextSent.current = true;
+
+    const parts: string[] = [];
+    if (sessionConfig) {
+      parts.push(`Practice target sounds: ${sessionConfig.targetSounds.join(", ")}.`);
+      parts.push(`Child age range: ${sessionConfig.ageRange} years.`);
+      if (sessionConfig.focusArea) {
+        parts.push(`Focus area: ${sessionConfig.focusArea}.`);
+      }
+    }
+    parts.push("Begin the session now — greet the child and start practicing.");
+    sendContextualUpdate(parts.join(" "));
+  }, [status, sessionConfig, sendContextualUpdate]);
 
   // Start conversation on mount
   useEffect(() => {

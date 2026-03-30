@@ -63,6 +63,7 @@ export function SpeechCoachPage({ patientId, homeProgramId }: Props) {
         onConversationStarted={(id) => session.markActive(id)}
         onEnd={() => session.endSession()}
         durationMinutes={session.durationMinutes}
+        sessionConfig={session.sessionConfig ?? undefined}
       />
     );
   }

@@ -47,6 +47,7 @@ export function StandaloneSpeechCoachPage() {
         onConversationStarted={(id) => session.markActive(id)}
         onEnd={() => session.endSession()}
         durationMinutes={session.durationMinutes}
+        sessionConfig={session.sessionConfig ?? undefined}
       />
     );
   }
