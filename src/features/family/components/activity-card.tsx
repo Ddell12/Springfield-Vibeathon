@@ -68,7 +68,7 @@ export function ActivityCard({
               onClick={onLogPractice}
               className={cn(
                 "text-white",
-                "bg-[linear-gradient(135deg,#00595c,#0d7377)]",
+                "bg-primary-gradient",
                 "hover:opacity-90 transition-opacity duration-300"
               )}
             >

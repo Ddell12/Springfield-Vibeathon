@@ -144,7 +144,7 @@ export function MessageThread({ paramsPromise }: MessageThreadProps) {
             aria-label="Send message"
             className={cn(
               "shrink-0 text-white",
-              "bg-[linear-gradient(135deg,#00595c,#0d7377)]",
+              "bg-primary-gradient",
               "hover:opacity-90 transition-opacity duration-300",
               (!input.trim() || isSending) && "opacity-50"
             )}
