@@ -158,6 +158,22 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
     return () => window.removeEventListener("beforeunload", handler);
   }, [status]);
 
+  // Toast when navigating away during active generation (in-app navigation)
+  const hasShownNavToastRef = useRef(false);
+  useEffect(() => {
+    if (status === "generating") {
+      hasShownNavToastRef.current = false;
+    }
+    return () => {
+      if (status === "generating" && !hasShownNavToastRef.current) {
+        hasShownNavToastRef.current = true;
+        toast.info("Your app is still building. Check My Apps when it's ready.", {
+          duration: 5000,
+        });
+      }
+    };
+  }, [status]);
+
   // Keyboard shortcut: Cmd/Ctrl + Shift + S toggles source/preview
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
