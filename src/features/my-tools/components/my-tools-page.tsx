@@ -1,13 +1,17 @@
 "use client";
 
 import { useMutation, useQuery } from "convex/react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { cn } from "@/core/utils";
-import { DeleteConfirmationDialog } from "@/shared/components/delete-confirmation-dialog";
+const DeleteConfirmationDialog = dynamic(
+  () => import("@/shared/components/delete-confirmation-dialog").then((m) => ({ default: m.DeleteConfirmationDialog })),
+  { ssr: false }
+);
 import { FullscreenAppView } from "@/shared/components/fullscreen-app-view";
 import { MaterialIcon } from "@/shared/components/material-icon";
 import { ProjectCard } from "@/shared/components/project-card";

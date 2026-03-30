@@ -63,10 +63,11 @@ export async function POST(request: Request): Promise<Response> {
 
   const pid = patientId as Id<"patients">;
 
-  const [patient, goals, progressData] = await Promise.all([
+  const [patient, goals, progressData, previousReports] = await Promise.all([
     convex.query(api.patients.get, { patientId: pid }),
     convex.query(api.goals.listActive, { patientId: pid }),
     convex.query(api.progressData.listByPatient, { patientId: pid, periodStart, periodEnd }),
+    convex.query(api.progressReports.list, { patientId: pid }),
   ]);
 
   if (!patient) {
@@ -105,7 +106,6 @@ export async function POST(request: Request): Promise<Response> {
     };
   });
 
-  const previousReports = await convex.query(api.progressReports.list, { patientId: pid });
   const previousNarrative = previousReports.length > 0
     ? previousReports[0].overallNarrative
     : undefined;

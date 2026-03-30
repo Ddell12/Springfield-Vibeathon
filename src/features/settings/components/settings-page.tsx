@@ -103,10 +103,10 @@ export function SettingsPage() {
 
       <main className="flex-1 overflow-y-auto bg-surface-container-lowest min-h-screen">
         <div className="max-w-[640px] mx-auto py-16 px-6 md:px-8">
-          {section === "profile" && <ProfileSection />}
-          {section === "account" && <AccountSection />}
-          {section === "appearance" && <AppearanceSection />}
-          {section === "billing" && <BillingSection />}
+          {section === "profile" ? <ProfileSection /> : null}
+          {section === "account" ? <AccountSection /> : null}
+          {section === "appearance" ? <AppearanceSection /> : null}
+          {section === "billing" ? <BillingSection /> : null}
         </div>
       </main>
     </div>

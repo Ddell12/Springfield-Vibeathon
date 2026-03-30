@@ -1,6 +1,7 @@
 "use client";
 
 import { useMutation, useQuery } from "convex/react";
+import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
 import { startTransition, useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -26,9 +27,19 @@ import { useStreaming } from "../hooks/use-streaming";
 import { THERAPY_SUGGESTIONS } from "../lib/constants";
 import type { TherapyBlueprint } from "../lib/schemas";
 import { BuilderToolbar, type DeviceSize, type ViewMode } from "./builder-toolbar";
-import { ChatPanel } from "./chat-panel";
-import { CodePanel } from "./code-panel";
 import { ContinueCard } from "./continue-card";
+
+const ChatPanel = dynamic(
+  () => import("./chat-panel").then((m) => ({ default: m.ChatPanel })),
+  {
+    ssr: false,
+    loading: () => <div className="animate-pulse rounded-2xl bg-surface-container-low h-full" />,
+  }
+);
+const CodePanel = dynamic(
+  () => import("./code-panel").then((m) => ({ default: m.CodePanel })),
+  { ssr: false }
+);
 import { InterviewController } from "./interview/interview-controller";
 import { PatientContextCard } from "./patient-context-card";
 import { PreviewPanel } from "./preview-panel";
@@ -411,7 +422,7 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
               <div className="h-full">
                 {mobilePanel === "chat" ? (
                   <div className="flex h-full flex-col overflow-hidden rounded-2xl bg-surface-container-lowest">
-                    {patientId && <PatientContextCard patientId={patientId} />}
+                    {patientId ? <PatientContextCard patientId={patientId} /> : null}
                     <ChatPanel
                       sessionId={sessionId}
                       status={status}
@@ -446,7 +457,7 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
               <ResizablePanelGroup orientation="horizontal" className="h-full">
                 <ResizablePanel defaultSize={30} minSize={20}>
                   <div className="flex h-full flex-col overflow-hidden rounded-2xl bg-surface-container-lowest">
-                    {patientId && <PatientContextCard patientId={patientId} />}
+                    {patientId ? <PatientContextCard patientId={patientId} /> : null}
                     <ChatPanel
                       sessionId={sessionId}
                       status={status}

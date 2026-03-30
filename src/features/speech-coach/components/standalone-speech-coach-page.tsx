@@ -140,7 +140,7 @@ export function StandaloneSpeechCoachPage() {
             />
           </div>
         )}
-        {activeTab === "history" && <SessionHistory mode="standalone" />}
+        {activeTab === "history" ? <SessionHistory mode="standalone" /> : null}
       </div>
     </div>
   );

@@ -1,12 +1,16 @@
 "use client";
 
 import { useMutation, useQuery } from "convex/react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 
 import { APP_BRAND } from "@/core/config";
-import { DeleteConfirmationDialog } from "@/shared/components/delete-confirmation-dialog";
+const DeleteConfirmationDialog = dynamic(
+  () => import("@/shared/components/delete-confirmation-dialog").then((m) => ({ default: m.DeleteConfirmationDialog })),
+  { ssr: false }
+);
 import { EmptyState } from "@/shared/components/empty-state";
 import { MaterialIcon } from "@/shared/components/material-icon";
 import { MobileNavDrawer } from "@/shared/components/mobile-nav-drawer";

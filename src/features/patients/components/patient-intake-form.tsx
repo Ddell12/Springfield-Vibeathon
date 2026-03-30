@@ -194,7 +194,7 @@ export function PatientIntakeForm() {
                 onChange={(e) => setFirstName(e.target.value)}
                 className={cn(errors.firstName && "border-destructive")}
               />
-              {errors.firstName && <p className="mt-1 text-xs text-destructive">{errors.firstName}</p>}
+              {errors.firstName ? <p className="mt-1 text-xs text-destructive">{errors.firstName}</p> : null}
             </div>
             <div>
               <Label htmlFor="lastName">Last name</Label>
@@ -204,7 +204,7 @@ export function PatientIntakeForm() {
                 onChange={(e) => setLastName(e.target.value)}
                 className={cn(errors.lastName && "border-destructive")}
               />
-              {errors.lastName && <p className="mt-1 text-xs text-destructive">{errors.lastName}</p>}
+              {errors.lastName ? <p className="mt-1 text-xs text-destructive">{errors.lastName}</p> : null}
             </div>
           </div>
 
@@ -217,7 +217,7 @@ export function PatientIntakeForm() {
               onChange={(e) => setDateOfBirth(e.target.value)}
               className={cn(errors.dateOfBirth && "border-destructive")}
             />
-            {errors.dateOfBirth && <p className="mt-1 text-xs text-destructive">{errors.dateOfBirth}</p>}
+            {errors.dateOfBirth ? <p className="mt-1 text-xs text-destructive">{errors.dateOfBirth}</p> : null}
           </div>
 
           <div>
@@ -232,7 +232,7 @@ export function PatientIntakeForm() {
                 ))}
               </SelectContent>
             </Select>
-            {errors.diagnosis && <p className="mt-1 text-xs text-destructive">{errors.diagnosis}</p>}
+            {errors.diagnosis ? <p className="mt-1 text-xs text-destructive">{errors.diagnosis}</p> : null}
           </div>
         </div>
 

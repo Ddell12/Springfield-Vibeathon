@@ -1,6 +1,7 @@
 "use client";
 
 import { useAction } from "convex/react";
+import dynamic from "next/dynamic";
 import { useState } from "react";
 
 import { useEntitlements } from "@/core/hooks/use-entitlements";
@@ -8,9 +9,16 @@ import { Button } from "@/shared/components/ui/button";
 
 import { api } from "../../../../convex/_generated/api";
 import { BillingHistory } from "./billing-history";
-import { DowngradeWarningDialog } from "./downgrade-warning-dialog";
 import { PlanComparisonCard } from "./plan-comparison-card";
-import { UpgradeConfirmationDialog } from "./upgrade-confirmation-dialog";
+
+const DowngradeWarningDialog = dynamic(
+  () => import("./downgrade-warning-dialog").then((m) => ({ default: m.DowngradeWarningDialog })),
+  { ssr: false }
+);
+const UpgradeConfirmationDialog = dynamic(
+  () => import("./upgrade-confirmation-dialog").then((m) => ({ default: m.UpgradeConfirmationDialog })),
+  { ssr: false }
+);
 import { UsageMeter } from "./usage-meter";
 
 export function BillingSection() {
