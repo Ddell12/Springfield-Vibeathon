@@ -227,7 +227,7 @@ export function FlashcardPage() {
             {/* Create New tab */}
             <TabsContent value="create-new" className="flex flex-1 flex-col items-center justify-center gap-6">
               <div className="text-center">
-                <h1 className="font-headline text-3xl font-semibold text-on-surface">
+                <h1 className="font-headline text-3xl font-normal text-on-surface">
                   What flashcards would you like to create?
                 </h1>
                 <p className="mt-2 text-base text-on-surface-variant">

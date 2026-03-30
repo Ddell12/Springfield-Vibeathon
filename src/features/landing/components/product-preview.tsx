@@ -32,7 +32,7 @@ export function ProductPreview() {
   return (
     <section className="py-20">
       <div className="max-w-6xl mx-auto px-6">
-        <h2 className="font-headline text-3xl md:text-4xl text-center text-on-surface mb-4">
+        <h2 className="font-headline text-3xl md:text-[2rem] text-center text-on-surface mb-4">
           Everything you need, all in one place
         </h2>
         <p className="text-center text-on-surface-variant text-lg mb-12 max-w-2xl mx-auto">
@@ -47,7 +47,7 @@ export function ProductPreview() {
               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 mb-4">
                 <MaterialIcon icon={feature.icon} className="text-primary text-2xl" />
               </div>
-              <h3 className="font-headline text-lg font-semibold text-on-surface mb-2">{feature.title}</h3>
+              <h3 className="font-body text-lg font-medium text-on-surface mb-2">{feature.title}</h3>
               <p className="text-sm text-on-surface-variant leading-relaxed">{feature.description}</p>
             </div>
           ))}

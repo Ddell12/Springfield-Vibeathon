@@ -6,7 +6,7 @@ export function HowItWorks() {
   return (
     <section className="py-20 bg-surface-container-lowest">
       <div className="max-w-6xl mx-auto px-6">
-        <h2 className="font-headline text-3xl md:text-4xl text-center text-on-surface mb-12">
+        <h2 className="font-headline text-3xl md:text-[2rem] text-center text-on-surface mb-12">
           Built for the people who matter most
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -16,7 +16,7 @@ export function HowItWorks() {
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
                 <MaterialIcon icon="medical_services" className="text-primary" />
               </div>
-              <h3 className="font-headline text-xl font-semibold text-on-surface">For Speech Therapists</h3>
+              <h3 className="font-body text-xl font-medium text-on-surface">For Speech Therapists</h3>
             </div>
             <ul className="space-y-3">
               <li className="flex items-start gap-3">
@@ -51,7 +51,7 @@ export function HowItWorks() {
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-tertiary/10">
                 <MaterialIcon icon="family_restroom" className="text-tertiary" />
               </div>
-              <h3 className="font-headline text-xl font-semibold text-on-surface">For Families</h3>
+              <h3 className="font-body text-xl font-medium text-on-surface">For Families</h3>
             </div>
             <ul className="space-y-3">
               <li className="flex items-start gap-3">
