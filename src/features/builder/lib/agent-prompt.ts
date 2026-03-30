@@ -534,12 +534,49 @@ export default function App() {
 - Keep text output MINIMAL. One short, friendly sentence per file at most (e.g., "Creating the main app layout"). Do NOT explain code, describe React patterns, or mention technical details. The user is a therapist or parent, not a developer.
 - NEVER output a technical summary, file listing, or explanation after generating files. Just write the files silently.`;
 
+const EDIT_MODE_SECTION = `
+
+## Edit Mode — Modifying an Existing App
+
+You are modifying an existing therapy app, NOT creating a new one from scratch.
+
+### Rules:
+- The user's current files are provided at the start of the conversation. Read them carefully.
+- Only rewrite files that need to change. Do NOT regenerate untouched files.
+- Do NOT call set_app_name unless the user explicitly asks to rename the app.
+- Use read_file to inspect files before modifying if you're unsure of current state.
+- Write COMPLETE file contents when modifying a file — no partial snippets or "// rest unchanged" placeholders.
+- For small changes (color, text, layout, single component), modify ONLY the affected file(s).
+- Preserve all existing functionality unless the user explicitly asks to remove it.
+- Keep explanation text SHORT — one sentence about what you changed. Do not re-explain the entire app.
+- If the user says something vague like "make it better" or "improve it", ask a clarifying question instead of rewriting everything.`;
+
+interface BuildSystemPromptOpts {
+  isFollowUp?: boolean;
+  patientContextBlock?: string;
+}
+
 /**
  * Builds the system prompt for the streaming LLM agent.
  *
- * Returns a cached constant; no dynamic content.
+ * In edit mode (follow-up messages), appends instructions that tell Claude
+ * to modify existing files surgically rather than rebuilding from scratch.
  */
-export function buildSystemPrompt(patientContextBlock?: string): string {
-  if (!patientContextBlock) return SYSTEM_PROMPT;
-  return `${SYSTEM_PROMPT}\n\n${patientContextBlock}`;
+export function buildSystemPrompt(opts?: BuildSystemPromptOpts | string): string {
+  // Backward compat: old callers may pass a plain string (patientContextBlock)
+  if (typeof opts === "string") {
+    return `${SYSTEM_PROMPT}\n\n${opts}`;
+  }
+
+  let prompt = SYSTEM_PROMPT;
+
+  if (opts?.isFollowUp) {
+    prompt += EDIT_MODE_SECTION;
+  }
+
+  if (opts?.patientContextBlock) {
+    prompt += `\n\n${opts.patientContextBlock}`;
+  }
+
+  return prompt;
 }

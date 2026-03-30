@@ -43,30 +43,24 @@ export async function persistUserMessage(
   });
 }
 
+export async function persistAssistantMessage(
+  convex: ConvexHttpClient,
+  sessionId: Id<"sessions">,
+  content: string,
+): Promise<void> {
+  if (!content.trim()) return;
+  await convex.mutation(api.messages.create, {
+    sessionId,
+    role: "assistant",
+    content,
+    timestamp: Date.now(),
+  });
+}
+
 export async function completeSession(
   convex: ConvexHttpClient,
   sessionId: Id<"sessions">,
-  opts: { isFlashcardMode: boolean; buildSucceeded: boolean; hasFiles: boolean },
 ): Promise<void> {
-  const postLlmPromises: Promise<unknown>[] = [];
-
-  if (opts.hasFiles || opts.isFlashcardMode) {
-    const friendlyMsg = opts.isFlashcardMode
-      ? "Your flashcards are ready! Swipe through them in the preview panel."
-      : opts.buildSucceeded
-        ? "Your app is ready! Try it out and let me know if you'd like any changes."
-        : "I created your app but the preview needs a small fix. Try sending a follow-up message.";
-    postLlmPromises.push(
-      convex.mutation(api.messages.create, {
-        sessionId,
-        role: "assistant",
-        content: friendlyMsg,
-        timestamp: Date.now(),
-      }),
-    );
-  }
-
-  await Promise.allSettled(postLlmPromises);
   await convex.mutation(api.sessions.setLive, { sessionId });
 }
 
