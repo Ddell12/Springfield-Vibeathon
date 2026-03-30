@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 import { ConvexError } from "convex/values";
 
-import { mutation, query } from "./_generated/server";
+import { internalMutation, mutation, query } from "./_generated/server";
 import { assertSLP } from "./lib/auth";
 import { insertProgressFromTargets } from "./lib/progress";
 
@@ -425,5 +425,36 @@ export const remove = mutation({
     }
 
     await ctx.db.delete(args.noteId);
+  },
+});
+
+export const createFromMeeting = internalMutation({
+  args: {
+    patientId: v.id("patients"),
+    slpUserId: v.string(),
+    sessionDate: v.string(),
+    sessionDuration: v.number(),
+    soap: soapNoteValidator,
+    meetingRecordId: v.id("meetingRecords"),
+  },
+  handler: async (ctx, args) => {
+    return await ctx.db.insert("sessionNotes", {
+      patientId: args.patientId,
+      slpUserId: args.slpUserId,
+      sessionDate: args.sessionDate,
+      sessionDuration: args.sessionDuration,
+      sessionType: "teletherapy",
+      status: "draft",
+      structuredData: {
+        targetsWorkedOn: [],
+        behaviorNotes: undefined,
+        parentFeedback: undefined,
+        homeworkAssigned: undefined,
+        nextSessionFocus: undefined,
+      },
+      soapNote: args.soap,
+      aiGenerated: true,
+      meetingRecordId: args.meetingRecordId,
+    });
   },
 });

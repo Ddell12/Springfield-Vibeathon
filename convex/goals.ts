@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 import { ConvexError } from "convex/values";
 
-import { mutation, query } from "./_generated/server";
+import { internalQuery, mutation, query } from "./_generated/server";
 import { assertPatientAccess,assertSLP } from "./lib/auth";
 
 // ── Validators ──────────────────────────────────────────────────────────────
@@ -103,6 +103,16 @@ export const listByPatient = query({
       .query("goals")
       .withIndex("by_patientId", (q) => q.eq("patientId", args.patientId))
       .take(100);
+  },
+});
+
+export const listByPatientInternal = internalQuery({
+  args: { patientId: v.id("patients") },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("goals")
+      .withIndex("by_patientId", (q) => q.eq("patientId", args.patientId))
+      .collect();
   },
 });
 

@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 import { ConvexError } from "convex/values";
 
-import { mutation, query } from "./_generated/server";
+import { internalQuery, mutation, query } from "./_generated/server";
 import { assertSLP,getAuthUserId } from "./lib/auth";
 
 const diagnosisValidator = v.union(
@@ -331,5 +331,12 @@ export const getStats = query({
       discharged: counts[2],
       pendingIntake: counts[3],
     };
+  },
+});
+
+export const getInternal = internalQuery({
+  args: { patientId: v.id("patients") },
+  handler: async (ctx, args) => {
+    return await ctx.db.get(args.patientId);
   },
 });

@@ -13,7 +13,9 @@ import type * as activityLog from "../activityLog.js";
 import type * as ai from "../ai.js";
 import type * as aiActions from "../aiActions.js";
 import type * as app_state from "../app_state.js";
+import type * as appointments from "../appointments.js";
 import type * as apps from "../apps.js";
+import type * as availability from "../availability.js";
 import type * as billing from "../billing.js";
 import type * as billingActions from "../billingActions.js";
 import type * as caregivers from "../caregivers.js";
@@ -38,7 +40,10 @@ import type * as lib_auth from "../lib/auth.js";
 import type * as lib_billing from "../lib/billing.js";
 import type * as lib_progress from "../lib/progress.js";
 import type * as lib_session_states from "../lib/session_states.js";
+import type * as meetingRecords from "../meetingRecords.js";
 import type * as messages from "../messages.js";
+import type * as notificationActions from "../notificationActions.js";
+import type * as notifications from "../notifications.js";
 import type * as patientMaterials from "../patientMaterials.js";
 import type * as patientMessages from "../patientMessages.js";
 import type * as patients from "../patients.js";
@@ -49,6 +54,7 @@ import type * as rate_limit_check from "../rate_limit_check.js";
 import type * as rate_limits from "../rate_limits.js";
 import type * as seeds_backfill_legacy_sessions from "../seeds/backfill_legacy_sessions.js";
 import type * as seeds_image_seeds from "../seeds/image_seeds.js";
+import type * as sessionActions from "../sessionActions.js";
 import type * as sessionNotes from "../sessionNotes.js";
 import type * as sessions from "../sessions.js";
 import type * as speechCoach from "../speechCoach.js";
@@ -73,7 +79,9 @@ declare const fullApi: ApiFromModules<{
   ai: typeof ai;
   aiActions: typeof aiActions;
   app_state: typeof app_state;
+  appointments: typeof appointments;
   apps: typeof apps;
+  availability: typeof availability;
   billing: typeof billing;
   billingActions: typeof billingActions;
   caregivers: typeof caregivers;
@@ -98,7 +106,10 @@ declare const fullApi: ApiFromModules<{
   "lib/billing": typeof lib_billing;
   "lib/progress": typeof lib_progress;
   "lib/session_states": typeof lib_session_states;
+  meetingRecords: typeof meetingRecords;
   messages: typeof messages;
+  notificationActions: typeof notificationActions;
+  notifications: typeof notifications;
   patientMaterials: typeof patientMaterials;
   patientMessages: typeof patientMessages;
   patients: typeof patients;
@@ -109,6 +120,7 @@ declare const fullApi: ApiFromModules<{
   rate_limits: typeof rate_limits;
   "seeds/backfill_legacy_sessions": typeof seeds_backfill_legacy_sessions;
   "seeds/image_seeds": typeof seeds_image_seeds;
+  sessionActions: typeof sessionActions;
   sessionNotes: typeof sessionNotes;
   sessions: typeof sessions;
   speechCoach: typeof speechCoach;
@@ -682,6 +694,155 @@ export declare const components: {
     };
     time: {
       getServerTime: FunctionReference<"mutation", "internal", {}, number>;
+    };
+  };
+  resend: {
+    lib: {
+      cancelEmail: FunctionReference<
+        "mutation",
+        "internal",
+        { emailId: string },
+        null
+      >;
+      cleanupAbandonedEmails: FunctionReference<
+        "mutation",
+        "internal",
+        { olderThan?: number },
+        null
+      >;
+      cleanupOldEmails: FunctionReference<
+        "mutation",
+        "internal",
+        { olderThan?: number },
+        null
+      >;
+      createManualEmail: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          from: string;
+          headers?: Array<{ name: string; value: string }>;
+          replyTo?: Array<string>;
+          subject: string;
+          to: Array<string> | string;
+        },
+        string
+      >;
+      get: FunctionReference<
+        "query",
+        "internal",
+        { emailId: string },
+        {
+          bcc?: Array<string>;
+          bounced?: boolean;
+          cc?: Array<string>;
+          clicked?: boolean;
+          complained: boolean;
+          createdAt: number;
+          deliveryDelayed?: boolean;
+          errorMessage?: string;
+          failed?: boolean;
+          finalizedAt: number;
+          from: string;
+          headers?: Array<{ name: string; value: string }>;
+          html?: string;
+          opened: boolean;
+          replyTo: Array<string>;
+          resendId?: string;
+          segment: number;
+          status:
+            | "waiting"
+            | "queued"
+            | "cancelled"
+            | "sent"
+            | "delivered"
+            | "delivery_delayed"
+            | "bounced"
+            | "failed";
+          subject?: string;
+          template?: {
+            id: string;
+            variables?: Record<string, string | number>;
+          };
+          text?: string;
+          to: Array<string>;
+        } | null
+      >;
+      getStatus: FunctionReference<
+        "query",
+        "internal",
+        { emailId: string },
+        {
+          bounced: boolean;
+          clicked: boolean;
+          complained: boolean;
+          deliveryDelayed: boolean;
+          errorMessage: string | null;
+          failed: boolean;
+          opened: boolean;
+          status:
+            | "waiting"
+            | "queued"
+            | "cancelled"
+            | "sent"
+            | "delivered"
+            | "delivery_delayed"
+            | "bounced"
+            | "failed";
+        } | null
+      >;
+      handleEmailEvent: FunctionReference<
+        "mutation",
+        "internal",
+        { event: any },
+        null
+      >;
+      sendEmail: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          bcc?: Array<string>;
+          cc?: Array<string>;
+          from: string;
+          headers?: Array<{ name: string; value: string }>;
+          html?: string;
+          options: {
+            apiKey: string;
+            initialBackoffMs: number;
+            onEmailEvent?: { fnHandle: string };
+            retryAttempts: number;
+            testMode: boolean;
+          };
+          replyTo?: Array<string>;
+          subject?: string;
+          template?: {
+            id: string;
+            variables?: Record<string, string | number>;
+          };
+          text?: string;
+          to: Array<string>;
+        },
+        string
+      >;
+      updateManualEmail: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          emailId: string;
+          errorMessage?: string;
+          resendId?: string;
+          status:
+            | "waiting"
+            | "queued"
+            | "cancelled"
+            | "sent"
+            | "delivered"
+            | "delivery_delayed"
+            | "bounced"
+            | "failed";
+        },
+        null
+      >;
     };
   };
   stripe: {

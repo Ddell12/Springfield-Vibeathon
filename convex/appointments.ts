@@ -1,0 +1,370 @@
+import { v } from "convex/values";
+import { ConvexError } from "convex/values";
+
+import { internalQuery, mutation, query } from "./_generated/server";
+import { internal } from "./_generated/api";
+import {
+  assertPatientAccess,
+  assertSLP,
+  getAuthUserId,
+} from "./lib/auth";
+
+export const getAvailableSlots = query({
+  args: {
+    slpId: v.string(),
+    weekStart: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return [];
+
+    const weekEnd = args.weekStart + 7 * 24 * 60 * 60 * 1000;
+
+    const availability = await ctx.db
+      .query("availability")
+      .withIndex("by_slpId", (q) => q.eq("slpId", args.slpId))
+      .collect();
+
+    const appointments = await ctx.db
+      .query("appointments")
+      .withIndex("by_slpId_scheduledAt", (q) =>
+        q.eq("slpId", args.slpId).gte("scheduledAt", args.weekStart)
+      )
+      .collect();
+
+    const bookedTimes = new Set(
+      appointments
+        .filter((a) => a.status !== "cancelled")
+        .filter((a) => a.scheduledAt < weekEnd)
+        .map((a) => a.scheduledAt)
+    );
+
+    const slots: Array<{ timestamp: number; startTime: string; dayOfWeek: number }> =
+      [];
+
+    for (let dayOffset = 0; dayOffset < 7; dayOffset++) {
+      const dayTimestamp = args.weekStart + dayOffset * 24 * 60 * 60 * 1000;
+      const date = new Date(dayTimestamp);
+      const dayOfWeek = date.getUTCDay();
+
+      const daySlots = availability.filter((a) => {
+        if (a.dayOfWeek !== dayOfWeek) return false;
+        if (a.isRecurring) return true;
+        if (a.effectiveDate) {
+          const dateStr = date.toISOString().split("T")[0];
+          return a.effectiveDate === dateStr;
+        }
+        return false;
+      });
+
+      for (const slot of daySlots) {
+        const [startHour, startMin] = slot.startTime.split(":").map(Number);
+        const [endHour, endMin] = slot.endTime.split(":").map(Number);
+        const startMinutes = startHour * 60 + startMin;
+        const endMinutes = endHour * 60 + endMin;
+
+        for (let m = startMinutes; m < endMinutes; m += 30) {
+          const slotTimestamp = dayTimestamp + m * 60 * 1000;
+          if (!bookedTimes.has(slotTimestamp) && slotTimestamp > Date.now()) {
+            const hour = Math.floor(m / 60);
+            const min = m % 60;
+            slots.push({
+              timestamp: slotTimestamp,
+              startTime: `${String(hour).padStart(2, "0")}:${String(min).padStart(2, "0")}`,
+              dayOfWeek,
+            });
+          }
+        }
+      }
+    }
+
+    return slots;
+  },
+});
+
+export const listBySlp = query({
+  args: {
+    weekStart: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return [];
+
+    const appointments = await ctx.db
+      .query("appointments")
+      .withIndex("by_slpId_scheduledAt", (q) =>
+        args.weekStart !== undefined
+          ? q.eq("slpId", userId).gte("scheduledAt", args.weekStart)
+          : q.eq("slpId", userId)
+      )
+      .take(200);
+
+    const enriched = await Promise.all(
+      appointments.map(async (apt) => {
+        const patient = await ctx.db.get(apt.patientId);
+        return { ...apt, patient };
+      })
+    );
+
+    return enriched;
+  },
+});
+
+export const listByPatient = query({
+  args: {
+    patientId: v.id("patients"),
+  },
+  handler: async (ctx, args) => {
+    await assertPatientAccess(ctx, args.patientId);
+
+    return await ctx.db
+      .query("appointments")
+      .withIndex("by_patientId", (q) => q.eq("patientId", args.patientId))
+      .collect();
+  },
+});
+
+export const get = query({
+  args: { appointmentId: v.id("appointments") },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return null;
+
+    const appointment = await ctx.db.get(args.appointmentId);
+    if (!appointment) return null;
+
+    await assertPatientAccess(ctx, appointment.patientId);
+
+    const patient = await ctx.db.get(appointment.patientId);
+    return { ...appointment, patient };
+  },
+});
+
+export const getInternal = internalQuery({
+  args: { appointmentId: v.id("appointments") },
+  handler: async (ctx, args) => {
+    const appointment = await ctx.db.get(args.appointmentId);
+    if (!appointment) return null;
+    const patient = await ctx.db.get(appointment.patientId);
+    return { ...appointment, patient };
+  },
+});
+
+export const create = mutation({
+  args: {
+    patientId: v.id("patients"),
+    scheduledAt: v.number(),
+    duration: v.optional(v.number()),
+    notes: v.optional(v.string()),
+    timezone: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const slpId = await assertSLP(ctx);
+
+    const patient = await ctx.db.get(args.patientId);
+    if (!patient) throw new ConvexError("Patient not found");
+    if (patient.slpUserId !== slpId) throw new ConvexError("Not your patient");
+
+    if (args.scheduledAt < Date.now()) {
+      throw new ConvexError("Cannot schedule in the past");
+    }
+
+    const existing = await ctx.db
+      .query("appointments")
+      .withIndex("by_slpId_scheduledAt", (q) =>
+        q.eq("slpId", slpId).eq("scheduledAt", args.scheduledAt)
+      )
+      .first();
+
+    if (existing && existing.status !== "cancelled") {
+      throw new ConvexError("Time slot already booked");
+    }
+
+    const appointmentId = await ctx.db.insert("appointments", {
+      slpId,
+      patientId: args.patientId,
+      scheduledAt: args.scheduledAt,
+      duration: args.duration ?? 30,
+      status: "scheduled",
+      joinLink: "",
+      notes: args.notes,
+      timezone: args.timezone,
+    });
+
+    await ctx.db.patch(appointmentId, {
+      joinLink: `/sessions/${appointmentId}/call`,
+    });
+
+    await ctx.scheduler.runAfter(0, internal.notificationActions.onAppointmentBooked, {
+      appointmentId,
+    });
+
+    return appointmentId;
+  },
+});
+
+export const bookAsCaregiver = mutation({
+  args: {
+    slpId: v.string(),
+    patientId: v.id("patients"),
+    scheduledAt: v.number(),
+    timezone: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new ConvexError("Not authenticated");
+
+    const link = await ctx.db
+      .query("caregiverLinks")
+      .withIndex("by_caregiverUserId_patientId", (q) =>
+        q.eq("caregiverUserId", userId).eq("patientId", args.patientId)
+      )
+      .first();
+
+    if (!link || link.inviteStatus !== "accepted") {
+      throw new ConvexError("Not authorized to book for this patient");
+    }
+
+    const patient = await ctx.db.get(args.patientId);
+    if (!patient || patient.slpUserId !== args.slpId) {
+      throw new ConvexError("Patient-SLP mismatch");
+    }
+
+    if (args.scheduledAt < Date.now()) {
+      throw new ConvexError("Cannot schedule in the past");
+    }
+
+    const existing = await ctx.db
+      .query("appointments")
+      .withIndex("by_slpId_scheduledAt", (q) =>
+        q.eq("slpId", args.slpId).eq("scheduledAt", args.scheduledAt)
+      )
+      .first();
+
+    if (existing && existing.status !== "cancelled") {
+      throw new ConvexError("Time slot already booked");
+    }
+
+    const appointmentId = await ctx.db.insert("appointments", {
+      slpId: args.slpId,
+      patientId: args.patientId,
+      caregiverId: userId,
+      scheduledAt: args.scheduledAt,
+      duration: 30,
+      status: "scheduled",
+      joinLink: "",
+      timezone: args.timezone,
+    });
+
+    await ctx.db.patch(appointmentId, {
+      joinLink: `/sessions/${appointmentId}/call`,
+    });
+
+    await ctx.scheduler.runAfter(0, internal.notificationActions.onAppointmentBooked, {
+      appointmentId,
+    });
+
+    return appointmentId;
+  },
+});
+
+export const cancel = mutation({
+  args: {
+    appointmentId: v.id("appointments"),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new ConvexError("Not authenticated");
+
+    const appointment = await ctx.db.get(args.appointmentId);
+    if (!appointment) throw new ConvexError("Appointment not found");
+
+    if (appointment.status !== "scheduled") {
+      throw new ConvexError("Can only cancel scheduled appointments");
+    }
+
+    const isSLP = appointment.slpId === userId;
+    const isCaregiver = appointment.caregiverId === userId;
+    if (!isSLP && !isCaregiver) {
+      const link = await ctx.db
+        .query("caregiverLinks")
+        .withIndex("by_caregiverUserId_patientId", (q) =>
+          q.eq("caregiverUserId", userId).eq("patientId", appointment.patientId)
+        )
+        .first();
+      if (!link || link.inviteStatus !== "accepted") {
+        throw new ConvexError("Not authorized");
+      }
+    }
+
+    await ctx.db.patch(args.appointmentId, {
+      status: "cancelled",
+      cancelledBy: userId,
+    });
+
+    await ctx.scheduler.runAfter(0, internal.notificationActions.onAppointmentCancelled, {
+      appointmentId: args.appointmentId,
+      cancelledBy: userId,
+    });
+  },
+});
+
+export const startSession = mutation({
+  args: { appointmentId: v.id("appointments") },
+  handler: async (ctx, args) => {
+    const slpId = await assertSLP(ctx);
+    const appointment = await ctx.db.get(args.appointmentId);
+    if (!appointment) throw new ConvexError("Appointment not found");
+    if (appointment.slpId !== slpId) throw new ConvexError("Not your appointment");
+    if (appointment.status !== "scheduled") throw new ConvexError("Not in scheduled status");
+
+    await ctx.db.patch(args.appointmentId, {
+      status: "in-progress",
+      livekitRoom: `session-${args.appointmentId}`,
+    });
+  },
+});
+
+export const completeSession = mutation({
+  args: {
+    appointmentId: v.id("appointments"),
+    durationSeconds: v.number(),
+    interactionLog: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const slpId = await assertSLP(ctx);
+    const appointment = await ctx.db.get(args.appointmentId);
+    if (!appointment) throw new ConvexError("Appointment not found");
+    if (appointment.slpId !== slpId) throw new ConvexError("Not your appointment");
+
+    await ctx.db.patch(args.appointmentId, { status: "completed" });
+
+    const meetingRecordId = await ctx.db.insert("meetingRecords", {
+      appointmentId: args.appointmentId,
+      slpId,
+      patientId: appointment.patientId,
+      duration: args.durationSeconds,
+      interactionLog: args.interactionLog,
+      status: "processing",
+    });
+
+    await ctx.scheduler.runAfter(0, internal.sessionActions.fetchAudio, {
+      meetingRecordId,
+    });
+
+    return meetingRecordId;
+  },
+});
+
+export const markNoShow = mutation({
+  args: { appointmentId: v.id("appointments") },
+  handler: async (ctx, args) => {
+    const slpId = await assertSLP(ctx);
+    const appointment = await ctx.db.get(args.appointmentId);
+    if (!appointment) throw new ConvexError("Appointment not found");
+    if (appointment.slpId !== slpId) throw new ConvexError("Not your appointment");
+    if (appointment.status !== "scheduled") throw new ConvexError("Not in scheduled status");
+
+    await ctx.db.patch(args.appointmentId, { status: "no-show" });
+  },
+});
