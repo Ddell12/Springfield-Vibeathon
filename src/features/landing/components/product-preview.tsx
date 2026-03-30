@@ -1,67 +1,57 @@
-import Link from "next/link";
-
 import { MaterialIcon } from "@/shared/components/material-icon";
+
+const FEATURES = [
+  {
+    icon: "auto_awesome",
+    title: "AI App Builder",
+    description: "Describe it in plain language, get a working therapy app",
+  },
+  {
+    icon: "grid_view",
+    title: "Template Library",
+    description: "Start from proven therapy tools, customize to fit your needs",
+  },
+  {
+    icon: "style",
+    title: "Flashcard Creator",
+    description: "Generate interactive flashcard decks with AI",
+  },
+  {
+    icon: "record_voice_over",
+    title: "Speech Coach",
+    description: "Practice speech skills with an AI-powered coach",
+  },
+  {
+    icon: "child_care",
+    title: "Family Play Mode",
+    description: "Kid-friendly interface with PIN-protected exit",
+  },
+];
 
 export function ProductPreview() {
   return (
-    <section className="py-20 max-w-7xl mx-auto px-6">
-      <h2 className="sr-only">See What You Can Build</h2>
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* Large card — Visual Schedules */}
-        <div className="lg:col-span-8 bg-surface-container h-[400px] rounded-2xl p-8 relative overflow-hidden flex flex-col justify-end sanctuary-shadow">
-          {/* Abstract background pattern */}
-          <div className="absolute inset-0 bg-gradient-to-br from-primary-fixed/30 to-surface-container" />
-          <div className="absolute top-8 right-8 flex gap-3 opacity-40">
-            <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center text-xl">
-              🛏️
+    <section className="py-20">
+      <div className="max-w-6xl mx-auto px-6">
+        <h2 className="font-headline text-3xl md:text-4xl text-center text-on-surface mb-4">
+          Everything you need, all in one place
+        </h2>
+        <p className="text-center text-on-surface-variant text-lg mb-12 max-w-2xl mx-auto">
+          Bridges combines AI-powered tools with therapy expertise to help every child communicate and thrive.
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {FEATURES.map((feature) => (
+            <div
+              key={feature.title}
+              className="rounded-2xl bg-surface-container-lowest p-6 shadow-[0_4px_16px_rgba(25,28,32,0.04)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_24px_rgba(25,28,32,0.08)]"
+            >
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 mb-4">
+                <MaterialIcon icon={feature.icon} className="text-primary text-2xl" />
+              </div>
+              <h3 className="font-headline text-lg font-semibold text-on-surface mb-2">{feature.title}</h3>
+              <p className="text-sm text-on-surface-variant leading-relaxed">{feature.description}</p>
             </div>
-            <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center text-xl">
-              🪥
-            </div>
-            <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center text-xl">
-              🥣
-            </div>
-            <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center text-xl">
-              🎒
-            </div>
-          </div>
-          <div className="relative z-10">
-            <span className="px-3 py-1 bg-primary-container text-on-primary-container rounded-full text-xs font-bold mb-4 inline-block">
-              MOST POPULAR
-            </span>
-            <h3 className="text-2xl font-body font-medium mb-2 text-on-surface">
-              Visual Schedules
-            </h3>
-            <p className="text-on-surface-variant max-w-md">
-              Reduce transition anxiety with step-by-step interactive flows
-              customized for any routine.
-            </p>
-          </div>
+          ))}
         </div>
-
-        {/* Small card — Communication Boards */}
-        <div className="lg:col-span-4 bg-tertiary-fixed text-on-tertiary-fixed rounded-2xl p-8 flex flex-col justify-between">
-          <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
-            <MaterialIcon icon="grid_view" />
-          </div>
-          <div>
-            <h3 className="text-2xl font-body font-medium mb-2">
-              Communication Boards
-            </h3>
-            <p className="opacity-80">
-              Give every child a voice with instant PECS-style boards based on
-              their specific environment.
-            </p>
-          </div>
-        </div>
-      </div>
-      <div className="mt-8 text-center">
-        <Link
-          href="/explore"
-          className="inline-flex items-center gap-2 text-primary font-body font-bold text-lg hover:underline transition-colors min-h-[44px]"
-        >
-          See them in action →
-        </Link>
       </div>
     </section>
   );

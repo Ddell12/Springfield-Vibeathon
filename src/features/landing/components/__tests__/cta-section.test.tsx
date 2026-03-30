@@ -20,7 +20,7 @@ describe("CtaSection", () => {
   it("renders the section heading", () => {
     render(<CtaSection />);
     expect(
-      screen.getByText(/Start building therapy apps today — for free\./i)
+      screen.getByText(/Ready to bridge the gap\?/i)
     ).toBeInTheDocument();
   });
 
@@ -30,10 +30,16 @@ describe("CtaSection", () => {
     expect(link).toHaveAttribute("href", "/builder");
   });
 
-  it("renders the supporting description text", () => {
+  it("renders the Browse Templates link pointing to /templates", () => {
+    render(<CtaSection />);
+    const link = screen.getByRole("link", { name: /Browse Templates/i });
+    expect(link).toHaveAttribute("href", "/templates");
+  });
+
+  it("renders description mentioning both roles", () => {
     render(<CtaSection />);
     expect(
-      screen.getByText(/No account required/i)
+      screen.getByText(/speech therapist.*caseload|family.*child/i)
     ).toBeInTheDocument();
   });
 });

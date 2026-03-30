@@ -18,6 +18,7 @@ import type { Activity, StreamingStatus } from "../hooks/use-streaming";
 import { THERAPY_SUGGESTIONS } from "../lib/constants";
 import type { TherapyBlueprint } from "../lib/schemas";
 import { BlueprintCard } from "./blueprint-card";
+import { ProgressCard } from "./progress-card";
 
 function UserMessage({ content }: { content: string }) {
   return (
@@ -67,6 +68,7 @@ interface ChatPanelProps {
   pendingPrompt?: string | null;
   onPendingPromptClear?: () => void;
   narrationMessage?: string | null;
+  startTime?: number;
 }
 
 export function ChatPanel({
@@ -81,6 +83,7 @@ export function ChatPanel({
   pendingPrompt,
   onPendingPromptClear,
   narrationMessage,
+  startTime,
 }: ChatPanelProps) {
   const [input, setInput] = useState("");
   const scrollEndRef = useRef<HTMLDivElement>(null);
@@ -165,18 +168,13 @@ export function ChatPanel({
           {/* Blueprint card */}
           {blueprint && <BlueprintCard blueprint={blueprint} />}
 
-          {/* Warm progress narration during generation */}
-          {isGenerating && narrationMessage && (
-            <div
-              className="flex items-center gap-2 rounded-xl bg-primary/5 px-4 py-3"
-              role="status"
-              aria-live="polite"
-            >
-              <MaterialIcon icon="progress_activity" size="xs" className="animate-spin text-primary" />
-              <span className="text-sm text-on-surface-variant">
-                {narrationMessage}
-              </span>
-            </div>
+          {/* Progress tracking card during generation */}
+          {(isGenerating || isLive) && (
+            <ProgressCard
+              status={status}
+              activities={activities}
+              startTime={startTime ?? Date.now()}
+            />
           )}
 
           {/* Success state */}

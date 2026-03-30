@@ -36,7 +36,7 @@ describe("HeroSection", () => {
     render(<HeroSection />);
     expect(
       screen.getByText(
-        /Bridges uses AI to turn your words into interactive visual schedules/
+        /AI-powered therapy tools for speech therapists and families/
       )
     ).toBeInTheDocument();
   });

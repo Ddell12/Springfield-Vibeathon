@@ -72,6 +72,7 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
   const lastPromptRef = useRef("");
   const promptInputRef = useRef<HTMLInputElement>(null);
   const [showFreeformInput, setShowFreeformInput] = useState(false);
+  const [generationStartTime, setGenerationStartTime] = useState<number>(Date.now());
 
   useEffect(() => { localStorage.setItem("bridges-viewMode", viewMode); }, [viewMode]);
   useEffect(() => { localStorage.setItem("bridges-deviceSize", deviceSize); }, [deviceSize]);
@@ -144,6 +145,7 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
   const handleGenerate = useCallback((prompt: string, blueprint?: TherapyBlueprint) => {
     lastPromptRef.current = prompt;
     setPendingPrompt(prompt);
+    setGenerationStartTime(Date.now());
     generate(prompt, blueprint ?? undefined, patientId ?? undefined);
   }, [generate, patientId]);
 
@@ -181,6 +183,34 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
     window.addEventListener("beforeunload", handler);
     return () => window.removeEventListener("beforeunload", handler);
   }, [status]);
+
+  // Toast when navigating away during active generation (in-app navigation)
+  const hasShownNavToastRef = useRef(false);
+  useEffect(() => {
+    if (status === "generating") {
+      hasShownNavToastRef.current = false;
+    }
+    return () => {
+      if (status === "generating" && !hasShownNavToastRef.current) {
+        hasShownNavToastRef.current = true;
+        toast.info("Your app is still building. Check My Apps when it's ready.", {
+          duration: 5000,
+        });
+      }
+    };
+  }, [status]);
+
+  // Keyboard shortcut: Cmd/Ctrl + Shift + S toggles source/preview
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === "S") {
+        e.preventDefault();
+        setViewMode((prev) => (prev === "preview" ? "code" : "preview"));
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
 
   const handleNameEditEnd = async (name: string) => {
     setIsEditingName(false);
@@ -390,6 +420,7 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
                       pendingPrompt={pendingPrompt}
                       onPendingPromptClear={() => setPendingPrompt(null)}
                       narrationMessage={narrationMessage}
+                      startTime={generationStartTime}
                     />
                   </div>
                 ) : (
@@ -424,6 +455,7 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
                       pendingPrompt={pendingPrompt}
                       onPendingPromptClear={() => setPendingPrompt(null)}
                       narrationMessage={narrationMessage}
+                      startTime={generationStartTime}
                     />
                   </div>
                 </ResizablePanel>

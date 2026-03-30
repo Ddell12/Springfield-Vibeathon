@@ -2,6 +2,14 @@ import { render, screen } from "@testing-library/react";
 
 import { HowItWorks } from "../how-it-works";
 
+vi.mock("next/link", () => ({
+  default: ({ href, children, ...props }: any) => (
+    <a href={href} {...props}>
+      {children}
+    </a>
+  ),
+}));
+
 vi.mock("@/shared/components/material-icon", () => ({
   MaterialIcon: ({ icon }: { icon: string }) => <span>{icon}</span>,
 }));
@@ -10,42 +18,44 @@ describe("HowItWorks", () => {
   it("renders the section heading", () => {
     render(<HowItWorks />);
     expect(
-      screen.getByRole("heading", { name: /How it Works/ })
+      screen.getByRole("heading", { name: /Built for the people who matter most/ })
     ).toBeInTheDocument();
   });
 
-  it("renders all three step titles", () => {
+  it("renders the SLP column heading", () => {
     render(<HowItWorks />);
     expect(
-      screen.getByRole("heading", { name: "Describe" })
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("heading", { name: "Build" })
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("heading", { name: "Share" })
+      screen.getByRole("heading", { name: /For Speech Therapists/ })
     ).toBeInTheDocument();
   });
 
-  it("renders the Describe step with its example quote", () => {
+  it("renders the Family column heading", () => {
     render(<HowItWorks />);
     expect(
-      screen.getByText(/Tell Bridges what your child needs/)
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(/A visual schedule for a trip to the dentist/)
+      screen.getByRole("heading", { name: /For Families/ })
     ).toBeInTheDocument();
   });
 
-  it("renders description text for Build and Share steps", () => {
+  it("renders SLP value props", () => {
     render(<HowItWorks />);
-    expect(
-      screen.getByText(/AI creates an interactive therapy app in seconds/)
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(
-        /Use at home, school, or therapy — share with your team instantly/
-      )
-    ).toBeInTheDocument();
+    expect(screen.getByText(/Build custom therapy apps in minutes/)).toBeInTheDocument();
+    expect(screen.getByText(/Manage patient caseloads and goals/)).toBeInTheDocument();
+    expect(screen.getByText(/Track progress with session notes/)).toBeInTheDocument();
+    expect(screen.getByText(/Share apps directly with families/)).toBeInTheDocument();
+  });
+
+  it("renders Family value props", () => {
+    render(<HowItWorks />);
+    expect(screen.getByText(/Describe what your child needs in plain language/)).toBeInTheDocument();
+    expect(screen.getByText(/Access speech coach anytime, anywhere/)).toBeInTheDocument();
+    expect(screen.getByText(/Play therapy apps together at home/)).toBeInTheDocument();
+    expect(screen.getByText(/Track your child/)).toBeInTheDocument();
+  });
+
+  it("renders SLP sign-up link", () => {
+    render(<HowItWorks />);
+    const links = screen.getAllByRole("link", { name: /Get Started/ });
+    expect(links.length).toBeGreaterThanOrEqual(1);
+    links.forEach((link) => expect(link).toHaveAttribute("href", "/sign-up"));
   });
 });

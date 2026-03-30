@@ -1,63 +1,84 @@
-const steps = [
-  {
-    number: "01",
-    title: "Describe",
-    description: (
-      <>
-        Tell Bridges what your child needs in everyday language.{" "}
-        <span className="font-medium text-primary">
-          &quot;A visual schedule for a trip to the dentist.&quot;
-        </span>
-      </>
-    ),
-  },
-  {
-    number: "02",
-    title: "Build",
-    description:
-      "AI creates an interactive therapy app in seconds, complete with vetted icons and clear structures designed for cognitive clarity.",
-  },
-  {
-    number: "03",
-    title: "Share",
-    description:
-      "Use at home, school, or therapy — share with your team instantly via private link or high-quality printouts for physical use.",
-  },
-];
+import Link from "next/link";
+
+import { MaterialIcon } from "@/shared/components/material-icon";
 
 export function HowItWorks() {
   return (
-    <section className="bg-surface-container-low py-20 md:py-28 px-6">
-      <div className="max-w-5xl mx-auto">
-        <div className="mb-16 md:text-left">
-          <h2 className="font-headline text-3xl md:text-[2rem] font-normal text-on-surface mb-4">
-            How it Works
-          </h2>
-          <div className="h-1.5 w-24 bg-primary rounded-full mb-6" />
-        </div>
-
-        <div className="flex flex-col gap-12 md:gap-0 md:flex-row md:items-start md:justify-between">
-          {steps.map((step, i) => (
-            <div key={step.title} className="flex-1 flex items-start gap-5 md:flex-col md:items-start md:px-6 relative">
-              {/* Connector line between steps (desktop only) */}
-              {i < steps.length - 1 && (
-                <div className="hidden md:block absolute top-3 left-[calc(50%+1rem)] w-[calc(100%-2rem)] h-px bg-border" />
-              )}
-
-              <span className="font-mono text-sm text-primary font-medium tracking-wider shrink-0 mt-0.5 md:mb-4">
-                {step.number}
-              </span>
-
-              <div>
-                <h3 className="text-xl font-medium font-body mb-2 text-on-surface">
-                  {step.title}
-                </h3>
-                <p className="text-on-surface-variant leading-relaxed text-[15px]">
-                  {step.description}
-                </p>
+    <section className="py-20 bg-surface-container-lowest">
+      <div className="max-w-6xl mx-auto px-6">
+        <h2 className="font-headline text-3xl md:text-4xl text-center text-on-surface mb-12">
+          Built for the people who matter most
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {/* SLP Column */}
+          <div className="rounded-2xl bg-primary/5 p-8">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+                <MaterialIcon icon="medical_services" className="text-primary" />
               </div>
+              <h3 className="font-headline text-xl font-semibold text-on-surface">For Speech Therapists</h3>
             </div>
-          ))}
+            <ul className="space-y-3">
+              <li className="flex items-start gap-3">
+                <MaterialIcon icon="check_circle" size="sm" className="text-primary mt-0.5" filled />
+                <span className="text-on-surface-variant">Build custom therapy apps in minutes</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <MaterialIcon icon="check_circle" size="sm" className="text-primary mt-0.5" filled />
+                <span className="text-on-surface-variant">Manage patient caseloads and goals</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <MaterialIcon icon="check_circle" size="sm" className="text-primary mt-0.5" filled />
+                <span className="text-on-surface-variant">Track progress with session notes</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <MaterialIcon icon="check_circle" size="sm" className="text-primary mt-0.5" filled />
+                <span className="text-on-surface-variant">Share apps directly with families</span>
+              </li>
+            </ul>
+            <Link
+              href="/sign-up"
+              className="mt-6 inline-flex items-center gap-2 bg-primary text-on-primary px-6 py-3 rounded-lg font-semibold hover:bg-primary/90 transition-colors"
+            >
+              Get Started as SLP
+              <MaterialIcon icon="arrow_forward" size="sm" />
+            </Link>
+          </div>
+
+          {/* Family Column */}
+          <div className="rounded-2xl bg-tertiary-fixed/30 p-8">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-tertiary/10">
+                <MaterialIcon icon="family_restroom" className="text-tertiary" />
+              </div>
+              <h3 className="font-headline text-xl font-semibold text-on-surface">For Families</h3>
+            </div>
+            <ul className="space-y-3">
+              <li className="flex items-start gap-3">
+                <MaterialIcon icon="check_circle" size="sm" className="text-tertiary mt-0.5" filled />
+                <span className="text-on-surface-variant">Describe what your child needs in plain language</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <MaterialIcon icon="check_circle" size="sm" className="text-tertiary mt-0.5" filled />
+                <span className="text-on-surface-variant">Access speech coach anytime, anywhere</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <MaterialIcon icon="check_circle" size="sm" className="text-tertiary mt-0.5" filled />
+                <span className="text-on-surface-variant">Play therapy apps together at home</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <MaterialIcon icon="check_circle" size="sm" className="text-tertiary mt-0.5" filled />
+                <span className="text-on-surface-variant">Track your child&apos;s progress over time</span>
+              </li>
+            </ul>
+            <Link
+              href="/sign-up"
+              className="mt-6 inline-flex items-center gap-2 bg-tertiary text-on-tertiary px-6 py-3 rounded-lg font-semibold hover:bg-tertiary/90 transition-colors"
+            >
+              Get Started as Family
+              <MaterialIcon icon="arrow_forward" size="sm" />
+            </Link>
+          </div>
         </div>
       </div>
     </section>

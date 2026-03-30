@@ -157,7 +157,7 @@ export function BuilderToolbar({
 
       {/* Center section: View toggle + Device sizes + URL bar (desktop) */}
       <div className="hidden min-w-0 flex-1 items-center justify-center gap-3 lg:flex">
-        {/* Segmented control */}
+        {/* Segmented control: Preview / Source toggle */}
         <div className="flex items-center rounded-lg bg-surface-container-high p-1" role="tablist">
           <button
             role="tab"
@@ -166,11 +166,24 @@ export function BuilderToolbar({
             className={cn(
               "rounded-md px-3 py-1 text-[13px] font-semibold transition-colors duration-300",
               view === "preview"
-                ? "bg-white text-primary shadow-sm"
+                ? "bg-white text-primary shadow-sm dark:bg-surface-container-lowest"
                 : "text-on-surface-variant hover:text-primary"
             )}
           >
             Preview
+          </button>
+          <button
+            role="tab"
+            aria-selected={view === "code"}
+            onClick={() => onViewChange("code")}
+            className={cn(
+              "rounded-md px-3 py-1 text-[13px] font-semibold transition-colors duration-300",
+              view === "code"
+                ? "bg-white text-primary shadow-sm dark:bg-surface-container-lowest"
+                : "text-on-surface-variant hover:text-primary"
+            )}
+          >
+            Source
           </button>
         </div>
 
@@ -206,7 +219,7 @@ export function BuilderToolbar({
         </div>
       </div>
 
-      {/* Right section: View Source + Share */}
+      {/* Right section: Fullscreen + Share */}
       <div className="flex flex-shrink-0 items-center gap-2">
         {!isGenerating && hasFiles && onFullscreen && (
           <Button
@@ -219,19 +232,6 @@ export function BuilderToolbar({
           >
             <MaterialIcon icon="fullscreen" size="sm" />
             <span className="hidden sm:inline">Fullscreen</span>
-          </Button>
-        )}
-        {!isGenerating && hasFiles && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="min-h-[44px] gap-1.5 rounded-md px-3 text-xs font-semibold text-on-surface-variant transition-all active:scale-95"
-            onClick={() => onViewChange("code")}
-            aria-label="View source"
-            title="View source code"
-          >
-            <MaterialIcon icon="code" size="sm" />
-            <span className="hidden sm:inline">Source</span>
           </Button>
         )}
         {onSave && (
