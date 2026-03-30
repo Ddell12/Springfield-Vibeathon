@@ -23,8 +23,7 @@ export function HeroSection() {
           </h1>
 
           <p className="text-lg text-on-surface-variant mt-6 max-w-lg leading-relaxed">
-            Bridges uses AI to turn your words into interactive visual schedules,
-            communication boards, and token systems. No technical skills required.
+            AI-powered therapy tools for speech therapists and families. Bridges turns your words into interactive apps — no technical skills required.
           </p>
 
           <div className="flex flex-wrap gap-4 mt-8">

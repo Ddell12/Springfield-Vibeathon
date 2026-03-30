@@ -14,10 +14,10 @@ export function CtaSection() {
             <MaterialIcon icon="auto_awesome" className="text-white text-3xl" />
           </div>
           <h2 className="font-headline text-3xl md:text-4xl font-normal text-white leading-tight">
-            Start building therapy apps today — for free.
+            Ready to bridge the gap?
           </h2>
           <p className="text-white/80 text-lg max-w-lg leading-relaxed">
-            No account required. Describe what you need, and Bridges builds it in seconds.
+            Whether you&apos;re a speech therapist building for your caseload or a family supporting your child at home — Bridges is free to start.
           </p>
           <Link
             href="/builder"
@@ -29,6 +29,12 @@ export function CtaSection() {
               size="sm"
               className="transition-transform group-hover:translate-x-1"
             />
+          </Link>
+          <Link
+            href="/templates"
+            className="text-white/80 hover:text-white text-base font-medium underline underline-offset-4 transition-colors duration-300"
+          >
+            Browse Templates
           </Link>
         </div>
       </div>
