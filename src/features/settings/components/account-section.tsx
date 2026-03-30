@@ -16,7 +16,7 @@ export function AccountSection() {
       </div>
 
       <div className="bg-surface-container-low p-6 rounded-xl">
-        <h3 className="font-headline font-bold text-on-surface mb-3">Session</h3>
+        <h3 className="font-body font-bold text-on-surface mb-3">Session</h3>
         <Button
           variant="outline"
           onClick={() => signOut({ redirectUrl: "/" })}
@@ -33,7 +33,7 @@ export function AccountSection() {
             <MaterialIcon icon="warning" size="sm" className="text-error" />
           </div>
           <div>
-            <h3 className="font-headline font-medium text-on-surface mb-1">
+            <h3 className="font-body font-medium text-on-surface mb-1">
               Danger Zone
             </h3>
             <p className="text-sm text-on-surface-variant">

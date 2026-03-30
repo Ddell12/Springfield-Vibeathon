@@ -44,7 +44,7 @@ export function BillingHistory() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="font-headline text-base">Billing History</CardTitle>
+        <CardTitle className="text-base">Billing History</CardTitle>
       </CardHeader>
       <CardContent>
         {loading ? (

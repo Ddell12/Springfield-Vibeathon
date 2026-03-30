@@ -16,7 +16,7 @@ import { api } from "../../../../convex/_generated/api";
 
 function getBarColor(percentage: number): string {
   if (percentage >= 100) return "bg-destructive";
-  if (percentage >= 80) return "bg-yellow-500";
+  if (percentage >= 80) return "bg-caution";
   return "bg-primary";
 }
 
@@ -67,7 +67,7 @@ export function UsageMeter() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="font-headline text-base">Usage This Month</CardTitle>
+          <CardTitle className="text-base">Usage This Month</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="animate-pulse space-y-4">
@@ -82,7 +82,7 @@ export function UsageMeter() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="font-headline text-base">Usage This Month</CardTitle>
+        <CardTitle className="text-base">Usage This Month</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <UsageBar

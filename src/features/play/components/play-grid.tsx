@@ -65,7 +65,7 @@ function PlayGridInner({ patientId }: { patientId: string }) {
         ) : !apps || apps.length === 0 ? (
           <div className="flex h-64 flex-col items-center justify-center gap-3 text-center">
             <span className="text-5xl" role="img" aria-hidden="true">🎯</span>
-            <p className="text-lg font-semibold text-foreground font-headline">
+            <p className="text-lg font-semibold text-foreground">
               No activities yet
             </p>
             <p className="text-sm text-muted-foreground">

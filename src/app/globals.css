@@ -97,6 +97,52 @@
   --radius-xl: 12px;
 
   --ease-sanctuary: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* ── Extended semantic status containers ── */
+  --color-success-container: oklch(0.940 0.040 157);
+  --color-on-success-container: oklch(0.400 0.070 157);
+  --color-caution-container: oklch(0.940 0.050 87);
+  --color-on-caution-container: oklch(0.400 0.100 87);
+  --color-info-container: oklch(0.940 0.020 250);
+  --color-on-info-container: oklch(0.400 0.060 250);
+
+  /* ── Domain category palette (diagnosis badges, goal domains, data viz) ── */
+  --color-domain-emerald: oklch(0.527 0.086 157);
+  --color-domain-emerald-container: oklch(0.940 0.040 157);
+  --color-on-domain-emerald: oklch(0.400 0.070 157);
+  --color-domain-blue: oklch(0.500 0.100 250);
+  --color-domain-blue-container: oklch(0.940 0.030 250);
+  --color-on-domain-blue: oklch(0.400 0.080 250);
+  --color-domain-amber: oklch(0.707 0.132 87);
+  --color-domain-amber-container: oklch(0.940 0.050 87);
+  --color-on-domain-amber: oklch(0.400 0.100 87);
+  --color-domain-purple: oklch(0.500 0.120 300);
+  --color-domain-purple-container: oklch(0.940 0.040 300);
+  --color-on-domain-purple: oklch(0.400 0.090 300);
+  --color-domain-rose: oklch(0.550 0.130 15);
+  --color-domain-rose-container: oklch(0.940 0.030 15);
+  --color-on-domain-rose: oklch(0.400 0.100 15);
+  --color-domain-orange: oklch(0.650 0.150 55);
+  --color-domain-orange-container: oklch(0.940 0.050 55);
+  --color-on-domain-orange: oklch(0.400 0.100 55);
+  --color-domain-pink: oklch(0.600 0.130 350);
+  --color-domain-pink-container: oklch(0.940 0.030 350);
+  --color-on-domain-pink: oklch(0.400 0.100 350);
+  --color-domain-teal: oklch(0.500 0.080 192);
+  --color-domain-teal-container: oklch(0.940 0.020 192);
+  --color-on-domain-teal: oklch(0.400 0.060 192);
+  --color-domain-neutral: oklch(0.600 0.010 70);
+  --color-domain-neutral-container: oklch(0.940 0.008 70);
+  --color-on-domain-neutral: oklch(0.400 0.010 70);
+
+  /* ── Chart colors (CSS custom props for Recharts SVG) ── */
+  --color-chart-line: oklch(0.441 0.063 190);
+  --color-chart-target: oklch(0.650 0.150 55);
+  --color-chart-success: oklch(0.600 0.150 145);
+  --color-chart-caution: oklch(0.750 0.150 95);
+  --color-chart-warning: oklch(0.650 0.150 55);
+  --color-chart-danger: oklch(0.600 0.200 28);
+  --color-chart-muted: oklch(0.650 0.010 250);
 }
 
 /* Dark mode overrides — warm dark, not cool */
@@ -136,6 +182,50 @@
   --color-sidebar-foreground: oklch(0.945 0.009 78);
   --color-sidebar-accent: oklch(0.298 0.030 199);    /* dark teal-subtle */
   --color-sidebar-accent-foreground: oklch(0.945 0.009 78);
+
+  /* Extended tokens — dark mode (reduced saturation, lighter for dark bg) */
+  --color-success-container: oklch(0.300 0.030 157);
+  --color-on-success-container: oklch(0.750 0.060 157);
+  --color-caution-container: oklch(0.300 0.040 87);
+  --color-on-caution-container: oklch(0.750 0.090 87);
+  --color-info-container: oklch(0.300 0.020 250);
+  --color-on-info-container: oklch(0.750 0.050 250);
+
+  --color-domain-emerald: oklch(0.650 0.070 157);
+  --color-domain-emerald-container: oklch(0.300 0.030 157);
+  --color-on-domain-emerald: oklch(0.750 0.060 157);
+  --color-domain-blue: oklch(0.650 0.080 250);
+  --color-domain-blue-container: oklch(0.300 0.025 250);
+  --color-on-domain-blue: oklch(0.750 0.060 250);
+  --color-domain-amber: oklch(0.750 0.100 87);
+  --color-domain-amber-container: oklch(0.300 0.040 87);
+  --color-on-domain-amber: oklch(0.750 0.090 87);
+  --color-domain-purple: oklch(0.650 0.100 300);
+  --color-domain-purple-container: oklch(0.300 0.035 300);
+  --color-on-domain-purple: oklch(0.750 0.075 300);
+  --color-domain-rose: oklch(0.650 0.100 15);
+  --color-domain-rose-container: oklch(0.300 0.025 15);
+  --color-on-domain-rose: oklch(0.750 0.080 15);
+  --color-domain-orange: oklch(0.700 0.120 55);
+  --color-domain-orange-container: oklch(0.300 0.040 55);
+  --color-on-domain-orange: oklch(0.750 0.090 55);
+  --color-domain-pink: oklch(0.650 0.100 350);
+  --color-domain-pink-container: oklch(0.300 0.025 350);
+  --color-on-domain-pink: oklch(0.750 0.080 350);
+  --color-domain-teal: oklch(0.650 0.065 192);
+  --color-domain-teal-container: oklch(0.300 0.020 192);
+  --color-on-domain-teal: oklch(0.750 0.050 192);
+  --color-domain-neutral: oklch(0.650 0.008 70);
+  --color-domain-neutral-container: oklch(0.300 0.006 70);
+  --color-on-domain-neutral: oklch(0.750 0.008 70);
+
+  --color-chart-line: oklch(0.600 0.055 190);
+  --color-chart-target: oklch(0.700 0.120 55);
+  --color-chart-success: oklch(0.650 0.120 145);
+  --color-chart-caution: oklch(0.750 0.120 95);
+  --color-chart-warning: oklch(0.700 0.120 55);
+  --color-chart-danger: oklch(0.650 0.160 28);
+  --color-chart-muted: oklch(0.600 0.008 250);
 }
 
 /* Utility classes */

@@ -17,11 +17,11 @@ const MORE_CATEGORIES = CATEGORIES.slice(5);
 
 // Icon background colors for each top category (by index)
 const ICON_BG_COLORS = [
-  "bg-teal-100 text-teal-700",
-  "bg-blue-100 text-blue-700",
-  "bg-amber-100 text-amber-700",
-  "bg-purple-100 text-purple-700",
-  "bg-rose-100 text-rose-700",
+  "bg-domain-teal-container text-on-domain-teal",
+  "bg-domain-blue-container text-on-domain-blue",
+  "bg-domain-amber-container text-on-domain-amber",
+  "bg-domain-purple-container text-on-domain-purple",
+  "bg-domain-rose-container text-on-domain-rose",
 ];
 
 export function CategoryPicker({ onSelect, onEscapeHatch }: CategoryPickerProps) {
@@ -52,7 +52,7 @@ export function CategoryPicker({ onSelect, onEscapeHatch }: CategoryPickerProps)
               <MaterialIcon icon={category.icon} size="sm" />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="font-headline font-semibold text-foreground">{category.label}</p>
+              <p className="font-semibold text-foreground">{category.label}</p>
               <p className="mt-0.5 text-sm text-on-surface-variant">{category.description}</p>
             </div>
           </button>

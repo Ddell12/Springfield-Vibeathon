@@ -42,7 +42,7 @@ export function ActivityCard({
       <CardContent className="flex flex-col gap-3 p-4">
         <div className="flex items-start justify-between gap-3">
           <div className="flex flex-col gap-1">
-            <p className="font-headline text-sm font-semibold text-foreground">
+            <p className="text-sm font-semibold text-foreground">
               {program.title}
             </p>
             <p className="text-xs text-muted-foreground line-clamp-2">
@@ -68,7 +68,7 @@ export function ActivityCard({
               onClick={onLogPractice}
               className={cn(
                 "text-white",
-                "bg-[linear-gradient(135deg,#00595c,#0d7377)]",
+                "bg-primary-gradient",
                 "hover:opacity-90 transition-opacity duration-300"
               )}
             >

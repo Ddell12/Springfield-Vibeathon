@@ -20,7 +20,7 @@ export function ChildAppsSection({ patientId }: ChildAppsSectionProps) {
   return (
     <div className="rounded-xl border bg-card p-4">
       <div className="mb-3 flex items-center justify-between">
-        <h3 className="font-headline text-lg font-semibold">Kid Mode Apps</h3>
+        <h3 className="font-body text-lg font-semibold">Kid Mode Apps</h3>
         <Button
           variant="outline"
           size="sm"

@@ -333,7 +333,7 @@ export function SessionNoteEditor({
           </h1>
 
           {isSigned && (
-            <div className="flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-1 text-sm font-medium text-emerald-600 dark:text-emerald-400">
+            <div className="flex items-center gap-1.5 rounded-full bg-success/10 px-3 py-1 text-sm font-medium text-success">
               <MaterialIcon icon="verified" size="xs" />
               Signed
             </div>

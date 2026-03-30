@@ -129,7 +129,7 @@ export function PreviewPanel({ bundleHtml, state, error, deviceSize = "desktop",
       )}
 
       {!hasPreview && !isGenerating && !isFailed && state === "live" && (
-        <div className="flex flex-col items-center gap-3 text-amber-600">
+        <div className="flex flex-col items-center gap-3 text-caution">
           <AlertCircle className="h-8 w-8" />
           <p className="text-sm font-medium">Something didn&apos;t look right</p>
           <p className="max-w-sm text-center text-xs text-muted-foreground">

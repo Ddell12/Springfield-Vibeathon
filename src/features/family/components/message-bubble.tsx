@@ -58,7 +58,7 @@ export function MessageBubble({
           "max-w-[75%] px-4 py-2.5 text-sm leading-relaxed",
           "rounded-2xl",
           isOwnMessage
-            ? "rounded-br-sm bg-[linear-gradient(135deg,#00595c,#0d7377)] text-white"
+            ? "rounded-br-sm bg-primary-gradient text-white"
             : "rounded-bl-sm bg-muted text-foreground"
         )}
       >

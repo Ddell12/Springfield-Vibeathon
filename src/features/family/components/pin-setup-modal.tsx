@@ -71,7 +71,7 @@ export function PinSetupModal({ open, onOpenChange, onPinSet }: PinSetupModalPro
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
-          <DialogTitle className="text-center font-headline">
+          <DialogTitle className="text-center">
             {step === "enter" ? "Set a Kid Mode PIN" : "Confirm your PIN"}
           </DialogTitle>
           <DialogDescription className="text-center">

@@ -65,7 +65,7 @@ export function StreakTracker({ streakData }: StreakTrackerProps) {
             </span>
           )}
           <div>
-            <p className="font-headline text-2xl font-bold text-amber-600 dark:text-amber-400">
+            <p className="text-2xl font-bold text-caution">
               {label}
             </p>
             {currentStreak > 0 && (
@@ -91,7 +91,7 @@ export function StreakTracker({ streakData }: StreakTrackerProps) {
                   className={cn(
                     "h-3 w-3 rounded-full transition-colors duration-300",
                     practiced
-                      ? "bg-amber-500 shadow-sm shadow-amber-200 dark:bg-amber-400"
+                      ? "bg-caution shadow-sm shadow-caution/20 dark:bg-caution"
                       : "bg-muted"
                   )}
                   aria-label={practiced ? `${day} practiced` : `${day} not practiced`}

@@ -102,8 +102,8 @@ export function CelebrationCard({ childName, currentStreak, goals }: Celebration
   return (
     <div
       className={cn(
-        "relative rounded-xl bg-amber-50 p-4 shadow-sm",
-        "border border-amber-200 dark:bg-amber-950/30 dark:border-amber-800"
+        "relative rounded-xl bg-caution-container p-4 shadow-sm",
+        "border border-caution/20"
       )}
       role="status"
       aria-live="polite"
@@ -111,13 +111,13 @@ export function CelebrationCard({ childName, currentStreak, goals }: Celebration
       <Button
         variant="ghost"
         size="icon"
-        className="absolute right-2 top-2 h-7 w-7 text-amber-700 hover:bg-amber-100 dark:text-amber-300 dark:hover:bg-amber-900/50"
+        className="absolute right-2 top-2 h-7 w-7 text-on-caution-container hover:bg-caution/10"
         onClick={() => dismiss(celebration.storageKey)}
         aria-label="Dismiss celebration"
       >
         <X className="h-4 w-4" />
       </Button>
-      <p className="pr-8 text-sm font-medium leading-relaxed text-amber-900 dark:text-amber-100">
+      <p className="pr-8 text-sm font-medium leading-relaxed text-on-caution-container">
         {celebration.message}
       </p>
     </div>

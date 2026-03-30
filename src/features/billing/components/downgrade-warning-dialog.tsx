@@ -49,7 +49,7 @@ export function DowngradeWarningDialog({
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle className="font-headline flex items-center gap-2">
+          <DialogTitle className="flex items-center gap-2">
             <AlertTriangle className="size-5 text-destructive" />
             Cancel Subscription
           </DialogTitle>

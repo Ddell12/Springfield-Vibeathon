@@ -4,7 +4,7 @@ import './index.css'
 import App from './App.tsx'
 
 const fontLink = document.createElement("link");
-fontLink.href = "https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap";
+fontLink.href = "https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,100..900;1,9..144,100..900&family=Instrument+Sans:wght@400;500;600;700&family=Commit+Mono&display=swap";
 fontLink.rel = "stylesheet";
 document.head.appendChild(fontLink);
 

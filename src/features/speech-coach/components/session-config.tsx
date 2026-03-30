@@ -65,7 +65,7 @@ export function SessionConfig({ speechCoachConfig, onStart, lastRecommended, isL
     <div className="flex flex-col gap-8">
       {/* Target sounds */}
       <div>
-        <h3 className="font-headline text-lg font-semibold text-foreground">
+        <h3 className="font-body text-lg font-semibold text-foreground">
           What sounds should we practice?
         </h3>
         <div className="mt-3 flex flex-wrap gap-2">
@@ -99,7 +99,7 @@ export function SessionConfig({ speechCoachConfig, onStart, lastRecommended, isL
 
       {/* Age range */}
       <div>
-        <h3 className="font-headline text-lg font-semibold text-foreground">
+        <h3 className="font-body text-lg font-semibold text-foreground">
           How old is your child?
         </h3>
         <div className="mt-3 flex gap-3">
@@ -123,7 +123,7 @@ export function SessionConfig({ speechCoachConfig, onStart, lastRecommended, isL
 
       {/* Duration */}
       <div>
-        <h3 className="font-headline text-lg font-semibold text-foreground">
+        <h3 className="font-body text-lg font-semibold text-foreground">
           How long?
         </h3>
         <div className="mt-3 flex gap-3">
@@ -147,7 +147,7 @@ export function SessionConfig({ speechCoachConfig, onStart, lastRecommended, isL
 
       {/* Focus area */}
       <div>
-        <h3 className="font-headline text-lg font-semibold text-foreground">
+        <h3 className="font-body text-lg font-semibold text-foreground">
           Anything specific to practice?
         </h3>
         <input

@@ -46,7 +46,7 @@ export function TodayActivities({ patientId }: TodayActivitiesProps) {
   if (isLoading || weeklyLogs === undefined) {
     return (
       <div className="flex flex-col gap-3">
-        <p className="font-headline text-base font-semibold text-foreground">
+        <p className="text-base font-semibold text-foreground">
           Today&apos;s Activities
         </p>
         <Skeleton className="h-20 rounded-xl" />
@@ -58,7 +58,7 @@ export function TodayActivities({ patientId }: TodayActivitiesProps) {
   if (!activePrograms || activePrograms.length === 0) {
     return (
       <div className="flex flex-col gap-2">
-        <p className="font-headline text-base font-semibold text-foreground">
+        <p className="text-base font-semibold text-foreground">
           Today&apos;s Activities
         </p>
         <p className="text-sm text-muted-foreground">
@@ -108,7 +108,7 @@ export function TodayActivities({ patientId }: TodayActivitiesProps) {
 
   return (
     <div className="flex flex-col gap-3">
-      <p className="font-headline text-base font-semibold text-foreground">
+      <p className="text-base font-semibold text-foreground">
         Today&apos;s Activities
       </p>
 
@@ -117,8 +117,8 @@ export function TodayActivities({ patientId }: TodayActivitiesProps) {
           Nothing due today — check back tomorrow!
         </p>
       ) : allDone ? (
-        <div className="rounded-xl bg-emerald-50 dark:bg-emerald-950/30 px-4 py-3 text-center">
-          <p className="text-sm font-medium text-emerald-700 dark:text-emerald-400">
+        <div className="rounded-xl bg-success-container px-4 py-3 text-center">
+          <p className="text-sm font-medium text-success">
             All done for today! ✓
           </p>
         </div>

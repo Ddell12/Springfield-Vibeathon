@@ -68,7 +68,7 @@ export function PracticeLogForm({
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="font-headline text-lg font-semibold">
+          <DialogTitle className="text-lg font-semibold">
             Log Practice
           </DialogTitle>
           <DialogDescription className="text-sm text-muted-foreground">
@@ -106,8 +106,8 @@ export function PracticeLogForm({
                   className={cn(
                     "text-2xl transition-colors duration-200",
                     star <= confidence
-                      ? "text-amber-400"
-                      : "text-muted-foreground/30 hover:text-amber-300"
+                      ? "text-caution"
+                      : "text-muted-foreground/30 hover:text-caution"
                   )}
                 >
                   ★
@@ -137,7 +137,7 @@ export function PracticeLogForm({
             disabled={isSubmitting}
             className={cn(
               "w-full text-white",
-              "bg-[linear-gradient(135deg,#00595c,#0d7377)]",
+              "bg-primary-gradient",
               "hover:opacity-90 transition-opacity duration-300",
               isSubmitting && "opacity-60"
             )}

@@ -15,9 +15,9 @@ type ProgressData = {
 };
 
 const RATE_STYLES = {
-  high: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
-  medium: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
-  low: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
+  high: "bg-success-container text-on-success-container",
+  medium: "bg-caution-container text-on-caution-container",
+  low: "bg-error-container text-on-error-container",
 };
 
 const ENGAGEMENT_LABELS = {
@@ -32,7 +32,7 @@ export function ProgressCard({ progress }: { progress: ProgressData }) {
       <p className="text-sm leading-relaxed text-foreground">{progress.summary}</p>
 
       <div className="flex flex-col gap-2">
-        <h4 className="font-headline text-sm font-semibold text-foreground">Sounds Practiced</h4>
+        <h4 className="font-body text-sm font-semibold text-foreground">Sounds Practiced</h4>
         {progress.soundsAttempted.map((attempt) => (
           <div key={attempt.sound} className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2">

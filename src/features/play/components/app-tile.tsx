@@ -4,12 +4,12 @@ import Link from "next/link";
 import { cn } from "@/core/utils";
 
 const TILE_COLORS = [
-  "bg-teal-100 dark:bg-teal-900/30",
-  "bg-sky-100 dark:bg-sky-900/30",
-  "bg-amber-100 dark:bg-amber-900/30",
-  "bg-rose-100 dark:bg-rose-900/30",
-  "bg-violet-100 dark:bg-violet-900/30",
-  "bg-emerald-100 dark:bg-emerald-900/30",
+  "bg-domain-teal-container",
+  "bg-domain-blue-container",
+  "bg-domain-amber-container",
+  "bg-domain-rose-container",
+  "bg-domain-purple-container",
+  "bg-domain-emerald-container",
 ] as const;
 
 const TILE_ICONS = ["🎯", "🧩", "🎨", "📚", "🎵", "⭐"] as const;
@@ -39,7 +39,7 @@ export function AppTile({ appId, patientId, title, index, hasPracticeProgram }: 
       )}
     >
       <span className="text-4xl" role="img" aria-hidden="true">{icon}</span>
-      <span className="text-center text-sm font-semibold text-foreground line-clamp-2 font-headline">
+      <span className="text-center text-sm font-semibold text-foreground line-clamp-2">
         {title}
       </span>
       {hasPracticeProgram && (

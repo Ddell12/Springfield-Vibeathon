@@ -55,7 +55,7 @@ export function RenameDeckDialog({
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-4">
-            <DialogTitle className="font-headline text-2xl font-semibold leading-tight tracking-tight text-on-surface">
+            <DialogTitle className="text-2xl font-semibold leading-tight tracking-tight text-on-surface">
               Rename deck
             </DialogTitle>
             <DialogDescription className="text-sm leading-relaxed text-on-surface-variant">

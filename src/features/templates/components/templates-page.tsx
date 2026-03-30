@@ -190,7 +190,7 @@ export function TemplatesPage() {
 
                 {/* Card footer */}
                 <div className="p-5">
-                  <h3 className="font-headline font-medium text-lg text-on-surface group-hover:text-primary transition-colors">
+                  <h3 className="font-body font-medium text-lg text-on-surface group-hover:text-primary transition-colors">
                     {template.title}
                   </h3>
                   <div className="flex items-center justify-between mt-1">

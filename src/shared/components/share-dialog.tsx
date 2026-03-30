@@ -52,7 +52,7 @@ export function ShareDialog({
       <DialogContent className="rounded-2xl p-6 gap-6 sm:max-w-[420px]" showCloseButton={false}>
         {/* Header */}
         <DialogHeader className="flex flex-row items-center justify-between">
-          <DialogTitle className="font-headline font-semibold text-lg text-on-surface">
+          <DialogTitle className="font-semibold text-lg text-on-surface">
             Share &apos;{appTitle}&apos;
           </DialogTitle>
           <DialogDescription className="sr-only">

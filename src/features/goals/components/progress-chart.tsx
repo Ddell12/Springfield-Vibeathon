@@ -106,14 +106,14 @@ export function ProgressChart({ data, targetAccuracy }: ProgressChartProps) {
         <Tooltip content={<CustomTooltip />} />
         <ReferenceLine
           y={targetAccuracy}
-          stroke="#f97316"
+          stroke="var(--color-chart-target)"
           strokeDasharray="4 4"
           label={{ value: `Target: ${targetAccuracy}%`, position: "right", fontSize: 12 }}
         />
         <Line
           type="monotone"
           dataKey="accuracy"
-          stroke="#0d7377"
+          stroke="var(--color-chart-line)"
           strokeWidth={2}
           dot={<CustomDot />}
           activeDot={{ r: 7 }}

@@ -40,7 +40,7 @@ export function DeckList({
   return (
     <div className="flex flex-col gap-1">
       <div className="mb-2 flex items-center justify-between px-1">
-        <h3 className="font-headline text-sm font-medium uppercase tracking-widest text-on-surface-variant">
+        <h3 className="font-body text-sm font-medium uppercase tracking-widest text-on-surface-variant">
           Your Decks
         </h3>
         <span className="text-xs text-on-surface-variant/60">

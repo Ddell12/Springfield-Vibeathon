@@ -33,13 +33,13 @@ export function GoalMetBanner({
   }
 
   return (
-    <div className="flex items-center gap-3 rounded-xl border border-green-200 bg-green-50 p-4 dark:border-green-800 dark:bg-green-950/30">
-      <MaterialIcon icon="check_circle" className="text-green-600 dark:text-green-400" />
+    <div className="flex items-center gap-3 rounded-xl border border-success/20 bg-success-container p-4">
+      <MaterialIcon icon="check_circle" className="text-success" />
       <div className="flex-1">
-        <p className="text-sm font-medium text-green-800 dark:text-green-200">
+        <p className="text-sm font-medium text-on-success-container">
           Goal criteria met!
         </p>
-        <p className="text-xs text-green-600 dark:text-green-400">
+        <p className="text-xs text-success">
           {targetAccuracy}% accuracy achieved across {targetConsecutiveSessions} consecutive sessions.
         </p>
       </div>
@@ -48,7 +48,7 @@ export function GoalMetBanner({
         size="sm"
         onClick={handleConfirm}
         disabled={confirming}
-        className="border-green-300 text-green-700 hover:bg-green-100 dark:border-green-700 dark:text-green-300"
+        className="border-success/30 text-on-success-container hover:bg-success/10"
       >
         {confirming ? "Confirming..." : "Mark as Met"}
       </Button>
@@ -56,7 +56,7 @@ export function GoalMetBanner({
         variant="ghost"
         size="icon"
         onClick={() => setDismissed(true)}
-        className="h-8 w-8 text-green-600"
+        className="h-8 w-8 text-success"
         aria-label="Dismiss"
       >
         <MaterialIcon icon="close" size="sm" />

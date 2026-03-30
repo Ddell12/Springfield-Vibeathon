@@ -204,7 +204,7 @@ export function FlashcardPage() {
                         key={deck._id}
                         className="cursor-pointer rounded-2xl bg-surface-container-lowest p-5 shadow-[0_12px_32px_rgba(25,28,32,0.06)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_16px_40px_rgba(25,28,32,0.10)]"
                       >
-                        <h3 className="font-headline text-lg font-semibold text-on-surface mb-1">
+                        <h3 className="font-body text-lg font-semibold text-on-surface mb-1">
                           {deck.title}
                         </h3>
                         <p className="text-sm text-on-surface-variant">
@@ -351,7 +351,7 @@ export function FlashcardPage() {
       <Sheet open={deckSheetOpen} onOpenChange={setDeckSheetOpen}>
         <SheetContent side="right" className="w-80 sm:w-96">
           <SheetHeader>
-            <SheetTitle className="font-headline">Your Decks</SheetTitle>
+            <SheetTitle>Your Decks</SheetTitle>
           </SheetHeader>
           <div className="mt-4 overflow-y-auto">
             <DeckList

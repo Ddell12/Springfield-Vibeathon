@@ -141,9 +141,9 @@ export function TargetEntry({ data, onChange, onRemove, disabled, activeGoals }:
         <div
           className={cn(
             "flex h-9 min-w-[56px] items-center justify-center rounded-md px-2 text-sm font-semibold",
-            accuracy !== null && accuracy >= 80 && "bg-green-100 dark:bg-green-900/30",
-            accuracy !== null && accuracy >= 60 && accuracy < 80 && "bg-yellow-100 dark:bg-yellow-900/30",
-            accuracy !== null && accuracy < 60 && "bg-red-100 dark:bg-red-900/30",
+            accuracy !== null && accuracy >= 80 && "bg-success-container",
+            accuracy !== null && accuracy >= 60 && accuracy < 80 && "bg-caution-container",
+            accuracy !== null && accuracy < 60 && "bg-error-container",
             accuracy === null && "bg-muted",
             accuracyColor(accuracy),
           )}

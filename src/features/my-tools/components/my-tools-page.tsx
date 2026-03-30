@@ -251,7 +251,7 @@ export function MyToolsPage() {
                       if (e.key === "Enter") handleRenameSubmit(session._id);
                       if (e.key === "Escape") setRenamingId(null);
                     }}
-                    className="font-headline text-lg font-semibold"
+                    className="text-lg font-semibold"
                     aria-label="Rename app"
                     data-testid="rename-input"
                   />

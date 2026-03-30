@@ -42,7 +42,7 @@ export function BillingSection() {
   if (isLoading) {
     return (
       <section>
-        <h3 className="font-headline text-lg font-medium text-on-surface mb-6">
+        <h3 className="font-body text-lg font-medium text-on-surface mb-6">
           Billing
         </h3>
         <div className="animate-pulse h-32 rounded-2xl bg-surface-container" />
@@ -52,7 +52,7 @@ export function BillingSection() {
 
   return (
     <section className="space-y-6">
-      <h3 className="font-headline text-lg font-medium text-on-surface mb-6">
+      <h3 className="font-body text-lg font-medium text-on-surface mb-6">
         Billing
       </h3>
 
@@ -63,7 +63,7 @@ export function BillingSection() {
       <div className="rounded-2xl bg-surface-container p-6">
         <div className="flex items-center justify-between">
           <div>
-            <p className="font-headline font-semibold text-on-surface">
+            <p className="font-semibold text-on-surface">
               {isPremium ? "Premium" : "Free"} Plan
             </p>
             {isPremium && (

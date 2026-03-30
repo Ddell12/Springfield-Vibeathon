@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useQuery } from "convex/react";
 
 import { api } from "../../../../convex/_generated/api";
@@ -11,6 +12,7 @@ import { DemoToolModal } from "./demo-tool-modal";
 export function DemoToolGrid() {
   const featuredApps = useQuery(api.apps.listFeatured, {});
   const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
+  const router = useRouter();
 
   const isLoading = featuredApps === undefined;
   const hasFeatured = featuredApps && featuredApps.length > 0;
@@ -39,10 +41,19 @@ export function DemoToolGrid() {
         gradient: tool.gradient,
         categoryLabel: tool.categoryLabel,
         prompt: tool.prompt,
-        disabled: true,
+        disabled: false,
       }));
 
   const selectedTool = displayTools.find((t) => t.shareSlug === selectedSlug);
+
+  const handleTryIt = (tool: (typeof displayTools)[number]) => {
+    if (tool.shareSlug) {
+      setSelectedSlug(tool.shareSlug);
+    } else {
+      // No live preview — navigate to builder with the prompt pre-filled
+      router.push(`/builder?prompt=${encodeURIComponent(tool.prompt)}`);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -78,7 +89,7 @@ export function DemoToolGrid() {
             icon={tool.icon}
             gradient={tool.gradient}
             disabled={tool.disabled}
-            onTryIt={() => setSelectedSlug(tool.shareSlug)}
+            onTryIt={() => handleTryIt(tool)}
           />
         ))}
       </div>

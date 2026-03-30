@@ -153,7 +153,7 @@ export function ProjectCard({
       {/* Info row */}
       <div className="flex items-start justify-between">
         <div>
-          <h3 className="mb-1 font-headline text-lg font-semibold text-on-surface">
+          <h3 className="mb-1 font-body text-lg font-semibold text-on-surface">
             {project.title}
           </h3>
           <p className="text-xs text-on-surface-variant">
