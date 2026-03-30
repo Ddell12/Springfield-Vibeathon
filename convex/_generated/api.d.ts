@@ -22,6 +22,7 @@ import type * as caregivers from "../caregivers.js";
 import type * as childApps from "../childApps.js";
 import type * as clerkActions from "../clerkActions.js";
 import type * as e2e_seed from "../e2e_seed.js";
+import type * as emailActions from "../emailActions.js";
 import type * as entitlements from "../entitlements.js";
 import type * as explore_seed from "../explore_seed.js";
 import type * as flashcard_cards from "../flashcard_cards.js";
@@ -88,6 +89,7 @@ declare const fullApi: ApiFromModules<{
   childApps: typeof childApps;
   clerkActions: typeof clerkActions;
   e2e_seed: typeof e2e_seed;
+  emailActions: typeof emailActions;
   entitlements: typeof entitlements;
   explore_seed: typeof explore_seed;
   flashcard_cards: typeof flashcard_cards;
