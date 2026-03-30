@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import QRCode from "react-qr-code";
 
 import { copyToClipboard } from "@/core/clipboard";
@@ -28,10 +28,17 @@ export function ShareDialog({
   appTitle,
 }: ShareDialogProps) {
   const [copied, setCopied] = useState(false);
+  const [timedOut, setTimedOut] = useState(false);
 
   const origin = typeof window !== "undefined" ? window.location.origin : "";
   const shareUrl = shareSlug ? `${origin}/tool/${shareSlug}` : "";
   const isLoading = !shareUrl;
+
+  useEffect(() => {
+    if (!open || shareSlug) { setTimedOut(false); return; }
+    const timer = setTimeout(() => setTimedOut(true), 10_000);
+    return () => clearTimeout(timer);
+  }, [open, shareSlug]);
 
   async function handleCopy() {
     await copyToClipboard(shareUrl, "Link copied!");
@@ -71,7 +78,12 @@ export function ShareDialog({
         {/* QR Code */}
         <div className="flex justify-center">
           <div className="w-40 h-40 border border-surface-container-low rounded-xl p-2 flex items-center justify-center">
-            {isLoading ? (
+            {isLoading && timedOut ? (
+              <p className="text-sm text-on-surface-variant text-center px-2">
+                Unable to create share link.
+                <br />Please close and try again.
+              </p>
+            ) : isLoading ? (
               <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
             ) : (
               <QRCode value={shareUrl} size={140} />
@@ -83,7 +95,7 @@ export function ShareDialog({
         <div className="flex gap-2">
           <div className="flex-1 bg-surface-container-low px-4 py-2.5 rounded-lg flex items-center">
             <span className="text-sm text-on-surface truncate">
-              {isLoading ? "Creating share link..." : shareUrl}
+              {isLoading && timedOut ? "Share link unavailable" : isLoading ? "Creating share link..." : shareUrl}
             </span>
           </div>
           <button
