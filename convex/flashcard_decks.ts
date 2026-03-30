@@ -21,7 +21,7 @@ export const create = mutation({
         const userDecks = await ctx.db
           .query("flashcardDecks")
           .withIndex("by_user", (q) => q.eq("userId", identity.subject))
-          .collect();
+          .take(FREE_LIMITS.maxDecks);
         if (userDecks.length >= FREE_LIMITS.maxDecks) {
           throw new Error(
             "Free plan limit reached. Upgrade to Premium for unlimited decks.",
@@ -94,7 +94,7 @@ export const update = mutation({
     if (!identity) throw new Error("Not authenticated");
     const deck = await ctx.db.get(args.deckId);
     if (!deck) throw new Error("Deck not found");
-    if (deck.userId && deck.userId !== identity.subject) throw new Error("Not authorized");
+    if (!deck.userId || deck.userId !== identity.subject) throw new Error("Not authorized");
 
     const { deckId, ...fields } = args;
     const updates: Record<string, unknown> = {};
@@ -113,7 +113,7 @@ export const remove = mutation({
     if (!identity) throw new Error("Not authenticated");
     const deck = await ctx.db.get(args.deckId);
     if (!deck) throw new Error("Deck not found");
-    if (deck.userId && deck.userId !== identity.subject) throw new Error("Not authorized");
+    if (!deck.userId || deck.userId !== identity.subject) throw new Error("Not authorized");
 
     // Cascade delete all cards in this deck
     while (true) {

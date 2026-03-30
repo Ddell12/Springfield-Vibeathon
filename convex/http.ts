@@ -9,6 +9,7 @@ const ALLOWED_ORIGINS = new Set([
   "http://localhost:3000",
   "http://localhost:3001",
   "https://bridges-vibeathon.vercel.app",
+  "https://bridgeai-iota.vercel.app",
 ]);
 
 function getCorsOrigin(request: Request): string {

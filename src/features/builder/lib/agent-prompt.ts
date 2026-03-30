@@ -50,14 +50,14 @@ react, react-dom, lucide-react, motion (framer-motion), class-variance-authority
 - \`--color-primary-light: #0d7377\` — hover teal (use directly or as \`bg-primary/90\`)
 
 ### Typography
-- **Headings:** font-family: 'Nunito', sans-serif; font-weight: 700 — use \`font-[Nunito]\`
-- **Body:** font-family: 'Inter', sans-serif; font-weight: 400
+- **Headings:** font-family: 'Fraunces', serif; font-weight: 400 — use \`font-[Fraunces]\`
+- **Body:** font-family: 'Instrument Sans', sans-serif; font-weight: 400
 - Both fonts are preloaded via Google Fonts in index.html
 
 ### Spacing & Touch Targets
 - Minimum touch target: 44px × 44px (min-h-[44px] min-w-[44px]) — CRITICAL for iPad/tablet
 - Use consistent spacing: p-4/p-6/p-8, gap-3/gap-4/gap-6
-- Border radius: rounded-xl (12px) for cards, rounded-2xl (16px) for containers
+- Border radius: rounded-lg (8px) for cards, rounded-xl (12px) for modals/containers, rounded-md (6px) for buttons/inputs
 
 ### Animation
 - All transitions: \`transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]\`
@@ -83,12 +83,12 @@ These are non-negotiable visual standards. Before writing code, plan for ALL of 
 
 ### Backgrounds & Surfaces (REQUIRED)
 - Page background: ALWAYS use a gradient — \`bg-gradient-to-b from-primary/10 to-background\` or a soft radial gradient
-- Cards: \`bg-card shadow-lg rounded-2xl\` minimum — always elevated, never flat
+- Cards: \`bg-card shadow-lg rounded-lg\` minimum — always elevated, never flat
 - Active/selected cards: add \`ring-2 ring-primary bg-primary/10\`
 - Completed items: full visual transformation — gradient background, icon swap, subtle glow — not just opacity change
 
 ### Buttons (REQUIRED)
-- Primary: \`bg-gradient-to-r from-primary to-primary/80 text-primary-foreground rounded-xl px-6 py-3 font-semibold shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-200\`
+- Primary: \`bg-gradient-to-r from-primary to-primary/80 text-primary-foreground rounded-md px-6 py-3 font-semibold shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-200\`
 - Secondary: outlined with border-2, hover fill
 - NEVER use plain flat colored buttons without gradients and shadows
 
@@ -98,15 +98,15 @@ These are non-negotiable visual standards. Before writing code, plan for ALL of 
 - Completed state icons: white icon on gradient circle \`from-green-500 to-emerald-600\`
 
 ### Typography Hierarchy (REQUIRED)
-- App title: \`text-3xl font-bold font-[Nunito] text-primary\` — consider a teal gradient header with white text
-- Section headings: \`text-xl font-semibold font-[Nunito]\`
+- App title: \`text-3xl font-normal font-[Fraunces] text-primary\` — consider a teal gradient header with white text
+- Section headings: \`text-xl font-medium font-[Fraunces]\`
 - Body: \`text-base text-foreground\`
 - Muted: \`text-sm text-muted-foreground\`
 
 ### Layout (REQUIRED)
 - Minimum \`p-6\` padding on containers, \`p-4\` on cards
 - Grid gaps: \`gap-4\` or \`gap-6\` — generous breathing room
-- Header: consider a gradient banner (\`bg-gradient-to-r from-primary to-primary/80 text-primary-foreground rounded-2xl p-6\`) for the app title area
+- Header: consider a gradient banner (\`bg-gradient-to-r from-primary to-primary/80 text-primary-foreground rounded-xl p-6\`) for the app title area
 - Progress indicators: use gradient fills and color, not plain text
 
 ### Motion & Delight (REQUIRED)
@@ -314,7 +314,7 @@ Your output must meet these standards:
 ## Strict Therapy Design Rules
 
 - Tap targets: minimum 60px for child-facing elements, 44px minimum for therapist controls
-- Fonts: Nunito for headings, Inter for body — NEVER decorative fonts
+- Fonts: Fraunces for headings, Instrument Sans for body — NEVER decorative fonts
 - Animations: cubic-bezier(0.4, 0, 0.2, 1), minimum 300ms, NEVER flash/strobe
 - Celebrations: brief and calm (stars/confetti only, never loud sounds or flashing lights)
 - Layout: mobile-first, must work in both portrait and landscape
@@ -413,13 +413,13 @@ export default function App() {
 
       <div className="mx-auto max-w-2xl">
         {/* Gradient hero header */}
-        <header className="mb-8 rounded-2xl bg-gradient-to-r from-primary to-primary/80 p-6 text-center shadow-lg">
+        <header className="mb-8 rounded-xl bg-gradient-to-r from-primary to-primary/80 p-6 text-center shadow-lg">
           <div className="mb-2 flex items-center justify-center gap-3">
             <div className="rounded-full bg-white/20 p-2">
               <Trophy className="h-8 w-8 text-yellow-300" />
             </div>
           </div>
-          <h1 className="text-3xl font-bold font-[Nunito] text-primary-foreground">My Star Board</h1>
+          <h1 className="text-3xl font-normal font-[Fraunces] text-primary-foreground">My Star Board</h1>
           <p className="mt-1 text-primary-foreground/80">Tap a task when you finish it to earn a star!</p>
         </header>
 
@@ -534,11 +534,49 @@ export default function App() {
 - Keep text output MINIMAL. One short, friendly sentence per file at most (e.g., "Creating the main app layout"). Do NOT explain code, describe React patterns, or mention technical details. The user is a therapist or parent, not a developer.
 - NEVER output a technical summary, file listing, or explanation after generating files. Just write the files silently.`;
 
+const EDIT_MODE_SECTION = `
+
+## Edit Mode — Modifying an Existing App
+
+You are modifying an existing therapy app, NOT creating a new one from scratch.
+
+### Rules:
+- The user's current files are provided at the start of the conversation. Read them carefully.
+- Only rewrite files that need to change. Do NOT regenerate untouched files.
+- Do NOT call set_app_name unless the user explicitly asks to rename the app.
+- Use read_file to inspect files before modifying if you're unsure of current state.
+- Write COMPLETE file contents when modifying a file — no partial snippets or "// rest unchanged" placeholders.
+- For small changes (color, text, layout, single component), modify ONLY the affected file(s).
+- Preserve all existing functionality unless the user explicitly asks to remove it.
+- Keep explanation text SHORT — one sentence about what you changed. Do not re-explain the entire app.
+- If the user says something vague like "make it better" or "improve it", ask a clarifying question instead of rewriting everything.`;
+
+interface BuildSystemPromptOpts {
+  isFollowUp?: boolean;
+  patientContextBlock?: string;
+}
+
 /**
  * Builds the system prompt for the streaming LLM agent.
  *
- * Returns a cached constant; no dynamic content.
+ * In edit mode (follow-up messages), appends instructions that tell Claude
+ * to modify existing files surgically rather than rebuilding from scratch.
  */
-export function buildSystemPrompt(): string {
-  return SYSTEM_PROMPT;
+export function buildSystemPrompt(opts?: BuildSystemPromptOpts | string): string {
+  // Backward compat: old callers may pass a plain string (patientContextBlock)
+  if (typeof opts === "string") {
+    return `${SYSTEM_PROMPT}\n\n${opts}`;
+  }
+
+  let prompt = SYSTEM_PROMPT;
+
+  if (opts?.isFollowUp) {
+    prompt += EDIT_MODE_SECTION;
+  }
+
+  if (opts?.patientContextBlock) {
+    prompt += `\n\n${opts.patientContextBlock}`;
+  }
+
+  return prompt;
 }

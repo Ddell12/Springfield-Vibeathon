@@ -29,6 +29,7 @@ interface BuilderToolbarProps {
   mobilePanel?: "chat" | "preview";
   onMobilePanelChange?: (panel: "chat" | "preview") => void;
   hasFiles?: boolean;
+  onFullscreen?: () => void;
 }
 
 const DEVICE_OPTIONS: { key: DeviceSize; icon: string; label: string }[] = [
@@ -54,6 +55,7 @@ export function BuilderToolbar({
   mobilePanel,
   onMobilePanelChange,
   hasFiles,
+  onFullscreen,
 }: BuilderToolbarProps) {
   const isGenerating = status === "generating";
 
@@ -129,7 +131,7 @@ export function BuilderToolbar({
             aria-selected={mobilePanel === "chat"}
             onClick={() => onMobilePanelChange("chat")}
             className={cn(
-              "min-h-[44px] rounded-md px-3 py-1 text-[13px] font-semibold transition-colors duration-200",
+              "min-h-[44px] rounded-md px-3 py-1 text-[13px] font-semibold transition-colors duration-300",
               mobilePanel === "chat"
                 ? "bg-white text-primary shadow-sm dark:bg-surface-container-lowest"
                 : "text-on-surface-variant hover:text-primary"
@@ -142,7 +144,7 @@ export function BuilderToolbar({
             aria-selected={mobilePanel === "preview"}
             onClick={() => onMobilePanelChange("preview")}
             className={cn(
-              "min-h-[44px] rounded-md px-3 py-1 text-[13px] font-semibold transition-colors duration-200",
+              "min-h-[44px] rounded-md px-3 py-1 text-[13px] font-semibold transition-colors duration-300",
               mobilePanel === "preview"
                 ? "bg-white text-primary shadow-sm dark:bg-surface-container-lowest"
                 : "text-on-surface-variant hover:text-primary"
@@ -217,8 +219,21 @@ export function BuilderToolbar({
         </div>
       </div>
 
-      {/* Right section: View Source + Share */}
+      {/* Right section: Fullscreen + Share */}
       <div className="flex flex-shrink-0 items-center gap-2">
+        {!isGenerating && hasFiles && onFullscreen && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="min-h-[44px] gap-1.5 rounded-md px-3 text-xs font-semibold text-on-surface-variant transition-all active:scale-95"
+            onClick={onFullscreen}
+            aria-label="Fullscreen"
+            title="View app fullscreen"
+          >
+            <MaterialIcon icon="fullscreen" size="sm" />
+            <span className="hidden sm:inline">Fullscreen</span>
+          </Button>
+        )}
         {onSave && (
           <Button
             variant="ghost"

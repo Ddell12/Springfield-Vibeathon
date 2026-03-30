@@ -78,7 +78,7 @@ export function TemplatesTab() {
             </span>
           </div>
           <div className="flex flex-col gap-1 p-4">
-            <h3 className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">
+            <h3 className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors duration-300">
               {template.title}
             </h3>
             <p className="text-xs text-muted line-clamp-2">{template.subtitle}</p>

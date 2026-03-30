@@ -43,7 +43,7 @@ function AnsweredQuestions({
         return (
           <div key={q.id} className="flex flex-col gap-2">
             <div className="flex justify-start">
-              <div className="max-w-[85%] break-words rounded-2xl rounded-bl-md border border-outline-variant/15 bg-surface-container px-4 py-3">
+              <div className="max-w-[85%] break-words rounded-2xl rounded-bl-md bg-surface-container px-4 py-3">
                 <p className="text-sm text-foreground">{q.text}</p>
               </div>
             </div>
@@ -136,8 +136,12 @@ export function InterviewController({
         }
 
         const data = await res.json();
-        const followUps = data.followUps ?? [];
-        const draftBlueprint = data.blueprint ?? null;
+        if (cancelled) return;
+        const followUps = Array.isArray(data.followUps) ? data.followUps : [];
+        const draftBlueprint =
+          data.blueprint != null && typeof data.blueprint === "object"
+            ? data.blueprint
+            : null;
 
         if (followUps.length > 0) {
           setFollowUps(followUps, draftBlueprint);
@@ -149,8 +153,9 @@ export function InterviewController({
           );
           showReview(blueprint, richPrompt);
         }
-      } catch {
+      } catch (err) {
         if (cancelled) return;
+        console.warn("[interview] Follow-up fetch failed:", err);
         toast.error("Couldn't load suggestions, building with your answers.");
         try {
           const { blueprint, richPrompt } = assembleBlueprint(
@@ -246,7 +251,7 @@ export function InterviewController({
         <AnsweredQuestions questions={answeredEssentialQuestions} answers={state.answers} />
 
         <div className="flex justify-start">
-          <div className="max-w-[85%] break-words rounded-2xl rounded-bl-md border border-outline-variant/15 bg-surface-container px-4 py-3">
+          <div className="max-w-[85%] break-words rounded-2xl rounded-bl-md bg-surface-container px-4 py-3">
             <p className="text-sm text-foreground">
               I have enough to get started! Want to customize further?
             </p>
@@ -256,7 +261,7 @@ export function InterviewController({
           <button
             type="button"
             onClick={chooseSkip}
-            className="rounded-xl bg-gradient-to-r from-[#00595c] to-[#0d7377] px-5 py-2.5 text-sm font-semibold text-white shadow-md transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5"
+            className="rounded-xl bg-primary-gradient px-5 py-2.5 text-sm font-semibold text-white shadow-md transition-all duration-300 hover:opacity-90 hover:shadow-lg hover:-translate-y-0.5"
           >
             Show me the plan
           </button>

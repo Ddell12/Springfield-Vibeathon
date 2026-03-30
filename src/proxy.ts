@@ -4,10 +4,13 @@ const isProtectedRoute = createRouteMatcher([
   "/dashboard(.*)",
   "/my-tools(.*)",
   "/settings(.*)",
+  "/patients(.*)",
+  "/family(.*)",
 ]);
 
 const isPublicApiRoute = createRouteMatcher([
   "/api/tool/(.*)",
+  "/family/(.*)/play/manifest.json",
 ]);
 
 export default clerkMiddleware(async (auth, req) => {

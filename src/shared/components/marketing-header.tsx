@@ -10,10 +10,13 @@ import { Button } from "@/shared/components/ui/button";
 import {
   Sheet,
   SheetContent,
+  SheetDescription,
+  SheetTitle,
   SheetTrigger,
 } from "@/shared/components/ui/sheet";
 
 const navLinks = [
+  { href: "/explore", label: "Explore" },
   { href: "/builder", label: "Builder" },
   { href: "/flashcards", label: "Flashcards" },
   { href: "/templates", label: "Templates" },
@@ -29,7 +32,7 @@ export function MarketingHeader() {
         <div className="flex items-center gap-12">
           <Link
             href="/"
-            className="text-primary font-extrabold text-2xl tracking-tighter font-headline"
+            className="text-primary font-medium text-2xl tracking-tighter font-headline"
           >
             Bridges
           </Link>
@@ -39,9 +42,9 @@ export function MarketingHeader() {
                 key={href}
                 href={href}
                 className={cn(
-                  "font-headline font-bold text-lg tracking-tight transition-colors rounded-lg px-3 py-1",
+                  "font-semibold text-lg tracking-tight transition-colors rounded-lg px-3 py-1",
                   pathname === href
-                    ? "text-primary border-b-2 border-primary pb-1"
+                    ? "text-primary bg-primary/10"
                     : "text-on-surface-variant hover:text-primary hover:bg-surface-container-low"
                 )}
               >
@@ -55,7 +58,7 @@ export function MarketingHeader() {
           <Show when="signed-out">
             <Link
               href="/sign-in"
-              className="hidden md:flex items-center font-headline font-bold text-sm text-on-surface-variant hover:text-primary transition-colors"
+              className="hidden md:flex items-center font-bold text-sm text-on-surface-variant hover:text-primary transition-colors"
             >
               Sign in
             </Link>
@@ -81,13 +84,15 @@ export function MarketingHeader() {
                 </Button>
               </SheetTrigger>
               <SheetContent side="right" className="w-64">
+                <SheetTitle className="sr-only">Navigation</SheetTitle>
+                <SheetDescription className="sr-only">Main navigation menu</SheetDescription>
                 <nav className="flex flex-col gap-2 mt-8">
                   {navLinks.map(({ href, label }) => (
                     <Link
                       key={href}
                       href={href}
                       className={cn(
-                        "font-headline font-bold text-lg px-3 py-2 rounded-lg transition-colors",
+                        "font-semibold text-lg px-3 py-2 rounded-lg transition-colors",
                         pathname === href
                           ? "text-primary bg-primary/5"
                           : "text-on-surface-variant hover:text-primary hover:bg-surface-container-low"
@@ -105,7 +110,7 @@ export function MarketingHeader() {
                   <Show when="signed-out">
                     <Link
                       href="/sign-in"
-                      className="mt-2 font-headline font-bold text-sm text-center text-on-surface-variant hover:text-primary transition-colors px-3 py-2"
+                      className="mt-2 font-bold text-sm text-center text-on-surface-variant hover:text-primary transition-colors px-3 py-2"
                     >
                       Sign in
                     </Link>

@@ -51,7 +51,7 @@ export function SettingsPage() {
       <div className="flex items-center gap-2 bg-surface-container-low px-4 py-3 md:hidden">
         <Link
           href="/"
-          className="flex h-8 w-8 items-center justify-center rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors"
+          className="flex h-8 w-8 items-center justify-center rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors duration-300"
           aria-label="Back to dashboard"
         >
           <MaterialIcon icon="arrow_back" size="xs" />
@@ -80,7 +80,7 @@ export function SettingsPage() {
                       setSection(id);
                       setMobileMenuOpen(false);
                     }}
-                    className={`w-full rounded-md px-3 py-2 text-left text-sm transition-colors ${
+                    className={`w-full rounded-md px-3 py-2 text-left text-sm transition-colors duration-300 ${
                       section === id
                         ? "bg-primary/10 text-primary font-medium"
                         : "text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface"

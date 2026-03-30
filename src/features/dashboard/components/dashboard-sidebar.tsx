@@ -1,24 +1,38 @@
 "use client";
 
-import { Show, UserButton } from "@clerk/nextjs";
+import { Show, UserButton, useUser } from "@clerk/nextjs";
 import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useEffect } from "react";
 
 import { cn } from "@/core/utils";
 import { MaterialIcon } from "@/shared/components/material-icon";
-import { isNavActive, NAV_ITEMS } from "@/shared/lib/navigation";
+import { isNavActive, NAV_ITEMS, CAREGIVER_NAV_ITEMS } from "@/shared/lib/navigation";
 
 export function DashboardSidebar() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const tab = searchParams.get("tab");
+  const { user } = useUser();
+  const router = useRouter();
+
+  const role = (user?.publicMetadata as { role?: string } | undefined)?.role;
+  const isCaregiver = role === "caregiver";
+  const navItems = isCaregiver ? CAREGIVER_NAV_ITEMS : NAV_ITEMS;
+
+  // Redirect caregivers away from SLP-only routes
+  useEffect(() => {
+    if (isCaregiver && !pathname.startsWith("/family") && !pathname.startsWith("/settings")) {
+      router.replace("/family");
+    }
+  }, [isCaregiver, pathname, router]);
 
   return (
     <aside className="fixed left-0 top-0 z-50 hidden h-screen w-20 md:flex flex-col items-center bg-surface-container py-6">
       {/* Logo */}
       <div className="mb-10">
         <Link
-          href="/dashboard"
+          href={isCaregiver ? "/family" : "/dashboard"}
           className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary-container text-lg font-bold text-white shadow-sm"
         >
           B
@@ -27,7 +41,7 @@ export function DashboardSidebar() {
 
       {/* Main Nav */}
       <nav className="flex flex-1 flex-col items-center gap-6">
-        {NAV_ITEMS.map((item) => {
+        {navItems.map((item) => {
           const isActive = isNavActive(item.href, pathname, tab);
 
           return (

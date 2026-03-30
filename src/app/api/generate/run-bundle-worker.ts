@@ -17,7 +17,7 @@ export function runBundleWorker(buildDir: string): Promise<string> {
       [workerPath, buildDir, rootNodeModules],
       {
         maxBuffer: 50 * 1024 * 1024, // 50MB — bundleHtml can be several MB
-        timeout: 60_000, // 60s hard limit — kills child if stuck
+        timeout: 30_000, // 30s hard limit — kills child if stuck
       },
       (error, stdout, stderr) => {
         if (error) {

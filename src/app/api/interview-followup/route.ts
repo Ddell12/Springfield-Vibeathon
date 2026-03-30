@@ -1,4 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { auth } from "@clerk/nextjs/server";
 import { z } from "zod";
 
 import { getCategoryById } from "@/features/builder/lib/interview/categories";
@@ -59,6 +60,11 @@ const FollowUpToolSchema = {
 };
 
 export async function POST(request: Request): Promise<Response> {
+  const { userId } = await auth();
+  if (!userId) {
+    return Response.json({ error: "Authentication required" }, { status: 401 });
+  }
+
   const body = await request.json().catch(() => null);
   const parsed = RequestSchema.safeParse(body);
   if (!parsed.success) {

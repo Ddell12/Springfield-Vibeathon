@@ -35,6 +35,9 @@ export function useTtsBridge(iframeRef: React.RefObject<HTMLIFrameElement | null
       const { text, id } = data as { text: string; id: number };
       if (!text || typeof text !== "string") return;
 
+      // Immediately acknowledge so the iframe cancels its browser-TTS fallback
+      postToIframe({ type: "bridges:tts-ack", id });
+
       // Stop any currently playing audio
       if (currentAudioRef.current) {
         currentAudioRef.current.pause();

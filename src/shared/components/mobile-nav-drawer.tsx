@@ -49,7 +49,7 @@ export function MobileNavDrawer({ open, onOpenChange }: MobileNavDrawerProps) {
         {/* Header */}
         <div className="flex flex-col mb-8">
           <div className="flex items-center justify-between mb-8">
-            <span className="font-headline font-bold text-primary text-2xl tracking-tighter">
+            <span className="font-headline font-medium text-primary text-2xl tracking-tighter">
               Bridges
             </span>
             <button
@@ -67,7 +67,7 @@ export function MobileNavDrawer({ open, onOpenChange }: MobileNavDrawerProps) {
               {userInitial}
             </div>
             <div className="flex flex-col">
-              <span className="font-headline font-bold text-on-surface">
+              <span className="font-headline font-medium text-on-surface">
                 {userName}
               </span>
               {userEmail && (
@@ -111,7 +111,7 @@ export function MobileNavDrawer({ open, onOpenChange }: MobileNavDrawerProps) {
         <div className="mt-auto pt-6 flex flex-col gap-4">
           <Button
             asChild
-            className="w-full h-14 bg-gradient-to-br from-primary to-primary-container text-white rounded-xl font-bold shadow-lg shadow-primary/20 active:scale-95 transition-transform"
+            className="w-full h-14 bg-gradient-to-br from-primary to-primary-container text-white rounded-lg font-bold shadow-lg shadow-primary/20 active:scale-95 transition-transform"
           >
             <Link href="/builder" onClick={handleNavClick}>
               <MaterialIcon icon="add" size="sm" />

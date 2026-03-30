@@ -1,0 +1,123 @@
+"use client";
+
+import { useQuery } from "convex/react";
+import { useState } from "react";
+
+import { cn } from "@/core/utils";
+import { api } from "../../../../convex/_generated/api";
+import type { Id } from "../../../../convex/_generated/dataModel";
+import { ProgressCard } from "./progress-card";
+
+const STATUS_STYLES = {
+  configuring: "bg-muted text-muted-foreground",
+  active: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
+  completed: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
+  analyzed: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
+  failed: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
+};
+
+const STATUS_LABELS = {
+  configuring: "Setting up",
+  active: "In progress",
+  completed: "Reviewing",
+  analyzed: "Complete",
+  failed: "Failed",
+};
+
+function formatDuration(startedAt?: number, endedAt?: number): string {
+  if (!startedAt || !endedAt) return "\u2014";
+  const seconds = Math.round((endedAt - startedAt) / 1000);
+  const minutes = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${minutes}:${secs.toString().padStart(2, "0")}`;
+}
+
+function formatDate(timestamp?: number): string {
+  if (!timestamp) return "\u2014";
+  return new Date(timestamp).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
+export function SessionHistory({ patientId }: { patientId: Id<"patients"> }) {
+  const sessions = useQuery(api.speechCoach.getSessionHistory, { patientId });
+  const [expandedId, setExpandedId] = useState<Id<"speechCoachSessions"> | null>(null);
+
+  if (!sessions) {
+    return <div className="p-6 text-muted-foreground">Loading sessions...</div>;
+  }
+
+  if (sessions.length === 0) {
+    return (
+      <div className="flex flex-col items-center gap-3 p-8 text-center">
+        <p className="text-lg font-medium text-foreground">No sessions yet</p>
+        <p className="text-sm text-muted-foreground">
+          Your session history will appear here after your first coaching session.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-3 p-6">
+      {sessions.map((session) => (
+        <div key={session._id} className="rounded-xl bg-muted/20">
+          <button
+            type="button"
+            onClick={() => setExpandedId(expandedId === session._id ? null : session._id)}
+            className="flex w-full items-center justify-between gap-4 p-4 text-left"
+          >
+            <div className="flex flex-col gap-1">
+              <span className="text-sm font-medium text-foreground">
+                {formatDate(session.startedAt ?? session._creationTime)}
+              </span>
+              <div className="flex flex-wrap gap-1.5">
+                {session.config.targetSounds.map((sound) => (
+                  <span key={sound} className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                    {sound}
+                  </span>
+                ))}
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-muted-foreground">
+                {formatDuration(session.startedAt, session.endedAt)}
+              </span>
+              <span className={cn("rounded-full px-2 py-0.5 text-xs font-medium", STATUS_STYLES[session.status as keyof typeof STATUS_STYLES])}>
+                {STATUS_LABELS[session.status as keyof typeof STATUS_LABELS]}
+              </span>
+            </div>
+          </button>
+
+          {expandedId === session._id && (
+            <ExpandedDetail sessionId={session._id} />
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ExpandedDetail({ sessionId }: { sessionId: Id<"speechCoachSessions"> }) {
+  const detail = useQuery(api.speechCoach.getSessionDetail, { sessionId });
+
+  if (!detail) return <div className="px-4 pb-4 text-sm text-muted-foreground">Loading...</div>;
+  if (!detail.progress) {
+    return (
+      <div className="px-4 pb-4 text-sm text-muted-foreground">
+        {detail.session?.status === "failed"
+          ? detail.session.errorMessage ?? "Session did not complete."
+          : "Session is still being reviewed."}
+      </div>
+    );
+  }
+
+  return (
+    <div className="px-4 pb-4">
+      <ProgressCard progress={detail.progress} />
+    </div>
+  );
+}

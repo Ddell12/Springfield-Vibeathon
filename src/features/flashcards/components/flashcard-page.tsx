@@ -178,7 +178,7 @@ export function FlashcardPage() {
         /* Phase 1: Full-width centered prompt — no session yet */
         <div className="flex flex-1 flex-col items-center justify-center gap-6 p-6">
           <div className="text-center">
-            <h1 className="font-headline text-3xl font-semibold text-foreground">
+            <h1 className="font-headline text-3xl font-semibold text-on-surface">
               What flashcards would you like to create?
             </h1>
             <p className="mt-2 text-base text-on-surface-variant">
@@ -194,7 +194,7 @@ export function FlashcardPage() {
             }}
             className="w-full max-w-2xl"
           >
-            <div className="flex items-center gap-2 rounded-full border border-outline-variant/40 bg-surface-container-lowest px-4 py-2 shadow-sm focus-within:ring-2 focus-within:ring-primary/30">
+            <div className="flex items-center gap-2 rounded-full bg-surface-container-high px-4 py-2 shadow-sm focus-within:ring-2 focus-within:ring-primary/30">
               <Input
                 value={promptInput}
                 onChange={(e) => setPromptInput(e.target.value)}

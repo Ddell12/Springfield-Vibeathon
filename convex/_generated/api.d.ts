@@ -8,14 +8,25 @@
  * @module
  */
 
+import type * as __tests___testHelpers from "../__tests__/testHelpers.js";
+import type * as activityLog from "../activityLog.js";
 import type * as ai from "../ai.js";
 import type * as aiActions from "../aiActions.js";
 import type * as app_state from "../app_state.js";
 import type * as apps from "../apps.js";
+import type * as billing from "../billing.js";
+import type * as billingActions from "../billingActions.js";
+import type * as caregivers from "../caregivers.js";
+import type * as childApps from "../childApps.js";
+import type * as clerkActions from "../clerkActions.js";
+import type * as e2e_seed from "../e2e_seed.js";
 import type * as entitlements from "../entitlements.js";
+import type * as explore_seed from "../explore_seed.js";
 import type * as flashcard_cards from "../flashcard_cards.js";
 import type * as flashcard_decks from "../flashcard_decks.js";
 import type * as generated_files from "../generated_files.js";
+import type * as goals from "../goals.js";
+import type * as homePrograms from "../homePrograms.js";
 import type * as http from "../http.js";
 import type * as image_cache from "../image_cache.js";
 import type * as image_generation from "../image_generation.js";
@@ -25,18 +36,30 @@ import type * as knowledge_search from "../knowledge/search.js";
 import type * as knowledge_seed from "../knowledge/seed.js";
 import type * as lib_auth from "../lib/auth.js";
 import type * as lib_billing from "../lib/billing.js";
+import type * as lib_progress from "../lib/progress.js";
 import type * as lib_session_states from "../lib/session_states.js";
 import type * as messages from "../messages.js";
+import type * as patientMaterials from "../patientMaterials.js";
+import type * as patientMessages from "../patientMessages.js";
+import type * as patients from "../patients.js";
+import type * as practiceLog from "../practiceLog.js";
+import type * as progressData from "../progressData.js";
+import type * as progressReports from "../progressReports.js";
 import type * as rate_limit_check from "../rate_limit_check.js";
 import type * as rate_limits from "../rate_limits.js";
+import type * as seeds_backfill_legacy_sessions from "../seeds/backfill_legacy_sessions.js";
 import type * as seeds_image_seeds from "../seeds/image_seeds.js";
+import type * as sessionNotes from "../sessionNotes.js";
 import type * as sessions from "../sessions.js";
+import type * as speechCoach from "../speechCoach.js";
+import type * as speechCoachActions from "../speechCoachActions.js";
 import type * as stt from "../stt.js";
 import type * as subscriptions from "../subscriptions.js";
 import type * as templates_queries from "../templates/queries.js";
 import type * as templates_seed from "../templates/seed.js";
 import type * as templates_therapy_seeds from "../templates/therapy_seeds.js";
 import type * as therapy_templates from "../therapy_templates.js";
+import type * as usage from "../usage.js";
 
 import type {
   ApiFromModules,
@@ -45,14 +68,25 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  "__tests__/testHelpers": typeof __tests___testHelpers;
+  activityLog: typeof activityLog;
   ai: typeof ai;
   aiActions: typeof aiActions;
   app_state: typeof app_state;
   apps: typeof apps;
+  billing: typeof billing;
+  billingActions: typeof billingActions;
+  caregivers: typeof caregivers;
+  childApps: typeof childApps;
+  clerkActions: typeof clerkActions;
+  e2e_seed: typeof e2e_seed;
   entitlements: typeof entitlements;
+  explore_seed: typeof explore_seed;
   flashcard_cards: typeof flashcard_cards;
   flashcard_decks: typeof flashcard_decks;
   generated_files: typeof generated_files;
+  goals: typeof goals;
+  homePrograms: typeof homePrograms;
   http: typeof http;
   image_cache: typeof image_cache;
   image_generation: typeof image_generation;
@@ -62,18 +96,30 @@ declare const fullApi: ApiFromModules<{
   "knowledge/seed": typeof knowledge_seed;
   "lib/auth": typeof lib_auth;
   "lib/billing": typeof lib_billing;
+  "lib/progress": typeof lib_progress;
   "lib/session_states": typeof lib_session_states;
   messages: typeof messages;
+  patientMaterials: typeof patientMaterials;
+  patientMessages: typeof patientMessages;
+  patients: typeof patients;
+  practiceLog: typeof practiceLog;
+  progressData: typeof progressData;
+  progressReports: typeof progressReports;
   rate_limit_check: typeof rate_limit_check;
   rate_limits: typeof rate_limits;
+  "seeds/backfill_legacy_sessions": typeof seeds_backfill_legacy_sessions;
   "seeds/image_seeds": typeof seeds_image_seeds;
+  sessionNotes: typeof sessionNotes;
   sessions: typeof sessions;
+  speechCoach: typeof speechCoach;
+  speechCoachActions: typeof speechCoachActions;
   stt: typeof stt;
   subscriptions: typeof subscriptions;
   "templates/queries": typeof templates_queries;
   "templates/seed": typeof templates_seed;
   "templates/therapy_seeds": typeof templates_therapy_seeds;
   therapy_templates: typeof therapy_templates;
+  usage: typeof usage;
 }>;
 
 /**

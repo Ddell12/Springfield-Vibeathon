@@ -3,11 +3,13 @@ import type { QueryCtx } from "../_generated/server";
 export const FREE_LIMITS = {
   maxApps: 5,
   maxDecks: 10,
+  maxGenerations: 20,
 } as const;
 
 export const PREMIUM_LIMITS = {
   maxApps: Infinity,
   maxDecks: Infinity,
+  maxGenerations: Infinity,
 } as const;
 
 /**

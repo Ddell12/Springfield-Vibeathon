@@ -43,7 +43,7 @@ export function ProfileSection() {
   return (
     <div className="flex flex-col gap-12">
       {/* Section heading */}
-      <h1 className="text-4xl font-headline font-bold text-primary tracking-tight">
+      <h1 className="text-4xl font-headline font-normal text-primary tracking-tight">
         Profile
       </h1>
 

@@ -27,7 +27,7 @@ export function MainPromptInput() {
       <div className="absolute inset-0 rounded-3xl bg-primary-fixed opacity-10 blur-xl transition-opacity group-focus-within:opacity-20" />
 
       {/* Input container */}
-      <div className="relative flex items-center rounded-3xl bg-surface-container-lowest p-2 pl-6 shadow-[0_12px_32px_rgba(25,28,32,0.06)] ring-1 ring-outline-variant/10 transition-all focus-within:ring-primary/40">
+      <div className="relative flex items-center rounded-3xl bg-surface-container-lowest p-2 pl-6 shadow-[0_12px_32px_rgba(25,28,32,0.06)] transition-all focus-within:ring-primary/40">
         <input
           type="text"
           value={value}

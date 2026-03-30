@@ -27,7 +27,7 @@ export function CloseTheGapHero() {
           Springfield Vibeathon 2026 — Close the Gap Challenge
         </div>
 
-        <h1 className="font-headline text-4xl sm:text-5xl lg:text-6xl font-extrabold text-on-surface leading-tight tracking-tight">
+        <h1 className="font-headline text-4xl sm:text-5xl lg:text-6xl font-normal text-on-surface leading-tight tracking-tight">
           Every child deserves a tool built{" "}
           <span className="text-primary">just for them.</span>
         </h1>
@@ -46,7 +46,7 @@ export function CloseTheGapHero() {
             { value: "∞", label: "personalization" },
           ].map(({ value, label }) => (
             <div key={label} className="flex flex-col items-center gap-1">
-              <span className="font-headline text-2xl font-extrabold text-primary">
+              <span className="font-headline text-2xl font-normal text-primary">
                 {value}
               </span>
               <span className="text-xs text-on-surface-variant uppercase tracking-wider">
@@ -60,14 +60,14 @@ export function CloseTheGapHero() {
         <div className="mt-12 flex flex-col sm:flex-row items-center justify-center gap-4">
           <Link
             href="/builder"
-            className="w-full sm:w-auto bg-gradient-to-br from-primary to-primary-container text-white px-8 py-4 rounded-2xl text-base font-bold font-headline inline-flex items-center justify-center gap-2 transition-all duration-300 hover:opacity-90 active:scale-95 min-h-[52px]"
+            className="w-full sm:w-auto bg-gradient-to-br from-primary to-primary-container text-white px-8 py-4 rounded-lg text-base font-bold inline-flex items-center justify-center gap-2 transition-all duration-300 hover:opacity-90 active:scale-95 min-h-[52px]"
           >
             Build Your First App
             <MaterialIcon icon="arrow_forward" size="sm" />
           </Link>
           <Link
             href="/templates"
-            className="w-full sm:w-auto bg-surface-container-low text-on-surface px-8 py-4 rounded-2xl text-base font-bold font-headline inline-flex items-center justify-center hover:bg-surface-container-high transition-colors duration-300 min-h-[52px]"
+            className="w-full sm:w-auto bg-surface-container-low text-on-surface px-8 py-4 rounded-lg text-base font-bold inline-flex items-center justify-center hover:bg-surface-container-high transition-colors duration-300 min-h-[52px]"
           >
             Browse Templates
           </Link>

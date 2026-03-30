@@ -19,6 +19,8 @@ vi.mock("../../../../../convex/_generated/api", () => ({
     },
     apps: { list: "mock" },
     flashcard_decks: { list: "mock" },
+    usage: { getUsage: "mock" },
+    billingActions: { getInvoices: "mock" },
   },
 }));
 
@@ -28,6 +30,26 @@ vi.mock("@/shared/components/ui/button", () => ({
       {children}
     </button>
   ),
+}));
+
+vi.mock("../plan-comparison-card", () => ({
+  PlanComparisonCard: () => <div data-testid="plan-comparison">PlanComparison</div>,
+}));
+
+vi.mock("../usage-meter", () => ({
+  UsageMeter: () => <div data-testid="usage-meter">UsageMeter</div>,
+}));
+
+vi.mock("../billing-history", () => ({
+  BillingHistory: () => <div data-testid="billing-history">BillingHistory</div>,
+}));
+
+vi.mock("../upgrade-confirmation-dialog", () => ({
+  UpgradeConfirmationDialog: ({ children }: any) => <div data-testid="upgrade-dialog">{children}</div>,
+}));
+
+vi.mock("../downgrade-warning-dialog", () => ({
+  DowngradeWarningDialog: ({ children }: any) => <div data-testid="downgrade-dialog">{children}</div>,
 }));
 
 import { BillingSection } from "../billing-section";
@@ -73,5 +95,18 @@ describe("BillingSection", () => {
     expect(
       screen.queryByRole("button", { name: /upgrade/i }),
     ).not.toBeInTheDocument();
+  });
+
+  it("renders plan comparison, usage meter, and billing history", () => {
+    mockUseEntitlements.mockReturnValue({
+      plan: "free",
+      limits: { maxApps: 5, maxDecks: 3 },
+      isPremium: false,
+      isLoading: false,
+    });
+    render(<BillingSection />);
+    expect(screen.getByTestId("plan-comparison")).toBeInTheDocument();
+    expect(screen.getByTestId("usage-meter")).toBeInTheDocument();
+    expect(screen.getByTestId("billing-history")).toBeInTheDocument();
   });
 });

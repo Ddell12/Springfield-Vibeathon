@@ -35,7 +35,7 @@ export function HowItWorks() {
     <section className="bg-surface-container-low py-20 md:py-28 px-6">
       <div className="max-w-7xl mx-auto">
         <div className="mb-16 text-center md:text-left">
-          <h2 className="font-headline text-3xl md:text-4xl font-extrabold text-on-surface mb-4">
+          <h2 className="font-headline text-3xl md:text-4xl font-normal text-on-surface mb-4">
             How it Works
           </h2>
           <div className="h-1.5 w-24 bg-primary rounded-full mb-6 mx-auto md:mx-0" />
@@ -45,14 +45,14 @@ export function HowItWorks() {
           {steps.map((step) => (
             <div
               key={step.title}
-              className="bg-surface-container-lowest rounded-xl p-8 sanctuary-shadow hover:shadow-md transition-shadow group"
+              className="bg-surface-container-lowest rounded-xl p-8 sanctuary-shadow hover:shadow-md hover:-translate-y-1 transition-all duration-300 group"
             >
               <div
                 className={`w-14 h-14 ${step.bg} rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform`}
               >
                 <MaterialIcon icon={step.icon} className="text-3xl" />
               </div>
-              <h3 className="text-2xl font-bold font-headline mb-4 text-on-surface">
+              <h3 className="text-2xl font-medium font-headline mb-4 text-on-surface">
                 {step.title}
               </h3>
               <p className="text-on-surface-variant leading-relaxed">

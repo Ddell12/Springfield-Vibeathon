@@ -2,21 +2,103 @@
 
 import { useMutation, useQuery } from "convex/react";
 import Link from "next/link";
-import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useRef, useState } from "react";
 
+import { cn } from "@/core/utils";
 import { DeleteConfirmationDialog } from "@/shared/components/delete-confirmation-dialog";
+import { FullscreenAppView } from "@/shared/components/fullscreen-app-view";
 import { MaterialIcon } from "@/shared/components/material-icon";
 import { ProjectCard } from "@/shared/components/project-card";
+import { Input } from "@/shared/components/ui/input";
 
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 
+type SortOption = "recent" | "alphabetical";
+
+const SORT_OPTIONS: { label: string; value: SortOption }[] = [
+  { label: "Last Edited", value: "recent" },
+  { label: "A–Z", value: "alphabetical" },
+];
+
 export function MyToolsPage() {
   const sessions = useQuery(api.sessions.list);
-  const removeSession = useMutation(api.sessions.remove);
-  const [deleteTarget, setDeleteTarget] = useState<{ id: Id<"sessions">; title: string } | null>(null);
+  const archiveSession = useMutation(api.sessions.archive);
+  const duplicateSession = useMutation(api.sessions.duplicateSession);
+  const updateTitle = useMutation(api.sessions.updateTitle);
+  const router = useRouter();
 
-  if (sessions === undefined) {
+  const [deleteTarget, setDeleteTarget] = useState<{ id: Id<"sessions">; title: string } | null>(null);
+  const [renamingId, setRenamingId] = useState<Id<"sessions"> | null>(null);
+  const [fullscreenSessionId, setFullscreenSessionId] = useState<Id<"sessions"> | null>(null);
+  const [renameValue, setRenameValue] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [sortBy, setSortBy] = useState<SortOption>("recent");
+
+  const fullscreenBundle = useQuery(
+    api.generated_files.getByPath,
+    fullscreenSessionId
+      ? { sessionId: fullscreenSessionId, path: "_bundle.html" }
+      : "skip"
+  );
+
+  const renameInputRef = useRef<HTMLInputElement>(null);
+
+  // Debounce search by 300ms
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(searchQuery), 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Focus rename input when it appears
+  useEffect(() => {
+    if (renamingId && renameInputRef.current) {
+      renameInputRef.current.focus();
+      renameInputRef.current.select();
+    }
+  }, [renamingId]);
+
+  const filteredSessions = useMemo(() => {
+    if (!sessions) return undefined;
+
+    let results = [...sessions];
+
+    // Filter by search
+    if (debouncedSearch.trim()) {
+      const q = debouncedSearch.toLowerCase();
+      results = results.filter((s) => s.title.toLowerCase().includes(q));
+    }
+
+    // Sort
+    switch (sortBy) {
+      case "alphabetical":
+        results.sort((a, b) => a.title.localeCompare(b.title));
+        break;
+      case "recent":
+      default:
+        // Already sorted desc by _creationTime from query
+        break;
+    }
+
+    return results;
+  }, [sessions, debouncedSearch, sortBy]);
+
+  const handleRenameSubmit = (sessionId: Id<"sessions">) => {
+    const trimmed = renameValue.trim();
+    if (trimmed && trimmed.length > 0) {
+      updateTitle({ sessionId, title: trimmed });
+    }
+    setRenamingId(null);
+  };
+
+  const handleDuplicate = async (sessionId: Id<"sessions">) => {
+    const newId = await duplicateSession({ sessionId });
+    router.push(`/builder/${newId}`);
+  };
+
+  if (filteredSessions === undefined) {
     return (
       <div className="max-w-7xl mx-auto px-8 pt-12 pb-24">
         <div data-testid="loading-skeleton" className="animate-pulse space-y-6">
@@ -31,12 +113,12 @@ export function MyToolsPage() {
     );
   }
 
-  if (sessions.length === 0) {
+  if (sessions && sessions.length === 0) {
     return (
       <div className="max-w-7xl mx-auto px-8 pt-12 pb-24 flex flex-col items-center justify-center gap-6 min-h-[60vh]">
         <div className="text-center">
           <MaterialIcon icon="dashboard_customize" className="text-6xl text-primary/40 mb-4" />
-          <h1 className="font-headline font-bold text-3xl text-on-surface mb-3">
+          <h1 className="font-headline font-normal text-3xl text-on-surface mb-3">
             No apps yet
           </h1>
           <p className="text-on-surface-variant text-lg mb-8">
@@ -56,13 +138,13 @@ export function MyToolsPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-8 pt-12 pb-24">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
         <div>
-          <h1 className="font-headline font-bold text-4xl md:text-5xl text-on-surface tracking-tight mb-2">
+          <h1 className="font-headline font-normal text-4xl md:text-5xl text-on-surface tracking-tight mb-2">
             My Apps
           </h1>
           <p className="text-on-surface-variant text-lg">
-            {sessions.length} app{sessions.length !== 1 ? "s" : ""} created
+            {sessions!.length} app{sessions!.length !== 1 ? "s" : ""} created
           </p>
         </div>
         <Link
@@ -74,38 +156,120 @@ export function MyToolsPage() {
         </Link>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {sessions.map((session, i) => (
-          <div key={session._id} className="relative">
-            <ProjectCard
-              project={{
-                id: session._id,
-                title: session.title,
-                thumbnail: null,
-                updatedAt: session._creationTime,
-                userInitial: session.title.charAt(0).toUpperCase(),
-                userColor: "bg-tertiary-fixed text-on-surface",
-              }}
-              index={i}
-              onDelete={() => setDeleteTarget({ id: session._id, title: session.title })}
-            />
-            {session.state === "generating" && (
-              <div className="absolute left-4 top-4 z-10 flex items-center gap-1.5 rounded-full bg-primary/90 px-3 py-1.5 text-xs font-semibold text-white shadow-md">
-                <span className="relative flex h-2 w-2">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white/60" />
-                  <span className="relative inline-flex h-2 w-2 rounded-full bg-white" />
-                </span>
-                Building...
-              </div>
-            )}
-          </div>
-        ))}
+      {/* Search + Sort Bar */}
+      <div className="flex flex-col sm:flex-row gap-4 mb-8">
+        <div className="relative flex-1">
+          <MaterialIcon
+            icon="search"
+            size="sm"
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant"
+          />
+          <Input
+            type="text"
+            placeholder="Search your apps..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10 bg-surface-container-low"
+            aria-label="Search apps"
+          />
+        </div>
+        <div className="flex gap-1 rounded-xl bg-surface-container-low p-1">
+          {SORT_OPTIONS.map((option) => (
+            <button
+              key={option.value}
+              onClick={() => setSortBy(option.value)}
+              className={cn(
+                "px-4 py-2 text-sm font-medium rounded-lg transition-all duration-300",
+                sortBy === option.value
+                  ? "bg-primary text-on-primary shadow-sm"
+                  : "text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high",
+              )}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
       </div>
+
+      {/* Results */}
+      {filteredSessions.length === 0 ? (
+        <div className="py-20 text-center" data-testid="no-search-results">
+          <MaterialIcon icon="search_off" className="text-5xl text-on-surface-variant/40 mb-4" />
+          <p className="text-on-surface-variant text-lg">
+            No apps match your search.
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {filteredSessions.map((session, i) => (
+            <div key={session._id} className="relative">
+              {renamingId === session._id ? (
+                <div className="rounded-2xl bg-surface-container-lowest p-5 shadow-[0_12px_32px_rgba(25,28,32,0.06)]">
+                  <div className="h-48 w-full rounded-xl bg-surface-container-low mb-5" />
+                  <Input
+                    ref={renameInputRef}
+                    value={renameValue}
+                    onChange={(e) => setRenameValue(e.target.value)}
+                    onBlur={() => handleRenameSubmit(session._id)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handleRenameSubmit(session._id);
+                      if (e.key === "Escape") setRenamingId(null);
+                    }}
+                    className="font-headline text-lg font-semibold"
+                    aria-label="Rename app"
+                    data-testid="rename-input"
+                  />
+                </div>
+              ) : (
+                <>
+                  <ProjectCard
+                    project={{
+                      id: session._id,
+                      title: session.title,
+                      thumbnail: null,
+                      updatedAt: session._creationTime,
+                      userInitial: session.title.charAt(0).toUpperCase(),
+                      userColor: "bg-tertiary-fixed text-on-surface",
+                    }}
+                    index={i}
+                    onDelete={() => setDeleteTarget({ id: session._id, title: session.title })}
+                    onRename={() => {
+                      setRenamingId(session._id);
+                      setRenameValue(session.title);
+                    }}
+                    onDuplicate={() => handleDuplicate(session._id)}
+                  />
+                  {session.state === "generating" && (
+                    <div className="absolute left-4 top-4 z-10 flex items-center gap-1.5 rounded-full bg-primary/90 px-3 py-1.5 text-xs font-semibold text-white shadow-md">
+                      <span className="relative flex h-2 w-2">
+                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white/60" />
+                        <span className="relative inline-flex h-2 w-2 rounded-full bg-white" />
+                      </span>
+                      Building...
+                    </div>
+                  )}
+                  {!renamingId && session.state !== "generating" && (
+                    <button
+                      onClick={() => setFullscreenSessionId(session._id)}
+                      className="absolute bottom-4 right-4 flex items-center gap-1.5 rounded-full bg-primary-gradient px-4 py-2 text-xs font-semibold text-white shadow-lg transition-all hover:shadow-xl active:scale-95"
+                      aria-label="Play app fullscreen"
+                      title="Play fullscreen"
+                    >
+                      <MaterialIcon icon="play_arrow" size="sm" />
+                      Play
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
 
       <section className="mt-20 p-10 rounded-xl bg-surface-container-lowest ring-1 ring-outline-variant/10 relative overflow-hidden flex flex-col md:flex-row items-center gap-10">
         <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -mr-20 -mt-20" />
         <div className="relative z-10 md:w-2/3">
-          <h2 className="font-headline font-bold text-3xl text-on-surface mb-4">
+          <h2 className="font-headline font-normal text-3xl text-on-surface mb-4">
             Need a custom app?
           </h2>
           <p className="text-on-surface-variant text-lg max-w-xl">
@@ -134,13 +298,20 @@ export function MyToolsPage() {
         </div>
       </section>
 
+      {fullscreenSessionId && fullscreenBundle?.contents && (
+        <FullscreenAppView
+          bundleHtml={fullscreenBundle.contents}
+          onExit={() => setFullscreenSessionId(null)}
+        />
+      )}
+
       <DeleteConfirmationDialog
         open={deleteTarget !== null}
         onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
         projectName={deleteTarget?.title ?? ""}
         onConfirmDelete={() => {
           if (deleteTarget) {
-            removeSession({ sessionId: deleteTarget.id });
+            archiveSession({ sessionId: deleteTarget.id });
             setDeleteTarget(null);
           }
         }}

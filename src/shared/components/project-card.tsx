@@ -45,10 +45,14 @@ export function ProjectCard({
   project,
   index = 0,
   onDelete,
+  onRename,
+  onDuplicate,
 }: {
   project: ProjectData;
   index?: number;
   onDelete?: () => void;
+  onRename?: () => void;
+  onDuplicate?: () => void;
 }) {
   const router = useRouter();
   const gradient = GRADIENTS[index % GRADIENTS.length];
@@ -59,7 +63,7 @@ export function ProjectCard({
       tabIndex={0}
       onClick={() => router.push(`/builder/${project.id}`)}
       onKeyDown={(e) => { if (e.key === "Enter") router.push(`/builder/${project.id}`); }}
-      className="group cursor-pointer rounded-2xl bg-surface-container-lowest p-5 shadow-[0_12px_32px_rgba(25,28,32,0.06)] transition-all duration-300 hover:-translate-y-2"
+      className="group cursor-pointer rounded-2xl bg-surface-container-lowest p-5 shadow-[0_12px_32px_rgba(25,28,32,0.06)] transition-all duration-300 hover:-translate-y-2 hover:shadow-[0_24px_48px_rgba(19,29,30,0.08)]"
     >
       {/* Thumbnail */}
       <div
@@ -104,7 +108,31 @@ export function ProjectCard({
                   <MaterialIcon icon="more_vert" size="sm" />
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="min-w-[140px]">
+              <DropdownMenuContent align="end" className="min-w-[160px]">
+                {onRename && (
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      onRename();
+                    }}
+                  >
+                    <MaterialIcon icon="edit" size="sm" className="mr-2" />
+                    Rename
+                  </DropdownMenuItem>
+                )}
+                {onDuplicate && (
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      onDuplicate();
+                    }}
+                  >
+                    <MaterialIcon icon="content_copy" size="sm" className="mr-2" />
+                    Duplicate
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem
                   onClick={(e) => {
                     e.preventDefault();

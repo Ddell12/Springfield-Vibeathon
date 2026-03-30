@@ -4,8 +4,12 @@ import { MaterialIcon } from "@/shared/components/material-icon";
 
 export function HeroSection() {
   return (
-    <section className="max-w-7xl mx-auto px-6 py-20 md:py-32">
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+    <section className="relative overflow-hidden max-w-7xl mx-auto px-6 py-20 md:py-32">
+      {/* Atmospheric depth */}
+      <div className="pointer-events-none absolute -top-32 -right-32 h-[500px] w-[500px] rounded-full bg-primary/5 blur-[100px]" />
+      <div className="pointer-events-none absolute -bottom-48 -left-48 h-[400px] w-[400px] rounded-full bg-secondary/5 blur-[100px]" />
+
+      <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
         {/* Left Column */}
         <div className="lg:col-span-6 space-y-8">
           <div className="inline-flex items-center gap-2 bg-tertiary-fixed text-on-tertiary-fixed px-4 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider">
@@ -13,7 +17,7 @@ export function HeroSection() {
             AI-Powered Support
           </div>
 
-          <h1 className="font-headline text-4xl md:text-5xl lg:text-6xl font-extrabold text-on-surface leading-tight tracking-tight">
+          <h1 className="font-headline text-4xl md:text-5xl lg:text-6xl font-normal text-on-surface leading-tight tracking-tight">
             Build therapy apps for your child —{" "}
             <span className="text-primary">just describe what you need</span>
           </h1>
@@ -26,7 +30,7 @@ export function HeroSection() {
           <div className="flex flex-wrap gap-4 mt-8">
             <Link
               href="/builder"
-              className="bg-primary-gradient text-white px-8 py-3.5 rounded-xl text-lg font-semibold font-headline inline-flex items-center gap-2 transition-all duration-300 active:scale-95 group focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+              className="bg-primary-gradient text-white px-8 py-3.5 rounded-lg text-lg font-semibold inline-flex items-center gap-2 transition-all duration-300 active:scale-95 group focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
             >
               Start Building — It&apos;s Free
               <MaterialIcon
@@ -37,7 +41,7 @@ export function HeroSection() {
             </Link>
             <Link
               href="/templates"
-              className="bg-surface-container-low text-on-surface px-8 py-3.5 rounded-xl text-lg font-semibold font-headline hover:bg-surface-container-high transition-colors duration-300 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+              className="bg-surface-container-low text-on-surface px-8 py-3.5 rounded-lg text-lg font-semibold hover:bg-surface-container-high transition-colors duration-300 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
             >
               View Templates
             </Link>
@@ -62,7 +66,7 @@ export function HeroSection() {
                   ⭐
                 </div>
               </div>
-              <p className="font-headline font-bold text-on-surface-variant text-sm">
+              <p className="font-headline font-medium text-on-surface-variant text-sm">
                 Schedules, Boards & Rewards
               </p>
             </div>
@@ -73,7 +77,7 @@ export function HeroSection() {
                 <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center">
                   <MaterialIcon icon="chat_bubble" className="text-primary" size="sm" />
                 </div>
-                <span className="font-headline font-bold text-sm text-on-surface">
+                <span className="font-headline font-semibold text-sm text-on-surface">
                   AI Assistant
                 </span>
               </div>

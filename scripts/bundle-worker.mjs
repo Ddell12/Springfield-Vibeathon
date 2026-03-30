@@ -109,6 +109,15 @@ async function main() {
     }
   }
 
+  // Sanitize twExtend: parse the extracted JS object literal and re-serialize
+  // as safe JSON to prevent script injection via crafted tailwind configs.
+  try {
+    const evaluated = new Function(`return (${twExtend})`)();
+    twExtend = JSON.stringify(evaluated);
+  } catch {
+    twExtend = "{}";
+  }
+
   // ---------------------------------------------------------------------------
   // 4. Inlined tailwindcss-animate CSS (CDN can't load Node plugins)
   // ---------------------------------------------------------------------------

@@ -2,6 +2,10 @@ import { render, screen } from "@testing-library/react";
 
 import { AccountSection } from "../account-section";
 
+vi.mock("@clerk/nextjs", () => ({
+  useClerk: () => ({ signOut: vi.fn() }),
+}));
+
 vi.mock("@/shared/components/material-icon", () => ({
   MaterialIcon: ({ icon }: { icon: string }) => (
     <span data-testid="icon">{icon}</span>

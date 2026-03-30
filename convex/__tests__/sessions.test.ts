@@ -289,6 +289,46 @@ describe("sessions — streaming builder mutations", () => {
       expect(results).toEqual([]);
     });
 
+    it("rejects access to legacy sessions with no userId (soft returns null)", async () => {
+      const t = convexTest(schema, modules);
+      // Insert a legacy session directly — no userId field
+      const legacyId = await t.run(async (ctx) => {
+        return await ctx.db.insert("sessions", {
+          title: "Legacy Demo",
+          query: "old test session",
+          state: "idle",
+        });
+      });
+      // Unauthenticated get (soft path) should return null
+      const session = await t.query(api.sessions.get, { sessionId: legacyId });
+      expect(session).toBeNull();
+      // Authenticated get should also return null
+      const sessionAsUser = await t
+        .withIdentity(TEST_IDENTITY)
+        .query(api.sessions.get, { sessionId: legacyId });
+      expect(sessionAsUser).toBeNull();
+    });
+
+    it("rejects mutation on legacy sessions with no userId (throws)", async () => {
+      const t = convexTest(schema, modules);
+      const legacyId = await t.run(async (ctx) => {
+        return await ctx.db.insert("sessions", {
+          title: "Legacy Demo",
+          query: "old test session",
+          state: "idle",
+        });
+      });
+      // Mutation path (non-soft) should throw
+      await expect(
+        t
+          .withIdentity(TEST_IDENTITY)
+          .mutation(api.sessions.updateTitle, {
+            sessionId: legacyId,
+            title: "Hacked",
+          }),
+      ).rejects.toThrow("legacy session access denied");
+    });
+
     it("getMostRecent only returns caller's live sessions", async () => {
       const t = convexTest(schema, modules);
       const id = await t.withIdentity(TEST_IDENTITY).mutation(api.sessions.create, {

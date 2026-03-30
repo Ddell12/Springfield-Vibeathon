@@ -88,27 +88,45 @@ export const deleteByDeck = mutation({
   },
   handler: async (ctx, args) => {
     await assertDeckOwner(ctx, args.deckId);
+    let totalDeleted = 0;
 
-    const cards = await ctx.db
-      .query("flashcards")
-      .withIndex("by_deck", (q) => q.eq("deckId", args.deckId))
-      .take(500);
-
-    const toDelete = args.labels
-      ? cards.filter((c) => args.labels!.includes(c.label))
-      : cards;
-
-    for (const card of toDelete) {
-      await ctx.db.delete(card._id);
+    if (args.labels) {
+      // When filtering by label, scan in batches and only delete matches.
+      while (true) {
+        const batch = await ctx.db
+          .query("flashcards")
+          .withIndex("by_deck", (q) => q.eq("deckId", args.deckId))
+          .take(200);
+        if (batch.length === 0) break;
+        const toDelete = batch.filter((c) => args.labels!.includes(c.label));
+        if (toDelete.length === 0) break;
+        for (const card of toDelete) {
+          await ctx.db.delete(card._id);
+        }
+        totalDeleted += toDelete.length;
+      }
+    } else {
+      // Delete all cards — batched loop
+      while (true) {
+        const batch = await ctx.db
+          .query("flashcards")
+          .withIndex("by_deck", (q) => q.eq("deckId", args.deckId))
+          .take(200);
+        if (batch.length === 0) break;
+        for (const card of batch) {
+          await ctx.db.delete(card._id);
+        }
+        totalDeleted += batch.length;
+      }
     }
 
     const deck = await ctx.db.get(args.deckId);
     if (deck) {
       await ctx.db.patch(args.deckId, {
-        cardCount: Math.max(0, deck.cardCount - toDelete.length),
+        cardCount: Math.max(0, deck.cardCount - totalDeleted),
       });
     }
 
-    return { deleted: toDelete.length };
+    return { deleted: totalDeleted };
   },
 });
