@@ -10,6 +10,10 @@
 
 **Spec:** `docs/superpowers/specs/2026-03-30-slp-teletherapy-sessions-design.md`
 
+**LiveKit Resources:** Before implementing LiveKit tasks (Tasks 8, 11, 13, 14), agents MUST:
+1. Use the **LiveKit skill** (`livekit-agents`) — already installed globally. It provides architectural guidance and best practices for real-time video/audio apps.
+2. Use the **LiveKit Docs MCP server** (`livekit-docs`) — already configured. Use its tools (`docs_search`, `get_pages`, `code_search`) to look up exact API signatures, component props, and integration patterns instead of guessing. Prefer `get_docs_overview` → `get_pages` browsing over search for better context.
+
 ---
 
 ## File Map
@@ -23,7 +27,8 @@
 | `convex/appointments.ts` | Booking, cancellation, status transitions, slot computation query |
 | `convex/meetingRecords.ts` | Post-call record queries and status updates |
 | `convex/sessionActions.ts` | `"use node"` actions: fetchAudio, transcribeAudio, generateNotes pipeline |
-| `convex/notifications.ts` | `"use node"` actions: email sending via Resend; mutations: in-app notification CRUD |
+| `convex/notifications.ts` | Queries/mutations for in-app notification CRUD (NO `"use node"`) |
+| `convex/notificationActions.ts` | `"use node"` actions: appointment event handlers, reminders |
 
 ### Next.js API Routes
 | File | Responsibility |
@@ -344,11 +349,26 @@ Add this line inside the `isNavActive` function:
 
 Add it after the `if (href === "/patients")` line.
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 5: Add `/sessions` to proxy.ts protected routes**
+
+In `src/proxy.ts`, add `"/sessions(.*)"` to the `isProtectedRoute` matcher:
+
+```typescript
+const isProtectedRoute = createRouteMatcher([
+  "/dashboard(.*)",
+  "/my-tools(.*)",
+  "/settings(.*)",
+  "/patients(.*)",
+  "/family(.*)",
+  "/sessions(.*)",
+]);
+```
+
+- [ ] **Step 6: Commit**
 
 ```bash
-git add src/core/routes.ts src/shared/lib/navigation.ts
-git commit -m "feat(nav): add Sessions route and navigation entries for SLP and caregiver"
+git add src/core/routes.ts src/shared/lib/navigation.ts src/proxy.ts
+git commit -m "feat(nav): add Sessions route, navigation entries, and proxy protection"
 ```
 
 ---
@@ -654,7 +674,7 @@ export const create = mutation({
       joinLink: `/sessions/${appointmentId}/call`,
     });
 
-    await ctx.scheduler.runAfter(0, internal.notifications.onAppointmentBooked, {
+    await ctx.scheduler.runAfter(0, internal.notificationActions.onAppointmentBooked, {
       appointmentId,
     });
 
@@ -723,7 +743,7 @@ export const bookAsCaregiver = mutation({
       joinLink: `/sessions/${appointmentId}/call`,
     });
 
-    await ctx.scheduler.runAfter(0, internal.notifications.onAppointmentBooked, {
+    await ctx.scheduler.runAfter(0, internal.notificationActions.onAppointmentBooked, {
       appointmentId,
     });
 
@@ -769,7 +789,7 @@ export const cancel = mutation({
       cancelledBy: userId,
     });
 
-    await ctx.scheduler.runAfter(0, internal.notifications.onAppointmentCancelled, {
+    await ctx.scheduler.runAfter(0, internal.notificationActions.onAppointmentCancelled, {
       appointmentId: args.appointmentId,
       cancelledBy: userId,
     });
@@ -843,7 +863,7 @@ export const markNoShow = mutation({
 npx convex dev --once
 ```
 
-Expected: No errors. (The `internal.notifications.onAppointmentBooked` and `internal.sessionActions.fetchAudio` references will fail until those files exist — add stub files if needed.)
+Expected: No errors. (The `internal.notificationActions.onAppointmentBooked` and `internal.sessionActions.fetchAudio` references will fail until those files exist — add stub files if needed.)
 
 - [ ] **Step 7: Commit**
 
@@ -857,15 +877,17 @@ git commit -m "feat(convex): add appointments — slot query, booking, cancellat
 ## Task 6: Convex Backend — Notifications (In-App + Email)
 
 **Files:**
-- Create: `convex/notifications.ts`
+- Create: `convex/notifications.ts` (queries + mutations — NO `"use node"`)
+- Create: `convex/notificationActions.ts` (`"use node"` actions)
+
+**IMPORTANT:** Convex requires `"use node"` files to ONLY contain actions. Queries and mutations CANNOT be in the same file as `"use node"` actions. This is why we split into two files.
 
 - [ ] **Step 1: Create notifications.ts with in-app queries and mutations**
 
 ```typescript
 import { v } from "convex/values";
-import { mutation, query, internalAction, internalMutation } from "./_generated/server";
+import { mutation, query, internalMutation } from "./_generated/server";
 import { getAuthUserId } from "./lib/auth";
-import { internal } from "./_generated/api";
 
 export const list = query({
   args: {},
@@ -949,9 +971,17 @@ export const createNotification = internalMutation({
 });
 ```
 
-- [ ] **Step 2: Add internal actions for appointment events**
+- [ ] **Step 2: Create notificationActions.ts with appointment event handlers**
+
+Create a SEPARATE file `convex/notificationActions.ts` (this file has `"use node"` and can only contain actions):
 
 ```typescript
+"use node";
+
+import { v } from "convex/values";
+import { internalAction } from "./_generated/server";
+import { internal } from "./_generated/api";
+
 export const onAppointmentBooked = internalAction({
   args: { appointmentId: v.id("appointments") },
   handler: async (ctx, args) => {
@@ -999,14 +1029,14 @@ export const onAppointmentBooked = internalAction({
     const oneHourBefore = scheduledAt - 60 * 60 * 1000;
 
     if (twentyFourHoursBefore > now) {
-      await ctx.scheduler.runAt(twentyFourHoursBefore, internal.notifications.sendReminder, {
+      await ctx.scheduler.runAt(twentyFourHoursBefore, internal.notificationActions.sendReminder, {
         appointmentId: args.appointmentId,
         type: "24h",
       });
     }
 
     if (oneHourBefore > now) {
-      await ctx.scheduler.runAt(oneHourBefore, internal.notifications.sendReminder, {
+      await ctx.scheduler.runAt(oneHourBefore, internal.notificationActions.sendReminder, {
         appointmentId: args.appointmentId,
         type: "1h",
       });
@@ -1283,7 +1313,7 @@ export const generateNotes = internalAction({
         patientId: record.patientId,
       });
 
-      const goals = await ctx.runQuery(internal.goals.listByPatient, {
+      const goals = await ctx.runQuery(internal.goals.listByPatientInternal, {
         patientId: record.patientId,
       });
 
@@ -1429,10 +1459,19 @@ export const getInternal = internalQuery({
 
 - [ ] **Step 7: Add `createFromMeeting` mutation to sessionNotes.ts**
 
-Add this internal mutation to the existing `convex/sessionNotes.ts`:
+**First, update the import** on line 2 of `convex/sessionNotes.ts`. It currently reads:
+```typescript
+import { mutation, query } from "./_generated/server";
+```
+Change it to:
+```typescript
+import { internalMutation, mutation, query } from "./_generated/server";
+```
+
+Then add this internal mutation to the existing `convex/sessionNotes.ts`:
 
 ```typescript
-import { internalMutation } from "./_generated/server";
+// (internalMutation is now imported above — do NOT add a duplicate import)
 
 export const createFromMeeting = internalMutation({
   args: {
@@ -1473,11 +1512,18 @@ export const createFromMeeting = internalMutation({
 
 - [ ] **Step 8: Add internal queries for goals and patients**
 
-Add to `convex/patients.ts` (if not already there):
+**`convex/patients.ts`** — update the import on line 2. It currently reads:
+```typescript
+import { mutation, query } from "./_generated/server";
+```
+Change it to:
+```typescript
+import { internalQuery, mutation, query } from "./_generated/server";
+```
+
+Then add this internal query:
 
 ```typescript
-import { internalQuery } from "./_generated/server";
-
 export const getInternal = internalQuery({
   args: { patientId: v.id("patients") },
   handler: async (ctx, args) => {
@@ -1486,10 +1532,21 @@ export const getInternal = internalQuery({
 });
 ```
 
-Add to `convex/goals.ts` (if not already there):
+**`convex/goals.ts`** — this file already has a public `listByPatient` query (line 97) that uses `assertPatientAccess`. Internal actions don't have auth context, so we need a separate internal query that skips auth.
+
+Update the import on line 2. It currently reads:
+```typescript
+import { mutation, query } from "./_generated/server";
+```
+Change it to:
+```typescript
+import { internalQuery, mutation, query } from "./_generated/server";
+```
+
+Then add (note the different name to avoid collision with the existing public query):
 
 ```typescript
-export const listByPatient = internalQuery({
+export const listByPatientInternal = internalQuery({
   args: { patientId: v.id("patients") },
   handler: async (ctx, args) => {
     return await ctx.db
