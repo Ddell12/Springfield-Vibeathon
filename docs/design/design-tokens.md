@@ -1,88 +1,135 @@
 # Design Tokens — Bridges
 
-## Tailwind v4 Theme Config
+> **Source of truth:** `DESIGN.md` (project root). This file is a quick-reference extraction.
+> **Implementation:** `src/app/globals.css` (Tailwind v4 `@theme` block, all values in OKLCH).
 
-Paste this into `src/app/globals.css`:
+## Tailwind v4 Theme Reference
+
+Defined in `src/app/globals.css` via `@theme`. All colors use OKLCH for Tailwind v4 opacity modifier support.
 
 ```css
-@import "tailwindcss";
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400&display=swap');
-
-@theme {
-  --color-primary: #0D7377;
-  --color-primary-hover: #0A5C5F;
-  --color-primary-light: #E6F3F3;
-  --color-secondary: #5B5FC7;
-  --color-secondary-hover: #4A4EB0;
-  --color-background: #FAFAFA;
-  --color-surface: #FFFFFF;
-  --color-surface-raised: #F5F5F5;
-  --color-foreground: #1A1A1A;
-  --color-muted: #6B7280;
-  --color-border: #E5E7EB;
-  --color-border-strong: #D1D5DB;
-  --color-success: #059669;
-  --color-warning: #D97706;
-  --color-error: #DC2626;
-  --color-info: #2563EB;
-
-  --font-heading: 'Inter', system-ui, sans-serif;
-  --font-body: 'Inter', system-ui, sans-serif;
-  --font-mono: 'JetBrains Mono', monospace;
-
-  --radius: 8px;
-  --radius-xl: 16px;
-}
+/* Font loading — add to layout <head> or CSS @import */
+https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,100..900;1,9..144,100..900&family=Instrument+Sans:wght@400;500;600;700&family=Commit+Mono&display=swap
 ```
 
 ## Color Reference
 
+### Surfaces — Warm Linen Palette
+| Token | Hex | OKLCH | Usage |
+|-------|-----|-------|-------|
+| background / surface-container | `#F6F3EE` | `oklch(0.965 0.007 81)` | Canvas — warm off-white |
+| surface | `#FFFFFF` | `oklch(1 0 0)` | Cards, panels |
+| surface-bright / surface-container-low | `#FAF8F5` | `oklch(0.980 0.004 78)` | Hover states, raised containers |
+| surface-dim / secondary-container | `#EDEAE4` | `oklch(0.938 0.009 85)` | Sidebar, recessed zones |
+
+### Text — Warm Grays (no cool grays)
 | Token | Hex | Usage |
 |-------|-----|-------|
-| primary | `#0D7377` | Actions, links, active states |
-| primary-hover | `#0A5C5F` | Hover on primary |
-| primary-light | `#E6F3F3` | Subtle primary backgrounds |
-| secondary | `#5B5FC7` | Accent elements |
-| background | `#FAFAFA` | Page background |
-| surface | `#FFFFFF` | Cards, panels |
-| surface-raised | `#F5F5F5` | Elevated surfaces |
-| foreground | `#1A1A1A` | Primary text |
-| muted | `#6B7280` | Secondary text, placeholders |
-| border | `#E5E7EB` | Borders, dividers |
-| success | `#059669` | Positive states |
-| warning | `#D97706` | Caution |
-| error | `#DC2626` | Errors |
+| on-surface / foreground | `#1A1917` | Primary text — warm near-black |
+| on-surface-variant / muted | `#6B6560` | Secondary text, labels |
+| outline | `#9C9590` | Placeholders, timestamps, tertiary text |
+
+### Primary — Teal (calming, therapeutic)
+| Token | Hex | Usage |
+|-------|-----|-------|
+| primary | `#00595c` | Actions, links, active states |
+| primary-container | `#0d7377` | Hover, gradient end |
+| primary-fixed / on-primary-container | `#e6f2f2` | Badges, tags, soft indicators (teal-subtle) |
+
+### Primary CTA Gradient
+The **only** gradient in the system. Reserved for the primary call-to-action button.
+```css
+background: linear-gradient(135deg, #00595c 0%, #0d7377 100%);
+/* In OKLCH: */
+background: linear-gradient(135deg, oklch(0.352 0.055 192) 0%, oklch(0.441 0.063 190) 100%);
+```
+
+### Semantic
+| Token | Hex | Usage |
+|-------|-----|-------|
+| success | `#3B7A57` | Forest green — positive states |
+| caution / tertiary | `#C49A2A` | Aged gold — warnings |
+| error / destructive | `#B8433A` | Brick red — errors, danger |
+| info | `#00595c` | Teal (same as primary) |
+
+### Borders
+| Token | Hex | Usage |
+|-------|-----|-------|
+| outline-variant / border | `#E2DED8` | Warm, visible but not harsh |
+| ring | `#00595c` | Focus ring (teal primary) |
 
 ## Typography
 
-- Heading + Body: Inter (400, 500, 600, 700)
-- Mono: JetBrains Mono (400) — minimal use
+| Role | Font | Weight | Size | Line-height | Notes |
+|------|------|--------|------|-------------|-------|
+| Display/Hero | Fraunces (variable serif) | 400 | 48px | 1.15 | letter-spacing -0.02em, optical size + wonk axes |
+| H2 | Fraunces | 400 | 32px | 1.3 | |
+| H3 | Instrument Sans | 500 | 24px | 1.35 | |
+| Body | Instrument Sans | 400 | 16px | 1.6 | |
+| UI Label | Instrument Sans | 600 (active) / 400 (inactive) | 14px | 1.4 | |
+| Caption | Instrument Sans | 400 | 12px | 1.4 | |
+| Mono/Status | Commit Mono | 400 | 13px | 1.5 | No ligatures |
+| Section Label | Commit Mono | 400 | 11px | — | letter-spacing 0.1em, uppercase |
+
+**CSS custom properties:**
+```css
+--font-headline: 'Fraunces', Georgia, serif;
+--font-body: 'Instrument Sans', system-ui, sans-serif;
+--font-mono: 'Commit Mono', monospace;
+```
 
 ## Spacing
 
-4px base unit. Use Tailwind scale: `p-1` = 4px, `p-2` = 8px, `p-3` = 12px, `p-4` = 16px, etc.
+- **Base unit:** 4px
+- **Density:** Comfortable — generous tap targets for therapy users, breathing room for autistic users
+- **Scale:** 2xs(2px) xs(4px) sm(8px) md(16px) lg(24px) xl(32px) 2xl(48px) 3xl(64px)
+- **Min tap target:** 44px x 44px
 
-## Component Styles
+## Border Radius
 
-**Button Primary:** `bg-primary text-white hover:bg-primary-hover rounded-lg px-4 py-2.5 text-sm font-medium`
-**Button Secondary:** `bg-surface border border-border text-foreground hover:bg-surface-raised rounded-lg px-4 py-2.5 text-sm font-medium`
-**Button Ghost:** `text-primary hover:bg-primary-light rounded-lg px-4 py-2.5 text-sm font-medium`
-**Card:** `bg-surface border border-border rounded-lg shadow-sm p-4`
-**Input:** `bg-surface border border-border rounded-lg px-3 py-2.5 text-base focus:ring-2 focus:ring-primary min-h-[44px]`
-**Chat User Msg:** `bg-primary text-white rounded-2xl rounded-br-sm px-4 py-3 max-w-[80%] ml-auto`
-**Chat AI Msg:** `bg-surface-raised text-foreground rounded-2xl rounded-bl-sm px-4 py-3 max-w-[80%]`
+```css
+--radius-sm: 4px;   /* small elements */
+--radius: 6px;      /* inputs, buttons */
+--radius-lg: 8px;   /* cards */
+--radius-xl: 12px;  /* modals, dialogs */
+/* full: 9999px — pills, avatars */
+```
 
 ## Layout
 
-- Max width: `max-w-7xl` (1280px)
-- Content padding: `px-4 sm:px-6 lg:px-8`
-- Builder: 400px chat sidebar + fluid preview
-- Mobile: stacked, chat/preview toggle
-- Min tap target: 44px x 44px
-- Therapy tool radius: `rounded-2xl` (16px)
+- **Max content width:** 1120px (`max-w-5xl` or custom)
+- **Content padding:** `px-4 sm:px-6 lg:px-8`
+- **Builder:** 360px fixed chat panel + fluid preview
+- **Template grid:** 1 col mobile, 2 col tablet, 3 col desktop
+- **Mobile builder:** stacked, chat/preview toggle
 
-## Transitions
+## Motion
 
-- Fast (hover/focus): `150ms ease-out`
-- Normal (content): `250ms ease-out`
-- Slow (page): `300ms ease-in-out`
+- **Easing:** `cubic-bezier(0.4, 0, 0.2, 1)` (aliased as `--ease-sanctuary`)
+- **Micro (toggles, hover):** 50-100ms
+- **Short (dropdowns, tooltips):** 150-250ms
+- **Medium (page transitions, modals):** 300-400ms
+- **Long (celebration only):** 400-700ms
+- **Minimum noticeable duration:** 300ms
+- **Principle:** Minimal-functional. Autistic users can be motion-sensitive. `prefers-reduced-motion` is respected globally.
+
+## Component Patterns
+
+**Button Primary (CTA):** `bg-primary-gradient text-on-primary rounded-md px-4 py-2.5 text-sm font-medium`
+**Button Secondary:** `bg-surface border border-border text-foreground hover:bg-surface-bright rounded-md px-4 py-2.5 text-sm font-medium`
+**Button Ghost:** `text-primary hover:bg-on-primary-container rounded-md px-4 py-2.5 text-sm font-medium`
+**Card:** `bg-surface border border-border rounded-lg shadow-sm p-4`
+**Input:** `bg-surface border border-border rounded-md px-3 py-2.5 text-base focus:ring-2 focus:ring-ring min-h-[44px]`
+
+## Anti-Patterns (never use)
+
+- Purple/violet gradients as default accent
+- 3-column icon grids with colored circles
+- Centered everything with uniform spacing
+- Uniform bubbly border-radius on all elements
+- Cool grays (use warm grays only)
+- Decorative blobs or abstract shapes
+- Hero images or stock photos on landing page
+- Inline `style={{}}` when Tailwind has an equivalent
+- Gradients on UI elements (gradient reserved for primary CTA only)
+- 1px borders for sectioning (use tonal background shifts instead)
