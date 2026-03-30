@@ -58,7 +58,7 @@ export function ProductPreview() {
       <div className="mt-8 text-center">
         <Link
           href="/explore"
-          className="inline-flex items-center gap-2 text-primary font-headline font-bold text-lg hover:underline transition-colors"
+          className="inline-flex items-center gap-2 text-primary font-body font-bold text-lg hover:underline transition-colors min-h-[44px]"
         >
           See them in action →
         </Link>

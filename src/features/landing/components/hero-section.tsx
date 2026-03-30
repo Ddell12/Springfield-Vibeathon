@@ -26,7 +26,7 @@ export function HeroSection() {
           <div className="flex flex-wrap gap-4 mt-8">
             <Link
               href="/builder"
-              className="bg-primary-gradient text-white px-8 py-3.5 rounded-lg text-lg font-semibold inline-flex items-center gap-2 transition-all duration-300 active:scale-95 group focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+              className="bg-primary-gradient text-white px-8 py-3.5 rounded-lg text-lg font-semibold inline-flex items-center gap-2 transition-all duration-300 active:scale-95 group focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 min-h-[44px]"
             >
               Start Building — It&apos;s Free
               <MaterialIcon
