@@ -15,7 +15,7 @@ export function QuickRating({ onRate, onSkip }: QuickRatingProps) {
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 backdrop-blur-sm">
       <div className="mx-4 w-full max-w-xs rounded-3xl bg-white p-6 text-center shadow-2xl dark:bg-zinc-900">
-        <p className="mb-4 text-lg font-bold font-headline text-foreground">
+        <p className="mb-4 text-lg font-bold text-foreground">
           How did it go?
         </p>
 

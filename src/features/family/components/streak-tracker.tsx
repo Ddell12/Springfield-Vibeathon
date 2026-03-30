@@ -65,7 +65,7 @@ export function StreakTracker({ streakData }: StreakTrackerProps) {
             </span>
           )}
           <div>
-            <p className="font-headline text-2xl font-bold text-amber-600 dark:text-amber-400">
+            <p className="text-2xl font-bold text-amber-600 dark:text-amber-400">
               {label}
             </p>
             {currentStreak > 0 && (

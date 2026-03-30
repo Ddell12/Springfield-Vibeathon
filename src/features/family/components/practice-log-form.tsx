@@ -68,7 +68,7 @@ export function PracticeLogForm({
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="font-headline text-lg font-semibold">
+          <DialogTitle className="text-lg font-semibold">
             Log Practice
           </DialogTitle>
           <DialogDescription className="text-sm text-muted-foreground">

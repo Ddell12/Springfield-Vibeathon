@@ -44,14 +44,14 @@ export function KidModeTile({ patientId, appId, title, isPractice }: KidModeTile
 
       <span
         className={cn(
-          "relative z-10 text-6xl font-bold font-headline opacity-80",
+          "relative z-10 text-6xl font-bold opacity-80",
           colorClass.split(" ")[1]
         )}
       >
         {initial}
       </span>
 
-      <p className="relative z-10 mt-3 max-w-full truncate px-2 text-center text-base font-bold font-headline text-foreground">
+      <p className="relative z-10 mt-3 max-w-full truncate px-2 text-center text-base font-bold text-foreground">
         {title}
       </p>
 

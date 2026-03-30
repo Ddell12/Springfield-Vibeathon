@@ -39,7 +39,7 @@ function ChildCard({ patientId }: ChildCardProps) {
     <Card className="transition-shadow duration-300 hover:shadow-md">
       <CardContent className="flex flex-col gap-4 p-6">
         <div>
-          <p className="font-headline text-xl font-semibold text-foreground">
+          <p className="text-xl font-semibold text-foreground">
             {patient.firstName}
           </p>
           {patient.lastName && (
@@ -96,7 +96,7 @@ export function FamilyLanding() {
           👨‍👩‍👧
         </div>
         <div>
-          <p className="font-headline text-xl font-semibold text-foreground">
+          <p className="text-xl font-semibold text-foreground">
             No children linked yet
           </p>
           <p className="mt-1 max-w-sm text-sm text-muted-foreground">
