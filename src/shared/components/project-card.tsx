@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 
 import { cn } from "@/core/utils";
+import { Avatar, AvatarFallback } from "@/shared/components/ui/avatar";
 import { MaterialIcon } from "@/shared/components/material-icon";
 import {
   DropdownMenu,
@@ -160,14 +161,9 @@ export function ProjectCard({
             {formatTimeAgo(project.updatedAt)}
           </p>
         </div>
-        <div
-          className={cn(
-            "flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-[10px] font-bold ring-4 ring-surface-container-lowest",
-            project.userColor || "bg-tertiary-fixed text-on-surface"
-          )}
-        >
-          {project.userInitial}
-        </div>
+        <Avatar>
+          <AvatarFallback className={cn("text-[10px] font-bold ring-4 ring-surface-container-lowest", project.userColor || "bg-tertiary-fixed text-on-surface")}>{project.userInitial}</AvatarFallback>
+        </Avatar>
       </div>
     </div>
   );

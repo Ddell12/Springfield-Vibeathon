@@ -4,6 +4,8 @@ import { useMutation } from "convex/react";
 import { useState } from "react";
 import { api } from "../../../../convex/_generated/api";
 import { cn } from "@/core/utils";
+import { Avatar, AvatarFallback } from "@/shared/components/ui/avatar";
+import { Badge } from "@/shared/components/ui/badge";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
@@ -39,27 +41,29 @@ export function PatientProfileWidget({ patient }: PatientProfileWidgetProps) {
   return (
     <div className="rounded-xl bg-surface-container p-6">
       <div className="flex items-start gap-4">
-        <div className={cn("flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-lg font-bold text-white", getInitialsColor(patient.diagnosis))}>
-          {getInitials(patient.firstName, patient.lastName)}
-        </div>
+        <Avatar className="h-14 w-14">
+          <AvatarFallback className={cn(getInitialsColor(patient.diagnosis), "text-lg font-bold text-white")}>
+            {getInitials(patient.firstName, patient.lastName)}
+          </AvatarFallback>
+        </Avatar>
         <div className="min-w-0 flex-1">
           <h2 className="text-xl font-semibold text-foreground">
             {patient.firstName} {patient.lastName}
           </h2>
           <p className="text-sm text-on-surface-variant">{formatAge(patient.dateOfBirth)} old</p>
           <div className="mt-2 flex flex-wrap gap-2">
-            <span className={cn("rounded-full px-2.5 py-0.5 text-xs font-medium", diagnosis.bg, diagnosis.text)}
+            <Badge className={cn(diagnosis.bg, diagnosis.text)}
               aria-label={`Diagnosis: ${diagnosis.label}`}>
               {diagnosis.label}
-            </span>
-            <span className={cn("rounded-full px-2.5 py-0.5 text-xs font-medium", status.bg, status.text)}
+            </Badge>
+            <Badge className={cn(status.bg, status.text)}
               aria-label={`Status: ${status.label}`}>
               {status.label}
-            </span>
+            </Badge>
             {patient.communicationLevel && (
-              <span className="rounded-full bg-surface-container-high px-2.5 py-0.5 text-xs font-medium text-on-surface-variant">
+              <Badge variant="secondary">
                 {patient.communicationLevel.replace("-", " ")}
-              </span>
+              </Badge>
             )}
           </div>
         </div>
@@ -99,12 +103,12 @@ export function PatientProfileWidget({ patient }: PatientProfileWidgetProps) {
             </div>
             <div className="flex flex-wrap gap-1.5">
               {editInterests.map((interest, i) => (
-                <span key={i} className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
+                <Badge key={i} variant="secondary" className="bg-primary/10 text-primary gap-1">
                   {interest}
-                  <button onClick={() => setEditInterests(editInterests.filter((_, idx) => idx !== i))} className="hover:text-destructive">
+                  <Button variant="ghost" size="icon-xs" onClick={() => setEditInterests(editInterests.filter((_, idx) => idx !== i))} className="hover:text-destructive">
                     <MaterialIcon icon="close" size="sm" />
-                  </button>
-                </span>
+                  </Button>
+                </Badge>
               ))}
             </div>
           </div>
@@ -112,9 +116,9 @@ export function PatientProfileWidget({ patient }: PatientProfileWidgetProps) {
           <div className="mt-1 flex flex-wrap gap-1.5">
             {patient.interests && patient.interests.length > 0 ? (
               patient.interests.map((interest, i) => (
-                <span key={i} className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
+                <Badge key={i} variant="secondary" className="bg-primary/10 text-primary">
                   {interest}
-                </span>
+                </Badge>
               ))
             ) : (
               <p className="text-xs text-on-surface-variant italic">No interests added yet</p>

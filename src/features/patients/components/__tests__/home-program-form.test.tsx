@@ -11,6 +11,30 @@ vi.mock("convex/react", () => ({
 
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
+// Mock shadcn Select as a native <select> so fireEvent.change works in tests
+vi.mock("@/shared/components/ui/select", () => {
+  const React = require("react");
+  const SelectContext = React.createContext<{ onValueChange?: (v: string) => void }>({});
+  return {
+    Select: ({ children, value, onValueChange }: any) => (
+      <SelectContext.Provider value={{ onValueChange }}>
+        <select
+          value={value ?? ""}
+          onChange={(e: any) => onValueChange?.(e.target.value)}
+          aria-label="Frequency"
+        >
+          <option value="" disabled>Select frequency</option>
+          {children}
+        </select>
+      </SelectContext.Provider>
+    ),
+    SelectTrigger: ({ children }: any) => <>{children}</>,
+    SelectValue: () => null,
+    SelectContent: ({ children }: any) => <>{children}</>,
+    SelectItem: ({ children, value }: any) => <option value={value}>{children}</option>,
+  };
+});
+
 describe("HomeProgramForm", () => {
   const patientId = "patients_1" as Id<"patients">;
   const defaultProps = {

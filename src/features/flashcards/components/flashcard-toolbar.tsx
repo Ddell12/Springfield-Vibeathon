@@ -5,6 +5,8 @@ import Link from "next/link";
 import { cn } from "@/core/utils";
 import { MaterialIcon } from "@/shared/components/material-icon";
 import { Button } from "@/shared/components/ui/button";
+import { Input } from "@/shared/components/ui/input";
+import { ToggleGroup, ToggleGroupItem } from "@/shared/components/ui/toggle-group";
 
 import type { FlashcardStreamingStatus } from "../hooks/use-flashcard-streaming";
 
@@ -54,24 +56,26 @@ export function FlashcardToolbar({
         </Link>
 
         {onNewChat && (
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={onNewChat}
-            className="flex min-h-[44px] min-w-[44px] flex-shrink-0 items-center justify-center rounded bg-surface-container-high text-on-surface-variant transition-all hover:bg-surface-container-highest hover:text-primary active:scale-90"
+            className="min-h-[44px] min-w-[44px] flex-shrink-0 rounded bg-surface-container-high text-on-surface-variant transition-all hover:bg-surface-container-highest hover:text-primary active:scale-90"
             aria-label="New deck"
             title="Start a new deck"
           >
             <MaterialIcon icon="add" size="xs" />
-          </button>
+          </Button>
         )}
 
         <h1 className="contents">
           {isEditingName ? (
-            <input
+            <Input
               autoFocus
               defaultValue={projectName}
               maxLength={100}
               aria-label="Deck name"
-              className="w-[160px] truncate border-b border-primary/50 bg-transparent text-[13px] font-semibold tracking-tight text-primary outline-none"
+              className="h-auto w-[160px] truncate rounded-none border-0 border-b border-primary/50 bg-transparent px-0 py-0 text-[13px] font-semibold tracking-tight text-primary shadow-none outline-none ring-0 focus-visible:ring-0"
               onBlur={(e) => onNameEditEnd?.(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "Enter") onNameEditEnd?.((e.target as HTMLInputElement).value);
@@ -79,13 +83,15 @@ export function FlashcardToolbar({
               }}
             />
           ) : (
-            <button
+            <Button
+              variant="link"
+              size="sm"
               onClick={onNameEditStart}
-              className="truncate text-[13px] font-semibold tracking-tight text-primary transition-all hover:underline hover:underline-offset-2"
+              className="h-auto truncate px-0 text-[13px] font-semibold tracking-tight text-primary no-underline transition-all hover:underline hover:underline-offset-2"
               title="Click to rename"
             >
               {projectName}
-            </button>
+            </Button>
           )}
         </h1>
 
@@ -104,34 +110,27 @@ export function FlashcardToolbar({
 
       {/* Center section: Mobile panel toggle */}
       {isMobile && onMobilePanelChange && (
-        <div className="flex items-center rounded-lg bg-surface-container-high p-1" role="tablist">
-          <button
-            role="tab"
-            aria-selected={mobilePanel === "chat"}
-            onClick={() => onMobilePanelChange("chat")}
-            className={cn(
-              "min-h-[44px] rounded-md px-3 py-1 text-[13px] font-semibold transition-colors duration-200",
-              mobilePanel === "chat"
-                ? "bg-white text-primary shadow-sm dark:bg-surface-container-lowest"
-                : "text-on-surface-variant hover:text-primary"
-            )}
+        <ToggleGroup
+          type="single"
+          value={mobilePanel}
+          onValueChange={(value) => {
+            if (value) onMobilePanelChange(value as "chat" | "preview");
+          }}
+          className="rounded-lg bg-surface-container-high p-1"
+        >
+          <ToggleGroupItem
+            value="chat"
+            className="min-h-[44px] rounded-md px-3 py-1 text-[13px] font-semibold text-on-surface-variant transition-colors duration-200 hover:text-primary data-[state=on]:bg-white data-[state=on]:text-primary data-[state=on]:shadow-sm dark:data-[state=on]:bg-surface-container-lowest"
           >
             Chat
-          </button>
-          <button
-            role="tab"
-            aria-selected={mobilePanel === "preview"}
-            onClick={() => onMobilePanelChange("preview")}
-            className={cn(
-              "min-h-[44px] rounded-md px-3 py-1 text-[13px] font-semibold transition-colors duration-200",
-              mobilePanel === "preview"
-                ? "bg-white text-primary shadow-sm dark:bg-surface-container-lowest"
-                : "text-on-surface-variant hover:text-primary"
-            )}
+          </ToggleGroupItem>
+          <ToggleGroupItem
+            value="preview"
+            className="min-h-[44px] rounded-md px-3 py-1 text-[13px] font-semibold text-on-surface-variant transition-colors duration-200 hover:text-primary data-[state=on]:bg-white data-[state=on]:text-primary data-[state=on]:shadow-sm dark:data-[state=on]:bg-surface-container-lowest"
           >
             Cards
-          </button>
-        </div>
+          </ToggleGroupItem>
+        </ToggleGroup>
       )}
 
       {/* Right section: Decks + Share */}

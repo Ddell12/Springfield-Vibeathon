@@ -2,6 +2,7 @@
 
 import { cn } from "@/core/utils";
 import { MaterialIcon } from "@/shared/components/material-icon";
+import { Badge } from "@/shared/components/ui/badge";
 import { Button } from "@/shared/components/ui/button";
 
 interface DemoToolCardProps {
@@ -46,9 +47,9 @@ export function DemoToolCard({
       {/* Content */}
       <div className="p-5 flex flex-col gap-3">
         <div>
-          <span className="inline-block px-2 py-0.5 bg-primary/10 text-primary text-xs font-bold rounded-full mb-2">
+          <Badge variant="secondary" className="bg-primary/10 text-primary font-bold mb-2">
             {categoryLabel}
-          </span>
+          </Badge>
           <h3 className="font-body font-bold text-lg text-on-surface">
             {title}
           </h3>

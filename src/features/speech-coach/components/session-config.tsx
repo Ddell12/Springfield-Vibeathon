@@ -3,6 +3,8 @@
 import { useState } from "react";
 
 import { Button } from "@/shared/components/ui/button";
+import { Input } from "@/shared/components/ui/input";
+import { ToggleGroup, ToggleGroupItem } from "@/shared/components/ui/toggle-group";
 import { cn } from "@/core/utils";
 
 const TARGET_SOUNDS = [
@@ -102,23 +104,28 @@ export function SessionConfig({ speechCoachConfig, onStart, lastRecommended, isL
         <h3 className="font-body text-lg font-semibold text-foreground">
           How old is your child?
         </h3>
-        <div className="mt-3 flex gap-3">
+        <ToggleGroup
+          type="single"
+          value={ageRange}
+          onValueChange={(value) => {
+            if (value) setAgeRange(value as "2-4" | "5-7");
+          }}
+          className="mt-3 flex gap-3"
+        >
           {(["2-4", "5-7"] as const).map((range) => (
-            <button
+            <ToggleGroupItem
               key={range}
-              type="button"
-              onClick={() => setAgeRange(range)}
+              value={range}
               className={cn(
                 "rounded-lg px-6 py-3 text-sm font-medium transition-colors duration-300",
-                ageRange === range
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted text-muted-foreground hover:bg-muted/80"
+                "data-[state=on]:bg-primary data-[state=on]:text-primary-foreground",
+                "bg-muted text-muted-foreground hover:bg-muted/80"
               )}
             >
               Ages {range}
-            </button>
+            </ToggleGroupItem>
           ))}
-        </div>
+        </ToggleGroup>
       </div>
 
       {/* Duration */}
@@ -126,23 +133,28 @@ export function SessionConfig({ speechCoachConfig, onStart, lastRecommended, isL
         <h3 className="font-body text-lg font-semibold text-foreground">
           How long?
         </h3>
-        <div className="mt-3 flex gap-3">
+        <ToggleGroup
+          type="single"
+          value={String(duration)}
+          onValueChange={(value) => {
+            if (value) setDuration(Number(value) as 5 | 10);
+          }}
+          className="mt-3 flex gap-3"
+        >
           {([5, 10] as const).map((mins) => (
-            <button
+            <ToggleGroupItem
               key={mins}
-              type="button"
-              onClick={() => setDuration(mins)}
+              value={String(mins)}
               className={cn(
                 "rounded-lg px-6 py-3 text-sm font-medium transition-colors duration-300",
-                duration === mins
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted text-muted-foreground hover:bg-muted/80"
+                "data-[state=on]:bg-primary data-[state=on]:text-primary-foreground",
+                "bg-muted text-muted-foreground hover:bg-muted/80"
               )}
             >
               {mins} minutes
-            </button>
+            </ToggleGroupItem>
           ))}
-        </div>
+        </ToggleGroup>
       </div>
 
       {/* Focus area */}
@@ -150,12 +162,12 @@ export function SessionConfig({ speechCoachConfig, onStart, lastRecommended, isL
         <h3 className="font-body text-lg font-semibold text-foreground">
           Anything specific to practice?
         </h3>
-        <input
+        <Input
           type="text"
           placeholder="e.g. animal names, colors, friend's names"
           value={focusArea}
           onChange={(e) => setFocusArea(e.target.value)}
-          className="mt-3 w-full rounded-lg border border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+          className="mt-3 w-full"
         />
       </div>
 

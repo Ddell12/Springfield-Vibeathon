@@ -11,7 +11,9 @@ import { DeleteConfirmationDialog } from "@/shared/components/delete-confirmatio
 import { FullscreenAppView } from "@/shared/components/fullscreen-app-view";
 import { MaterialIcon } from "@/shared/components/material-icon";
 import { ProjectCard } from "@/shared/components/project-card";
+import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
+import { ToggleGroup, ToggleGroupItem } from "@/shared/components/ui/toggle-group";
 
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
@@ -160,15 +162,17 @@ export function MyToolsPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => {
               setSelectionMode(!selectionMode);
               setSelectedIds(new Set());
             }}
-            className="px-4 py-2 text-sm font-medium rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors"
+            className="text-on-surface-variant hover:text-on-surface"
           >
             {selectionMode ? "Cancel" : "Select"}
-          </button>
+          </Button>
           <Link
             href="/builder"
             className="bg-primary-gradient text-white px-8 py-4 rounded-lg font-semibold flex items-center gap-2 shadow-lg shadow-primary/10 hover:shadow-primary/20 transition-all active:scale-95"
@@ -196,22 +200,28 @@ export function MyToolsPage() {
             aria-label="Search apps"
           />
         </div>
-        <div className="flex gap-1 rounded-xl bg-surface-container-low p-1">
+        <ToggleGroup
+          type="single"
+          value={sortBy}
+          onValueChange={(value) => {
+            if (value) setSortBy(value as SortOption);
+          }}
+          className="rounded-xl bg-surface-container-low p-1"
+        >
           {SORT_OPTIONS.map((option) => (
-            <button
+            <ToggleGroupItem
               key={option.value}
-              onClick={() => setSortBy(option.value)}
+              value={option.value}
               className={cn(
                 "px-4 py-2 text-sm font-medium rounded-lg transition-all duration-300",
-                sortBy === option.value
-                  ? "bg-primary text-on-primary shadow-sm"
-                  : "text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high",
+                "text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high",
+                "data-[state=on]:bg-primary data-[state=on]:text-on-primary data-[state=on]:shadow-sm",
               )}
             >
               {option.label}
-            </button>
+            </ToggleGroupItem>
           ))}
-        </div>
+        </ToggleGroup>
       </div>
 
       {/* Results */}
@@ -309,15 +319,17 @@ export function MyToolsPage() {
                     </div>
                   )}
                   {!renamingId && !selectionMode && session.state !== "generating" && (
-                    <button
+                    <Button
+                      variant="gradient"
+                      size="sm"
                       onClick={() => setFullscreenSessionId(session._id)}
-                      className="absolute bottom-4 right-4 flex items-center gap-1.5 rounded-full bg-primary-gradient px-4 py-2 text-xs font-semibold text-white shadow-lg transition-all hover:shadow-xl active:scale-95"
+                      className="absolute bottom-4 right-4 rounded-full px-4 text-xs font-semibold shadow-lg hover:shadow-xl active:scale-95"
                       aria-label="Play app fullscreen"
                       title="Play fullscreen"
                     >
                       <MaterialIcon icon="play_arrow" size="sm" />
                       Play
-                    </button>
+                    </Button>
                   )}
                 </>
               )}
@@ -399,21 +411,23 @@ export function MyToolsPage() {
             {selectedIds.size} selected
           </span>
           <div className="flex items-center gap-3">
-            <button
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => {
                 setSelectionMode(false);
                 setSelectedIds(new Set());
               }}
-              className="px-4 py-2 text-sm font-medium rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors"
             >
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
               onClick={() => setBulkDeleteOpen(true)}
-              className="px-4 py-2 text-sm font-medium rounded-lg bg-error text-on-error hover:bg-error/90 transition-colors"
             >
               Delete ({selectedIds.size})
-            </button>
+            </Button>
           </div>
         </div>
       )}

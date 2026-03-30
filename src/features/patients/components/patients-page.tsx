@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { cn } from "@/core/utils";
+
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
+import { ToggleGroup, ToggleGroupItem } from "@/shared/components/ui/toggle-group";
 import { MaterialIcon } from "@/shared/components/material-icon";
 import { usePatients, usePatientStats } from "../hooks/use-patients";
 import { PatientRow } from "./patient-row";
@@ -57,22 +58,22 @@ export function PatientsPage() {
 
       {/* Filter pills + search */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex gap-2 overflow-x-auto">
+        <ToggleGroup
+          type="single"
+          value={statusFilter ?? ""}
+          onValueChange={(v) => setStatusFilter(v || undefined)}
+          className="flex gap-2 overflow-x-auto"
+        >
           {FILTERS.map((f) => (
-            <button
+            <ToggleGroupItem
               key={f.label}
-              onClick={() => setStatusFilter(f.value)}
-              className={cn(
-                "shrink-0 rounded-full px-3 py-1.5 text-sm font-medium transition-colors duration-300",
-                statusFilter === f.value
-                  ? "bg-primary text-white"
-                  : "bg-surface-container text-on-surface-variant hover:bg-surface-container-high"
-              )}
+              value={f.value ?? ""}
+              className="shrink-0 rounded-full px-3 py-1.5 text-sm font-medium transition-colors duration-300 bg-surface-container text-on-surface-variant hover:bg-surface-container-high data-[state=on]:bg-primary data-[state=on]:text-white"
             >
               {f.label}
-            </button>
+            </ToggleGroupItem>
           ))}
-        </div>
+        </ToggleGroup>
         <Input
           placeholder="Search patients..."
           value={search}

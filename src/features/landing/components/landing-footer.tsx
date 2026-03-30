@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { APP_BRAND } from "@/core/config";
 
 export function LandingFooter() {
@@ -13,15 +14,15 @@ export function LandingFooter() {
           </span>
         </div>
         <div className="flex gap-4">
-          <a href="#" className="text-sm text-on-surface-variant hover:text-on-surface transition-colors min-h-[44px] inline-flex items-center px-2">
+          <Link href="#" className="text-sm text-on-surface-variant hover:text-on-surface transition-colors min-h-[44px] inline-flex items-center px-2">
             Privacy Policy
-          </a>
-          <a href="#" className="text-sm text-on-surface-variant hover:text-on-surface transition-colors min-h-[44px] inline-flex items-center px-2">
+          </Link>
+          <Link href="#" className="text-sm text-on-surface-variant hover:text-on-surface transition-colors min-h-[44px] inline-flex items-center px-2">
             Terms of Service
-          </a>
-          <a href="#" className="text-sm text-on-surface-variant hover:text-on-surface transition-colors min-h-[44px] inline-flex items-center px-2">
+          </Link>
+          <Link href="#" className="text-sm text-on-surface-variant hover:text-on-surface transition-colors min-h-[44px] inline-flex items-center px-2">
             Accessibility
-          </a>
+          </Link>
         </div>
       </div>
     </footer>
