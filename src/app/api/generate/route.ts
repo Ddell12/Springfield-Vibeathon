@@ -13,6 +13,7 @@ import {
   createOrReuseSession,
   startGeneration,
   persistUserMessage,
+  persistAssistantMessage,
   completeSession,
   failSession,
 } from "./lib/session-lifecycle";
@@ -92,9 +93,8 @@ export async function POST(request: Request): Promise<Response> {
       try {
         send("session", { sessionId });
 
-        if (!providedSessionId) {
-          await persistUserMessage(convex, sessionId, query);
-        }
+        // Always persist user messages — including follow-ups
+        await persistUserMessage(convex, sessionId, query);
 
         await startGeneration(convex, sessionId);
         send("status", { status: "generating" });
@@ -117,11 +117,10 @@ export async function POST(request: Request): Promise<Response> {
           convex, sessionId, collectedFiles: result.collectedFiles,
         });
 
-        await completeSession(convex, sessionId, {
-          isFlashcardMode,
-          buildSucceeded,
-          hasFiles: fileArray.length > 0,
-        });
+        // Persist Claude's actual response text (not a canned message)
+        await persistAssistantMessage(convex, sessionId, result.streamingText);
+
+        await completeSession(convex, sessionId);
 
         send("activity", {
           type: "complete",
