@@ -5,6 +5,7 @@ export const NAV_ITEMS = [
   { icon: "group",                label: "Patients",   href: ROUTES.PATIENTS },
   { icon: "auto_awesome", label: "Builder", href: ROUTES.BUILDER },
   { icon: "collections_bookmark", label: "Flashcards", href: ROUTES.FLASHCARDS },
+  { icon: "record_voice_over", label: "Speech Coach", href: ROUTES.SPEECH_COACH },
   { icon: "grid_view", label: "Templates", href: ROUTES.TEMPLATES },
   { icon: "folder_open", label: "My Apps", href: ROUTES.MY_TOOLS },
   { icon: "settings", label: "Settings", href: ROUTES.SETTINGS },
