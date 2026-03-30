@@ -102,7 +102,7 @@ export const onAppointmentCancelled = internalAction({
 export const sendReminder = internalAction({
   args: {
     appointmentId: v.id("appointments"),
-    type: v.string(),
+    type: v.union(v.literal("24h"), v.literal("1h")),
   },
   handler: async (ctx, args) => {
     const appointment = await ctx.runQuery(internal.appointments.getInternal, {

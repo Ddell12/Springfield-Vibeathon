@@ -42,7 +42,7 @@ export function Lobby({ onJoin, isConnecting = false }: LobbyProps) {
             camLabel="Camera"
             userLabel="Display name"
             defaults={{ videoEnabled: true, audioEnabled: true }}
-            className="lk-prejoin p-6"
+            className="p-6"
           />
         </div>
 
