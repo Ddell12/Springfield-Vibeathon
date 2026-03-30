@@ -13,9 +13,9 @@ export function WeeklyProgress({ weeklyPracticeDays, weeklyTarget }: WeeklyProgr
   const isGood = weeklyPracticeDays >= 4;
 
   const barColor = isComplete
-    ? "bg-green-500 dark:bg-green-400"
+    ? "bg-success dark:bg-success"
     : isGood
-      ? "bg-amber-500 dark:bg-amber-400"
+      ? "bg-caution dark:bg-caution"
       : "bg-muted-foreground/40";
 
   return (
@@ -23,13 +23,13 @@ export function WeeklyProgress({ weeklyPracticeDays, weeklyTarget }: WeeklyProgr
       <div className="flex items-center justify-between">
         <p className="text-sm font-medium text-foreground">
           Practiced{" "}
-          <span className={cn("font-bold", isComplete && "text-green-600 dark:text-green-400")}>
+          <span className={cn("font-bold", isComplete && "text-success")}>
             {weeklyPracticeDays}/{weeklyTarget}
           </span>{" "}
           days this week
         </p>
         {isComplete && (
-          <span className="text-xs font-medium text-green-600 dark:text-green-400">
+          <span className="text-xs font-medium text-success">
             Full week! 🎉
           </span>
         )}

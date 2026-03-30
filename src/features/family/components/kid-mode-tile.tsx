@@ -13,14 +13,14 @@ interface KidModeTileProps {
 }
 
 const TILE_COLORS = [
-  "bg-blue-100 text-blue-700",
-  "bg-green-100 text-green-700",
-  "bg-purple-100 text-purple-700",
-  "bg-orange-100 text-orange-700",
-  "bg-pink-100 text-pink-700",
-  "bg-teal-100 text-teal-700",
-  "bg-yellow-100 text-yellow-700",
-  "bg-red-100 text-red-700",
+  "bg-domain-blue-container text-on-domain-blue",
+  "bg-domain-emerald-container text-on-domain-emerald",
+  "bg-domain-purple-container text-on-domain-purple",
+  "bg-domain-orange-container text-on-domain-orange",
+  "bg-domain-pink-container text-on-domain-pink",
+  "bg-domain-teal-container text-on-domain-teal",
+  "bg-domain-amber-container text-on-domain-amber",
+  "bg-domain-rose-container text-on-domain-rose",
 ];
 
 function getColorForTitle(title: string): string {

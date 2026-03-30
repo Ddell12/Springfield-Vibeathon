@@ -87,7 +87,7 @@ export function EngagementSummary({ patientId }: EngagementSummaryProps) {
     <div className="flex flex-col gap-2">
       {stale && (
         <div className="rounded-lg bg-amber-50 px-4 py-2.5 dark:bg-amber-950/30">
-          <p className="text-xs font-medium text-amber-700 dark:text-amber-400">
+          <p className="text-xs font-medium text-on-caution-container">
             No practice logged recently
           </p>
         </div>

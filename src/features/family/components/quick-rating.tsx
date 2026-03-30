@@ -33,7 +33,7 @@ export function QuickRating({ onRate, onSkip }: QuickRatingProps) {
                 className={cn(
                   "h-10 w-10 transition-colors",
                   star <= hoveredStar
-                    ? "fill-amber-400 text-amber-400"
+                    ? "fill-caution text-caution"
                     : "fill-muted text-muted"
                 )}
               />
