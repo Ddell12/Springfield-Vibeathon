@@ -22,11 +22,23 @@ export function ContentRenderer({
   // Reset reveal state when content changes
   function getCardFront(): string {
     if (!content || content.contentType !== "flashcard") return "";
+    const cards = content.payload.cards as Array<{ front: string; back: string; imageUrl?: string }> | undefined;
+    if (cards && cards.length > 0) {
+      const index = Number(content.payload.currentIndex ?? 0);
+      return cards[index]?.front ?? "";
+    }
+    // Fallback for legacy payloads that may not have the cards array
     return String(content.payload.cardFront ?? content.payload.deckTitle ?? "");
   }
 
   function getCardBack(): string {
     if (!content || content.contentType !== "flashcard") return "";
+    const cards = content.payload.cards as Array<{ front: string; back: string; imageUrl?: string }> | undefined;
+    if (cards && cards.length > 0) {
+      const index = Number(content.payload.currentIndex ?? 0);
+      return cards[index]?.back ?? "";
+    }
+    // Fallback for legacy payloads
     return String(content.payload.cardBack ?? "");
   }
 
@@ -37,7 +49,8 @@ export function ContentRenderer({
 
   function getCardCount(): number {
     if (!content || content.contentType !== "flashcard") return 0;
-    return Number(content.payload.cardCount ?? 0);
+    const cards = content.payload.cards as unknown[] | undefined;
+    return cards?.length ?? Number(content.payload.cardCount ?? 0);
   }
 
   // Empty state
@@ -89,7 +102,10 @@ export function ContentRenderer({
           )}
         </div>
 
-        {/* SLP controls */}
+        {/* SLP controls — Next/Previous and Reveal are SLP-only per spec.
+            Reveal is SLP-only because toggling it sends an updated content-update
+            message via the data channel to sync the revealed state to the patient's
+            side; the patient's renderer just reflects what the incoming payload says. */}
         {isSLP && (
           <div className="flex items-center gap-2">
             {hasNavigation && (

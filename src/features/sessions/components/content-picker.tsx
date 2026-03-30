@@ -1,8 +1,9 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useQuery } from "convex/react";
 import { api } from "@/../convex/_generated/api";
-import { Button } from "@/shared/components/ui/button";
+import type { Id } from "@/../convex/_generated/dataModel";
 import {
   Sheet,
   SheetContent,
@@ -33,18 +34,42 @@ export function ContentPicker({
   const decks = useQuery(api.flashcard_decks.list);
   const apps = useQuery(api.apps.listMine);
 
-  function handleSelectDeck(deck: NonNullable<typeof decks>[number]) {
+  // pendingDeckId holds the deck the SLP tapped while we wait for cards to load
+  const [pendingDeckId, setPendingDeckId] = useState<Id<"flashcardDecks"> | null>(null);
+  const pendingCards = useQuery(
+    api.flashcard_cards.listByDeck,
+    pendingDeckId !== null ? { deckId: pendingDeckId } : "skip",
+  );
+
+  // Fire the content payload once cards resolve for the pending deck
+  useEffect(() => {
+    if (pendingDeckId === null || pendingCards === undefined) return;
+    const deck = decks?.find((d) => d._id === pendingDeckId);
+    if (!deck) return;
+
     onSelectContent({
       type: "content-update",
       contentType: "flashcard",
       payload: {
         deckId: deck._id,
         deckTitle: deck.title,
-        cardCount: deck.cardCount,
+        // Map cards: label → front; no back field exists in schema
+        cards: pendingCards.map((c) => ({
+          front: c.label,
+          back: "",
+          imageUrl: c.imageUrl,
+        })),
         currentIndex: 0,
+        revealed: false,
       },
     });
+    setPendingDeckId(null);
     onOpenChange(false);
+  }, [pendingDeckId, pendingCards, decks, onSelectContent, onOpenChange]);
+
+  // Called when the SLP taps a deck row — triggers the card fetch
+  function handleSelectDeck(deck: NonNullable<typeof decks>[number]) {
+    setPendingDeckId(deck._id);
   }
 
   function handleSelectApp(app: NonNullable<typeof apps>[number]) {
