@@ -3,6 +3,8 @@
 import { Show, UserButton } from "@clerk/nextjs";
 import Link from "next/link";
 
+import { NotificationBell } from "@/features/sessions/components/notification-bell";
+
 export function MobileTopBar() {
   return (
     <header className="flex items-center justify-between px-4 py-3 md:hidden bg-surface-container">
@@ -13,7 +15,10 @@ export function MobileTopBar() {
         B
       </Link>
       <Show when="signed-in">
-        <UserButton />
+        <div className="flex items-center gap-2">
+          <NotificationBell />
+          <UserButton />
+        </div>
       </Show>
       <Show when="signed-out">
         <Link

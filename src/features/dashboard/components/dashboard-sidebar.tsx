@@ -8,6 +8,7 @@ import { useEffect } from "react";
 import { cn } from "@/core/utils";
 import { MaterialIcon } from "@/shared/components/material-icon";
 import { CAREGIVER_NAV_ITEMS,isNavActive, NAV_ITEMS } from "@/shared/lib/navigation";
+import { NotificationBell } from "@/features/sessions/components/notification-bell";
 
 export function DashboardSidebar() {
   const pathname = usePathname();
@@ -67,6 +68,7 @@ export function DashboardSidebar() {
       {/* Bottom: User menu */}
       <div className="mt-auto flex flex-col items-center gap-6">
         <Show when="signed-in">
+          <NotificationBell />
           <UserButton />
         </Show>
         <Show when="signed-out">
