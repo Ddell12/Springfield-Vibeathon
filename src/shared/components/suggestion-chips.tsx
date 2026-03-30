@@ -14,7 +14,7 @@ export function SuggestionChips({ suggestions, onSelect }: SuggestionChipsProps)
         <button
           key={suggestion}
           onClick={() => onSelect(suggestion)}
-          className="rounded-full bg-surface-container px-3 py-1.5 text-xs text-on-surface-variant transition-colors hover:bg-surface-container-low hover:text-on-surface"
+          className="rounded-full bg-surface-container px-4 py-2 text-sm text-on-surface-variant transition-colors hover:bg-surface-container-low hover:text-on-surface min-h-[2.75rem]"
         >
           {suggestion}
         </button>
