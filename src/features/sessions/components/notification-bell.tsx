@@ -3,6 +3,7 @@
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
 import { useMutation, useQuery } from "convex/react";
+import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { cn } from "@/core/utils";
@@ -49,22 +50,18 @@ export function NotificationBell() {
   const unreadCount = useQuery(api.notifications.unreadCount);
   const markRead = useMutation(api.notifications.markRead);
   const markAllRead = useMutation(api.notifications.markAllRead);
+  const [open, setOpen] = useState(false);
 
   const count = unreadCount ?? 0;
-  const items = notifications ?? [];
 
-  function handleNotificationClick(
-    notificationId: Id<"notifications">,
-    link: string | undefined
-  ) {
-    void markRead({ notificationId });
-    if (link) {
-      router.push(link);
-    }
-  }
+  const handleNotificationClick = useCallback(async (id: Id<"notifications">, link?: string) => {
+    setOpen(false);
+    void markRead({ notificationId: id });
+    if (link) router.push(link);
+  }, [markRead, router]);
 
   return (
-    <Popover>
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <button
           aria-label={count > 0 ? `${count} unread notifications` : "Notifications"}
@@ -82,7 +79,7 @@ export function NotificationBell() {
               aria-hidden="true"
               className={cn(
                 "absolute right-1.5 top-1.5 flex min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold leading-none text-white",
-                count > 9 ? "h-4" : "h-4 w-4"
+                "h-4", count > 9 ? "min-w-[1.25rem]" : "w-4"
               )}
             >
               {count > 99 ? "99+" : count}
@@ -114,7 +111,13 @@ export function NotificationBell() {
 
         {/* List */}
         <div className="max-h-[420px] overflow-y-auto">
-          {items.length === 0 ? (
+          {notifications === undefined ? (
+            <div className="flex flex-col gap-2 p-4">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="h-12 animate-pulse rounded-lg bg-surface-container" />
+              ))}
+            </div>
+          ) : notifications.length === 0 ? (
             <div className="flex flex-col items-center justify-center gap-2 py-10 text-center">
               <MaterialIcon icon="notifications_none" size="lg" className="text-on-surface-variant/40" />
               <p className="font-body text-sm text-on-surface-variant">
@@ -123,13 +126,13 @@ export function NotificationBell() {
             </div>
           ) : (
             <ul role="list">
-              {items.map((notification) => {
+              {notifications.map((notification) => {
                 const icon = TYPE_ICONS[notification.type as NotificationType] ?? "notifications";
                 return (
                   <li key={notification._id}>
                     <button
                       onClick={() =>
-                        handleNotificationClick(notification._id, notification.link)
+                        void handleNotificationClick(notification._id, notification.link)
                       }
                       className={cn(
                         "flex w-full items-start gap-3 px-4 py-3 text-left transition-colors duration-200",
