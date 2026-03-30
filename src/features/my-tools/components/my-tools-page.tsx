@@ -4,6 +4,7 @@ import { useMutation, useQuery } from "convex/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 
 import { cn } from "@/core/utils";
 import { DeleteConfirmationDialog } from "@/shared/components/delete-confirmation-dialog";
@@ -36,6 +37,9 @@ export function MyToolsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("recent");
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
 
   const fullscreenBundle = useQuery(
     api.generated_files.getByPath,
@@ -59,6 +63,14 @@ export function MyToolsPage() {
       renameInputRef.current.select();
     }
   }, [renamingId]);
+
+  // Handle play button feedback — show toast when bundle doesn't exist
+  useEffect(() => {
+    if (fullscreenSessionId && fullscreenBundle === null) {
+      toast.error("No preview available yet. Try opening it in the builder.");
+      setFullscreenSessionId(null);
+    }
+  }, [fullscreenSessionId, fullscreenBundle]);
 
   const filteredSessions = useMemo(() => {
     if (!sessions) return undefined;
@@ -147,13 +159,24 @@ export function MyToolsPage() {
             {sessions!.length} app{sessions!.length !== 1 ? "s" : ""} created
           </p>
         </div>
-        <Link
-          href="/builder"
-          className="bg-primary-gradient text-white px-8 py-4 rounded-lg font-semibold flex items-center gap-2 shadow-lg shadow-primary/10 hover:shadow-primary/20 transition-all active:scale-95"
-        >
-          <MaterialIcon icon="add_circle" />
-          Create New App
-        </Link>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => {
+              setSelectionMode(!selectionMode);
+              setSelectedIds(new Set());
+            }}
+            className="px-4 py-2 text-sm font-medium rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors"
+          >
+            {selectionMode ? "Cancel" : "Select"}
+          </button>
+          <Link
+            href="/builder"
+            className="bg-primary-gradient text-white px-8 py-4 rounded-lg font-semibold flex items-center gap-2 shadow-lg shadow-primary/10 hover:shadow-primary/20 transition-all active:scale-95"
+          >
+            <MaterialIcon icon="add_circle" />
+            Create New App
+          </Link>
+        </div>
       </div>
 
       {/* Search + Sort Bar */}
@@ -202,7 +225,20 @@ export function MyToolsPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {filteredSessions.map((session, i) => (
-            <div key={session._id} className="relative">
+            <div
+              key={session._id}
+              className="relative"
+              onClick={selectionMode ? (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setSelectedIds((prev) => {
+                  const next = new Set(prev);
+                  if (next.has(session._id)) next.delete(session._id);
+                  else next.add(session._id);
+                  return next;
+                });
+              } : undefined}
+            >
               {renamingId === session._id ? (
                 <div className="rounded-2xl bg-surface-container-lowest p-5 shadow-[0_12px_32px_rgba(25,28,32,0.06)]">
                   <div className="h-48 w-full rounded-xl bg-surface-container-low mb-5" />
@@ -222,6 +258,30 @@ export function MyToolsPage() {
                 </div>
               ) : (
                 <>
+                  {selectionMode && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedIds((prev) => {
+                          const next = new Set(prev);
+                          if (next.has(session._id)) next.delete(session._id);
+                          else next.add(session._id);
+                          return next;
+                        });
+                      }}
+                      className={cn(
+                        "absolute left-3 top-3 z-20 flex h-6 w-6 items-center justify-center rounded-md border-2 shadow-sm transition-all",
+                        selectedIds.has(session._id)
+                          ? "border-primary bg-primary"
+                          : "border-primary bg-white"
+                      )}
+                      aria-label={selectedIds.has(session._id) ? "Deselect app" : "Select app"}
+                    >
+                      {selectedIds.has(session._id) && (
+                        <MaterialIcon icon="check" size="xs" className="text-white" />
+                      )}
+                    </button>
+                  )}
                   <ProjectCard
                     project={{
                       id: session._id,
@@ -248,7 +308,7 @@ export function MyToolsPage() {
                       Building...
                     </div>
                   )}
-                  {!renamingId && session.state !== "generating" && (
+                  {!renamingId && !selectionMode && session.state !== "generating" && (
                     <button
                       onClick={() => setFullscreenSessionId(session._id)}
                       className="absolute bottom-4 right-4 flex items-center gap-1.5 rounded-full bg-primary-gradient px-4 py-2 text-xs font-semibold text-white shadow-lg transition-all hover:shadow-xl active:scale-95"
@@ -316,6 +376,47 @@ export function MyToolsPage() {
           }
         }}
       />
+
+      <DeleteConfirmationDialog
+        open={bulkDeleteOpen}
+        onOpenChange={(open) => { if (!open) setBulkDeleteOpen(false); }}
+        projectName={`${selectedIds.size} app${selectedIds.size !== 1 ? "s" : ""}`}
+        onConfirmDelete={() => {
+          const count = selectedIds.size;
+          selectedIds.forEach((id) => {
+            archiveSession({ sessionId: id as Id<"sessions"> });
+          });
+          setSelectedIds(new Set());
+          setSelectionMode(false);
+          setBulkDeleteOpen(false);
+          toast.success(`Deleted ${count} app${count !== 1 ? "s" : ""}`);
+        }}
+      />
+
+      {selectionMode && selectedIds.size > 0 && (
+        <div className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-between bg-surface-container-lowest px-6 py-4 shadow-[0_-4px_16px_rgba(0,0,0,0.1)]">
+          <span className="text-sm font-medium text-on-surface">
+            {selectedIds.size} selected
+          </span>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => {
+                setSelectionMode(false);
+                setSelectedIds(new Set());
+              }}
+              className="px-4 py-2 text-sm font-medium rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={() => setBulkDeleteOpen(true)}
+              className="px-4 py-2 text-sm font-medium rounded-lg bg-error text-on-error hover:bg-error/90 transition-colors"
+            >
+              Delete ({selectedIds.size})
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
