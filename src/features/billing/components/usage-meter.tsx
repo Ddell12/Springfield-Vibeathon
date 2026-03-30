@@ -16,7 +16,7 @@ import { api } from "../../../../convex/_generated/api";
 
 function getBarColor(percentage: number): string {
   if (percentage >= 100) return "bg-destructive";
-  if (percentage >= 80) return "bg-yellow-500";
+  if (percentage >= 80) return "bg-caution";
   return "bg-primary";
 }
 

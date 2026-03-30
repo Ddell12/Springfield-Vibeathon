@@ -170,7 +170,7 @@ export function FamilyDashboard({ paramsPromise }: FamilyDashboardProps) {
         <div>
           <p className="text-sm font-medium text-foreground">Therapist messages</p>
           {unreadCount !== undefined && unreadCount > 0 ? (
-            <p className="text-xs text-amber-600 dark:text-amber-400">
+            <p className="text-xs text-caution">
               {unreadCount} unread message{unreadCount !== 1 ? "s" : ""}
             </p>
           ) : (

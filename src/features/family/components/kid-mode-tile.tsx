@@ -56,7 +56,7 @@ export function KidModeTile({ patientId, appId, title, isPractice }: KidModeTile
       </p>
 
       {isPractice && (
-        <div className="absolute right-3 top-3 z-10 rounded-full bg-amber-400 p-1.5 shadow-md">
+        <div className="absolute right-3 top-3 z-10 rounded-full bg-caution p-1.5 shadow-md">
           <Star className="h-4 w-4 fill-white text-white" />
         </div>
       )}

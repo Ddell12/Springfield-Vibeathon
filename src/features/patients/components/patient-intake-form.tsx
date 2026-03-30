@@ -123,8 +123,8 @@ export function PatientIntakeForm() {
 
     return (
       <div className="mx-auto flex max-w-lg flex-col items-center gap-6 px-4 py-16">
-        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/30">
-          <MaterialIcon icon="check_circle" size="lg" className="text-emerald-600" />
+        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-success-container">
+          <MaterialIcon icon="check_circle" size="lg" className="text-success" />
         </div>
         <h1 className="text-2xl font-semibold text-foreground">
           {firstName} has been added

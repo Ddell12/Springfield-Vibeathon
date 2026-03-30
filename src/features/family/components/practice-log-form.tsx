@@ -106,8 +106,8 @@ export function PracticeLogForm({
                   className={cn(
                     "text-2xl transition-colors duration-200",
                     star <= confidence
-                      ? "text-amber-400"
-                      : "text-muted-foreground/30 hover:text-amber-300"
+                      ? "text-caution"
+                      : "text-muted-foreground/30 hover:text-caution"
                   )}
                 >
                   ★
