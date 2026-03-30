@@ -3,7 +3,7 @@ import Link from "next/link";
 export function ExploreCtaSection() {
   return (
     <section className="text-center py-20 px-6">
-      <h2 className="font-headline font-extrabold text-3xl md:text-4xl text-on-surface mb-4">
+      <h2 className="font-headline font-normal text-3xl md:text-[2rem] text-on-surface mb-4">
         These are just examples
       </h2>
       <p className="text-on-surface-variant text-lg max-w-xl mx-auto mb-8">
