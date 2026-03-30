@@ -160,7 +160,7 @@ export const listFeatured = query({
     const apps = await ctx.db
       .query("apps")
       .withIndex("by_featured_order", (q) => q.eq("featured", true))
-      .collect();
+      .take(100);
     return apps.map((app) => ({
       title: app.title,
       description: app.description,
@@ -179,7 +179,7 @@ export const listMine = query({
     return await ctx.db
       .query("apps")
       .withIndex("by_user", (q) => q.eq("userId", userId))
-      .collect();
+      .take(200);
   },
 });
 

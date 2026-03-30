@@ -32,7 +32,7 @@ export async function GET(
       headers: {
         "Content-Type": "text/html; charset=utf-8",
         "Cache-Control": "public, max-age=60, s-maxage=300",
-        "Content-Security-Policy": "default-src 'none'; script-src 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src blob: data: https:; connect-src blob: data:; frame-ancestors 'self';",
+        "Content-Security-Policy": "default-src 'none'; script-src 'unsafe-inline' https://cdn.tailwindcss.com; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src blob: data: https:; connect-src 'none'; frame-ancestors 'self';",
       },
     });
   } catch (error) {

@@ -125,7 +125,7 @@ export const getSessionHistory = query({
     const sessions = await ctx.db
       .query("speechCoachSessions")
       .withIndex("by_patientId_startedAt", (q) => q.eq("patientId", args.patientId))
-      .collect();
+      .take(50);
 
     return sessions.reverse();
   },
@@ -139,7 +139,7 @@ export const getProgress = query({
     return await ctx.db
       .query("speechCoachProgress")
       .withIndex("by_patientId", (q) => q.eq("patientId", args.patientId))
-      .collect();
+      .take(200);
   },
 });
 

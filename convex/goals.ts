@@ -261,6 +261,8 @@ export const remove = mutation({
     if (!goal) throw new ConvexError("Goal not found");
     if (goal.slpUserId !== slpUserId) throw new ConvexError("Not authorized");
 
+    // Soft-delete: goal document remains so progressData (by_goalId index) is not orphaned.
+    // If hard-delete is ever added, cascade-delete progressData records first.
     await ctx.db.patch(args.goalId, { status: "discontinued" });
 
     await ctx.db.insert("activityLog", {

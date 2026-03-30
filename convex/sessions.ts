@@ -1,6 +1,6 @@
 import { ConvexError, v } from "convex/values";
 
-import { mutation, query } from "./_generated/server";
+import { internalMutation, mutation, query } from "./_generated/server";
 import { assertSessionOwner, getAuthUserId } from "./lib/auth";
 import {
   SESSION_STATES,
@@ -217,6 +217,12 @@ export const setBlueprint = mutation({
     if (args.blueprint !== null && typeof args.blueprint !== "object") {
       throw new ConvexError("Blueprint must be an object");
     }
+    if (args.blueprint !== null) {
+      const serialized = JSON.stringify(args.blueprint);
+      if (serialized.length > 50_000) {
+        throw new ConvexError("Blueprint is too large (max 50KB)");
+      }
+    }
     await ctx.db.patch(args.sessionId, { blueprint: args.blueprint });
   },
 });
@@ -242,5 +248,50 @@ export const duplicateSession = mutation({
       blueprint: session.blueprint,
     });
     return newSessionId;
+  },
+});
+
+export const recoverStuckSessions = mutation({
+  args: { maxAgeMs: v.optional(v.number()) },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new ConvexError("Not authenticated");
+    const maxAge = args.maxAgeMs ?? 5 * 60 * 1000; // default 5 minutes
+    const cutoff = Date.now() - maxAge;
+
+    const stuck = await ctx.db
+      .query("sessions")
+      .withIndex("by_state_user", (q) =>
+        q.eq("state", "generating").eq("userId", userId)
+      )
+      .take(20);
+
+    let recovered = 0;
+    for (const session of stuck) {
+      if (session._creationTime < cutoff) {
+        await ctx.db.patch(session._id, {
+          state: "failed",
+          error: "Generation timed out — please try again",
+        });
+        recovered++;
+      }
+    }
+    return recovered;
+  },
+});
+
+/** Internal-only: fail a specific stuck session by ID. For CLI/admin use. */
+export const failStuckSession = internalMutation({
+  args: { sessionId: v.id("sessions"), error: v.optional(v.string()) },
+  handler: async (ctx, args) => {
+    const session = await ctx.db.get(args.sessionId);
+    if (!session) throw new ConvexError("Session not found");
+    if (session.state !== "generating") {
+      throw new ConvexError(`Session is "${session.state}", not "generating"`);
+    }
+    await ctx.db.patch(args.sessionId, {
+      state: "failed",
+      error: args.error ?? "Generation timed out — please try again",
+    });
   },
 });

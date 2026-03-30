@@ -18,7 +18,7 @@ export const assign = mutation({
     const existing = await ctx.db
       .query("childApps")
       .withIndex("by_patientId", (q) => q.eq("patientId", args.patientId))
-      .collect();
+      .take(200);
     if (existing.some((e) => e.appId === args.appId)) {
       throw new Error("App already assigned to this child");
     }
@@ -51,7 +51,7 @@ export const listByPatient = query({
     const assignments = await ctx.db
       .query("childApps")
       .withIndex("by_patientId", (q) => q.eq("patientId", args.patientId))
-      .collect();
+      .take(100);
 
     const enriched = await Promise.all(
       assignments.map(async (a) => {
@@ -75,11 +75,12 @@ export const getBundleForApp = query({
   handler: async (ctx, args) => {
     await assertPatientAccess(ctx, args.patientId);
 
-    const assignments = await ctx.db
+    const assignment = await ctx.db
       .query("childApps")
       .withIndex("by_patientId", (q) => q.eq("patientId", args.patientId))
-      .collect();
-    if (!assignments.some((a) => a.appId === args.appId)) return null;
+      .filter((q) => q.eq(q.field("appId"), args.appId))
+      .first();
+    if (!assignment) return null;
 
     const app = await ctx.db.get(args.appId);
     if (!app?.sessionId) return null;
@@ -94,8 +95,18 @@ export const getBundleForApp = query({
   },
 });
 
-/** SHA-256 hash for PIN. Threat model: child-proofing, not security. */
-async function hashPIN(pin: string): Promise<string> {
+/** SHA-256 hash for PIN with per-link salt. Threat model: child-proofing, not security. */
+async function hashPIN(pin: string, salt: string): Promise<string> {
+  const salted = `bridges-kid-mode:${salt}:${pin}`;
+  const encoded = new TextEncoder().encode(salted);
+  const digest = await crypto.subtle.digest("SHA-256", encoded);
+  return Array.from(new Uint8Array(digest))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+/** Legacy hash format (static salt) for migration fallback. */
+async function hashPINLegacy(pin: string): Promise<string> {
   const salted = `bridges-kid-mode:${pin}`;
   const encoded = new TextEncoder().encode(salted);
   const digest = await crypto.subtle.digest("SHA-256", encoded);
@@ -115,8 +126,6 @@ export const setPIN = mutation({
       throw new Error("PIN must be exactly 4 digits");
     }
 
-    const hashed = await hashPIN(args.pin);
-
     const userId = (await ctx.auth.getUserIdentity())!.subject;
     const link = await ctx.db
       .query("caregiverLinks")
@@ -125,6 +134,8 @@ export const setPIN = mutation({
       )
       .first();
     if (!link) throw new Error("Caregiver link not found");
+
+    const hashed = await hashPIN(args.pin, link._id);
 
     await ctx.db.patch(link._id, { kidModePIN: hashed });
   },
@@ -148,8 +159,11 @@ export const verifyPIN = mutation({
       .first();
     if (!link?.kidModePIN) return false;
 
-    const hashed = await hashPIN(args.pin);
-    return hashed === link.kidModePIN;
+    const newHash = await hashPIN(args.pin, link._id);
+    if (newHash === link.kidModePIN) return true;
+    // Migration fallback: try old hash format
+    const oldHash = await hashPINLegacy(args.pin);
+    return oldHash === link.kidModePIN;
   },
 });
 

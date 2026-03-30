@@ -144,6 +144,7 @@ export async function POST(request: Request): Promise<Response> {
 
         if (isClientDisconnect) {
           console.log(`[generate] Client disconnected: ${errSummary.slice(0, 200)}`);
+          await failSession(convex, sessionId, new Error("Client disconnected during generation"));
         } else {
           console.error("[generate] Error:", error instanceof Error ? error.stack : error);
           await failSession(convex, sessionId, error);

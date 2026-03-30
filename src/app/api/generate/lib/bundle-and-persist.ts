@@ -61,15 +61,11 @@ export async function bundleFiles(opts: BundleOpts): Promise<{
       send("activity", { type: "thinking", message: "Almost ready..." });
       send("bundle", { html: bundleHtml });
 
-      try {
-        await convex.mutation(api.generated_files.upsertAutoVersion, {
-          sessionId,
-          path: "_bundle.html",
-          contents: bundleHtml,
-        });
-      } catch (err) {
-        console.error("[generate] Failed to persist bundle:", err);
-      }
+      await convex.mutation(api.generated_files.upsertAutoVersion, {
+        sessionId,
+        path: "_bundle.html",
+        contents: bundleHtml,
+      });
 
       return { html: bundleHtml, succeeded: true };
     }

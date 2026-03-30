@@ -15,6 +15,7 @@ import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
 import { Textarea } from "@/shared/components/ui/textarea";
+import { Loader2 } from "lucide-react";
 import type { Id } from "../../../../convex/_generated/dataModel";
 
 interface HomeProgramFormProps {
@@ -190,6 +191,7 @@ export function HomeProgramForm({ open, onOpenChange, patientId }: HomeProgramFo
               Cancel
             </Button>
             <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {isSubmitting ? "Assigning..." : "Assign Program"}
             </Button>
           </div>

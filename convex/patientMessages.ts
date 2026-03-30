@@ -91,7 +91,7 @@ export const getUnreadCount = query({
           q.eq(q.field("readAt"), undefined)
         )
       )
-      .collect();
+      .take(1000);
     return unread.length;
   },
 });

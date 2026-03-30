@@ -320,7 +320,7 @@ export const getStats = query({
           .withIndex("by_slpUserId_status", (q) =>
             q.eq("slpUserId", userId).eq("status", status)
           )
-          .collect();
+          .take(500);
         return results.length;
       })
     );

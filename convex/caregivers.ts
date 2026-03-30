@@ -81,13 +81,17 @@ export const acceptInvite = mutation({
 
     // Prevent SLPs from accepting caregiver invites
     const role = await getAuthRole(ctx);
-    if (role === "slp" || role === null) {
+    if (role === "slp") {
+      throw new ConvexError("Therapists cannot accept caregiver invites. Please use a separate account.");
+    }
+    // Secondary guard: users with no explicit role who own patients are likely SLPs
+    if (role === null) {
       const ownsPatients = await ctx.db
         .query("patients")
         .withIndex("by_slpUserId", (q) => q.eq("slpUserId", userId))
         .first();
       if (ownsPatients) {
-        throw new ConvexError("Therapists cannot accept caregiver invites. Please use a separate account.");
+        throw new ConvexError("You have a therapist account. Please use a separate account for caregiver access.");
       }
     }
 
