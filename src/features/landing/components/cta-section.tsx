@@ -13,7 +13,7 @@ export function CtaSection() {
           <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center">
             <MaterialIcon icon="auto_awesome" className="text-white text-3xl" />
           </div>
-          <h2 className="font-headline text-3xl md:text-4xl font-normal text-white leading-tight">
+          <h2 className="font-headline text-3xl md:text-[2rem] font-normal text-white leading-tight">
             Start building therapy apps today — for free.
           </h2>
           <p className="text-white/80 text-lg max-w-lg leading-relaxed">

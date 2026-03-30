@@ -35,7 +35,7 @@ export function HowItWorks() {
     <section className="bg-surface-container-low py-20 md:py-28 px-6">
       <div className="max-w-7xl mx-auto">
         <div className="mb-16 text-center md:text-left">
-          <h2 className="font-headline text-3xl md:text-4xl font-normal text-on-surface mb-4">
+          <h2 className="font-headline text-3xl md:text-[2rem] font-normal text-on-surface mb-4">
             How it Works
           </h2>
           <div className="h-1.5 w-24 bg-primary rounded-full mb-6 mx-auto md:mx-0" />
