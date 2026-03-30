@@ -41,7 +41,7 @@ export function DashboardSidebar() {
       </div>
 
       {/* Main Nav */}
-      <nav className="flex flex-col items-center gap-4 overflow-y-auto overflow-x-hidden" style={{ maxHeight: "calc(100vh - 13rem)" }}>
+      <nav className="sidebar-nav-scroll flex flex-col items-center gap-4">
         {navItems.map((item) => {
           const isActive = isNavActive(item.href, pathname, tab);
 

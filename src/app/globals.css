@@ -323,8 +323,10 @@ body {
   }
 }
 
-/* Sidebar nav scroll fix: constrain nav height so bell/avatar always visible */
-aside.fixed nav {
-  max-height: calc(100vh - 13rem);
-  overflow-y: auto;
+@layer utilities {
+  .sidebar-nav-scroll {
+    max-height: calc(100vh - 13rem);
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
 }
