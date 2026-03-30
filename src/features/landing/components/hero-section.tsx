@@ -56,18 +56,18 @@ export function HeroSection() {
             <div className="absolute inset-0 bg-gradient-to-br from-primary-fixed/20 to-secondary-fixed/10" />
             <div className="relative z-10 flex flex-col items-center justify-center h-full gap-4">
               <div className="flex gap-3">
-                <div className="w-16 h-16 bg-primary-fixed rounded-xl flex items-center justify-center text-3xl">
-                  📅
+                <div className="w-14 h-14 bg-primary-fixed rounded-xl flex items-center justify-center">
+                  <MaterialIcon icon="calendar_today" className="text-primary" />
                 </div>
-                <div className="w-16 h-16 bg-secondary-fixed rounded-xl flex items-center justify-center text-3xl">
-                  💬
+                <div className="w-14 h-14 bg-surface-container rounded-xl flex items-center justify-center">
+                  <MaterialIcon icon="grid_view" className="text-on-surface-variant" />
                 </div>
-                <div className="w-16 h-16 bg-tertiary-fixed rounded-xl flex items-center justify-center text-3xl">
-                  ⭐
+                <div className="w-14 h-14 bg-tertiary-fixed rounded-xl flex items-center justify-center">
+                  <MaterialIcon icon="star" className="text-tertiary" />
                 </div>
               </div>
-              <p className="font-headline font-medium text-on-surface-variant text-sm">
-                Schedules, Boards & Rewards
+              <p className="font-body font-medium text-on-surface-variant text-sm">
+                Schedules, Boards &amp; Rewards
               </p>
             </div>
 
