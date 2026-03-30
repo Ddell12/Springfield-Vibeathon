@@ -8,6 +8,16 @@ export const ROUTES = {
   FLASHCARDS: "/flashcards",
   SETTINGS: "/settings",
   TOOL_VIEW: (toolId: string) => `/tool/${toolId}` as const,
+  PATIENTS: "/patients",
+  PATIENT_DETAIL: (id: string) => `/patients/${id}` as const,
+  PATIENT_NEW: "/patients/new",
+  INVITE: (token: string) => `/invite/${token}` as const,
   SIGN_IN: "/sign-in",
   SIGN_UP: "/sign-up",
+  FAMILY: "/family",
+  SPEECH_COACH: "/family", // Nav entry point — patient selection happens at /family, then redirects to /family/[patientId]/speech-coach
+  FAMILY_CHILD: (patientId: string) => `/family/${patientId}` as const,
+  FAMILY_MESSAGES: (patientId: string) => `/family/${patientId}/messages` as const,
+  FAMILY_PLAY: (patientId: string) => `/family/${patientId}/play` as const,
+  FAMILY_PLAY_APP: (patientId: string, appId: string) => `/family/${patientId}/play/${appId}` as const,
 } as const;

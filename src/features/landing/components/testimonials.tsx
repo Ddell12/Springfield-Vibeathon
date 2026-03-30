@@ -29,7 +29,7 @@ export function Testimonials() {
   return (
     <section className="py-20 md:py-28 px-6 max-w-7xl mx-auto">
       <div className="mb-16 text-center md:text-left">
-        <h2 className="font-headline text-3xl md:text-4xl font-extrabold text-on-surface mb-4">
+        <h2 className="font-headline text-3xl md:text-[2rem] font-normal text-on-surface mb-4">
           Families &amp; Therapists Love Bridges
         </h2>
         <div className="h-1.5 w-24 bg-primary rounded-full mx-auto md:mx-0" />
@@ -39,7 +39,7 @@ export function Testimonials() {
         {testimonials.map((t) => (
           <div
             key={t.name}
-            className="bg-surface-container-lowest rounded-xl p-8 sanctuary-shadow flex flex-col gap-6"
+            className="bg-surface-container-lowest rounded-xl p-8 sanctuary-shadow flex flex-col gap-6 hover:-translate-y-1 hover:shadow-md transition-all duration-300"
           >
             <p className="text-on-surface-variant leading-relaxed text-sm italic flex-1">
               &ldquo;{t.quote}&rdquo;

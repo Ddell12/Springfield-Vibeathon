@@ -28,11 +28,10 @@ export function BlueprintCard({ blueprint }: BlueprintCardProps) {
         className={cn(
           "bg-surface-container-lowest rounded-xl overflow-hidden",
           "shadow-[0_20px_40px_rgba(19,29,30,0.06)]",
-          "outline outline-1 outline-outline-variant/15"
-        )}
+                  )}
       >
         {/* Card Header */}
-        <div className="bg-surface-container-low/50 px-5 py-3 flex items-center gap-2 border-b border-outline-variant/10">
+        <div className="bg-surface-container-low px-5 py-3 flex items-center gap-2">
           <MaterialIcon icon="auto_awesome" size="sm" className="text-primary" filled />
           <h3 className="font-headline font-semibold text-[13px] tracking-wide text-primary uppercase">
             App Blueprint
@@ -41,7 +40,7 @@ export function BlueprintCard({ blueprint }: BlueprintCardProps) {
 
         {/* Content */}
         <div className="p-6 space-y-5">
-          <h2 className="font-headline font-bold text-xl text-primary leading-tight">
+          <h2 className="font-headline font-normal text-xl text-primary leading-tight">
             {title}
           </h2>
 
@@ -55,7 +54,7 @@ export function BlueprintCard({ blueprint }: BlueprintCardProps) {
             </div>
 
             {description && (
-              <div className="pt-2 border-t border-outline-variant/10">
+              <div className="pt-2 bg-surface-container-low/50 rounded-lg px-2 py-1">
                 <p className="text-[13px] text-on-surface-variant leading-relaxed">
                   {description}
                 </p>

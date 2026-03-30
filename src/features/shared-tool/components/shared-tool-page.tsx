@@ -28,7 +28,7 @@ export function SharedToolPage() {
     return (
       <div className="bg-surface font-body text-on-surface min-h-screen flex flex-col items-center justify-center gap-6 text-center px-4">
         <MaterialIcon icon="search_off" className="text-6xl text-primary/40" />
-        <h1 className="font-headline font-bold text-3xl text-on-surface">
+        <h1 className="font-headline font-normal text-3xl text-on-surface">
           This tool doesn&apos;t exist
         </h1>
         <p className="text-on-surface-variant text-lg">
@@ -50,7 +50,7 @@ export function SharedToolPage() {
     <div className="bg-surface font-body text-on-surface min-h-screen flex flex-col">
       <header className="flex justify-center items-center w-full px-6 py-4 bg-surface">
         <div className="max-w-7xl w-full flex justify-between items-center">
-          <Link href="/" className="text-primary-container font-extrabold tracking-tight font-headline text-lg">
+          <Link href="/" className="text-primary-container font-medium tracking-tight text-lg">
             Bridges
           </Link>
           <span className="hidden md:block text-on-surface-variant font-label text-sm">

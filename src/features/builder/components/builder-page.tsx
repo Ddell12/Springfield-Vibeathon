@@ -6,7 +6,8 @@ import { startTransition, useCallback, useEffect, useRef, useState } from "react
 import { toast } from "sonner";
 
 import { useIsMobile } from "@/core/hooks/use-mobile";
-import { ShareDialog } from "@/features/sharing/components/share-dialog";
+import { FullscreenAppView } from "@/shared/components/fullscreen-app-view";
+import { ShareDialog } from "@/shared/components/share-dialog";
 import { MaterialIcon } from "@/shared/components/material-icon";
 import { SuggestionChips } from "@/shared/components/suggestion-chips";
 import { Button } from "@/shared/components/ui/button";
@@ -27,6 +28,7 @@ import type { TherapyBlueprint } from "../lib/schemas";
 import { BuilderToolbar, type DeviceSize, type ViewMode } from "./builder-toolbar";
 import { ChatPanel } from "./chat-panel";
 import { CodePanel } from "./code-panel";
+import { PatientContextCard } from "./patient-context-card";
 import { ContinueCard } from "./continue-card";
 import { InterviewController } from "./interview/interview-controller";
 import { PreviewPanel } from "./preview-panel";
@@ -38,21 +40,42 @@ interface BuilderPageProps {
 export function BuilderPage({ initialSessionId }: BuilderPageProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const rawPatientId = searchParams.get("patientId");
+  // Validate patientId format to prevent Convex query crashes on invalid IDs
+  const patientId = (rawPatientId && /^[a-z0-9]{32}$/.test(rawPatientId)
+    ? rawPatientId
+    : null) as Id<"patients"> | null;
 
   const isMobile = useIsMobile();
-  const [viewMode, setViewMode] = useState<ViewMode>("preview");
-  const [deviceSize, setDeviceSize] = useState<DeviceSize>("desktop");
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
+    if (typeof window === "undefined") return "preview";
+    return (localStorage.getItem("bridges-viewMode") as ViewMode) || "preview";
+  });
+  const [deviceSize, setDeviceSize] = useState<DeviceSize>(() => {
+    if (typeof window === "undefined") return "desktop";
+    return (localStorage.getItem("bridges-deviceSize") as DeviceSize) || "desktop";
+  });
   const [mobilePanel, setMobilePanel] = useState<"chat" | "preview">("chat");
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const [continueDismissed, setContinueDismissed] = useState(false);
   const updateTitle = useMutation(api.sessions.updateTitle);
   const ensureApp = useMutation(api.apps.ensureForSession);
+  const assignMaterial = useMutation(api.patientMaterials.assign);
+  const patientData = useQuery(
+    api.patients.getForContext,
+    patientId ? { patientId } : "skip",
+  );
   const [isEditingName, setIsEditingName] = useState(false);
   const [promptInput, setPromptInput] = useState("");
   const [pendingPrompt, setPendingPrompt] = useState<string | null>(null);
   const lastPromptRef = useRef("");
   const promptInputRef = useRef<HTMLInputElement>(null);
   const [showFreeformInput, setShowFreeformInput] = useState(false);
+  const [generationStartTime, setGenerationStartTime] = useState<number>(Date.now());
+
+  useEffect(() => { localStorage.setItem("bridges-viewMode", viewMode); }, [viewMode]);
+  useEffect(() => { localStorage.setItem("bridges-deviceSize", deviceSize); }, [deviceSize]);
 
   const {
     status,
@@ -87,12 +110,16 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
   useEffect(() => {
     if (recoveredBundle?.contents && !bundleHtml && !bundleRecoveredRef.current) {
       bundleRecoveredRef.current = true;
-      resumeSession({
-        sessionId: activeSessionId_forQuery!,
-        files: files,
-        blueprint: blueprint ?? null,
-        bundleHtml: recoveredBundle.contents,
-      });
+      try {
+        resumeSession({
+          sessionId: activeSessionId_forQuery!,
+          files: files,
+          blueprint: blueprint ?? null,
+          bundleHtml: recoveredBundle.contents,
+        });
+      } catch {
+        bundleRecoveredRef.current = false;
+      }
     }
   }, [recoveredBundle, bundleHtml, activeSessionId_forQuery, files, blueprint, resumeSession]);
 
@@ -118,14 +145,15 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
   const handleGenerate = useCallback((prompt: string, blueprint?: TherapyBlueprint) => {
     lastPromptRef.current = prompt;
     setPendingPrompt(prompt);
-    generate(prompt, blueprint);
-  }, [generate]);
+    setGenerationStartTime(Date.now());
+    generate(prompt, blueprint ?? undefined, patientId ?? undefined);
+  }, [generate, patientId]);
 
   const handleRetry = useCallback(() => {
     if (lastPromptRef.current) {
-      generate(lastPromptRef.current);
+      generate(lastPromptRef.current, undefined, patientId ?? undefined);
     }
-  }, [generate]);
+  }, [generate, patientId]);
 
   // Session resume & URL sync
   const {
@@ -156,6 +184,34 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
     return () => window.removeEventListener("beforeunload", handler);
   }, [status]);
 
+  // Toast when navigating away during active generation (in-app navigation)
+  const hasShownNavToastRef = useRef(false);
+  useEffect(() => {
+    if (status === "generating") {
+      hasShownNavToastRef.current = false;
+    }
+    return () => {
+      if (status === "generating" && !hasShownNavToastRef.current) {
+        hasShownNavToastRef.current = true;
+        toast.info("Your app is still building. Check My Apps when it's ready.", {
+          duration: 5000,
+        });
+      }
+    };
+  }, [status]);
+
+  // Keyboard shortcut: Cmd/Ctrl + Shift + S toggles source/preview
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === "S") {
+        e.preventDefault();
+        setViewMode((prev) => (prev === "preview" ? "code" : "preview"));
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
+
   const handleNameEditEnd = async (name: string) => {
     setIsEditingName(false);
     const trimmed = name.trim();
@@ -167,6 +223,31 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
     }
   };
 
+  // Assignment toast: prompt to link the built app to a patient's materials
+  const assignToastShownRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (status !== "live" || !patientId || !sessionId) return;
+    if (assignToastShownRef.current === sessionId) return;
+    assignToastShownRef.current = sessionId;
+
+    const firstName = patientData?.firstName ?? "patient";
+
+    toast(`App ready · Assign to ${firstName}'s materials?`, {
+      duration: 15_000,
+      action: {
+        label: "Assign",
+        onClick: async () => {
+          try {
+            await assignMaterial({ patientId, sessionId: sessionId as Id<"sessions">, fromGeneration: true });
+            toast.success(`Added to ${firstName}'s materials`);
+          } catch {
+            toast.error("Failed to assign material");
+          }
+        },
+      },
+    });
+  }, [status, patientId, sessionId, patientData?.firstName, assignMaterial]);
+
   // Auto-save to My Apps when generation completes
   const autoSavedRef = useRef(false);
   useEffect(() => {
@@ -174,7 +255,9 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
       autoSavedRef.current = true;
       ensureApp({ sessionId: activeSessionId as Id<"sessions">, title: appName })
         .then(() => toast.success("Saved to My Apps!"))
-        .catch(() => {}); // Silently fail — user can retry with Save button
+        .catch((err) => {
+          console.warn("[builder] Auto-save failed:", err);
+        });
     }
     if (status === "generating") autoSavedRef.current = false;
   }, [status, activeSessionId, appRecord, appName, ensureApp]);
@@ -214,8 +297,13 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
     <div className="flex flex-1 flex-col overflow-hidden">
       {showPromptScreen ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-6 overflow-y-auto p-6">
+          {patientId && (
+            <div className="w-full max-w-2xl">
+              <PatientContextCard patientId={patientId} />
+            </div>
+          )}
           <div className="text-center">
-            <h1 className="font-headline text-3xl font-semibold text-foreground">
+            <h1 className="font-headline text-3xl font-normal text-foreground">
               What would you like to build?
             </h1>
             <p className="mt-2 text-base text-on-surface-variant">
@@ -310,6 +398,7 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
             mobilePanel={mobilePanel}
             onMobilePanelChange={setMobilePanel}
             hasFiles={files.length > 0}
+            onFullscreen={bundleHtml ? () => setIsFullscreen(true) : undefined}
           />
 
           <div className="min-h-0 flex-1 bg-surface-container-low p-2">
@@ -317,7 +406,8 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
               /* Mobile: single-panel view toggled via toolbar */
               <div className="h-full">
                 {mobilePanel === "chat" ? (
-                  <div className="h-full overflow-hidden rounded-2xl bg-surface-container-lowest">
+                  <div className="flex h-full flex-col overflow-hidden rounded-2xl bg-surface-container-lowest">
+                    {patientId && <PatientContextCard patientId={patientId} />}
                     <ChatPanel
                       sessionId={sessionId}
                       status={status}
@@ -330,6 +420,7 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
                       pendingPrompt={pendingPrompt}
                       onPendingPromptClear={() => setPendingPrompt(null)}
                       narrationMessage={narrationMessage}
+                      startTime={generationStartTime}
                     />
                   </div>
                 ) : (
@@ -350,7 +441,8 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
               /* Desktop: resizable side-by-side panels */
               <ResizablePanelGroup orientation="horizontal" className="h-full">
                 <ResizablePanel defaultSize={30} minSize={20}>
-                  <div className="h-full overflow-hidden rounded-2xl bg-surface-container-lowest">
+                  <div className="flex h-full flex-col overflow-hidden rounded-2xl bg-surface-container-lowest">
+                    {patientId && <PatientContextCard patientId={patientId} />}
                     <ChatPanel
                       sessionId={sessionId}
                       status={status}
@@ -363,6 +455,7 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
                       pendingPrompt={pendingPrompt}
                       onPendingPromptClear={() => setPendingPrompt(null)}
                       narrationMessage={narrationMessage}
+                      startTime={generationStartTime}
                     />
                   </div>
                 </ResizablePanel>
@@ -399,6 +492,13 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
             )}
           </div>
         </>
+      )}
+
+      {isFullscreen && bundleHtml && (
+        <FullscreenAppView
+          bundleHtml={bundleHtml}
+          onExit={() => setIsFullscreen(false)}
+        />
       )}
 
       <ShareDialog

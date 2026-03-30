@@ -21,6 +21,12 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/shared/components/ui/sheet";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/shared/components/ui/tabs";
 
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
@@ -69,6 +75,9 @@ export function FlashcardPage() {
     api.apps.getBySession,
     sessionId ? { sessionId } : "skip",
   );
+
+  const allDecks = useQuery(api.flashcard_decks.list, {});
+  const defaultTab = allDecks && allDecks.length > 0 ? "my-decks" : "create-new";
 
   const sessionName = currentSession?.title ?? "Untitled Deck";
 
@@ -175,50 +184,92 @@ export function FlashcardPage() {
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
       {showPromptScreen ? (
-        /* Phase 1: Full-width centered prompt — no session yet */
-        <div className="flex flex-1 flex-col items-center justify-center gap-6 p-6">
-          <div className="text-center">
-            <h1 className="font-headline text-3xl font-semibold text-foreground">
-              What flashcards would you like to create?
-            </h1>
-            <p className="mt-2 text-base text-on-surface-variant">
-              Describe them and AI will generate images and audio for each card.
-            </p>
-          </div>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (!promptInput.trim()) return;
-              handleGenerate(promptInput.trim());
-              setPromptInput("");
-            }}
-            className="w-full max-w-2xl"
-          >
-            <div className="flex items-center gap-2 rounded-full border border-outline-variant/40 bg-surface-container-lowest px-4 py-2 shadow-sm focus-within:ring-2 focus-within:ring-primary/30">
-              <Input
-                value={promptInput}
-                onChange={(e) => setPromptInput(e.target.value)}
-                placeholder="Describe the flashcards you want to create…"
-                className="flex-1 border-0 bg-transparent p-0 text-base shadow-none focus-visible:ring-0"
-                aria-label="Describe the flashcards you want to create"
-              />
-              <Button
-                type="submit"
-                disabled={!promptInput.trim()}
-                size="icon"
-                className="shrink-0 rounded-full"
-                aria-label="Generate flashcards"
-              >
-                <MaterialIcon icon="auto_fix_high" size="xs" />
-              </Button>
+        /* Phase 1: Tabbed view — My Decks or Create New */
+        <div className="flex flex-1 flex-col overflow-y-auto p-6">
+          <Tabs defaultValue={defaultTab} className="flex flex-1 flex-col">
+            <div className="flex justify-center">
+              <TabsList className="mb-6">
+                <TabsTrigger value="my-decks">My Decks</TabsTrigger>
+                <TabsTrigger value="create-new">Create New</TabsTrigger>
+              </TabsList>
             </div>
-          </form>
-          <SuggestionChips
-            suggestions={FLASHCARD_SUGGESTIONS}
-            onSelect={(suggestion) => {
-              handleGenerate(suggestion);
-            }}
-          />
+
+            {/* My Decks tab */}
+            <TabsContent value="my-decks" className="flex-1">
+              {allDecks && allDecks.length > 0 ? (
+                <div className="mx-auto max-w-4xl">
+                  <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                    {allDecks.map((deck) => (
+                      <div
+                        key={deck._id}
+                        className="cursor-pointer rounded-2xl bg-surface-container-lowest p-5 shadow-[0_12px_32px_rgba(25,28,32,0.06)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_16px_40px_rgba(25,28,32,0.10)]"
+                      >
+                        <h3 className="font-headline text-lg font-semibold text-on-surface mb-1">
+                          {deck.title}
+                        </h3>
+                        <p className="text-sm text-on-surface-variant">
+                          {deck.cardCount ?? 0} card{deck.cardCount !== 1 ? "s" : ""}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-1 flex-col items-center justify-center gap-4 py-16 text-center">
+                  <MaterialIcon icon="collections_bookmark" size="lg" className="text-on-surface-variant opacity-30" />
+                  <p className="text-on-surface-variant">
+                    No decks yet — switch to Create New to build your first deck.
+                  </p>
+                </div>
+              )}
+            </TabsContent>
+
+            {/* Create New tab */}
+            <TabsContent value="create-new" className="flex flex-1 flex-col items-center justify-center gap-6">
+              <div className="text-center">
+                <h1 className="font-headline text-3xl font-normal text-on-surface">
+                  What flashcards would you like to create?
+                </h1>
+                <p className="mt-2 text-base text-on-surface-variant">
+                  Describe them and AI will generate images and audio for each card.
+                </p>
+              </div>
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (!promptInput.trim()) return;
+                  handleGenerate(promptInput.trim());
+                  setPromptInput("");
+                }}
+                className="w-full max-w-2xl"
+              >
+                <div className="flex items-center gap-2 rounded-full bg-surface-container-high px-4 py-2 shadow-sm focus-within:ring-2 focus-within:ring-primary/30">
+                  <Input
+                    value={promptInput}
+                    onChange={(e) => setPromptInput(e.target.value)}
+                    placeholder="Describe the flashcards you want to create…"
+                    className="flex-1 border-0 bg-transparent p-0 text-base shadow-none focus-visible:ring-0"
+                    aria-label="Describe the flashcards you want to create"
+                  />
+                  <Button
+                    type="submit"
+                    disabled={!promptInput.trim()}
+                    size="icon"
+                    className="shrink-0 rounded-full"
+                    aria-label="Generate flashcards"
+                  >
+                    <MaterialIcon icon="auto_fix_high" size="xs" />
+                  </Button>
+                </div>
+              </form>
+              <SuggestionChips
+                suggestions={FLASHCARD_SUGGESTIONS}
+                onSelect={(suggestion) => {
+                  handleGenerate(suggestion);
+                }}
+              />
+            </TabsContent>
+          </Tabs>
         </div>
       ) : (
         /* Phase 2: Toolbar + 2-panel layout */

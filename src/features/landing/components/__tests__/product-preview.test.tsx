@@ -7,32 +7,36 @@ vi.mock("@/shared/components/material-icon", () => ({
 }));
 
 describe("ProductPreview", () => {
-  it("renders the Visual Schedules card with its heading and description", () => {
+  it("renders the section heading", () => {
     render(<ProductPreview />);
     expect(
-      screen.getByRole("heading", { name: /Visual Schedules/ })
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(
-        /Reduce transition anxiety with step-by-step interactive flows/
-      )
+      screen.getByRole("heading", { name: /Everything you need, all in one place/ })
     ).toBeInTheDocument();
   });
 
-  it("renders the Communication Boards card with its heading and description", () => {
+  it("renders the subtitle", () => {
     render(<ProductPreview />);
     expect(
-      screen.getByRole("heading", { name: /Communication Boards/ })
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(
-        /Give every child a voice with instant PECS-style boards/
-      )
+      screen.getByText(/Bridges combines AI-powered tools with therapy expertise/)
     ).toBeInTheDocument();
   });
 
-  it("renders the MOST POPULAR badge on the Visual Schedules card", () => {
+  it("renders all five feature cards", () => {
     render(<ProductPreview />);
-    expect(screen.getByText("MOST POPULAR")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "AI App Builder" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Template Library" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Flashcard Creator" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Speech Coach" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Family Play Mode" })).toBeInTheDocument();
+  });
+
+  it("renders feature descriptions", () => {
+    render(<ProductPreview />);
+    expect(
+      screen.getByText(/Describe it in plain language, get a working therapy app/)
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/Kid-friendly interface with PIN-protected exit/)
+    ).toBeInTheDocument();
   });
 });

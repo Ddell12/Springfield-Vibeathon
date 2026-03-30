@@ -6,6 +6,7 @@ export const GenerateInputSchema = z.object({
   sessionId: z.string().optional(),
   mode: z.enum(["builder", "flashcards"]).default("builder"),
   blueprint: z.any().optional(),
+  patientId: z.string().optional(),
 }).refine(
   (data) => data.query || data.prompt,
   { message: "Either query or prompt is required" }

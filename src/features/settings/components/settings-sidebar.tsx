@@ -26,14 +26,14 @@ export function SettingsSidebar({
       {/* Back to dashboard */}
       <Link
         href="/dashboard"
-        className="mb-4 flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors"
+        className="mb-4 flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors duration-300"
       >
         <MaterialIcon icon="arrow_back" className="text-sm" />
         <span>Back</span>
       </Link>
 
       <div className="mb-8 px-4">
-        <h2 className="font-headline font-bold text-lg text-primary">Settings</h2>
+        <h2 className="font-headline font-medium text-lg text-primary">Settings</h2>
         <p className="text-xs text-on-surface-variant font-medium">Manage your sanctuary</p>
       </div>
 

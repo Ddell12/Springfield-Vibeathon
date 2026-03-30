@@ -33,7 +33,7 @@ export interface ResumeSessionArgs {
 export interface UseStreamingReturn {
   status: StreamingStatus;
   files: StreamingFile[];
-  generate: (prompt: string, blueprint?: TherapyBlueprint) => Promise<void>;
+  generate: (prompt: string, blueprint?: TherapyBlueprint, patientId?: string) => Promise<void>;
   resumeSession: (args: ResumeSessionArgs) => void;
   blueprint: TherapyBlueprint | null;
   appName: string | null;
@@ -82,6 +82,7 @@ type StreamingAction =
   | { type: "SET_BUILD_FAILED"; failed: boolean }
   | { type: "SET_NOTABLE_MESSAGE"; message: string | null }
   | { type: "START_GENERATION" }
+  | { type: "START_FOLLOW_UP" }
   | { type: "DONE"; sessionId?: string; buildFailed?: boolean }
   | { type: "RESUME_SESSION"; args: ResumeSessionArgs }
   | { type: "ERROR_RESPONSE"; error: string };
@@ -159,6 +160,19 @@ function streamingReducer(state: StreamingState, action: StreamingAction): Strea
         notableMessage: null,
       };
 
+    // Follow-up: preserve files, bundleHtml, appName, sessionId so the
+    // preview stays visible while Claude edits specific files.
+    case "START_FOLLOW_UP":
+      return {
+        ...state,
+        error: null,
+        status: "generating",
+        streamingText: "",
+        activities: [],
+        buildFailed: false,
+        notableMessage: null,
+      };
+
     case "DONE":
       return {
         ...state,
@@ -204,6 +218,7 @@ export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn 
   const tokenBufferRef = useRef("");
   const rafIdRef = useRef<number | undefined>(undefined);
   const sessionIdRef = useRef(state.sessionId);
+  const statusRef = useRef(state.status);
 
   useEffect(() => {
     onFileCompleteRef.current = options?.onFileComplete;
@@ -216,6 +231,10 @@ export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn 
   useEffect(() => {
     sessionIdRef.current = state.sessionId;
   }, [state.sessionId]);
+
+  useEffect(() => {
+    statusRef.current = state.status;
+  }, [state.status]);
 
   const flushTokenBuffer = useCallback(() => {
     if (rafIdRef.current) {
@@ -259,7 +278,16 @@ export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn 
           }
           break;
 
-        case "token":
+        case "token": {
+          const MAX_BUFFER = 512 * 1024; // 500KB safety limit
+          if (tokenBufferRef.current.length + sseEvent.token.length > MAX_BUFFER) {
+            dispatch({ type: "SET_STREAMING_TEXT", text: tokenBufferRef.current });
+            tokenBufferRef.current = "";
+            if (rafIdRef.current) {
+              cancelAnimationFrame(rafIdRef.current);
+              rafIdRef.current = undefined;
+            }
+          }
           tokenBufferRef.current += sseEvent.token;
           if (!rafIdRef.current) {
             rafIdRef.current = requestAnimationFrame(() => {
@@ -268,6 +296,7 @@ export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn 
             });
           }
           break;
+        }
 
         case "activity":
           addActivity(sseEvent.type, sseEvent.message, sseEvent.path);
@@ -339,7 +368,7 @@ export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn 
   );
 
   const generate = useCallback(
-    async (prompt: string, blueprint?: TherapyBlueprint): Promise<void> => {
+    async (prompt: string, blueprint?: TherapyBlueprint, patientId?: string): Promise<void> => {
       if (abortRef.current) {
         abortRef.current.abort();
         if (rafIdRef.current) {
@@ -350,7 +379,9 @@ export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn 
       const controller = new AbortController();
       abortRef.current = controller;
 
-      dispatch({ type: "START_GENERATION" });
+      // Detect follow-up: session exists and was previously live
+      const isFollowUp = sessionIdRef.current != null && statusRef.current === "live";
+      dispatch({ type: isFollowUp ? "START_FOLLOW_UP" : "START_GENERATION" });
       tokenBufferRef.current = "";
 
       try {
@@ -361,6 +392,7 @@ export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn 
             prompt,
             sessionId: sessionIdRef.current ?? undefined,
             ...(blueprint ? { blueprint } : {}),
+            ...(patientId ? { patientId } : {}),
           }),
           signal: controller.signal,
         });

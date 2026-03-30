@@ -1,0 +1,147 @@
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Quicksand:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 45 30% 97%;
+    --foreground: 220 20% 20%;
+    --card: 0 0% 100%;
+    --card-foreground: 220 20% 20%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 20% 20%;
+    --primary: 168 60% 38%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 45 80% 65%;
+    --secondary-foreground: 220 20% 20%;
+    --muted: 45 20% 92%;
+    --muted-foreground: 220 10% 50%;
+    --accent: 280 55% 60%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 45 15% 85%;
+    --input: 45 15% 85%;
+    --ring: 168 60% 38%;
+    --radius: 1rem;
+
+    /* Fitzgerald Key Colors - evidence-based AAC color coding */
+    --fitz-people: 45 90% 58%;       /* Yellow - people/pronouns */
+    --fitz-actions: 145 55% 45%;     /* Green - verbs/actions */
+    --fitz-objects: 25 90% 55%;      /* Orange - nouns/objects */
+    --fitz-descriptors: 210 70% 55%; /* Blue - adjectives/descriptors */
+    --fitz-social: 330 70% 60%;      /* Pink - social words */
+    --fitz-misc: 270 50% 60%;        /* Purple - questions/misc */
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Quicksand', sans-serif;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Nunito', sans-serif;
+  }
+}
+
+/* Smooth animations for kids - minimum 300ms, gentle easing */
+@layer utilities {
+  .animate-pop {
+    animation: pop 400ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .animate-bounce-gentle {
+    animation: bounce-gentle 600ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .animate-wiggle {
+    animation: wiggle 500ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
+  }
+  .animate-celebrate {
+    animation: celebrate 800ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .animate-fade-in {
+    animation: fade-in 400ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .animate-slide-up {
+    animation: slide-up 400ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .animate-pulse-ring {
+    animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+  .animate-star-burst {
+    animation: star-burst 600ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  }
+}
+
+@keyframes pop {
+  0% { transform: scale(0.8); opacity: 0; }
+  60% { transform: scale(1.1); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes bounce-gentle {
+  0%, 100% { transform: translateY(0); }
+  40% { transform: translateY(-12px); }
+  60% { transform: translateY(-6px); }
+}
+
+@keyframes wiggle {
+  0%, 100% { transform: rotate(0deg); }
+  20% { transform: rotate(-5deg); }
+  40% { transform: rotate(5deg); }
+  60% { transform: rotate(-3deg); }
+  80% { transform: rotate(3deg); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+@keyframes celebrate {
+  0% { transform: scale(1); }
+  25% { transform: scale(1.15) rotate(-3deg); }
+  50% { transform: scale(1.2) rotate(3deg); }
+  75% { transform: scale(1.1) rotate(-1deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse-ring {
+  0%, 100% { box-shadow: 0 0 0 0 hsl(168 60% 38% / 0.4); }
+  50% { box-shadow: 0 0 0 12px hsl(168 60% 38% / 0); }
+}
+
+@keyframes star-burst {
+  0% { transform: scale(0) rotate(0deg); opacity: 1; }
+  100% { transform: scale(1.5) rotate(180deg); opacity: 0; }
+}
+
+/* Minimal focus styles for accessibility */
+:focus-visible {
+  outline: 3px solid hsl(var(--ring));
+  outline-offset: 2px;
+  border-radius: var(--radius);
+}
+
+/* No scroll bounce on iOS */
+html {
+  overscroll-behavior: none;
+}

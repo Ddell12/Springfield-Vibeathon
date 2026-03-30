@@ -22,7 +22,7 @@ export const create = mutation({
       const userApps = await ctx.db
         .query("apps")
         .withIndex("by_user", (q) => q.eq("userId", identity.subject))
-        .collect();
+        .take(FREE_LIMITS.maxApps);
       if (userApps.length >= FREE_LIMITS.maxApps) {
         throw new Error(
           "Free plan limit reached. Upgrade to Premium for unlimited apps.",
@@ -78,7 +78,7 @@ export const update = mutation({
     if (!identity) throw new Error("Not authenticated");
     const app = await ctx.db.get(args.appId);
     if (!app) throw new Error("App not found");
-    if (app.userId && app.userId !== identity.subject) throw new Error("Not authorized");
+    if (!app.userId || app.userId !== identity.subject) throw new Error("Not authorized");
 
     const { appId, ...fields } = args;
     const patch: Record<string, unknown> = { updatedAt: Date.now() };
@@ -94,12 +94,11 @@ export const list = query({
   handler: async (ctx) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) return [];
-    const all = await ctx.db
+    return await ctx.db
       .query("apps")
-      .withIndex("by_created")
+      .withIndex("by_user", (q) => q.eq("userId", identity.subject))
       .order("desc")
       .take(50);
-    return all.filter((app) => app.userId === identity.subject);
   },
 });
 
@@ -121,7 +120,7 @@ export const ensureForSession = mutation({
         const userApps = await ctx.db
           .query("apps")
           .withIndex("by_user", (q) => q.eq("userId", identity.subject))
-          .collect();
+          .take(FREE_LIMITS.maxApps);
         if (userApps.length >= FREE_LIMITS.maxApps) {
           throw new Error(
             "Free plan limit reached. Upgrade to Premium for unlimited apps.",
@@ -151,6 +150,36 @@ export const ensureForSession = mutation({
       updatedAt: now,
     });
     return await ctx.db.get(appId);
+  },
+});
+
+/** Public query — returns featured apps for the /explore page. No auth required. */
+export const listFeatured = query({
+  args: {},
+  handler: async (ctx) => {
+    const apps = await ctx.db
+      .query("apps")
+      .withIndex("by_featured_order", (q) => q.eq("featured", true))
+      .take(100);
+    return apps.map((app) => ({
+      title: app.title,
+      description: app.description,
+      shareSlug: app.shareSlug,
+      featuredCategory: app.featuredCategory,
+      featuredOrder: app.featuredOrder,
+    }));
+  },
+});
+
+export const listMine = query({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return [];
+    return await ctx.db
+      .query("apps")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .take(200);
   },
 });
 

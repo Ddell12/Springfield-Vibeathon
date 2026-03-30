@@ -77,7 +77,7 @@ export function PreviewPanel({ bundleHtml, state, error, deviceSize = "desktop",
             sandbox="allow-scripts allow-same-origin"
             className={cn(
               "h-full border-0 bg-white transition-all duration-300",
-              deviceSize === "mobile" ? "w-[375px] rounded-2xl shadow-xl" : "w-full",
+              deviceSize === "mobile" ? "w-[390px] rounded-2xl shadow-xl" : "w-full",
             )}
           />
           {!iframeReady && (

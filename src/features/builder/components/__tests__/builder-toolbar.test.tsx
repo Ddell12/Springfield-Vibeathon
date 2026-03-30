@@ -127,25 +127,33 @@ describe("BuilderToolbar", () => {
     expect(onDeviceSizeChange).toHaveBeenCalledWith("mobile");
   });
 
-  it("'View source' button calls onViewChange('code')", () => {
+  it("renders a segmented control with both Preview and Source tabs on desktop", () => {
+    render(<BuilderToolbar {...baseProps} hasFiles={true} />);
+    const tabs = screen.getAllByRole("tab");
+    const tabLabels = tabs.map((t) => t.textContent);
+    expect(tabLabels).toContain("Preview");
+    expect(tabLabels).toContain("Source");
+  });
+
+  it("calls onViewChange with 'code' when Source tab is clicked", () => {
     const onViewChange = vi.fn();
-    render(<BuilderToolbar {...baseProps} onViewChange={onViewChange} status="live" hasFiles={true} />);
-    fireEvent.click(screen.getByRole("button", { name: /view source/i }));
+    render(<BuilderToolbar {...baseProps} hasFiles={true} onViewChange={onViewChange} />);
+    const sourceTab = screen.getAllByRole("tab").find((t) => t.textContent === "Source");
+    fireEvent.click(sourceTab!);
     expect(onViewChange).toHaveBeenCalledWith("code");
   });
 
-  it("does not render 'Code' tab in segmented control", () => {
-    render(<BuilderToolbar {...baseProps} />);
-    expect(screen.queryByRole("tab", { name: /code/i })).not.toBeInTheDocument();
+  it("calls onViewChange with 'preview' when Preview tab is clicked", () => {
+    const onViewChange = vi.fn();
+    render(<BuilderToolbar {...baseProps} hasFiles={true} onViewChange={onViewChange} />);
+    const previewTab = screen.getAllByRole("tab").find((t) => t.textContent === "Preview");
+    fireEvent.click(previewTab!);
+    expect(onViewChange).toHaveBeenCalledWith("preview");
   });
 
-  it("shows 'View source' button when live with files", () => {
-    render(<BuilderToolbar {...baseProps} status="live" hasFiles={true} />);
-    expect(screen.getByRole("button", { name: /view source/i })).toBeInTheDocument();
-  });
-
-  it("hides 'View source' button when generating", () => {
-    render(<BuilderToolbar {...baseProps} status="generating" hasFiles={true} />);
-    expect(screen.queryByRole("button", { name: /view source/i })).not.toBeInTheDocument();
+  it("does not render standalone Source button in right section", () => {
+    render(<BuilderToolbar {...baseProps} hasFiles={true} />);
+    const rightButtons = screen.queryAllByLabelText("View source");
+    expect(rightButtons).toHaveLength(0);
   });
 });

@@ -8,6 +8,7 @@ import { useState } from "react";
 import { DeleteConfirmationDialog } from "@/shared/components/delete-confirmation-dialog";
 import { EmptyState } from "@/shared/components/empty-state";
 import { MaterialIcon } from "@/shared/components/material-icon";
+import { Skeleton } from "@/shared/components/ui/skeleton";
 import { MobileNavDrawer } from "@/shared/components/mobile-nav-drawer";
 import { ProjectCard } from "@/shared/components/project-card";
 import { Button } from "@/shared/components/ui/button";
@@ -15,6 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/components/ui
 
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
+import { APP_BRAND } from "@/core/config";
 import { MainPromptInput } from "./main-prompt-input";
 import { TemplatesTab } from "./templates-tab";
 
@@ -57,12 +59,12 @@ export function DashboardView() {
         <div className="flex items-center gap-3">
           <button
             onClick={() => setDrawerOpen(true)}
-            className="flex h-11 w-11 items-center justify-center rounded-lg hover:bg-surface-container-low transition-colors active:scale-95"
+            className="flex h-11 w-11 items-center justify-center rounded-lg hover:bg-surface-container-low transition-colors duration-300 active:scale-95"
             aria-label="Open navigation menu"
           >
             <MaterialIcon icon="menu" size="md" className="text-primary" />
           </button>
-          <span className="font-headline font-bold tracking-tight text-lg text-primary">
+          <span className="font-headline font-medium tracking-tight text-lg text-primary">
             Bridges
           </span>
         </div>
@@ -78,8 +80,8 @@ export function DashboardView() {
       {/* Desktop Top Nav Bar */}
       <header className="sticky top-0 z-30 hidden h-16 w-full items-center justify-between bg-background/70 px-8 backdrop-blur-xl md:flex">
         <div className="flex items-center gap-3">
-          <h1 className="font-headline text-xl font-extrabold tracking-tight text-primary">
-            Bridges AI
+          <h1 className="font-headline text-xl font-normal tracking-tight text-primary">
+            {APP_BRAND}
           </h1>
         </div>
         <div className="flex items-center gap-6">
@@ -90,11 +92,12 @@ export function DashboardView() {
       </header>
 
       {/* Hero Section */}
-      <section className="mx-auto max-w-4xl px-6 pb-16 pt-20 text-center">
-        <h2 className="mb-4 font-headline text-5xl font-bold tracking-tight text-on-surface">
+      <section className="relative overflow-hidden mx-auto max-w-4xl px-6 pb-16 pt-20 text-center">
+        <div className="pointer-events-none absolute -top-20 left-1/2 -translate-x-1/2 h-[300px] w-[600px] rounded-full bg-primary/3 blur-[80px]" />
+        <h2 className="relative z-10 mb-4 font-headline text-5xl font-normal tracking-tight text-on-surface">
           What would you like to build?
         </h2>
-        <p className="mb-10 font-body text-lg text-on-surface-variant">
+        <p className="relative z-10 mb-10 font-body text-lg text-on-surface-variant">
           Describe your idea, and Bridges will build it instantly.
         </p>
 
@@ -107,7 +110,7 @@ export function DashboardView() {
             <button
               key={chip}
               onClick={() => router.push(`/builder?prompt=${encodeURIComponent(`Build a ${chip} for a child`)}`)}
-              className="min-h-[44px] rounded-full bg-surface-container-low px-5 py-2 font-body text-sm text-on-surface-variant ring-1 ring-outline-variant/10 transition-colors hover:bg-surface-container-high"
+              className="min-h-[44px] rounded-full bg-surface-container-low px-5 py-2 font-body text-sm text-on-surface-variant transition-colors duration-300 hover:bg-surface-container-high"
             >
               {chip}
             </button>
@@ -118,7 +121,7 @@ export function DashboardView() {
       {/* Tab & Grid Container */}
       <section className="mt-8 min-h-full rounded-t-[3rem] bg-surface-container-low px-12 pt-16">
         <Tabs value={activeTab} onValueChange={handleTabChange}>
-          <TabsList variant="line" className="mb-10 gap-10 border-b border-outline-variant/10">
+          <TabsList variant="line" className="mb-10 gap-10">
             <TabsTrigger
               value="recent"
               className="min-h-[44px] pb-4 font-body text-sm data-[state=active]:font-bold data-[state=active]:text-primary data-[state=active]:after:bg-primary"
@@ -178,10 +181,7 @@ export function DashboardView() {
               /* Loading state */
               <div className="grid grid-cols-1 gap-8 pb-20 md:grid-cols-2 lg:grid-cols-3">
                 {[0, 1, 2].map((i) => (
-                  <div
-                    key={i}
-                    className="h-64 animate-pulse rounded-2xl bg-surface-container-low"
-                  />
+                  <Skeleton key={i} className="h-64 rounded-2xl" />
                 ))}
               </div>
             )}
@@ -217,10 +217,7 @@ export function DashboardView() {
             ) : (
               <div className="grid grid-cols-1 gap-8 pb-20 md:grid-cols-2 lg:grid-cols-3">
                 {[0, 1, 2].map((i) => (
-                  <div
-                    key={i}
-                    className="h-64 animate-pulse rounded-2xl bg-surface-container-low"
-                  />
+                  <Skeleton key={i} className="h-64 rounded-2xl" />
                 ))}
               </div>
             )}

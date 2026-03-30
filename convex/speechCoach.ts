@@ -1,0 +1,279 @@
+import { v } from "convex/values";
+import { ConvexError } from "convex/values";
+import { internal } from "./_generated/api";
+import { mutation, query, internalMutation, internalQuery } from "./_generated/server";
+import { assertCaregiverAccess, assertPatientAccess } from "./lib/auth";
+
+const SPEECH_COACH_AGENT_ID = "speech-coach";
+
+const configValidator = v.object({
+  targetSounds: v.array(v.string()),
+  ageRange: v.union(v.literal("2-4"), v.literal("5-7")),
+  durationMinutes: v.number(),
+  focusArea: v.optional(v.string()),
+});
+
+// ── Mutations ────────────────────────────────────────────────────────────────
+
+export const createSession = mutation({
+  args: {
+    homeProgramId: v.id("homePrograms"),
+    config: configValidator,
+  },
+  handler: async (ctx, args) => {
+    const program = await ctx.db.get(args.homeProgramId);
+    if (!program) throw new ConvexError("Home program not found");
+    if (program.type !== "speech-coach") {
+      throw new ConvexError("This home program is not a speech-coach type");
+    }
+    if (program.status !== "active") {
+      throw new ConvexError("Home program is not active");
+    }
+
+    // assertCaregiverAccess throws if the caller is not an accepted caregiver
+    // for this patient — this also gates out SLPs and unauthenticated users
+    const caregiverUserId = await assertCaregiverAccess(ctx, program.patientId);
+
+    // Extra guard: SLP who owns the patient must not be able to create a session
+    // (they could theoretically also have a caregiver link, but that's a data
+    // integrity issue). Double-check via patient ownership.
+    const patient = await ctx.db.get(program.patientId);
+    if (patient && patient.slpUserId === caregiverUserId) {
+      throw new ConvexError("SLPs cannot create speech coach sessions");
+    }
+
+    return await ctx.db.insert("speechCoachSessions", {
+      patientId: program.patientId,
+      homeProgramId: args.homeProgramId,
+      caregiverUserId,
+      agentId: SPEECH_COACH_AGENT_ID,
+      status: "configuring",
+      config: args.config,
+    });
+  },
+});
+
+export const startSession = mutation({
+  args: {
+    sessionId: v.id("speechCoachSessions"),
+    conversationId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const session = await ctx.db.get(args.sessionId);
+    if (!session) throw new ConvexError("Session not found");
+
+    await assertCaregiverAccess(ctx, session.patientId);
+
+    await ctx.db.patch(args.sessionId, {
+      conversationId: args.conversationId,
+      status: "active",
+      startedAt: Date.now(),
+    });
+  },
+});
+
+export const endSession = mutation({
+  args: {
+    sessionId: v.id("speechCoachSessions"),
+  },
+  handler: async (ctx, args) => {
+    const session = await ctx.db.get(args.sessionId);
+    if (!session) throw new ConvexError("Session not found");
+
+    await assertCaregiverAccess(ctx, session.patientId);
+
+    await ctx.db.patch(args.sessionId, {
+      status: "completed",
+      endedAt: Date.now(),
+    });
+
+    // Schedule analysis if we have a conversation to analyze
+    if (session.conversationId) {
+      await ctx.scheduler.runAfter(0, internal.speechCoachActions.analyzeSession, {
+        sessionId: args.sessionId,
+      });
+    }
+  },
+});
+
+export const failSession = mutation({
+  args: {
+    sessionId: v.id("speechCoachSessions"),
+    errorMessage: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const session = await ctx.db.get(args.sessionId);
+    if (!session) throw new ConvexError("Session not found");
+
+    await assertCaregiverAccess(ctx, session.patientId);
+
+    await ctx.db.patch(args.sessionId, {
+      status: "failed",
+      errorMessage: args.errorMessage,
+      endedAt: Date.now(),
+    });
+  },
+});
+
+// ── Queries ──────────────────────────────────────────────────────────────────
+
+export const getSessionHistory = query({
+  args: { patientId: v.id("patients") },
+  handler: async (ctx, args) => {
+    await assertPatientAccess(ctx, args.patientId);
+
+    const sessions = await ctx.db
+      .query("speechCoachSessions")
+      .withIndex("by_patientId_startedAt", (q) => q.eq("patientId", args.patientId))
+      .take(50);
+
+    return sessions.reverse();
+  },
+});
+
+export const getProgress = query({
+  args: { patientId: v.id("patients") },
+  handler: async (ctx, args) => {
+    await assertPatientAccess(ctx, args.patientId);
+
+    return await ctx.db
+      .query("speechCoachProgress")
+      .withIndex("by_patientId", (q) => q.eq("patientId", args.patientId))
+      .take(200);
+  },
+});
+
+export const getSessionDetail = query({
+  args: { sessionId: v.id("speechCoachSessions") },
+  handler: async (ctx, args) => {
+    const session = await ctx.db.get(args.sessionId);
+    if (!session) throw new ConvexError("Session not found");
+
+    await assertPatientAccess(ctx, session.patientId);
+
+    const progress = await ctx.db
+      .query("speechCoachProgress")
+      .withIndex("by_sessionId", (q) => q.eq("sessionId", args.sessionId))
+      .first();
+
+    return { session, progress };
+  },
+});
+
+// ── Internal functions (for actions) ────────────────────────────────────────
+
+export const getSessionById = internalQuery({
+  args: { sessionId: v.id("speechCoachSessions") },
+  handler: async (ctx, args) => {
+    return await ctx.db.get(args.sessionId);
+  },
+});
+
+export const setTranscriptStorageId = internalMutation({
+  args: {
+    sessionId: v.id("speechCoachSessions"),
+    storageId: v.id("_storage"),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.sessionId, {
+      transcriptStorageId: args.storageId,
+    });
+  },
+});
+
+export const saveProgress = internalMutation({
+  args: {
+    sessionId: v.id("speechCoachSessions"),
+    patientId: v.id("patients"),
+    caregiverUserId: v.string(),
+    soundsAttempted: v.array(
+      v.object({
+        sound: v.string(),
+        wordsAttempted: v.number(),
+        approximateSuccessRate: v.union(
+          v.literal("high"),
+          v.literal("medium"),
+          v.literal("low")
+        ),
+        notes: v.string(),
+      })
+    ),
+    overallEngagement: v.union(v.literal("high"), v.literal("medium"), v.literal("low")),
+    recommendedNextFocus: v.array(v.string()),
+    summary: v.string(),
+    analyzedAt: v.number(),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.insert("speechCoachProgress", {
+      sessionId: args.sessionId,
+      patientId: args.patientId,
+      caregiverUserId: args.caregiverUserId,
+      soundsAttempted: args.soundsAttempted,
+      overallEngagement: args.overallEngagement,
+      recommendedNextFocus: args.recommendedNextFocus,
+      summary: args.summary,
+      analyzedAt: args.analyzedAt,
+    });
+
+    await ctx.db.patch(args.sessionId, { status: "analyzed" });
+  },
+});
+
+export const savePracticeLog = internalMutation({
+  args: {
+    homeProgramId: v.id("homePrograms"),
+    patientId: v.id("patients"),
+    caregiverUserId: v.string(),
+    date: v.string(),
+    duration: v.optional(v.number()),
+    notes: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const program = await ctx.db.get(args.homeProgramId);
+    if (!program) throw new ConvexError("Home program not found");
+
+    await ctx.db.insert("practiceLog", {
+      homeProgramId: args.homeProgramId,
+      patientId: args.patientId,
+      caregiverUserId: args.caregiverUserId,
+      date: args.date,
+      duration: args.duration,
+      notes: args.notes,
+      timestamp: Date.now(),
+    });
+
+    await ctx.db.insert("activityLog", {
+      patientId: args.patientId,
+      actorUserId: args.caregiverUserId,
+      action: "practice-logged",
+      details: `Speech coach session logged for program: ${program.title}`,
+      timestamp: Date.now(),
+    });
+  },
+});
+
+export const saveGoalProgress = internalMutation({
+  args: {
+    homeProgramId: v.id("homePrograms"),
+    patientId: v.id("patients"),
+    date: v.string(),
+    accuracy: v.number(),
+    notes: v.optional(v.string()),
+    sourceId: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const program = await ctx.db.get(args.homeProgramId);
+    if (!program || !program.goalId) return; // No goal linked — nothing to do
+
+    await ctx.db.insert("progressData", {
+      goalId: program.goalId,
+      patientId: args.patientId,
+      source: "in-app-auto",
+      sourceId: args.sourceId,
+      date: args.date,
+      accuracy: args.accuracy,
+      notes: args.notes,
+      timestamp: Date.now(),
+    });
+  },
+});

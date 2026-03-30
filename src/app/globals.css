@@ -1,94 +1,141 @@
 @import "tailwindcss";
 
+@source not "../.claude";
+@source not "../.worktrees";
+
 @theme {
-  /* Material 3 palette from Stitch designs — OKLCH for opacity modifier support */
-  --color-primary: oklch(0.352 0.055 192);
-  --color-primary-container: oklch(0.441 0.063 190);
-  --color-on-primary: oklch(1 0 0);
-  --color-on-primary-container: oklch(0.916 0.042 192);
-  --color-on-primary-fixed: oklch(0.155 0.025 192);
-  --color-on-primary-fixed-variant: oklch(0.322 0.050 192);
-  --color-primary-fixed: oklch(0.897 0.045 192);
+  /* Bridges Design System — Warm Professional palette
+     All values in OKLCH for Tailwind v4 opacity modifier support.
+     See DESIGN.md for full rationale and decisions log. */
+
+  /* Primary — teal (calming, therapeutic) */
+  --color-primary: oklch(0.352 0.055 192);          /* #00595c */
+  --color-primary-container: oklch(0.441 0.063 190); /* #0d7377 — hover/gradient end */
+  --color-on-primary: oklch(1 0 0);                  /* white */
+  --color-on-primary-container: oklch(0.952 0.013 197); /* teal-subtle */
+  --color-primary-fixed: oklch(0.952 0.013 197);     /* teal-subtle */
   --color-primary-fixed-dim: oklch(0.840 0.044 192);
-  --color-inverse-primary: oklch(0.840 0.044 192);
+  --color-inverse-primary: oklch(0.722 0.097 198);   /* dark-mode teal */
 
-  --color-secondary: oklch(0.437 0.167 280);
-  --color-secondary-container: oklch(0.639 0.172 280);
+  /* Secondary — warm muted (text-secondary role) */
+  --color-secondary: oklch(0.511 0.011 62);          /* #6B6560 */
+  --color-secondary-container: oklch(0.938 0.009 85); /* #EDEAE4 — recessed */
   --color-on-secondary: oklch(1 0 0);
-  --color-on-secondary-container: oklch(0.310 0.158 280);
-  --color-on-secondary-fixed: oklch(0.142 0.120 280);
-  --color-on-secondary-fixed-variant: oklch(0.380 0.160 280);
-  --color-secondary-fixed: oklch(0.897 0.042 280);
-  --color-secondary-fixed-dim: oklch(0.808 0.080 280);
+  --color-on-secondary-container: oklch(0.214 0.004 85); /* text-primary */
 
-  --color-tertiary: oklch(0.398 0.105 50);
-  --color-tertiary-container: oklch(0.472 0.100 50);
-  --color-tertiary-fixed: oklch(0.895 0.057 50);
-  --color-tertiary-fixed-dim: oklch(0.795 0.098 50);
+  /* Tertiary — caution/gold accent */
+  --color-tertiary: oklch(0.707 0.132 87);           /* #C49A2A — aged gold */
+  --color-tertiary-container: oklch(0.900 0.050 87);
   --color-on-tertiary: oklch(1 0 0);
-  --color-on-tertiary-container: oklch(0.916 0.040 50);
-  --color-on-tertiary-fixed: oklch(0.226 0.065 50);
-  --color-on-tertiary-fixed-variant: oklch(0.370 0.095 50);
+  --color-on-tertiary-container: oklch(0.350 0.060 87);
 
-  --color-error: oklch(0.454 0.170 25);
-  --color-error-container: oklch(0.895 0.046 20);
+  /* Error/danger */
+  --color-error: oklch(0.543 0.153 28);              /* #B8433A — brick red */
+  --color-error-container: oklch(0.940 0.030 28);
   --color-on-error: oklch(1 0 0);
-  --color-on-error-container: oklch(0.330 0.150 25);
+  --color-on-error-container: oklch(0.400 0.120 28);
 
-  --color-surface: oklch(0.979 0.007 270);
-  --color-surface-dim: oklch(0.870 0.016 260);
-  --color-surface-bright: oklch(0.979 0.007 270);
-  --color-surface-container: oklch(0.940 0.014 265);
-  --color-surface-container-low: oklch(0.958 0.012 268);
-  --color-surface-container-lowest: oklch(1 0 0);
-  --color-surface-container-high: oklch(0.920 0.014 262);
-  --color-surface-container-highest: oklch(0.900 0.016 260);
-  --color-surface-tint: oklch(0.405 0.060 192);
-  --color-surface-variant: oklch(0.900 0.016 260);
-  --color-on-surface: oklch(0.192 0.020 255);
-  --color-on-surface-variant: oklch(0.370 0.018 195);
-  --color-inverse-surface: oklch(0.272 0.018 260);
-  --color-inverse-on-surface: oklch(0.950 0.012 268);
+  /* Success */
+  --color-success: oklch(0.527 0.086 157);           /* #3B7A57 — forest green */
 
-  --color-outline: oklch(0.554 0.016 199);
-  --color-outline-variant: oklch(0.818 0.014 199);
-  --color-on-background: oklch(0.192 0.020 255);
-  --color-background: oklch(0.979 0.007 270);
+  /* Caution */
+  --color-caution: oklch(0.707 0.132 87);            /* #C49A2A — aged gold */
+
+  /* Surfaces — warm linen palette (hue ~80 = warm, not ~260 = cool) */
+  --color-surface: oklch(1 0 0);                     /* white — cards/panels */
+  --color-surface-dim: oklch(0.938 0.009 85);        /* #EDEAE4 — recessed */
+  --color-surface-bright: oklch(0.980 0.004 78);     /* #FAF8F5 — raised */
+  --color-surface-container: oklch(0.965 0.007 81);  /* #F6F3EE — canvas */
+  --color-surface-container-low: oklch(0.980 0.004 78); /* surface-raised */
+  --color-surface-container-lowest: oklch(1 0 0);    /* white */
+  --color-surface-container-high: oklch(0.938 0.009 85); /* recessed */
+  --color-surface-container-highest: oklch(0.920 0.010 82);
+  --color-surface-tint: oklch(0.352 0.055 192);      /* teal tint */
+  --color-surface-variant: oklch(0.938 0.009 85);    /* recessed */
+  --color-on-surface: oklch(0.214 0.004 85);         /* #1A1917 — warm near-black */
+  --color-on-surface-variant: oklch(0.511 0.011 62); /* #6B6560 — warm muted */
+  --color-inverse-surface: oklch(0.214 0.004 85);    /* text-primary */
+  --color-inverse-on-surface: oklch(0.965 0.007 81); /* canvas */
+
+  --color-outline: oklch(0.674 0.011 58);            /* #9C9590 — tertiary text */
+  --color-outline-variant: oklch(0.902 0.009 78);    /* #E2DED8 — border */
+  --color-on-background: oklch(0.214 0.004 85);      /* text-primary */
+  --color-background: oklch(0.965 0.007 81);         /* #F6F3EE — canvas */
 
   /* Backward-compatible aliases */
-  --color-foreground: oklch(0.192 0.020 255);
-  --color-muted: oklch(0.370 0.018 195);
-  --color-border: oklch(0.818 0.014 199);
+  --color-foreground: oklch(0.214 0.004 85);         /* text-primary */
+  --color-muted: oklch(0.511 0.011 62);              /* text-secondary */
+  --color-border: oklch(0.902 0.009 78);             /* #E2DED8 — warm border */
 
-  /* Font tokens */
-  --font-headline: 'Manrope', system-ui, sans-serif;
-  --font-body: 'Inter', system-ui, sans-serif;
-  --font-mono: 'JetBrains Mono', monospace;
+  /* shadcn-compat aliases */
+  --color-card: oklch(1 0 0);                        /* white */
+  --color-card-foreground: oklch(0.214 0.004 85);    /* text-primary */
+  --color-popover: oklch(1 0 0);
+  --color-popover-foreground: oklch(0.214 0.004 85);
+  --color-primary-foreground: oklch(1 0 0);
+  --color-secondary-foreground: oklch(0.214 0.004 85); /* dark text on light secondary bg */
+  --color-accent: oklch(0.952 0.013 197);            /* teal-subtle */
+  --color-accent-foreground: oklch(0.214 0.004 85);
+  --color-destructive: oklch(0.543 0.153 28);        /* danger */
+  --color-destructive-foreground: oklch(1 0 0);
+  --color-muted-foreground: oklch(0.511 0.011 62);   /* text-secondary */
+  --color-ring: oklch(0.352 0.055 192);              /* teal primary */
+  --color-input: oklch(0.938 0.009 85);              /* recessed */
+  --color-sidebar-background: oklch(0.965 0.007 81); /* canvas */
+  --color-sidebar-foreground: oklch(0.214 0.004 85);
+  --color-sidebar-accent: oklch(0.952 0.013 197);    /* teal-subtle */
+  --color-sidebar-accent-foreground: oklch(0.214 0.004 85);
 
-  --radius: 8px;
-  --radius-xl: 16px;
+  /* Font tokens — Bridges Design System */
+  --font-headline: 'Fraunces', Georgia, serif;
+  --font-body: 'Instrument Sans', system-ui, sans-serif;
+  --font-mono: 'Commit Mono', monospace;
+
+  --radius: 6px;
+  --radius-sm: 4px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
 
   --ease-sanctuary: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Dark mode overrides */
+/* Dark mode overrides — warm dark, not cool */
 .dark {
-  --color-surface: oklch(0.155 0.015 260);
-  --color-surface-dim: oklch(0.120 0.012 260);
-  --color-surface-bright: oklch(0.215 0.018 260);
-  --color-surface-container: oklch(0.230 0.020 260);
-  --color-surface-container-low: oklch(0.190 0.017 260);
-  --color-surface-container-lowest: oklch(0.155 0.015 260);
-  --color-surface-container-high: oklch(0.280 0.018 260);
-  --color-surface-container-highest: oklch(0.310 0.018 260);
-  --color-on-surface: oklch(0.928 0.014 268);
-  --color-on-surface-variant: oklch(0.778 0.016 220);
-  --color-outline: oklch(0.488 0.025 228);
-  --color-outline-variant: oklch(0.339 0.017 237);
-  --color-foreground: oklch(0.928 0.014 268);
-  --color-muted: oklch(0.778 0.016 220);
-  --color-border: oklch(0.339 0.017 237);
-  --color-background: oklch(0.155 0.015 260);
+  --color-surface: oklch(0.257 0.006 78);            /* #252320 */
+  --color-surface-dim: oklch(0.187 0.004 85);        /* #141311 */
+  --color-surface-bright: oklch(0.290 0.006 78);     /* #2D2B28 */
+  --color-surface-container: oklch(0.257 0.006 78);  /* dark surface */
+  --color-surface-container-low: oklch(0.230 0.005 80);
+  --color-surface-container-lowest: oklch(0.214 0.004 85); /* darkest */
+  --color-surface-container-high: oklch(0.290 0.006 78);
+  --color-surface-container-highest: oklch(0.320 0.007 75);
+  --color-on-surface: oklch(0.945 0.009 78);         /* #F0ECE6 */
+  --color-on-surface-variant: oklch(0.702 0.010 73); /* #A39E98 */
+  --color-outline: oklch(0.511 0.011 62);            /* text-secondary */
+  --color-outline-variant: oklch(0.339 0.007 68);    /* #3A3734 */
+  --color-foreground: oklch(0.945 0.009 78);         /* dark text-primary */
+  --color-muted: oklch(0.702 0.010 73);              /* dark text-secondary */
+  --color-border: oklch(0.339 0.007 68);             /* #3A3734 */
+  --color-background: oklch(0.214 0.004 85);         /* #1A1917 */
+
+  /* shadcn-compat dark overrides */
+  --color-card: oklch(0.257 0.006 78);               /* dark surface */
+  --color-card-foreground: oklch(0.945 0.009 78);
+  --color-popover: oklch(0.257 0.006 78);
+  --color-popover-foreground: oklch(0.945 0.009 78);
+  --color-primary-foreground: oklch(1 0 0);
+  --color-secondary-foreground: oklch(0.945 0.009 78);
+  --color-accent: oklch(0.298 0.030 199);            /* dark teal-subtle */
+  --color-accent-foreground: oklch(0.945 0.009 78);
+  --color-destructive: oklch(0.650 0.140 28);        /* lighter danger for dark bg */
+  --color-destructive-foreground: oklch(1 0 0);
+  --color-muted-foreground: oklch(0.702 0.010 73);
+  --color-ring: oklch(0.722 0.097 198);              /* dark teal */
+  --color-input: oklch(0.290 0.006 78);              /* dark surface-raised */
+  --color-sidebar-background: oklch(0.230 0.005 80);
+  --color-sidebar-foreground: oklch(0.945 0.009 78);
+  --color-sidebar-accent: oklch(0.298 0.030 199);    /* dark teal-subtle */
+  --color-sidebar-accent-foreground: oklch(0.945 0.009 78);
 }
 
 /* Utility classes */
@@ -97,7 +144,7 @@
 }
 
 .sanctuary-shadow {
-  box-shadow: 0px 12px 32px oklch(0.192 0.020 255 / 0.06);
+  box-shadow: 0px 12px 32px oklch(0.214 0.004 85 / 0.06);
 }
 
 .glass-effect {
@@ -107,8 +154,9 @@
 
 .safe-space-container {
   border-radius: 1.5rem;
-  border: 1px solid oklch(0.818 0.014 199 / 0.1);
+  border: 1px solid oklch(0.902 0.009 78 / 0.1);
 }
+
 
 .material-symbols-outlined {
   font-family: 'Material Symbols Outlined' !important;
@@ -134,11 +182,53 @@ body {
 /* assistant-ui 0.12.x: primitives are unstyled, colors applied via Tailwind
    in src/features/builder/components/chat/bridges-chat.tsx */
 
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-8px); }
+  40%, 80% { transform: translateX(8px); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+}
+
+@media print {
+  nav,
+  header,
+  [data-sidebar],
+  [role="navigation"],
+  .print\:hidden {
+    display: none !important;
+  }
+
+  main {
+    margin: 0 !important;
+    padding: 0 !important;
+    max-width: 100% !important;
+  }
+
+  .recharts-responsive-container {
+    width: 700px !important;
+    height: 300px !important;
+  }
+
+  .print\:break-inside-avoid {
+    break-inside: avoid;
+  }
+
+  .print\:break-before-page {
+    break-before: page;
+  }
+
+  body {
+    font-size: 12pt;
+    line-height: 1.5;
+    color: black;
+    background: white;
   }
 }

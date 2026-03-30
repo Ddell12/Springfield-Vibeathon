@@ -62,15 +62,12 @@ export const seedTemplates = internalMutation({
   handler: async (ctx): Promise<void> => {
     for (const template of TEMPLATES) {
       // Idempotency: check if template with this name already exists
-      const categoryTemplates = await ctx.db
+      const existing = await ctx.db
         .query("therapyTemplates")
         .withIndex("by_category", (q) => q.eq("category", template.category))
-        .collect();
-
-      const existing = categoryTemplates.find((t) => t.name === template.name);
-      if (existing) {
-        continue;
-      }
+        .filter((q) => q.eq(q.field("name"), template.name))
+        .first();
+      if (existing) continue;
 
       await ctx.db.insert("therapyTemplates", {
         name: template.name,

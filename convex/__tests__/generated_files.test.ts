@@ -273,6 +273,90 @@ describe("generated_files — version-tracked file operations", () => {
   });
 });
 
+describe("getBundleByAppId — public bundle serving by appId", () => {
+  it("returns bundle HTML for valid appId", async () => {
+    const t = convexTest(schema, modules).withIdentity(TEST_IDENTITY);
+    const sessionId = await t.mutation(api.sessions.create, {
+      title: "Test",
+      query: "test",
+    });
+    const appId = await t.run(async (ctx) => {
+      return await ctx.db.insert("apps", {
+        title: "Play App",
+        description: "Test",
+        shareSlug: "play-app-slug",
+        sessionId,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      });
+    });
+    await t.mutation(api.generated_files.upsert, {
+      sessionId,
+      path: "_bundle.html",
+      contents: "<html><body>Kid Mode</body></html>",
+      version: 1,
+    });
+    const html = await t.query(api.generated_files.getBundleByAppId, { appId });
+    expect(html).toBe("<html><body>Kid Mode</body></html>");
+  });
+
+  it("returns null for nonexistent appId", async () => {
+    const t = convexTest(schema, modules).withIdentity(TEST_IDENTITY);
+    // Create a real app so we have a valid Id shape, then use a different one
+    const appId = await t.run(async (ctx) => {
+      return await ctx.db.insert("apps", {
+        title: "Temp",
+        description: "temp",
+        shareSlug: "temp-slug-nonexistent",
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      });
+    });
+    // Delete it so the id no longer resolves
+    await t.run(async (ctx) => {
+      await ctx.db.delete(appId);
+    });
+    const html = await t.query(api.generated_files.getBundleByAppId, { appId });
+    expect(html).toBeNull();
+  });
+
+  it("returns null when app has no session", async () => {
+    const t = convexTest(schema, modules).withIdentity(TEST_IDENTITY);
+    const appId = await t.run(async (ctx) => {
+      return await ctx.db.insert("apps", {
+        title: "No Session",
+        description: "no session",
+        shareSlug: "no-session-app-slug",
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        // sessionId intentionally omitted
+      });
+    });
+    const html = await t.query(api.generated_files.getBundleByAppId, { appId });
+    expect(html).toBeNull();
+  });
+
+  it("returns null when app has session but no _bundle.html file", async () => {
+    const t = convexTest(schema, modules).withIdentity(TEST_IDENTITY);
+    const sessionId = await t.mutation(api.sessions.create, {
+      title: "No Bundle",
+      query: "test",
+    });
+    const appId = await t.run(async (ctx) => {
+      return await ctx.db.insert("apps", {
+        title: "No Bundle App",
+        description: "no bundle",
+        shareSlug: "no-bundle-app-slug",
+        sessionId,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      });
+    });
+    const html = await t.query(api.generated_files.getBundleByAppId, { appId });
+    expect(html).toBeNull();
+  });
+});
+
 describe("getPublicBundle — public bundle serving via share slug", () => {
   it("returns bundle HTML when app and _bundle.html exist", async () => {
     const t = convexTest(schema, modules).withIdentity(TEST_IDENTITY);

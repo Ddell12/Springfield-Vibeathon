@@ -75,3 +75,4 @@ aac-board/
 
 # clerk configuration (can include secrets)
 /.clerk/
+.gstack/

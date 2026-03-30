@@ -3,6 +3,8 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   // esbuild ships a native binary that Turbopack can't parse — keep it external
   serverExternalPackages: ["esbuild"],
+  // recharts uses CJS without explicit package.json exports — Turbopack needs this
+  transpilePackages: ["recharts"],
   // Include the WAB scaffold (and its prod node_modules installed by postinstall)
   // in the /api/generate serverless function so esbuild can resolve imports at runtime
   outputFileTracingIncludes: {
