@@ -1,7 +1,8 @@
-import { describe, expect, it, vi } from "vitest";
 import { renderHook } from "@testing-library/react";
-import { useInviteInfo, useAcceptInvite } from "../use-invite";
+import { describe, expect, it, vi } from "vitest";
+
 import { api } from "../../../../../convex/_generated/api";
+import { useAcceptInvite,useInviteInfo } from "../use-invite";
 
 const mockUseQuery = vi.fn();
 const mockUseMutation = vi.fn();

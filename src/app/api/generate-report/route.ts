@@ -14,10 +14,10 @@ import {
   buildReportPrompt,
   parseReportResponse,
 } from "@/features/goals/lib/progress-prompt";
-import { calculateStreak, detectTrend } from "../../../../convex/lib/progress";
 
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
+import { calculateStreak, detectTrend } from "../../../../convex/lib/progress";
 import { sseEncode } from "../generate/sse";
 
 export const runtime = "nodejs";

@@ -1,6 +1,8 @@
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import { QuickNotes } from "../quick-notes";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+
 import { createMockPatient } from "@/test/fixtures/patient-fixtures";
+
+import { QuickNotes } from "../quick-notes";
 
 const mockMutate = vi.fn();
 

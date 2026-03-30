@@ -1,4 +1,4 @@
-import { test, expect } from "./fixtures";
+import { expect,test } from "./fixtures";
 import { TIMEOUTS } from "./helpers";
 
 /** Timeout for AI SOAP generation (streaming via SSE) */
@@ -48,7 +48,7 @@ test.describe("Session Notes — create, generate, sign flow", () => {
     });
 
     // Store the patient detail URL for later navigation back
-    const patientDetailUrl = page.url();
+    const _patientDetailUrl = page.url();
 
     // ── Step 3: Click "New Session" in the session notes widget ──────────────
     const newSessionButton = page

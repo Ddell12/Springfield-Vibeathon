@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { SoapPreview, type SoapNote } from "../soap-preview";
+
+import { type SoapNote,SoapPreview } from "../soap-preview";
 
 vi.mock("@/core/utils", () => ({
   cn: (...classes: any[]) => classes.filter(Boolean).join(" "),

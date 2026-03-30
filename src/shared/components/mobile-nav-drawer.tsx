@@ -5,8 +5,8 @@ import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 
 import { cn } from "@/core/utils";
-import { Avatar, AvatarFallback } from "@/shared/components/ui/avatar";
 import { MaterialIcon } from "@/shared/components/material-icon";
+import { Avatar, AvatarFallback } from "@/shared/components/ui/avatar";
 import { Button } from "@/shared/components/ui/button";
 import {
   Sheet,

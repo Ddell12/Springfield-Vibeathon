@@ -1,7 +1,8 @@
-import Link from "next/link";
 import { Sparkles } from "lucide-react";
+import Link from "next/link";
 
 import { Button } from "@/shared/components/ui/button";
+
 import type { Id } from "../../../../convex/_generated/dataModel";
 
 interface CreateMaterialButtonProps {

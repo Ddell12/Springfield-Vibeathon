@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
 import { cn } from "@/core/utils";
 import { MaterialIcon } from "@/shared/components/material-icon";
@@ -44,11 +44,12 @@ function formatDuration(ms: number): string {
 
 export function ProgressCard({ status, activities, startTime }: ProgressCardProps) {
   const phase = useMemo(() => derivePhase(status, activities), [status, activities]);
+  const [renderTime] = useState(() => Date.now());
+  const elapsed = renderTime - startTime;
 
   if (status === "idle") return null;
 
   const isComplete = status === "live";
-  const elapsed = Date.now() - startTime;
 
   const progressPercent = isComplete ? 100 : Math.min((phase / PHASES.length) * 100, 95);
 

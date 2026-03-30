@@ -1,6 +1,8 @@
-import { render, screen, fireEvent } from "@testing-library/react";
-import { PatientRow } from "../patient-row";
+import { fireEvent,render, screen } from "@testing-library/react";
+
 import { createMockPatient } from "@/test/fixtures/patient-fixtures";
+
+import { PatientRow } from "../patient-row";
 
 vi.mock("@/shared/components/material-icon", () => ({
   MaterialIcon: ({ icon }: { icon: string }) => <span data-testid="material-icon">{icon}</span>,

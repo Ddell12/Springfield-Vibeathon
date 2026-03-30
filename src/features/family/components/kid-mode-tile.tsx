@@ -1,9 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import { Star } from "lucide-react";
-import { cn } from "@/core/utils";
+import Link from "next/link";
+
 import { ROUTES } from "@/core/routes";
+import { cn } from "@/core/utils";
 
 interface KidModeTileProps {
   patientId: string;

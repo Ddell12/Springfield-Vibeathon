@@ -1,6 +1,7 @@
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
 import { ConvexError } from "convex/values";
+
+import { mutation, query } from "./_generated/server";
 import { assertSLP, getAuthUserId } from "./lib/auth";
 
 export const assign = mutation({

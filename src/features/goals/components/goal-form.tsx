@@ -2,10 +2,17 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
+
 import { Button } from "@/shared/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/shared/components/ui/dialog";
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
-import { Textarea } from "@/shared/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -13,19 +20,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/shared/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/shared/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/components/ui/tabs";
-import { GoalBankPicker } from "./goal-bank-picker";
-import { useCreateGoal, useUpdateGoal } from "../hooks/use-goals";
-import { domainLabel } from "../lib/goal-utils";
-import { fillTemplate, type GoalDomain, type GoalTemplate } from "../lib/goal-bank-data";
+import { Textarea } from "@/shared/components/ui/textarea";
+
 import type { Id } from "../../../../convex/_generated/dataModel";
+import { useCreateGoal, useUpdateGoal } from "../hooks/use-goals";
+import { fillTemplate, type GoalDomain, type GoalTemplate } from "../lib/goal-bank-data";
+import { domainLabel } from "../lib/goal-utils";
+import { GoalBankPicker } from "./goal-bank-picker";
 
 const DOMAINS: GoalDomain[] = [
   "articulation", "language-receptive", "language-expressive",

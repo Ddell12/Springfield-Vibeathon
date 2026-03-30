@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 
-import { EngagementSummary } from "../engagement-summary";
 import type { Id } from "../../../../../convex/_generated/dataModel";
+import { EngagementSummary } from "../engagement-summary";
 
 const mockUseQuery = vi.fn();
 

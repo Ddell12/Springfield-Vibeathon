@@ -1,7 +1,8 @@
-import { render, screen, fireEvent } from "@testing-library/react";
-import { FlashcardChatPanel } from "../flashcard-chat-panel";
+import { fireEvent,render, screen } from "@testing-library/react";
+
 import type { Id } from "../../../../../convex/_generated/dataModel";
 import type { FlashcardStreamingStatus } from "../../hooks/use-flashcard-streaming";
+import { FlashcardChatPanel } from "../flashcard-chat-panel";
 
 // jsdom doesn't implement scrollIntoView
 Element.prototype.scrollIntoView = vi.fn();

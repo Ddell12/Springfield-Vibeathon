@@ -4,8 +4,10 @@ import { useMutation } from "convex/react";
 import { ConvexError } from "convex/values";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { api } from "../../../../convex/_generated/api";
+import { toast } from "sonner";
+
 import { cn } from "@/core/utils";
+import { MaterialIcon } from "@/shared/components/material-icon";
 import { Badge } from "@/shared/components/ui/badge";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
@@ -19,9 +21,9 @@ import {
 } from "@/shared/components/ui/select";
 import { Textarea } from "@/shared/components/ui/textarea";
 import { ToggleGroup, ToggleGroupItem } from "@/shared/components/ui/toggle-group";
-import { MaterialIcon } from "@/shared/components/material-icon";
-import { toast } from "sonner";
-import { DIAGNOSIS_VALUES, DIAGNOSIS_LABELS, type DiagnosisValue } from "@/shared/lib/diagnosis";
+import { DIAGNOSIS_LABELS, DIAGNOSIS_VALUES, type DiagnosisValue } from "@/shared/lib/diagnosis";
+
+import { api } from "../../../../convex/_generated/api";
 
 const DIAGNOSES = DIAGNOSIS_VALUES.map((value) => ({
   value,

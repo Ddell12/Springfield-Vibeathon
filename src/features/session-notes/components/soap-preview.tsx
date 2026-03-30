@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
+
 import { cn } from "@/core/utils";
+import { MaterialIcon } from "@/shared/components/material-icon";
+import { Badge } from "@/shared/components/ui/badge";
 import { Button } from "@/shared/components/ui/button";
 import { Textarea } from "@/shared/components/ui/textarea";
-import { Badge } from "@/shared/components/ui/badge";
-import { MaterialIcon } from "@/shared/components/material-icon";
 
 export type SoapNote = {
   subjective: string;

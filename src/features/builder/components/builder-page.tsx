@@ -7,8 +7,8 @@ import { toast } from "sonner";
 
 import { useIsMobile } from "@/core/hooks/use-mobile";
 import { FullscreenAppView } from "@/shared/components/fullscreen-app-view";
-import { ShareDialog } from "@/shared/components/share-dialog";
 import { MaterialIcon } from "@/shared/components/material-icon";
+import { ShareDialog } from "@/shared/components/share-dialog";
 import { SuggestionChips } from "@/shared/components/suggestion-chips";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
@@ -28,9 +28,9 @@ import type { TherapyBlueprint } from "../lib/schemas";
 import { BuilderToolbar, type DeviceSize, type ViewMode } from "./builder-toolbar";
 import { ChatPanel } from "./chat-panel";
 import { CodePanel } from "./code-panel";
-import { PatientContextCard } from "./patient-context-card";
 import { ContinueCard } from "./continue-card";
 import { InterviewController } from "./interview/interview-controller";
+import { PatientContextCard } from "./patient-context-card";
 import { PreviewPanel } from "./preview-panel";
 
 interface BuilderPageProps {
@@ -55,8 +55,8 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
   useEffect(() => {
     const savedView = localStorage.getItem("bridges-viewMode") as ViewMode | null;
     const savedDevice = localStorage.getItem("bridges-deviceSize") as DeviceSize | null;
-    if (savedView) setViewMode(savedView);
-    if (savedDevice) setDeviceSize(savedDevice);
+    if (savedView) setViewMode(savedView); // eslint-disable-line react-hooks/set-state-in-effect -- localStorage hydration
+    if (savedDevice) setDeviceSize(savedDevice); // eslint-disable-line react-hooks/set-state-in-effect -- localStorage hydration
     hasMounted.current = true;
   }, []);
   const [mobilePanel, setMobilePanel] = useState<"chat" | "preview">("chat");
@@ -76,7 +76,7 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
   const lastPromptRef = useRef("");
   const promptInputRef = useRef<HTMLInputElement>(null);
   const [showFreeformInput, setShowFreeformInput] = useState(false);
-  const [generationStartTime, setGenerationStartTime] = useState<number>(Date.now());
+  const [generationStartTime, setGenerationStartTime] = useState<number>(() => Date.now());
 
   useEffect(() => { localStorage.setItem("bridges-viewMode", viewMode); }, [viewMode]);
   useEffect(() => { localStorage.setItem("bridges-deviceSize", deviceSize); }, [deviceSize]);
@@ -139,7 +139,7 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
   // prevent the user from switching to the code view via "View source".
   useEffect(() => {
     if (bundleHtml) startTransition(() => setViewMode("preview"));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+   
   }, [bundleHtml]);
 
   useEffect(() => {

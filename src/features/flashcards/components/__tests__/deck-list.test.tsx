@@ -1,8 +1,9 @@
 import { render, screen } from "@testing-library/react";
 
 import { createMockDeck } from "@/test/fixtures/flashcard-fixtures";
-import { DeckList } from "../deck-list";
+
 import type { Id } from "../../../../../convex/_generated/dataModel";
+import { DeckList } from "../deck-list";
 
 const mockUseQuery = vi.fn();
 

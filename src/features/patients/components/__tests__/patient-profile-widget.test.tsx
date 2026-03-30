@@ -1,6 +1,8 @@
 import { render, screen } from "@testing-library/react";
-import { PatientProfileWidget } from "../patient-profile-widget";
+
 import { createMockPatient } from "@/test/fixtures/patient-fixtures";
+
+import { PatientProfileWidget } from "../patient-profile-widget";
 
 const mockMutate = vi.fn();
 

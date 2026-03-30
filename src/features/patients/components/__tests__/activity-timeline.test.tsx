@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react";
-import { ActivityTimeline } from "../activity-timeline";
+
 import type { Id } from "../../../../../convex/_generated/dataModel";
+import { ActivityTimeline } from "../activity-timeline";
 
 const mockUsePatientActivity = vi.fn();
 

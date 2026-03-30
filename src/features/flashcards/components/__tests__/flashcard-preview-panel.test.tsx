@@ -1,8 +1,9 @@
 import { render, screen } from "@testing-library/react";
 
-import { createMockDeck, createMockCard } from "@/test/fixtures/flashcard-fixtures";
-import { FlashcardPreviewPanel } from "../flashcard-preview-panel";
+import { createMockCard,createMockDeck } from "@/test/fixtures/flashcard-fixtures";
+
 import type { Id } from "../../../../../convex/_generated/dataModel";
+import { FlashcardPreviewPanel } from "../flashcard-preview-panel";
 
 const mockUseQuery = vi.fn();
 

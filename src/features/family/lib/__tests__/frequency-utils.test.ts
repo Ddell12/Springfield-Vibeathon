@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { isDueToday, frequencySortOrder } from "../frequency-utils";
+
+import { frequencySortOrder,isDueToday } from "../frequency-utils";
 
 describe("isDueToday", () => {
   it("daily is always due", () => { expect(isDueToday("daily", 0)).toBe(true); });

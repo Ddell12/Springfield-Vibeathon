@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, act } from "@testing-library/react";
+import { act,fireEvent, render, screen } from "@testing-library/react";
 import type { Id } from "convex/_generated/dataModel";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 
@@ -57,6 +57,27 @@ vi.mock("@/shared/components/project-card", () => ({
     </div>
   ),
 }));
+
+// Mock ToggleGroup — propagate onValueChange when items are clicked
+vi.mock("@/shared/components/ui/toggle-group", () => {
+  let _onValueChange: ((v: string) => void) | undefined;
+  return {
+    ToggleGroup: ({ children, onValueChange }: any) => {
+      _onValueChange = onValueChange;
+      return <div data-testid="toggle-group">{children}</div>;
+    },
+    ToggleGroupItem: ({ children, value, ...props }: any) => (
+      <button
+        role="button"
+        data-value={value}
+        onClick={() => _onValueChange?.(value)}
+        {...props}
+      >
+        {children}
+      </button>
+    ),
+  };
+});
 
 // Mock DeleteConfirmationDialog
 vi.mock("@/shared/components/delete-confirmation-dialog", () => ({

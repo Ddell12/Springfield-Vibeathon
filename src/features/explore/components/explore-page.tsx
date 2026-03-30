@@ -1,6 +1,6 @@
-import { ExploreHero } from "./explore-hero";
 import { DemoToolGrid } from "./demo-tool-grid";
 import { ExploreCtaSection } from "./explore-cta-section";
+import { ExploreHero } from "./explore-hero";
 
 export function ExplorePage() {
   return (

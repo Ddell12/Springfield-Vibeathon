@@ -1,4 +1,5 @@
 import Link from "next/link";
+
 import { APP_BRAND } from "@/core/config";
 
 export function LandingFooter() {

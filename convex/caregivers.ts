@@ -1,8 +1,9 @@
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
-import { internal } from "./_generated/api";
 import { ConvexError } from "convex/values";
-import { getAuthUserId, getAuthRole, assertSLP } from "./lib/auth";
+
+import { internal } from "./_generated/api";
+import { mutation, query } from "./_generated/server";
+import { assertSLP,getAuthRole, getAuthUserId } from "./lib/auth";
 
 function generateInviteToken(): string {
   const bytes = new Uint8Array(16);

@@ -5,18 +5,18 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 
+import { APP_BRAND } from "@/core/config";
 import { DeleteConfirmationDialog } from "@/shared/components/delete-confirmation-dialog";
 import { EmptyState } from "@/shared/components/empty-state";
 import { MaterialIcon } from "@/shared/components/material-icon";
-import { Skeleton } from "@/shared/components/ui/skeleton";
 import { MobileNavDrawer } from "@/shared/components/mobile-nav-drawer";
 import { ProjectCard } from "@/shared/components/project-card";
 import { Button } from "@/shared/components/ui/button";
+import { Skeleton } from "@/shared/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/components/ui/tabs";
 
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
-import { APP_BRAND } from "@/core/config";
 import { DashboardChatBox } from "./dashboard-chat-box";
 import { TemplatesTab } from "./templates-tab";
 

@@ -3,10 +3,11 @@
 import Link from "next/link";
 import { useState } from "react";
 
+import { MaterialIcon } from "@/shared/components/material-icon";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
 import { ToggleGroup, ToggleGroupItem } from "@/shared/components/ui/toggle-group";
-import { MaterialIcon } from "@/shared/components/material-icon";
+
 import { usePatients, usePatientStats } from "../hooks/use-patients";
 import { PatientRow } from "./patient-row";
 import { PatientRowExpanded } from "./patient-row-expanded";

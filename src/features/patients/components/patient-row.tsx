@@ -5,9 +5,10 @@ import { MaterialIcon } from "@/shared/components/material-icon";
 import { Avatar, AvatarFallback } from "@/shared/components/ui/avatar";
 import { Badge } from "@/shared/components/ui/badge";
 import { Button } from "@/shared/components/ui/button";
-import { DIAGNOSIS_COLORS, STATUS_COLORS, getInitialsColor } from "../lib/diagnosis-colors";
-import { formatAge, getInitials } from "../lib/patient-utils";
+
 import type { Doc } from "../../../../convex/_generated/dataModel";
+import { DIAGNOSIS_COLORS, getInitialsColor,STATUS_COLORS } from "../lib/diagnosis-colors";
+import { formatAge, getInitials } from "../lib/patient-utils";
 
 interface PatientRowProps {
   patient: Doc<"patients">;

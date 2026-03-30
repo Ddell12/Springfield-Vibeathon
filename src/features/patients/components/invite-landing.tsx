@@ -1,13 +1,15 @@
 "use client";
 
-import { use, useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { useUser } from "@clerk/nextjs";
-import { Button } from "@/shared/components/ui/button";
-import { MaterialIcon } from "@/shared/components/material-icon";
-import { useInviteInfo, useAcceptInvite } from "../hooks/use-invite";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { use, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+
+import { MaterialIcon } from "@/shared/components/material-icon";
+import { Button } from "@/shared/components/ui/button";
+
+import { useAcceptInvite,useInviteInfo } from "../hooks/use-invite";
 
 interface InviteLandingProps {
   paramsPromise: Promise<{ token: string }>;
@@ -29,7 +31,7 @@ export function InviteLanding({ paramsPromise }: InviteLandingProps) {
   useEffect(() => {
     if (isLoaded && isSignedIn && !isSLP && inviteInfo && !isAccepting && !acceptAttemptedRef.current) {
       acceptAttemptedRef.current = true;
-      setIsAccepting(true);
+      setIsAccepting(true); // eslint-disable-line react-hooks/set-state-in-effect -- auto-accept flow
       acceptInvite({ token })
         .then(() => {
           toast.success("You're connected!");

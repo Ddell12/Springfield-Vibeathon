@@ -1,6 +1,9 @@
 "use client";
 
 import { useState } from "react";
+
+import { cn } from "@/core/utils";
+import { Button } from "@/shared/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -8,8 +11,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/shared/components/ui/dialog";
-import { Button } from "@/shared/components/ui/button";
-import { cn } from "@/core/utils";
 
 interface PinSetupModalProps {
   open: boolean;

@@ -1,10 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { X } from "lucide-react";
-import { Button } from "@/shared/components/ui/button";
+import { useEffect,useState } from "react";
+
 import { cn } from "@/core/utils";
-import { getCelebrationMessage, type CelebrationTrigger } from "../lib/encouragement";
+import { Button } from "@/shared/components/ui/button";
+
+import { type CelebrationTrigger,getCelebrationMessage } from "../lib/encouragement";
 
 interface CelebrationCardProps {
   childName: string;
@@ -68,7 +70,7 @@ export function CelebrationCard({ childName, currentStreak, goals }: Celebration
 
   // Read localStorage after hydration to avoid SSR mismatch
   useEffect(() => {
-    setMounted(true);
+    setMounted(true); // eslint-disable-line react-hooks/set-state-in-effect -- intentional mount-sync
   }, []);
 
   const allCelebrations = buildCelebrations(childName, currentStreak, goals);

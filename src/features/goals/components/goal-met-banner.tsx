@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/shared/components/ui/button";
+
 import { MaterialIcon } from "@/shared/components/material-icon";
-import { useUpdateGoal } from "../hooks/use-goals";
+import { Button } from "@/shared/components/ui/button";
+
 import type { Id } from "../../../../convex/_generated/dataModel";
+import { useUpdateGoal } from "../hooks/use-goals";
 
 interface GoalMetBannerProps {
   goalId: Id<"goals">;

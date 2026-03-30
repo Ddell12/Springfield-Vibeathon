@@ -1,20 +1,22 @@
 "use client";
 
-import { use, type ReactNode } from "react";
-import { notFound } from "next/navigation";
 import Link from "next/link";
-import { Button } from "@/shared/components/ui/button";
+import { notFound } from "next/navigation";
+import { type ReactNode,use } from "react";
+
+import { ChildAppsSection } from "@/shared/components/child-apps-section";
 import { MaterialIcon } from "@/shared/components/material-icon";
+import { Button } from "@/shared/components/ui/button";
+
+import type { Id } from "../../../../convex/_generated/dataModel";
 import { usePatient } from "../hooks/use-patients";
-import { PatientProfileWidget } from "./patient-profile-widget";
 import { ActivityTimeline } from "./activity-timeline";
 import { AssignedMaterials } from "./assigned-materials";
 import { CaregiverInfo } from "./caregiver-info";
-import { HomeProgramsWidget } from "./home-programs-widget";
-import { QuickNotes } from "./quick-notes";
 import { CreateMaterialButton } from "./create-material-button";
-import { ChildAppsSection } from "@/shared/components/child-apps-section";
-import type { Id } from "../../../../convex/_generated/dataModel";
+import { HomeProgramsWidget } from "./home-programs-widget";
+import { PatientProfileWidget } from "./patient-profile-widget";
+import { QuickNotes } from "./quick-notes";
 
 interface PatientDetailPageProps {
   paramsPromise: Promise<{ id: string }>;

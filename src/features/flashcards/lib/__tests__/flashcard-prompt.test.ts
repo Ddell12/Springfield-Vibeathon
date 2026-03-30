@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
+
 import {
-  FLASHCARD_SYSTEM_PROMPT,
   buildFlashcardSystemPrompt,
+  FLASHCARD_SYSTEM_PROMPT,
 } from "../flashcard-prompt";
 
 describe("flashcard-prompt", () => {

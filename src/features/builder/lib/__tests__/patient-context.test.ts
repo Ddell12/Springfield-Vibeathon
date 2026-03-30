@@ -3,9 +3,9 @@ import { describe, expect, it } from "vitest";
 
 import {
   buildPatientContextBlock,
-  sanitizePatientContext,
   type GoalForContext,
   type PatientForContext,
+  sanitizePatientContext,
 } from "../patient-context";
 
 // ─── Fixtures ────────────────────────────────────────────────────────────────

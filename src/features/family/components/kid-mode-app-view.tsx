@@ -1,13 +1,15 @@
 "use client";
 
-import { use } from "react";
-import { useQuery, useConvexAuth } from "convex/react";
-import { useRouter } from "next/navigation";
+import { useConvexAuth,useQuery } from "convex/react";
 import { ArrowLeft, Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { use } from "react";
+
+import { ROUTES } from "@/core/routes";
+import { FullscreenAppView } from "@/shared/components/fullscreen-app-view";
+
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
-import { FullscreenAppView } from "@/shared/components/fullscreen-app-view";
-import { ROUTES } from "@/core/routes";
 import { KidModeExit } from "./kid-mode-exit";
 
 interface KidModeAppViewProps {

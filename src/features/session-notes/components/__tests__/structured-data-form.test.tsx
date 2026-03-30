@@ -1,5 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+
 import { StructuredDataForm } from "../structured-data-form";
 
 vi.mock("@/shared/components/ui/button", () => ({

@@ -1,4 +1,4 @@
-import { DIAGNOSIS_COLORS, STATUS_COLORS, getInitialsColor } from "../diagnosis-colors";
+import { DIAGNOSIS_COLORS, getInitialsColor,STATUS_COLORS } from "../diagnosis-colors";
 
 const EXPECTED_DIAGNOSES = ["articulation", "language", "fluency", "voice", "aac-complex", "other"];
 const EXPECTED_STATUSES = ["active", "on-hold", "discharged", "pending-intake"];
@@ -64,17 +64,17 @@ describe("STATUS_COLORS", () => {
 });
 
 describe("getInitialsColor", () => {
-  it("returns the correct color class for known diagnoses", () => {
-    expect(getInitialsColor("articulation")).toBe("bg-emerald-500");
-    expect(getInitialsColor("language")).toBe("bg-blue-500");
-    expect(getInitialsColor("fluency")).toBe("bg-amber-500");
-    expect(getInitialsColor("voice")).toBe("bg-purple-500");
-    expect(getInitialsColor("aac-complex")).toBe("bg-rose-500");
-    expect(getInitialsColor("other")).toBe("bg-gray-500");
+  it("returns the correct domain color class for known diagnoses", () => {
+    expect(getInitialsColor("articulation")).toBe("bg-domain-emerald");
+    expect(getInitialsColor("language")).toBe("bg-domain-blue");
+    expect(getInitialsColor("fluency")).toBe("bg-domain-amber");
+    expect(getInitialsColor("voice")).toBe("bg-domain-purple");
+    expect(getInitialsColor("aac-complex")).toBe("bg-domain-rose");
+    expect(getInitialsColor("other")).toBe("bg-domain-neutral");
   });
 
-  it("falls back to bg-gray-500 for unknown diagnosis", () => {
-    expect(getInitialsColor("unknown-diagnosis")).toBe("bg-gray-500");
-    expect(getInitialsColor("")).toBe("bg-gray-500");
+  it("falls back to bg-domain-neutral for unknown diagnosis", () => {
+    expect(getInitialsColor("unknown-diagnosis")).toBe("bg-domain-neutral");
+    expect(getInitialsColor("")).toBe("bg-domain-neutral");
   });
 });

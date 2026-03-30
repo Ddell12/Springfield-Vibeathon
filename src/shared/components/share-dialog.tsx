@@ -34,8 +34,12 @@ export function ShareDialog({
   const shareUrl = shareSlug ? `${origin}/tool/${shareSlug}` : "";
   const isLoading = !shareUrl;
 
+  // Reset timedOut when dialog closes or slug arrives
   useEffect(() => {
-    if (!open || shareSlug) { setTimedOut(false); return; }
+    if (!open || shareSlug) {
+      setTimedOut(false); // eslint-disable-line react-hooks/set-state-in-effect -- reset on close/slug
+      return;
+    }
     const timer = setTimeout(() => setTimedOut(true), 10_000);
     return () => clearTimeout(timer);
   }, [open, shareSlug]);

@@ -1,6 +1,8 @@
-import { Suspense } from "react";
 import { render, screen } from "@testing-library/react";
+import { Suspense } from "react";
+
 import { createMockPatient } from "@/test/fixtures/patient-fixtures";
+
 import { PatientDetailPage } from "../patient-detail-page";
 
 const mockUsePatient = vi.fn();

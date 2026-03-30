@@ -29,8 +29,8 @@ export function useProgressNarration(
 
   useEffect(() => {
     if (isGenerating) {
-      setStageIndex(0);
-      setActiveOverride(null);
+      setStageIndex(0); // eslint-disable-line react-hooks/set-state-in-effect -- reset on generate start
+      setActiveOverride(null); // eslint-disable-line react-hooks/set-state-in-effect -- reset on generate start
       prevOverrideRef.current = undefined;
     }
   }, [isGenerating]);
@@ -49,7 +49,7 @@ export function useProgressNarration(
     if (!isGenerating) return;
     if (overrideMessage && overrideMessage !== prevOverrideRef.current) {
       prevOverrideRef.current = overrideMessage;
-      setActiveOverride(overrideMessage);
+      setActiveOverride(overrideMessage); // eslint-disable-line react-hooks/set-state-in-effect -- sync override
       if (overrideTimeoutRef.current) clearTimeout(overrideTimeoutRef.current);
       overrideTimeoutRef.current = setTimeout(() => {
         setActiveOverride(null);

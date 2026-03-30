@@ -2,18 +2,20 @@
 
 import { useMutation } from "convex/react";
 import { useState } from "react";
-import { api } from "../../../../convex/_generated/api";
+import { toast } from "sonner";
+
 import { cn } from "@/core/utils";
+import { MaterialIcon } from "@/shared/components/material-icon";
 import { Avatar, AvatarFallback } from "@/shared/components/ui/avatar";
 import { Badge } from "@/shared/components/ui/badge";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
-import { MaterialIcon } from "@/shared/components/material-icon";
-import { DIAGNOSIS_COLORS, STATUS_COLORS, getInitialsColor } from "../lib/diagnosis-colors";
-import { formatAge, getInitials } from "../lib/patient-utils";
-import { toast } from "sonner";
+
+import { api } from "../../../../convex/_generated/api";
 import type { Doc } from "../../../../convex/_generated/dataModel";
+import { DIAGNOSIS_COLORS, getInitialsColor,STATUS_COLORS } from "../lib/diagnosis-colors";
+import { formatAge, getInitials } from "../lib/patient-utils";
 
 interface PatientProfileWidgetProps {
   patient: Doc<"patients">;

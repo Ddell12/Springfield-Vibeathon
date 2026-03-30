@@ -1,13 +1,14 @@
 import { describe, expect, it } from "vitest";
+
 import {
-  formatAccuracy,
-  formatAccuracyWithTarget,
-  trendArrow,
-  domainLabel,
-  promptLevelColor,
-  statusBadgeColor,
   calculateStreakClient,
   checkGoalMetClient,
+  domainLabel,
+  formatAccuracy,
+  formatAccuracyWithTarget,
+  promptLevelColor,
+  statusBadgeColor,
+  trendArrow,
 } from "../lib/goal-utils";
 
 describe("goal-utils", () => {
@@ -35,9 +36,9 @@ describe("goal-utils", () => {
     expect(domainLabel("aac")).toBe("AAC");
   });
 
-  it("promptLevelColor returns hex colors", () => {
-    expect(promptLevelColor("independent")).toMatch(/^#/);
-    expect(promptLevelColor(undefined)).toMatch(/^#/);
+  it("promptLevelColor returns CSS variable colors", () => {
+    expect(promptLevelColor("independent")).toMatch(/^var\(--color-/);
+    expect(promptLevelColor(undefined)).toMatch(/^var\(--color-/);
   });
 
   it("statusBadgeColor returns tailwind classes for all statuses", () => {

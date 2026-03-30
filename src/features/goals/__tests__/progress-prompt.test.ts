@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import { buildReportPrompt, parseReportResponse } from "../lib/progress-prompt";
 
 describe("buildReportPrompt", () => {

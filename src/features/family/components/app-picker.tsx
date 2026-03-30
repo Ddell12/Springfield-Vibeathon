@@ -3,8 +3,8 @@
 import { useMutation, useQuery } from "convex/react";
 import { Check, Plus } from "lucide-react";
 import { toast } from "sonner";
-import { api } from "../../../../convex/_generated/api";
-import type { Id } from "../../../../convex/_generated/dataModel";
+
+import { cn } from "@/core/utils";
 import {
   Dialog,
   DialogContent,
@@ -12,7 +12,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/shared/components/ui/dialog";
-import { cn } from "@/core/utils";
+
+import { api } from "../../../../convex/_generated/api";
+import type { Id } from "../../../../convex/_generated/dataModel";
 
 interface AppPickerProps {
   open: boolean;

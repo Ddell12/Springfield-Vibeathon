@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import { FLASHCARD_SUGGESTIONS } from "../constants";
 
 describe("FLASHCARD_SUGGESTIONS", () => {

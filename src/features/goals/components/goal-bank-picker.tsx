@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+
+import { cn } from "@/core/utils";
 import {
   Select,
   SelectContent,
@@ -8,14 +10,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/shared/components/ui/select";
-import { cn } from "@/core/utils";
+
 import {
+  fillTemplate,
+  getTemplatesByDomain,
   type GoalDomain,
   type GoalTemplate,
-  getTemplatesByDomain,
-  fillTemplate,
 } from "../lib/goal-bank-data";
-import { domainLabel, domainColor } from "../lib/goal-utils";
+import { domainColor,domainLabel } from "../lib/goal-utils";
 
 const DOMAINS: GoalDomain[] = [
   "articulation",

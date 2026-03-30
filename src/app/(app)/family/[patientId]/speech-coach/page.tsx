@@ -1,11 +1,12 @@
 "use client";
 
-import { use } from "react";
 import { useSearchParams } from "next/navigation";
+import { use } from "react";
 import { ErrorBoundary } from "react-error-boundary";
 
 import { SpeechCoachPage } from "@/features/speech-coach/components/speech-coach-page";
 import { GenericErrorFallback } from "@/shared/components/generic-error-fallback";
+
 import type { Id } from "../../../../../../convex/_generated/dataModel";
 
 export default function Page({ params }: { params: Promise<{ patientId: string }> }) {

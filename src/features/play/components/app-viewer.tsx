@@ -1,16 +1,16 @@
 "use client";
 
-import { use, useEffect, useRef, useState } from "react";
-import Link from "next/link";
-import { Home, Loader2 } from "lucide-react";
 import { useQuery } from "convex/react";
-import { toast } from "sonner";
+import { Home, Loader2 } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { use, useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
-import { PlayAuthGuard } from "./play-auth-guard";
 import { useTtsBridge } from "../../builder/hooks/use-tts-bridge";
+import { PlayAuthGuard } from "./play-auth-guard";
 
 interface AppViewerProps {
   paramsPromise: Promise<{ patientId: string; appId: string }>;
@@ -39,7 +39,7 @@ function AppViewerInner({ patientId, appId }: { patientId: string; appId: string
     const url = URL.createObjectURL(
       new Blob([bundle], { type: "text/html" })
     );
-    setBlobUrl(url);
+    setBlobUrl(url); // eslint-disable-line react-hooks/set-state-in-effect -- set blob URL after creation
 
     return () => {
       URL.revokeObjectURL(url);

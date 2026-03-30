@@ -1,19 +1,20 @@
 "use client";
 
+import { formatAge,useActiveGoals } from "@/shared/clinical";
+import { MaterialIcon } from "@/shared/components/material-icon";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
-import { Textarea } from "@/shared/components/ui/textarea";
 import {
   RadioGroup,
   RadioGroupItem,
 } from "@/shared/components/ui/radio-group";
-import { MaterialIcon } from "@/shared/components/material-icon";
-import { TargetEntry, type TargetData } from "./target-entry";
-import { useActiveGoals, formatAge } from "@/shared/clinical";
-import { DurationPresetInput } from "./duration-preset-input";
+import { Textarea } from "@/shared/components/ui/textarea";
 import { DIAGNOSIS_LABELS } from "@/shared/lib/diagnosis";
+
 import type { Doc } from "../../../../convex/_generated/dataModel";
+import { DurationPresetInput } from "./duration-preset-input";
+import { type TargetData,TargetEntry } from "./target-entry";
 
 const MAX_TARGETS = 20;
 

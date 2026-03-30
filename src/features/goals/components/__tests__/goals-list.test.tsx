@@ -1,5 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+
 import { GoalsList } from "../goals-list";
 
 vi.mock("next/link", () => ({

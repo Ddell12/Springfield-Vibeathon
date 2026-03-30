@@ -34,7 +34,7 @@ export function FullscreenAppView({
   }, []);
 
   useEffect(() => {
-    resetFadeTimer();
+    resetFadeTimer(); // eslint-disable-line react-hooks/set-state-in-effect -- initialize fade timer
     return () => {
       if (fadeTimerRef.current) clearTimeout(fadeTimerRef.current);
     };

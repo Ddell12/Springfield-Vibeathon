@@ -7,7 +7,7 @@ import { useEffect } from "react";
 
 import { cn } from "@/core/utils";
 import { MaterialIcon } from "@/shared/components/material-icon";
-import { isNavActive, NAV_ITEMS, CAREGIVER_NAV_ITEMS } from "@/shared/lib/navigation";
+import { CAREGIVER_NAV_ITEMS,isNavActive, NAV_ITEMS } from "@/shared/lib/navigation";
 
 export function DashboardSidebar() {
   const pathname = usePathname();

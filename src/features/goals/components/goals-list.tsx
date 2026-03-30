@@ -1,14 +1,16 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
-import { Button } from "@/shared/components/ui/button";
-import { MaterialIcon } from "@/shared/components/material-icon";
+import { useState } from "react";
+
 import { cn } from "@/core/utils";
-import { useActiveGoals } from "../hooks/use-goals";
-import { GoalForm } from "./goal-form";
-import { domainLabel, domainColor } from "../lib/goal-utils";
+import { MaterialIcon } from "@/shared/components/material-icon";
+import { Button } from "@/shared/components/ui/button";
+
 import type { Id } from "../../../../convex/_generated/dataModel";
+import { useActiveGoals } from "../hooks/use-goals";
+import { domainColor,domainLabel } from "../lib/goal-utils";
+import { GoalForm } from "./goal-form";
 
 interface GoalsListProps {
   patientId: Id<"patients">;

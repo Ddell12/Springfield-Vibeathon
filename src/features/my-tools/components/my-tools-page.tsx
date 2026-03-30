@@ -78,7 +78,7 @@ export function MyToolsPage() {
   useEffect(() => {
     if (fullscreenSessionId && fullscreenBundle === null) {
       toast.error("No preview available yet. Try opening it in the builder.");
-      setFullscreenSessionId(null);
+      setFullscreenSessionId(null); // eslint-disable-line react-hooks/set-state-in-effect -- clear on missing bundle
     }
   }, [fullscreenSessionId, fullscreenBundle]);
 

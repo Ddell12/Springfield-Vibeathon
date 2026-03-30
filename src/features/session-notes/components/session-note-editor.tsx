@@ -1,30 +1,32 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { notFound } from "next/navigation";
-import Link from "next/link";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Button } from "@/shared/components/ui/button";
-import { MaterialIcon } from "@/shared/components/material-icon";
+
 import { usePatient } from "@/shared/clinical";
+import { MaterialIcon } from "@/shared/components/material-icon";
+import { Button } from "@/shared/components/ui/button";
+
+import type { Id } from "../../../../convex/_generated/dataModel";
 import {
-  useSessionNote,
   useCreateSessionNote,
-  useUpdateSessionNote,
-  useUpdateSoap,
-  useUpdateSessionNoteStatus,
+  useSessionNote,
   useSignSessionNote,
   useUnsignSessionNote,
+  useUpdateSessionNote,
+  useUpdateSessionNoteStatus,
+  useUpdateSoap,
 } from "../hooks/use-session-notes";
 import { useSoapGeneration } from "../hooks/use-soap-generation";
+import { type SoapNote,SoapPreview } from "./soap-preview";
 import {
-  StructuredDataForm,
-  type StructuredData,
   type SessionType,
+  type StructuredData,
+  StructuredDataForm,
 } from "./structured-data-form";
-import { SoapPreview, type SoapNote } from "./soap-preview";
-import type { Id } from "../../../../convex/_generated/dataModel";
 
 interface SessionNoteEditorProps {
   patientId: string;

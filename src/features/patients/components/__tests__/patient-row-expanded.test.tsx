@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react";
 
-import { createMockPatient, createMockActivity, createMockCaregiverLink } from "@/test/fixtures/patient-fixtures";
+import { createMockActivity, createMockCaregiverLink,createMockPatient } from "@/test/fixtures/patient-fixtures";
+
 import { PatientRowExpanded } from "../patient-row-expanded";
 
 const mockUseQuery = vi.fn();

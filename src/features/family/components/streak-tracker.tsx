@@ -1,7 +1,7 @@
 "use client";
 
-import { Card, CardContent } from "@/shared/components/ui/card";
 import { cn } from "@/core/utils";
+import { Card, CardContent } from "@/shared/components/ui/card";
 
 interface StreakTrackerProps {
   streakData: {

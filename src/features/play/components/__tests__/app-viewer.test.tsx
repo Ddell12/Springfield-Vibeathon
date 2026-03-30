@@ -1,6 +1,6 @@
 import { act, render, screen, waitFor } from "@testing-library/react";
-import { describe, expect, it, vi, beforeEach } from "vitest";
 import React from "react";
+import { beforeEach,describe, expect, it, vi } from "vitest";
 
 const mockReplace = vi.fn();
 

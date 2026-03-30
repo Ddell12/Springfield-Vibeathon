@@ -4,8 +4,8 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 
 import { cn } from "@/core/utils";
-import { Avatar, AvatarFallback } from "@/shared/components/ui/avatar";
 import { MaterialIcon } from "@/shared/components/material-icon";
+import { Avatar, AvatarFallback } from "@/shared/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,

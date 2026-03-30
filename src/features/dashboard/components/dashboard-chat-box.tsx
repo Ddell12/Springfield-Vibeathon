@@ -8,7 +8,6 @@ import { SuggestionChips } from "@/shared/components/suggestion-chips";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
 import { VoiceInput } from "@/shared/components/voice-input";
-
 import { THERAPY_SUGGESTIONS } from "@/shared/lib/therapy-constants";
 
 export function DashboardChatBox() {

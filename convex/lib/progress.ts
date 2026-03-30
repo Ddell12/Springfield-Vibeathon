@@ -1,4 +1,5 @@
 import type { GenericDatabaseWriter } from "convex/server";
+
 import type { DataModel, Id } from "../_generated/dataModel";
 
 interface DataPoint {

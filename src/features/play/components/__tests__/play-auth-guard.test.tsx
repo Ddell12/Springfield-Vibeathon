@@ -14,6 +14,7 @@ vi.mock("../../../../../convex/_generated/api", () => ({
 }));
 
 import { useConvexAuth, useQuery } from "convex/react";
+
 import { PlayAuthGuard } from "../play-auth-guard";
 
 describe("PlayAuthGuard", () => {

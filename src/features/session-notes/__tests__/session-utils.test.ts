@@ -61,22 +61,22 @@ describe("calculateAccuracy", () => {
 });
 
 describe("accuracyColor", () => {
-  it("returns green for 80 and above", () => {
-    expect(accuracyColor(80)).toBe("text-green-600 dark:text-green-400");
-    expect(accuracyColor(100)).toBe("text-green-600 dark:text-green-400");
-    expect(accuracyColor(95)).toBe("text-green-600 dark:text-green-400");
+  it("returns success token for 80 and above", () => {
+    expect(accuracyColor(80)).toBe("text-success");
+    expect(accuracyColor(100)).toBe("text-success");
+    expect(accuracyColor(95)).toBe("text-success");
   });
 
-  it("returns yellow for 60-79", () => {
-    expect(accuracyColor(60)).toBe("text-yellow-600 dark:text-yellow-400");
-    expect(accuracyColor(79)).toBe("text-yellow-600 dark:text-yellow-400");
-    expect(accuracyColor(70)).toBe("text-yellow-600 dark:text-yellow-400");
+  it("returns caution token for 60-79", () => {
+    expect(accuracyColor(60)).toBe("text-caution");
+    expect(accuracyColor(79)).toBe("text-caution");
+    expect(accuracyColor(70)).toBe("text-caution");
   });
 
-  it("returns red for below 60", () => {
-    expect(accuracyColor(59)).toBe("text-red-600 dark:text-red-400");
-    expect(accuracyColor(0)).toBe("text-red-600 dark:text-red-400");
-    expect(accuracyColor(30)).toBe("text-red-600 dark:text-red-400");
+  it("returns error token for below 60", () => {
+    expect(accuracyColor(59)).toBe("text-error");
+    expect(accuracyColor(0)).toBe("text-error");
+    expect(accuracyColor(30)).toBe("text-error");
   });
 
   it("returns muted for null", () => {

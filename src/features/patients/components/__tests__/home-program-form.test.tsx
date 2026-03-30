@@ -1,7 +1,8 @@
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import { HomeProgramForm } from "../home-program-form";
-import type { Id } from "../../../../../convex/_generated/dataModel";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { toast } from "sonner";
+
+import type { Id } from "../../../../../convex/_generated/dataModel";
+import { HomeProgramForm } from "../home-program-form";
 
 const mockMutate = vi.fn();
 
@@ -13,6 +14,7 @@ vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
 // Mock shadcn Select as a native <select> so fireEvent.change works in tests
 vi.mock("@/shared/components/ui/select", () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const React = require("react");
   const SelectContext = React.createContext<{ onValueChange?: (v: string) => void }>({});
   return {

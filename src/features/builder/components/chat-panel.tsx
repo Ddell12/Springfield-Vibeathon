@@ -173,7 +173,7 @@ export function ChatPanel({
             <ProgressCard
               status={status}
               activities={activities}
-              startTime={startTime ?? Date.now()}
+              startTime={startTime ?? 0}
             />
           )}
 

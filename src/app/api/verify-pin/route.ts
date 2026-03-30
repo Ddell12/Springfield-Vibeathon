@@ -1,8 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
 import { ConvexHttpClient } from "convex/browser";
+import { NextRequest, NextResponse } from "next/server";
+
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
-import { auth } from "@clerk/nextjs/server";
 
 const CONVEX_URL = process.env.NEXT_PUBLIC_CONVEX_URL!;
 

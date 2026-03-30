@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { getCelebrationMessage, type CelebrationTrigger } from "../encouragement";
+
+import { type CelebrationTrigger,getCelebrationMessage } from "../encouragement";
 
 describe("getCelebrationMessage", () => {
   it("streak 3 message", () => {

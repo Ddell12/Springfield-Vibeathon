@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react";
-import { AssignedMaterials } from "../assigned-materials";
+
 import type { Id } from "../../../../../convex/_generated/dataModel";
+import { AssignedMaterials } from "../assigned-materials";
 
 const mockUsePatientMaterials = vi.fn();
 

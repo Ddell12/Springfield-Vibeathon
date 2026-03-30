@@ -1,6 +1,7 @@
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import { PatientIntakeForm } from "../patient-intake-form";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { toast } from "sonner";
+
+import { PatientIntakeForm } from "../patient-intake-form";
 
 const mockMutate = vi.fn();
 const mockPush = vi.fn();

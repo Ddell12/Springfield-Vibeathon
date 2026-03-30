@@ -1,10 +1,12 @@
 "use client";
 
-import Link from "next/link";
 import { useQuery } from "convex/react";
-import { api } from "../../../../convex/_generated/api";
-import { Button } from "@/shared/components/ui/button";
+import Link from "next/link";
+
 import { MaterialIcon } from "@/shared/components/material-icon";
+import { Button } from "@/shared/components/ui/button";
+
+import { api } from "../../../../convex/_generated/api";
 import type { Doc } from "../../../../convex/_generated/dataModel";
 
 interface PatientRowExpandedProps {

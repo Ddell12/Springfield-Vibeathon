@@ -1,9 +1,10 @@
 "use client";
 
-import { Card, CardContent } from "@/shared/components/ui/card";
+import { cn } from "@/core/utils";
 import { Badge } from "@/shared/components/ui/badge";
 import { Button } from "@/shared/components/ui/button";
-import { cn } from "@/core/utils";
+import { Card, CardContent } from "@/shared/components/ui/card";
+
 import type { Id } from "../../../../convex/_generated/dataModel";
 import type { Frequency } from "../lib/frequency-utils";
 

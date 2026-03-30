@@ -1,16 +1,18 @@
 "use client";
 
 import Link from "next/link";
+
 import { cn } from "@/core/utils";
-import { Badge } from "@/shared/components/ui/badge";
 import { MaterialIcon } from "@/shared/components/material-icon";
-import {
-  formatDuration,
-  calculateAccuracy,
-  accuracyLabel,
-  accuracyColor,
-} from "../lib/session-utils";
+import { Badge } from "@/shared/components/ui/badge";
+
 import type { Doc } from "../../../../convex/_generated/dataModel";
+import {
+  accuracyColor,
+  accuracyLabel,
+  calculateAccuracy,
+  formatDuration,
+} from "../lib/session-utils";
 
 interface SessionNoteCardProps {
   note: Doc<"sessionNotes">;

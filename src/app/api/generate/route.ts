@@ -2,23 +2,25 @@
 // process requires it at runtime but Next.js can't trace child process imports.
 import "esbuild";
 
-import { rmSync } from "fs";
 import Anthropic from "@anthropic-ai/sdk";
+import { rmSync } from "fs";
+
 import { GenerateInputSchema } from "@/features/builder/lib/schemas/generate";
+
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
-import { sseEncode } from "./sse";
 import { authenticate } from "./lib/authenticate";
+import { bundleFiles, persistFiles } from "./lib/bundle-and-persist";
 import {
-  createOrReuseSession,
-  startGeneration,
-  persistUserMessage,
-  persistAssistantMessage,
   completeSession,
+  createOrReuseSession,
   failSession,
+  persistAssistantMessage,
+  persistUserMessage,
+  startGeneration,
 } from "./lib/session-lifecycle";
 import { streamGeneration } from "./lib/stream-generation";
-import { bundleFiles, persistFiles } from "./lib/bundle-and-persist";
+import { sseEncode } from "./sse";
 
 export const runtime = "nodejs";
 

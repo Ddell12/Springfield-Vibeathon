@@ -1,24 +1,26 @@
 "use client";
 
-import { use, useState } from "react";
+import { useConvexAuth, useMutation,useQuery } from "convex/react";
+import { Gamepad2, Settings2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useQuery, useConvexAuth, useMutation } from "convex/react";
+import { use, useState } from "react";
+
+import { ROUTES } from "@/core/routes";
+import { MaterialIcon } from "@/shared/components/material-icon";
+import { Button } from "@/shared/components/ui/button";
+import { Separator } from "@/shared/components/ui/separator";
+import { Skeleton } from "@/shared/components/ui/skeleton";
+
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
-import { Gamepad2, Settings2 } from "lucide-react";
-import { Button } from "@/shared/components/ui/button";
-import { Skeleton } from "@/shared/components/ui/skeleton";
-import { Separator } from "@/shared/components/ui/separator";
-import { MaterialIcon } from "@/shared/components/material-icon";
-import { ROUTES } from "@/core/routes";
 import { useFamilyData } from "../hooks/use-family-data";
-import { StreakTracker } from "./streak-tracker";
-import { WeeklyProgress } from "./weekly-progress";
-import { CelebrationCard } from "./celebration-card";
-import { TodayActivities } from "./today-activities";
-import { PinSetupModal } from "./pin-setup-modal";
 import { AppPicker } from "./app-picker";
+import { CelebrationCard } from "./celebration-card";
+import { PinSetupModal } from "./pin-setup-modal";
+import { StreakTracker } from "./streak-tracker";
+import { TodayActivities } from "./today-activities";
+import { WeeklyProgress } from "./weekly-progress";
 
 interface FamilyDashboardProps {
   paramsPromise: Promise<{ patientId: string }>;

@@ -7,7 +7,7 @@ describe("NAV_ITEMS", () => {
     expect(NAV_ITEMS[1].href).toBe("/patients");
     expect(NAV_ITEMS[2].href).toBe("/builder");
     expect(NAV_ITEMS[3].href).toBe("/flashcards");
-    expect(NAV_ITEMS[4].href).toBe("/family");
+    expect(NAV_ITEMS[4].href).toBe("/speech-coach");
     expect(NAV_ITEMS[5].href).toBe("/templates");
     expect(NAV_ITEMS[6].href).toBe("/my-tools");
     expect(NAV_ITEMS[7].href).toBe("/settings");

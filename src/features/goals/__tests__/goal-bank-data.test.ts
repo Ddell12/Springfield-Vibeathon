@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { GOAL_TEMPLATES, getTemplatesByDomain, fillTemplate } from "../lib/goal-bank-data";
+
+import { fillTemplate,getTemplatesByDomain, GOAL_TEMPLATES } from "../lib/goal-bank-data";
 
 describe("goal-bank-data", () => {
   it("has no duplicate template IDs", () => {

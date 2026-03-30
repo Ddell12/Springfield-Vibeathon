@@ -1,6 +1,7 @@
+import { act,render, screen } from "@testing-library/react";
 import { Suspense } from "react";
-import { render, screen, act } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+
 import { MessageThread } from "../message-thread";
 
 vi.mock("next/link", () => ({

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { calculateStreak, detectTrend, checkGoalMet } from "../lib/progress";
+
+import { calculateStreak, checkGoalMet,detectTrend } from "../lib/progress";
 
 describe("calculateStreak", () => {
   it("returns 0 for empty data", () => {

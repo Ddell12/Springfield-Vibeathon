@@ -1,9 +1,9 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
-import { ProgressCard } from "../progress-card";
 import type { Activity } from "../../hooks/use-streaming";
 import type { StreamingStatus } from "../../hooks/use-streaming";
+import { ProgressCard } from "../progress-card";
 
 describe("ProgressCard", () => {
   const baseProps = {

@@ -1,15 +1,17 @@
 "use client";
 
-import { use } from "react";
-import { useQuery, useConvexAuth } from "convex/react";
-import { useRouter } from "next/navigation";
+import { useConvexAuth,useQuery } from "convex/react";
 import { Gamepad2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { use } from "react";
+
+import { ROUTES } from "@/core/routes";
+import { Skeleton } from "@/shared/components/ui/skeleton";
+
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
-import { Skeleton } from "@/shared/components/ui/skeleton";
-import { ROUTES } from "@/core/routes";
-import { KidModeTile } from "./kid-mode-tile";
 import { KidModeExit } from "./kid-mode-exit";
+import { KidModeTile } from "./kid-mode-tile";
 
 interface KidModeGridProps {
   paramsPromise: Promise<{ patientId: string }>;

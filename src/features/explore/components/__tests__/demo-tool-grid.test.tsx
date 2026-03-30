@@ -42,6 +42,10 @@ vi.mock("@/shared/components/ui/sheet", () => ({
   SheetDescription: ({ children }: { children: React.ReactNode }) => <p>{children}</p>,
 }));
 
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn() }),
+}));
+
 vi.mock("next/link", () => ({
   default: ({ href, children, ...props }: { href: string; children: React.ReactNode }) => (
     <a href={href} {...props}>{children}</a>
@@ -81,13 +85,14 @@ describe("DemoToolGrid", () => {
     expect(screen.getByRole("button", { name: /try it/i })).toBeEnabled();
   });
 
-  test("falls back to static data with disabled cards on empty result", () => {
+  test("falls back to static data on empty result", () => {
     mockUseQuery.mockReturnValue([]);
     render(<DemoToolGrid />);
     EXPLORE_DEMO_TOOLS.forEach((tool) => {
       expect(screen.getByText(tool.title)).toBeInTheDocument();
     });
+    // Static fallback cards are enabled and navigate to builder with prompt
     const buttons = screen.getAllByRole("button", { name: /try it/i });
-    buttons.forEach((btn) => expect(btn).toBeDisabled());
+    buttons.forEach((btn) => expect(btn).toBeEnabled());
   });
 });

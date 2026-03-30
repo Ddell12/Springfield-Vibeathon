@@ -1,9 +1,11 @@
 import type { ConvexHttpClient } from "convex/browser";
+
 import { settleInBatches } from "@/core/utils";
-import { acquireBuildSlot } from "../build-limiter";
-import { runBundleWorker } from "../run-bundle-worker";
+
 import { api } from "../../../../../convex/_generated/api";
 import type { Id } from "../../../../../convex/_generated/dataModel";
+import { acquireBuildSlot } from "../build-limiter";
+import { runBundleWorker } from "../run-bundle-worker";
 
 interface BundleOpts {
   convex: ConvexHttpClient;

@@ -1,8 +1,8 @@
 "use client";
 
+import { cn } from "@/core/utils";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
-import { cn } from "@/core/utils";
 
 const PRESETS = [30, 45, 60] as const;
 

@@ -1,11 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { Button } from "@/shared/components/ui/button";
+
 import { MaterialIcon } from "@/shared/components/material-icon";
+import { Button } from "@/shared/components/ui/button";
+
+import type { Id } from "../../../../convex/_generated/dataModel";
 import { useSessionNotes } from "../hooks/use-session-notes";
 import { SessionNoteCard } from "./session-note-card";
-import type { Id } from "../../../../convex/_generated/dataModel";
 
 interface SessionNotesListProps {
   patientId: Id<"patients">;

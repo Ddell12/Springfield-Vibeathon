@@ -26,6 +26,13 @@ const eslintConfig = defineConfig([
       "no-var": "off", // vitest mock-hoisting plugin converts const→var at transform time
     },
   },
+  // Playwright fixtures use `use` callback which triggers false-positive react-hooks/rules-of-hooks
+  {
+    files: ["tests/e2e/**/*.{ts,tsx}"],
+    rules: {
+      "react-hooks/rules-of-hooks": "off",
+    },
+  },
   // Override default ignores of eslint-config-next.
   globalIgnores([
     ".next/**",
@@ -41,6 +48,9 @@ const eslintConfig = defineConfig([
     "aac-board/**",
     ".worktrees/**",
     "artifacts/**",
+    "speech-adventures/**",
+    "coverage/**",
+    "scripts/**",
   ]),
 ]);
 

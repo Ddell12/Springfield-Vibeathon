@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 
+import { cn } from "@/core/utils";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
 import { ToggleGroup, ToggleGroupItem } from "@/shared/components/ui/toggle-group";
-import { cn } from "@/core/utils";
 
 const TARGET_SOUNDS = [
   { id: "/s/", label: "/s/ & /z/" },

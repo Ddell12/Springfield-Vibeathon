@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react";
-import { CreateMaterialButton } from "../create-material-button";
+
 import type { Id } from "../../../../../convex/_generated/dataModel";
+import { CreateMaterialButton } from "../create-material-button";
 
 vi.mock("next/link", () => ({
   default: ({ children, href }: { children: React.ReactNode; href: string }) => (

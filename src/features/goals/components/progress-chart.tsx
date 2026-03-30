@@ -1,16 +1,17 @@
 "use client";
 
 import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
   CartesianGrid,
-  Tooltip,
+  Legend,
+  Line,
+  LineChart,
   ReferenceLine,
   ResponsiveContainer,
-  Legend,
+  Tooltip,
+  XAxis,
+  YAxis,
 } from "recharts";
+
 import { promptLevelColor, promptLevelLabel } from "../lib/goal-utils";
 
 interface ProgressDataPoint {

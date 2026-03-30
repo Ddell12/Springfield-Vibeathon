@@ -1,5 +1,7 @@
 "use client";
 
+import { cn } from "@/core/utils";
+import { MaterialIcon } from "@/shared/components/material-icon";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
 import {
@@ -9,9 +11,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/shared/components/ui/select";
-import { MaterialIcon } from "@/shared/components/material-icon";
-import { cn } from "@/core/utils";
-import { calculateAccuracy, accuracyColor, accuracyLabel } from "../lib/session-utils";
+
+import { accuracyColor, accuracyLabel,calculateAccuracy } from "../lib/session-utils";
 
 export interface TargetData {
   target: string;

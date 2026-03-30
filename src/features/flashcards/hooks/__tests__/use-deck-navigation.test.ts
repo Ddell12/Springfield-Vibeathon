@@ -1,5 +1,6 @@
+import { act,renderHook } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { renderHook, act } from "@testing-library/react";
+
 import { useDeckNavigation } from "../use-deck-navigation";
 
 describe("useDeckNavigation", () => {

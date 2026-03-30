@@ -1,19 +1,21 @@
 "use client";
 
 import { useState } from "react";
+
+import { cn } from "@/core/utils";
+import { MaterialIcon } from "@/shared/components/material-icon";
 import { Button } from "@/shared/components/ui/button";
 import { Textarea } from "@/shared/components/ui/textarea";
-import { MaterialIcon } from "@/shared/components/material-icon";
-import { cn } from "@/core/utils";
+
+import type { Id } from "../../../../convex/_generated/dataModel";
 import {
-  useReport,
   useMarkReportReviewed,
+  useReport,
   useSignReport,
   useUnsignReport,
   useUpdateReportNarrative,
 } from "../hooks/use-report-generation";
-import { domainLabel, domainColor, trendArrow, statusBadgeColor } from "../lib/goal-utils";
-import type { Id } from "../../../../convex/_generated/dataModel";
+import { domainColor, domainLabel, statusBadgeColor,trendArrow } from "../lib/goal-utils";
 
 interface ProgressReportViewerProps {
   reportId: Id<"progressReports">;

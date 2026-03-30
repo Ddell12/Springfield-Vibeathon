@@ -1,8 +1,9 @@
 "use client";
 
 import { MaterialIcon } from "@/shared/components/material-icon";
-import { usePatientActivity } from "../hooks/use-patients";
+
 import type { Id } from "../../../../convex/_generated/dataModel";
+import { usePatientActivity } from "../hooks/use-patients";
 
 const ACTION_ICONS: Record<string, string> = {
   "patient-created": "person_add",

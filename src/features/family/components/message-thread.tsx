@@ -1,13 +1,15 @@
 "use client";
 
-import { use, useEffect, useRef, useState } from "react";
-import Link from "next/link";
 import { useUser } from "@clerk/nextjs";
-import { toast } from "sonner";
 import { ArrowLeft, Send } from "lucide-react";
+import Link from "next/link";
+import { use, useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
+
+import { cn } from "@/core/utils";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
-import { cn } from "@/core/utils";
+
 import type { Id } from "../../../../convex/_generated/dataModel";
 import { useMessages } from "../hooks/use-messages";
 import { MessageBubble } from "./message-bubble";

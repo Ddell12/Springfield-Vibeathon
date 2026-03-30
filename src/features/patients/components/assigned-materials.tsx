@@ -1,10 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { Button } from "@/shared/components/ui/button";
+
 import { MaterialIcon } from "@/shared/components/material-icon";
-import { usePatientMaterials } from "../hooks/use-patients";
+import { Button } from "@/shared/components/ui/button";
+
 import type { Id } from "../../../../convex/_generated/dataModel";
+import { usePatientMaterials } from "../hooks/use-patients";
 
 interface AssignedMaterialsProps {
   patientId: Id<"patients">;

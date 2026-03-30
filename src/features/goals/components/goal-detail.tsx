@@ -1,19 +1,21 @@
 "use client";
 
-import { useState } from "react";
-import { notFound } from "next/navigation";
 import Link from "next/link";
-import { Button } from "@/shared/components/ui/button";
-import { MaterialIcon } from "@/shared/components/material-icon";
+import { notFound } from "next/navigation";
+import { useState } from "react";
+
 import { cn } from "@/core/utils";
+import { MaterialIcon } from "@/shared/components/material-icon";
+import { Button } from "@/shared/components/ui/button";
+
+import type { Id } from "../../../../convex/_generated/dataModel";
 import { useGoalWithProgress } from "../hooks/use-goals";
+import { checkGoalMetClient,domainColor, domainLabel, statusBadgeColor } from "../lib/goal-utils";
 import { GoalForm } from "./goal-form";
 import { GoalMetBanner } from "./goal-met-banner";
-import { ProgressReportGenerator } from "./progress-report-generator";
 import { ProgressChart } from "./progress-chart";
 import { ProgressDataTable } from "./progress-data-table";
-import { domainLabel, domainColor, statusBadgeColor, checkGoalMetClient } from "../lib/goal-utils";
-import type { Id } from "../../../../convex/_generated/dataModel";
+import { ProgressReportGenerator } from "./progress-report-generator";
 
 interface GoalDetailProps {
   patientId: string;

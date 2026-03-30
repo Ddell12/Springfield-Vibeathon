@@ -1,5 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+
 import { StreakTracker } from "../streak-tracker";
 
 vi.mock("@/shared/components/ui/card", () => ({
