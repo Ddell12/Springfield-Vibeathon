@@ -32,25 +32,25 @@ export function domainLabel(domain: string): string {
 
 export function domainColor(domain: string): string {
   const colors: Record<string, string> = {
-    "articulation": "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
-    "language-receptive": "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300",
-    "language-expressive": "bg-violet-100 text-violet-800 dark:bg-violet-900/30 dark:text-violet-300",
-    "fluency": "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
-    "voice": "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300",
-    "pragmatic-social": "bg-pink-100 text-pink-800 dark:bg-pink-900/30 dark:text-pink-300",
-    "aac": "bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-300",
-    "feeding": "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300",
+    "articulation": "bg-domain-blue-container text-on-domain-blue",
+    "language-receptive": "bg-domain-purple-container text-on-domain-purple",
+    "language-expressive": "bg-domain-purple-container text-on-domain-purple",
+    "fluency": "bg-domain-emerald-container text-on-domain-emerald",
+    "voice": "bg-domain-orange-container text-on-domain-orange",
+    "pragmatic-social": "bg-domain-pink-container text-on-domain-pink",
+    "aac": "bg-domain-teal-container text-on-domain-teal",
+    "feeding": "bg-domain-amber-container text-on-domain-amber",
   };
-  return colors[domain] ?? "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300";
+  return colors[domain] ?? "bg-domain-neutral-container text-on-domain-neutral";
 }
 
 export function promptLevelColor(level: string | undefined): string {
   switch (level) {
-    case "independent": return "#22c55e";
-    case "verbal-cue": return "#eab308";
-    case "model": return "#f97316";
-    case "physical": return "#ef4444";
-    default: return "#94a3b8";
+    case "independent": return "var(--color-chart-success)";
+    case "verbal-cue": return "var(--color-chart-caution)";
+    case "model": return "var(--color-chart-warning)";
+    case "physical": return "var(--color-chart-danger)";
+    default: return "var(--color-chart-muted)";
   }
 }
 
@@ -86,10 +86,10 @@ export function checkGoalMetClient(
 
 export function statusBadgeColor(status: string): string {
   switch (status) {
-    case "active": return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300";
-    case "met": return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300";
-    case "discontinued": return "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300";
-    case "modified": return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300";
-    default: return "bg-gray-100 text-gray-800";
+    case "active": return "bg-success-container text-on-success-container";
+    case "met": return "bg-info-container text-on-info-container";
+    case "discontinued": return "bg-domain-neutral-container text-on-domain-neutral";
+    case "modified": return "bg-caution-container text-on-caution-container";
+    default: return "bg-domain-neutral-container text-on-domain-neutral";
   }
 }
