@@ -2,8 +2,9 @@ import { v } from "convex/values";
 import { ConvexError } from "convex/values";
 
 import { internal } from "./_generated/api";
-import { internalMutation, internalQuery,mutation, query } from "./_generated/server";
+import { internalMutation, internalQuery, mutation, query } from "./_generated/server";
 import { assertCaregiverAccess, assertPatientAccess, getAuthUserId } from "./lib/auth";
+import { authedMutation, authedQuery } from "./lib/customFunctions";
 
 const SPEECH_COACH_AGENT_ID = "speech-coach";
 
@@ -269,15 +270,12 @@ export const savePracticeLog = internalMutation({
 
 // ── Standalone mode (no patient/program required) ─────────────────────────
 
-export const createStandaloneSession = mutation({
+export const createStandaloneSession = authedMutation({
   args: { config: configValidator },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new ConvexError("Not authenticated");
-
     return await ctx.db.insert("speechCoachSessions", {
-      userId,
-      caregiverUserId: userId,
+      userId: ctx.userId,
+      caregiverUserId: ctx.userId,
       mode: "standalone",
       agentId: SPEECH_COACH_AGENT_ID,
       status: "configuring",
@@ -286,7 +284,7 @@ export const createStandaloneSession = mutation({
   },
 });
 
-export const startStandaloneSession = mutation({
+export const startStandaloneSession = authedMutation({
   args: {
     sessionId: v.id("speechCoachSessions"),
     conversationId: v.string(),
@@ -295,8 +293,7 @@ export const startStandaloneSession = mutation({
     const session = await ctx.db.get(args.sessionId);
     if (!session) throw new ConvexError("Session not found");
 
-    const userId = await getAuthUserId(ctx);
-    if (!userId || session.userId !== userId) {
+    if (session.userId !== ctx.userId) {
       throw new ConvexError("Not authorized");
     }
 
@@ -308,14 +305,13 @@ export const startStandaloneSession = mutation({
   },
 });
 
-export const endStandaloneSession = mutation({
+export const endStandaloneSession = authedMutation({
   args: { sessionId: v.id("speechCoachSessions") },
   handler: async (ctx, args) => {
     const session = await ctx.db.get(args.sessionId);
     if (!session) throw new ConvexError("Session not found");
 
-    const userId = await getAuthUserId(ctx);
-    if (!userId || session.userId !== userId) {
+    if (session.userId !== ctx.userId) {
       throw new ConvexError("Not authorized");
     }
 
@@ -332,7 +328,7 @@ export const endStandaloneSession = mutation({
   },
 });
 
-export const failStandaloneSession = mutation({
+export const failStandaloneSession = authedMutation({
   args: {
     sessionId: v.id("speechCoachSessions"),
     errorMessage: v.string(),
@@ -341,8 +337,7 @@ export const failStandaloneSession = mutation({
     const session = await ctx.db.get(args.sessionId);
     if (!session) throw new ConvexError("Session not found");
 
-    const userId = await getAuthUserId(ctx);
-    if (!userId || session.userId !== userId) {
+    if (session.userId !== ctx.userId) {
       throw new ConvexError("Not authorized");
     }
 
@@ -354,16 +349,15 @@ export const failStandaloneSession = mutation({
   },
 });
 
-export const getStandaloneHistory = query({
+export const getStandaloneHistory = authedQuery({
   args: {},
   handler: async (ctx) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) return [];
+    if (!ctx.userId) return [];
 
     const sessions = await ctx.db
       .query("speechCoachSessions")
       .withIndex("by_userId_mode_startedAt", (q) =>
-        q.eq("userId", userId).eq("mode", "standalone"))
+        q.eq("userId", ctx.userId!).eq("mode", "standalone"))
       .order("desc")
       .take(50);
 
@@ -371,15 +365,14 @@ export const getStandaloneHistory = query({
   },
 });
 
-export const getStandaloneProgress = query({
+export const getStandaloneProgress = authedQuery({
   args: {},
   handler: async (ctx) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) return [];
+    if (!ctx.userId) return [];
 
     return await ctx.db
       .query("speechCoachProgress")
-      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .withIndex("by_userId", (q) => q.eq("userId", ctx.userId!))
       .take(200);
   },
 });

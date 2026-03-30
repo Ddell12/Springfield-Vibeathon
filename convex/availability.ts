@@ -1,17 +1,15 @@
 import { v } from "convex/values";
 
-import { mutation, query } from "./_generated/server";
-import { assertSLP, getAuthUserId } from "./lib/auth";
+import { authedQuery, slpMutation } from "./lib/customFunctions";
 
-export const list = query({
+export const list = authedQuery({
   args: {
     slpId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) return [];
+    if (!ctx.userId) return [];
 
-    const targetSlpId = args.slpId ?? userId;
+    const targetSlpId = args.slpId ?? ctx.userId;
 
     return await ctx.db
       .query("availability")
@@ -20,7 +18,7 @@ export const list = query({
   },
 });
 
-export const create = mutation({
+export const create = slpMutation({
   args: {
     dayOfWeek: v.number(),
     startTime: v.string(),
@@ -30,8 +28,6 @@ export const create = mutation({
     timezone: v.string(),
   },
   handler: async (ctx, args) => {
-    const slpId = await assertSLP(ctx);
-
     if (args.dayOfWeek < 0 || args.dayOfWeek > 6) {
       throw new Error("dayOfWeek must be 0-6");
     }
@@ -40,7 +36,7 @@ export const create = mutation({
     }
 
     return await ctx.db.insert("availability", {
-      slpId,
+      slpId: ctx.slpUserId,
       dayOfWeek: args.dayOfWeek,
       startTime: args.startTime,
       endTime: args.endTime,
@@ -51,15 +47,14 @@ export const create = mutation({
   },
 });
 
-export const remove = mutation({
+export const remove = slpMutation({
   args: {
     availabilityId: v.id("availability"),
   },
   handler: async (ctx, args) => {
-    const slpId = await assertSLP(ctx);
     const slot = await ctx.db.get(args.availabilityId);
     if (!slot) throw new Error("Availability slot not found");
-    if (slot.slpId !== slpId) throw new Error("Not authorized");
+    if (slot.slpId !== ctx.slpUserId) throw new Error("Not authorized");
 
     await ctx.db.delete(args.availabilityId);
   },

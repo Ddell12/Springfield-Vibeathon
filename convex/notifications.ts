@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 
-import { internalMutation, mutation, query } from "./_generated/server";
-import { getAuthUserId } from "./lib/auth";
+import { internalMutation } from "./_generated/server";
+import { authedMutation, authedQuery } from "./lib/customFunctions";
 
 const notificationTypeValidator = v.union(
   v.literal("session-booked"),
@@ -11,57 +11,49 @@ const notificationTypeValidator = v.union(
   v.literal("notes-ready")
 );
 
-export const list = query({
+export const list = authedQuery({
   args: {},
   handler: async (ctx) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) return [];
+    if (!ctx.userId) return [];
 
     return await ctx.db
       .query("notifications")
-      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .withIndex("by_userId", (q) => q.eq("userId", ctx.userId!))
       .order("desc")
       .take(50);
   },
 });
 
-export const unreadCount = query({
+export const unreadCount = authedQuery({
   args: {},
   handler: async (ctx) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) return 0;
+    if (!ctx.userId) return 0;
 
     const unread = await ctx.db
       .query("notifications")
-      .withIndex("by_userId_read", (q) => q.eq("userId", userId).eq("read", false))
+      .withIndex("by_userId_read", (q) => q.eq("userId", ctx.userId!).eq("read", false))
       .collect();
 
     return unread.length;
   },
 });
 
-export const markRead = mutation({
+export const markRead = authedMutation({
   args: { notificationId: v.id("notifications") },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) return;
-
     const notification = await ctx.db.get(args.notificationId);
-    if (!notification || notification.userId !== userId) return;
+    if (!notification || notification.userId !== ctx.userId) return;
 
     await ctx.db.patch(args.notificationId, { read: true });
   },
 });
 
-export const markAllRead = mutation({
+export const markAllRead = authedMutation({
   args: {},
   handler: async (ctx) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) return;
-
     const unread = await ctx.db
       .query("notifications")
-      .withIndex("by_userId_read", (q) => q.eq("userId", userId).eq("read", false))
+      .withIndex("by_userId_read", (q) => q.eq("userId", ctx.userId).eq("read", false))
       .collect();
 
     await Promise.all(unread.map((n) => ctx.db.patch(n._id, { read: true })));

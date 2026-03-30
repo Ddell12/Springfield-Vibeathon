@@ -2,23 +2,22 @@ import { v } from "convex/values";
 import { ConvexError } from "convex/values";
 
 import type { Doc } from "./_generated/dataModel";
-import { internalQuery, mutation, query } from "./_generated/server";
+import { internalQuery, query } from "./_generated/server";
 import { internal } from "./_generated/api";
 import {
   assertPatientAccess,
-  assertSLP,
   getAuthRole,
   getAuthUserId,
 } from "./lib/auth";
+import { authedMutation, authedQuery, slpMutation } from "./lib/customFunctions";
 
-export const getAvailableSlots = query({
+export const getAvailableSlots = authedQuery({
   args: {
     slpId: v.string(),
     weekStart: v.number(),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) return [];
+    if (!ctx.userId) return [];
 
     const weekEnd = args.weekStart + 7 * 24 * 60 * 60 * 1000;
 
@@ -83,20 +82,19 @@ export const getAvailableSlots = query({
   },
 });
 
-export const listBySlp = query({
+export const listBySlp = authedQuery({
   args: {
     weekStart: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) return [];
+    if (!ctx.userId) return [];
 
     const appointments = await ctx.db
       .query("appointments")
       .withIndex("by_slpId_scheduledAt", (q) =>
         args.weekStart !== undefined
-          ? q.eq("slpId", userId).gte("scheduledAt", args.weekStart)
-          : q.eq("slpId", userId)
+          ? q.eq("slpId", ctx.userId!).gte("scheduledAt", args.weekStart)
+          : q.eq("slpId", ctx.userId!)
       )
       .take(200);
 
@@ -183,11 +181,10 @@ export const listByPatient = query({
   },
 });
 
-export const get = query({
+export const get = authedQuery({
   args: { appointmentId: v.id("appointments") },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) return null;
+    if (!ctx.userId) return null;
 
     const appointment = await ctx.db.get(args.appointmentId);
     if (!appointment) return null;
@@ -209,7 +206,7 @@ export const getInternal = internalQuery({
   },
 });
 
-export const create = mutation({
+export const create = slpMutation({
   args: {
     patientId: v.id("patients"),
     scheduledAt: v.number(),
@@ -218,7 +215,7 @@ export const create = mutation({
     timezone: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const slpId = await assertSLP(ctx);
+    const slpId = ctx.slpUserId;
 
     const patient = await ctx.db.get(args.patientId);
     if (!patient) throw new ConvexError("Patient not found");
@@ -262,7 +259,7 @@ export const create = mutation({
   },
 });
 
-export const bookAsCaregiver = mutation({
+export const bookAsCaregiver = authedMutation({
   args: {
     slpId: v.string(),
     patientId: v.id("patients"),
@@ -270,8 +267,7 @@ export const bookAsCaregiver = mutation({
     timezone: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new ConvexError("Not authenticated");
+    const userId = ctx.userId;
 
     const link = await ctx.db
       .query("caregiverLinks")
@@ -327,13 +323,12 @@ export const bookAsCaregiver = mutation({
   },
 });
 
-export const cancel = mutation({
+export const cancel = authedMutation({
   args: {
     appointmentId: v.id("appointments"),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new ConvexError("Not authenticated");
+    const userId = ctx.userId;
 
     const appointment = await ctx.db.get(args.appointmentId);
     if (!appointment) throw new ConvexError("Appointment not found");
@@ -368,10 +363,10 @@ export const cancel = mutation({
   },
 });
 
-export const startSession = mutation({
+export const startSession = slpMutation({
   args: { appointmentId: v.id("appointments") },
   handler: async (ctx, args) => {
-    const slpId = await assertSLP(ctx);
+    const slpId = ctx.slpUserId;
     const appointment = await ctx.db.get(args.appointmentId);
     if (!appointment) throw new ConvexError("Appointment not found");
     if (appointment.slpId !== slpId) throw new ConvexError("Not your appointment");
@@ -384,14 +379,14 @@ export const startSession = mutation({
   },
 });
 
-export const completeSession = mutation({
+export const completeSession = slpMutation({
   args: {
     appointmentId: v.id("appointments"),
     durationSeconds: v.number(),
     interactionLog: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const slpId = await assertSLP(ctx);
+    const slpId = ctx.slpUserId;
     const appointment = await ctx.db.get(args.appointmentId);
     if (!appointment) throw new ConvexError("Appointment not found");
     if (appointment.slpId !== slpId) throw new ConvexError("Not your appointment");
@@ -415,10 +410,10 @@ export const completeSession = mutation({
   },
 });
 
-export const markNoShow = mutation({
+export const markNoShow = slpMutation({
   args: { appointmentId: v.id("appointments") },
   handler: async (ctx, args) => {
-    const slpId = await assertSLP(ctx);
+    const slpId = ctx.slpUserId;
     const appointment = await ctx.db.get(args.appointmentId);
     if (!appointment) throw new ConvexError("Appointment not found");
     if (appointment.slpId !== slpId) throw new ConvexError("Not your appointment");

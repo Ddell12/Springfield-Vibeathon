@@ -1,7 +1,8 @@
 import { ConvexError, v } from "convex/values";
 
 import { internalMutation, mutation, query } from "./_generated/server";
-import { assertSessionOwner, getAuthUserId } from "./lib/auth";
+import { assertSessionOwner } from "./lib/auth";
+import { authedMutation, authedQuery } from "./lib/customFunctions";
 import {
   SESSION_STATES,
   type SessionState,
@@ -104,14 +105,13 @@ export const setFailed = mutation({
   },
 });
 
-export const listByState = query({
+export const listByState = authedQuery({
   args: { state: v.union(v.literal("idle"), v.literal("generating"), v.literal("live"), v.literal("failed")) },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) return [];
+    if (!ctx.userId) return [];
     return await ctx.db
       .query("sessions")
-      .withIndex("by_state_user", (q) => q.eq("state", args.state).eq("userId", userId))
+      .withIndex("by_state_user", (q) => q.eq("state", args.state).eq("userId", ctx.userId!))
       .order("desc")
       .take(50);
   },
@@ -205,15 +205,14 @@ export const updateTitle = mutation({
   },
 });
 
-export const getMostRecent = query({
+export const getMostRecent = authedQuery({
   args: {},
   handler: async (ctx) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) return null;
+    if (!ctx.userId) return null;
     const sessions = await ctx.db
       .query("sessions")
       .withIndex("by_state_user", (q) =>
-        q.eq("state", SESSION_STATES.LIVE).eq("userId", userId)
+        q.eq("state", SESSION_STATES.LIVE).eq("userId", ctx.userId!)
       )
       .order("desc")
       .take(1);
@@ -265,18 +264,16 @@ export const duplicateSession = mutation({
   },
 });
 
-export const recoverStuckSessions = mutation({
+export const recoverStuckSessions = authedMutation({
   args: { maxAgeMs: v.optional(v.number()) },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new ConvexError("Not authenticated");
     const maxAge = args.maxAgeMs ?? 5 * 60 * 1000; // default 5 minutes
     const cutoff = Date.now() - maxAge;
 
     const stuck = await ctx.db
       .query("sessions")
       .withIndex("by_state_user", (q) =>
-        q.eq("state", "generating").eq("userId", userId)
+        q.eq("state", "generating").eq("userId", ctx.userId)
       )
       .take(20);
 

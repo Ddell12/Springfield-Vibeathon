@@ -1,8 +1,8 @@
 import { v } from "convex/values";
 import { ConvexError } from "convex/values";
 
-import { internalMutation, mutation, query } from "./_generated/server";
-import { assertSLP } from "./lib/auth";
+import { internalMutation } from "./_generated/server";
+import { slpMutation, slpQuery } from "./lib/customFunctions";
 import { insertProgressFromTargets } from "./lib/progress";
 
 // ── Validators ──────────────────────────────────────────────────────────────
@@ -129,18 +129,16 @@ function validateSoapNote(soap: SoapNoteData): void {
 
 // ── Queries ─────────────────────────────────────────────────────────────────
 
-export const list = query({
+export const list = slpQuery({
   args: {
     patientId: v.id("patients"),
     limit: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    const slpUserId = await assertSLP(ctx);
-
     // Verify the SLP owns this patient
     const patient = await ctx.db.get(args.patientId);
     if (!patient) throw new ConvexError("Patient not found");
-    if (patient.slpUserId !== slpUserId) throw new ConvexError("Not authorized");
+    if (patient.slpUserId !== ctx.slpUserId) throw new ConvexError("Not authorized");
 
     const limit = args.limit ?? 20;
     return await ctx.db
@@ -153,27 +151,23 @@ export const list = query({
   },
 });
 
-export const get = query({
+export const get = slpQuery({
   args: { noteId: v.id("sessionNotes") },
   handler: async (ctx, args) => {
-    const slpUserId = await assertSLP(ctx);
-
     const note = await ctx.db.get(args.noteId);
     if (!note) throw new ConvexError("Session note not found");
-    if (note.slpUserId !== slpUserId) throw new ConvexError("Not authorized");
+    if (note.slpUserId !== ctx.slpUserId) throw new ConvexError("Not authorized");
 
     return note;
   },
 });
 
-export const getLatestSoap = query({
+export const getLatestSoap = slpQuery({
   args: { patientId: v.id("patients") },
   handler: async (ctx, args) => {
-    const slpUserId = await assertSLP(ctx);
-
     const patient = await ctx.db.get(args.patientId);
     if (!patient) throw new ConvexError("Patient not found");
-    if (patient.slpUserId !== slpUserId) throw new ConvexError("Not authorized");
+    if (patient.slpUserId !== ctx.slpUserId) throw new ConvexError("Not authorized");
 
     const notes = await ctx.db
       .query("sessionNotes")
@@ -192,7 +186,7 @@ export const getLatestSoap = query({
 
 // ── Mutations ───────────────────────────────────────────────────────────────
 
-export const create = mutation({
+export const create = slpMutation({
   args: {
     patientId: v.id("patients"),
     sessionDate: v.string(),
@@ -201,12 +195,10 @@ export const create = mutation({
     structuredData: structuredDataValidator,
   },
   handler: async (ctx, args) => {
-    const slpUserId = await assertSLP(ctx);
-
     // Verify the SLP owns this patient
     const patient = await ctx.db.get(args.patientId);
     if (!patient) throw new ConvexError("Patient not found");
-    if (patient.slpUserId !== slpUserId) throw new ConvexError("Not authorized");
+    if (patient.slpUserId !== ctx.slpUserId) throw new ConvexError("Not authorized");
 
     validateSessionDate(args.sessionDate);
     validateSessionDuration(args.sessionDuration);
@@ -214,7 +206,7 @@ export const create = mutation({
 
     const noteId = await ctx.db.insert("sessionNotes", {
       patientId: args.patientId,
-      slpUserId,
+      slpUserId: ctx.slpUserId,
       sessionDate: args.sessionDate,
       sessionDuration: args.sessionDuration,
       sessionType: args.sessionType,
@@ -225,7 +217,7 @@ export const create = mutation({
 
     await ctx.db.insert("activityLog", {
       patientId: args.patientId,
-      actorUserId: slpUserId,
+      actorUserId: ctx.slpUserId,
       action: "session-documented",
       details: `Created session note for ${args.sessionDate}`,
       timestamp: Date.now(),
@@ -235,7 +227,7 @@ export const create = mutation({
   },
 });
 
-export const update = mutation({
+export const update = slpMutation({
   args: {
     noteId: v.id("sessionNotes"),
     sessionDate: v.optional(v.string()),
@@ -244,11 +236,9 @@ export const update = mutation({
     structuredData: v.optional(structuredDataValidator),
   },
   handler: async (ctx, args) => {
-    const slpUserId = await assertSLP(ctx);
-
     const note = await ctx.db.get(args.noteId);
     if (!note) throw new ConvexError("Session note not found");
-    if (note.slpUserId !== slpUserId) throw new ConvexError("Not authorized");
+    if (note.slpUserId !== ctx.slpUserId) throw new ConvexError("Not authorized");
     if (note.status === "signed") {
       throw new ConvexError("Cannot edit a signed session note");
     }
@@ -272,17 +262,15 @@ export const update = mutation({
   },
 });
 
-export const updateSoap = mutation({
+export const updateSoap = slpMutation({
   args: {
     noteId: v.id("sessionNotes"),
     soapNote: soapNoteValidator,
   },
   handler: async (ctx, args) => {
-    const slpUserId = await assertSLP(ctx);
-
     const note = await ctx.db.get(args.noteId);
     if (!note) throw new ConvexError("Session note not found");
-    if (note.slpUserId !== slpUserId) throw new ConvexError("Not authorized");
+    if (note.slpUserId !== ctx.slpUserId) throw new ConvexError("Not authorized");
     if (note.status === "signed") {
       throw new ConvexError("Cannot edit a signed session note");
     }
@@ -296,17 +284,15 @@ export const updateSoap = mutation({
   },
 });
 
-export const saveSoapFromAI = mutation({
+export const saveSoapFromAI = slpMutation({
   args: {
     noteId: v.id("sessionNotes"),
     soapNote: soapNoteValidator,
   },
   handler: async (ctx, args) => {
-    const slpUserId = await assertSLP(ctx);
-
     const note = await ctx.db.get(args.noteId);
     if (!note) throw new ConvexError("Session note not found");
-    if (note.slpUserId !== slpUserId) throw new ConvexError("Not authorized");
+    if (note.slpUserId !== ctx.slpUserId) throw new ConvexError("Not authorized");
     if (note.status === "signed") {
       throw new ConvexError("Cannot edit a signed session note");
     }
@@ -320,14 +306,12 @@ export const saveSoapFromAI = mutation({
   },
 });
 
-export const sign = mutation({
+export const sign = slpMutation({
   args: { noteId: v.id("sessionNotes") },
   handler: async (ctx, args) => {
-    const slpUserId = await assertSLP(ctx);
-
     const note = await ctx.db.get(args.noteId);
     if (!note) throw new ConvexError("Session note not found");
-    if (note.slpUserId !== slpUserId) throw new ConvexError("Not authorized");
+    if (note.slpUserId !== ctx.slpUserId) throw new ConvexError("Not authorized");
     if (note.status !== "complete") {
       throw new ConvexError("Only complete session notes can be signed");
     }
@@ -343,7 +327,7 @@ export const sign = mutation({
 
     await ctx.db.insert("activityLog", {
       patientId: note.patientId,
-      actorUserId: slpUserId,
+      actorUserId: ctx.slpUserId,
       action: "session-signed",
       details: `Signed session note for ${note.sessionDate}`,
       timestamp: now,
@@ -360,14 +344,12 @@ export const sign = mutation({
   },
 });
 
-export const unsign = mutation({
+export const unsign = slpMutation({
   args: { noteId: v.id("sessionNotes") },
   handler: async (ctx, args) => {
-    const slpUserId = await assertSLP(ctx);
-
     const note = await ctx.db.get(args.noteId);
     if (!note) throw new ConvexError("Session note not found");
-    if (note.slpUserId !== slpUserId) throw new ConvexError("Not authorized");
+    if (note.slpUserId !== ctx.slpUserId) throw new ConvexError("Not authorized");
     if (note.status !== "signed") {
       throw new ConvexError("Only signed session notes can be unsigned");
     }
@@ -380,7 +362,7 @@ export const unsign = mutation({
 
     await ctx.db.insert("activityLog", {
       patientId: note.patientId,
-      actorUserId: slpUserId,
+      actorUserId: ctx.slpUserId,
       action: "session-unsigned",
       details: `Unsigned session note for ${note.sessionDate}`,
       timestamp: now,
@@ -388,17 +370,15 @@ export const unsign = mutation({
   },
 });
 
-export const updateStatus = mutation({
+export const updateStatus = slpMutation({
   args: {
     noteId: v.id("sessionNotes"),
     status: statusValidator,
   },
   handler: async (ctx, args) => {
-    const slpUserId = await assertSLP(ctx);
-
     const note = await ctx.db.get(args.noteId);
     if (!note) throw new ConvexError("Session note not found");
-    if (note.slpUserId !== slpUserId) throw new ConvexError("Not authorized");
+    if (note.slpUserId !== ctx.slpUserId) throw new ConvexError("Not authorized");
 
     // Cannot transition to or from signed via this function
     if (note.status === "signed") {
@@ -412,14 +392,12 @@ export const updateStatus = mutation({
   },
 });
 
-export const remove = mutation({
+export const remove = slpMutation({
   args: { noteId: v.id("sessionNotes") },
   handler: async (ctx, args) => {
-    const slpUserId = await assertSLP(ctx);
-
     const note = await ctx.db.get(args.noteId);
     if (!note) throw new ConvexError("Session note not found");
-    if (note.slpUserId !== slpUserId) throw new ConvexError("Not authorized");
+    if (note.slpUserId !== ctx.slpUserId) throw new ConvexError("Not authorized");
     if (note.status === "signed") {
       throw new ConvexError("Cannot delete a signed session note");
     }

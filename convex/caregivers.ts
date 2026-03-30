@@ -1,9 +1,10 @@
 import { v } from "convex/values";
 import { ConvexError } from "convex/values";
 
+import { query } from "./_generated/server";
 import { internal } from "./_generated/api";
-import { mutation, query } from "./_generated/server";
-import { assertSLP,getAuthRole, getAuthUserId } from "./lib/auth";
+import { getAuthRole } from "./lib/auth";
+import { authedMutation, authedQuery, slpMutation } from "./lib/customFunctions";
 
 function generateInviteToken(): string {
   const bytes = new Uint8Array(16);
@@ -19,14 +20,14 @@ function validateEmail(email: string): string {
   return normalized;
 }
 
-export const createInvite = mutation({
+export const createInvite = slpMutation({
   args: {
     patientId: v.id("patients"),
     email: v.string(),
     relationship: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const slpUserId = await assertSLP(ctx);
+    const slpUserId = ctx.slpUserId;
     const patient = await ctx.db.get(args.patientId);
     if (!patient) throw new ConvexError("Patient not found");
     if (patient.slpUserId !== slpUserId) throw new ConvexError("Not authorized");
@@ -74,11 +75,10 @@ export const getInvite = query({
   },
 });
 
-export const acceptInvite = mutation({
+export const acceptInvite = authedMutation({
   args: { token: v.string() },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new ConvexError("Not authenticated");
+    const userId = ctx.userId;
 
     // Prevent SLPs from accepting caregiver invites
     const role = await getAuthRole(ctx);
@@ -136,10 +136,10 @@ export const acceptInvite = mutation({
   },
 });
 
-export const revokeInvite = mutation({
+export const revokeInvite = slpMutation({
   args: { token: v.string() },
   handler: async (ctx, args) => {
-    const slpUserId = await assertSLP(ctx);
+    const slpUserId = ctx.slpUserId;
 
     const link = await ctx.db
       .query("caregiverLinks")
@@ -157,10 +157,10 @@ export const revokeInvite = mutation({
   },
 });
 
-export const revokeInviteById = mutation({
+export const revokeInviteById = slpMutation({
   args: { linkId: v.id("caregiverLinks") },
   handler: async (ctx, args) => {
-    const slpUserId = await assertSLP(ctx);
+    const slpUserId = ctx.slpUserId;
 
     const link = await ctx.db.get(args.linkId);
     if (!link) throw new ConvexError("Caregiver link not found");
@@ -174,19 +174,18 @@ export const revokeInviteById = mutation({
   },
 });
 
-export const listByPatient = query({
+export const listByPatient = authedQuery({
   args: { patientId: v.id("patients") },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) return [];
+    if (!ctx.userId) return [];
 
     const patient = await ctx.db.get(args.patientId);
     if (!patient) return [];
-    if (patient.slpUserId !== userId) {
+    if (patient.slpUserId !== ctx.userId) {
       const link = await ctx.db
         .query("caregiverLinks")
         .withIndex("by_caregiverUserId_patientId", (q) =>
-          q.eq("caregiverUserId", userId).eq("patientId", args.patientId)
+          q.eq("caregiverUserId", ctx.userId!).eq("patientId", args.patientId)
         )
         .filter((q) => q.eq(q.field("inviteStatus"), "accepted"))
         .first();
@@ -201,15 +200,14 @@ export const listByPatient = query({
   },
 });
 
-export const listByCaregiver = query({
+export const listByCaregiver = authedQuery({
   args: {},
   handler: async (ctx) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) return [];
+    if (!ctx.userId) return [];
 
     const links = await ctx.db
       .query("caregiverLinks")
-      .withIndex("by_caregiverUserId", (q) => q.eq("caregiverUserId", userId))
+      .withIndex("by_caregiverUserId", (q) => q.eq("caregiverUserId", ctx.userId!))
       .filter((q) => q.eq(q.field("inviteStatus"), "accepted"))
       .take(50);
 

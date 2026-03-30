@@ -1,10 +1,9 @@
 import { v } from "convex/values";
 import { ConvexError } from "convex/values";
 
-import { mutation, query } from "./_generated/server";
-import { assertSLP, getAuthUserId } from "./lib/auth";
+import { authedQuery, slpMutation } from "./lib/customFunctions";
 
-export const assign = mutation({
+export const assign = slpMutation({
   args: {
     patientId: v.id("patients"),
     sessionId: v.optional(v.id("sessions")),
@@ -14,7 +13,7 @@ export const assign = mutation({
     fromGeneration: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
-    const slpUserId = await assertSLP(ctx);
+    const slpUserId = ctx.slpUserId;
     const patient = await ctx.db.get(args.patientId);
     if (!patient) throw new ConvexError("Patient not found");
     if (patient.slpUserId !== slpUserId) throw new ConvexError("Not authorized");
@@ -53,19 +52,18 @@ export const assign = mutation({
   },
 });
 
-export const listByPatient = query({
+export const listByPatient = authedQuery({
   args: { patientId: v.id("patients") },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) return [];
+    if (!ctx.userId) return [];
 
     const patient = await ctx.db.get(args.patientId);
     if (!patient) return [];
-    if (patient.slpUserId !== userId) {
+    if (patient.slpUserId !== ctx.userId) {
       const link = await ctx.db
         .query("caregiverLinks")
         .withIndex("by_caregiverUserId_patientId", (q) =>
-          q.eq("caregiverUserId", userId).eq("patientId", args.patientId)
+          q.eq("caregiverUserId", ctx.userId!).eq("patientId", args.patientId)
         )
         .filter((q) => q.eq(q.field("inviteStatus"), "accepted"))
         .first();
@@ -97,10 +95,10 @@ export const listByPatient = query({
   },
 });
 
-export const unassign = mutation({
+export const unassign = slpMutation({
   args: { materialId: v.id("patientMaterials") },
   handler: async (ctx, args) => {
-    const slpUserId = await assertSLP(ctx);
+    const slpUserId = ctx.slpUserId;
     const material = await ctx.db.get(args.materialId);
     if (!material) throw new ConvexError("Material not found");
 

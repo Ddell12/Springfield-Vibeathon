@@ -1,9 +1,8 @@
 "use node";
 
-import { anyApi } from "convex/server";
 import { v } from "convex/values";
 
-import { action } from "./_generated/server";
+import { action, internal } from "./_generated/server";
 
 // Voice IDs verified and audio tested 2026-03-25. All three produce clear therapy-appropriate speech.
 const VOICE_MAP: Record<string, string> = {
@@ -24,7 +23,7 @@ export const generateSpeech = action({
       VOICE_MAP["child-friendly"];
 
     // Check cache first
-    const cached = await ctx.runQuery(anyApi.ai.getTtsCache, {
+    const cached = await ctx.runQuery(internal.ai.getTtsCache, {
       text: args.text,
       voiceId: resolvedVoiceId,
     });
@@ -71,7 +70,7 @@ export const generateSpeech = action({
         throw new Error("Failed to get storage URL");
       }
 
-      await ctx.runMutation(anyApi.ai.saveTtsCache, {
+      await ctx.runMutation(internal.ai.saveTtsCache, {
         text: args.text,
         voiceId: resolvedVoiceId,
         audioUrl,

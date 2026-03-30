@@ -1,8 +1,9 @@
 import { v } from "convex/values";
 import { ConvexError } from "convex/values";
 
-import { mutation, query } from "./_generated/server";
-import { assertPatientAccess,assertSLP } from "./lib/auth";
+import { query } from "./_generated/server";
+import { assertPatientAccess } from "./lib/auth";
+import { slpMutation } from "./lib/customFunctions";
 
 // ── Validators ──────────────────────────────────────────────────────────────
 
@@ -81,7 +82,7 @@ export const getActiveByPatient = query({
 
 // ── Mutations ───────────────────────────────────────────────────────────────
 
-export const create = mutation({
+export const create = slpMutation({
   args: {
     patientId: v.id("patients"),
     title: v.string(),
@@ -99,10 +100,9 @@ export const create = mutation({
     })),
   },
   handler: async (ctx, args) => {
-    const slpUserId = await assertSLP(ctx);
     const patient = await ctx.db.get(args.patientId);
     if (!patient) throw new ConvexError("Patient not found");
-    if (patient.slpUserId !== slpUserId) throw new ConvexError("Not authorized");
+    if (patient.slpUserId !== ctx.slpUserId) throw new ConvexError("Not authorized");
 
     validateProgramFields({
       title: args.title,
@@ -122,7 +122,7 @@ export const create = mutation({
 
     const programId = await ctx.db.insert("homePrograms", {
       patientId: args.patientId,
-      slpUserId,
+      slpUserId: ctx.slpUserId,
       title: args.title.trim(),
       instructions: args.instructions.trim(),
       materialId: args.materialId,
@@ -137,7 +137,7 @@ export const create = mutation({
 
     await ctx.db.insert("activityLog", {
       patientId: args.patientId,
-      actorUserId: slpUserId,
+      actorUserId: ctx.slpUserId,
       action: "home-program-assigned",
       details: `Home program assigned: ${args.title.trim()}`,
       timestamp: Date.now(),
@@ -147,7 +147,7 @@ export const create = mutation({
   },
 });
 
-export const update = mutation({
+export const update = slpMutation({
   args: {
     id: v.id("homePrograms"),
     title: v.optional(v.string()),
@@ -162,13 +162,12 @@ export const update = mutation({
     })),
   },
   handler: async (ctx, args) => {
-    const slpUserId = await assertSLP(ctx);
     const program = await ctx.db.get(args.id);
     if (!program) throw new ConvexError("Home program not found");
 
     const patient = await ctx.db.get(program.patientId);
     if (!patient) throw new ConvexError("Patient not found");
-    if (patient.slpUserId !== slpUserId) throw new ConvexError("Not authorized");
+    if (patient.slpUserId !== ctx.slpUserId) throw new ConvexError("Not authorized");
 
     validateProgramFields({
       title: args.title,

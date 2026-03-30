@@ -1,13 +1,13 @@
 import { v } from "convex/values";
 
-import { internalQuery, query, internalMutation } from "./_generated/server";
-import { assertPatientAccess, getAuthUserId } from "./lib/auth";
+import { internalQuery, internalMutation } from "./_generated/server";
+import { assertPatientAccess } from "./lib/auth";
+import { authedQuery } from "./lib/customFunctions";
 
-export const getByAppointment = query({
+export const getByAppointment = authedQuery({
   args: { appointmentId: v.id("appointments") },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) return null;
+    if (!ctx.userId) return null;
 
     const appointment = await ctx.db.get(args.appointmentId);
     if (!appointment) return null;

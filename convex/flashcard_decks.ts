@@ -2,6 +2,7 @@ import { v } from "convex/values";
 
 import { mutation, query } from "./_generated/server";
 import { assertSessionOwner, getAuthUserId } from "./lib/auth";
+import { authedQuery } from "./lib/customFunctions";
 import { checkPremiumStatus, FREE_LIMITS } from "./lib/billing";
 
 export const create = mutation({
@@ -56,14 +57,13 @@ export const get = query({
   },
 });
 
-export const list = query({
+export const list = authedQuery({
   args: {},
   handler: async (ctx) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) return [];
+    if (!ctx.userId) return [];
     return await ctx.db
       .query("flashcardDecks")
-      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .withIndex("by_user", (q) => q.eq("userId", ctx.userId!))
       .order("desc")
       .take(50);
   },

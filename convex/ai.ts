@@ -1,11 +1,11 @@
 import { v } from "convex/values";
 
-import { mutation,query } from "./_generated/server";
+import { internalMutation, internalQuery } from "./_generated/server";
 
 // TTS cache helpers — must be in a non-"use node" file
 // (actions that call ElevenLabs/Google live in convex/aiActions.ts)
 
-export const getTtsCache = query({
+export const getTtsCache = internalQuery({
   args: {
     text: v.string(),
     voiceId: v.string(),
@@ -13,7 +13,7 @@ export const getTtsCache = query({
   handler: async (ctx, args): Promise<string | null> => {
     const entry = await ctx.db
       .query("ttsCache")
-      .withIndex("by_text_voice", (q) =>
+      .withIndex("by_textVoice", (q) =>
         q.eq("text", args.text).eq("voiceId", args.voiceId),
       )
       .first();
@@ -22,7 +22,7 @@ export const getTtsCache = query({
   },
 });
 
-export const saveTtsCache = mutation({
+export const saveTtsCache = internalMutation({
   args: {
     text: v.string(),
     voiceId: v.string(),

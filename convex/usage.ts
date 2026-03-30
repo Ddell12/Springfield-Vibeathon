@@ -1,9 +1,8 @@
 import { v } from "convex/values";
 
 import type { MutationCtx, QueryCtx } from "./_generated/server";
-import { mutation, query } from "./_generated/server";
-import { getAuthUserId } from "./lib/auth";
 import { checkPremiumStatus, FREE_LIMITS } from "./lib/billing";
+import { authedMutation, authedQuery } from "./lib/customFunctions";
 
 /** Get the start of the current billing period (first of the month, UTC). */
 function getCurrentPeriodStart(): number {
@@ -26,14 +25,13 @@ async function getOrCreateUsage(
   return existing ?? { userId, periodStart, generationCount: 0, appCount: 0 };
 }
 
-export const getUsage = query({
+export const getUsage = authedQuery({
   args: {},
   handler: async (ctx) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) {
+    if (!ctx.userId) {
       return { generationCount: 0, appCount: 0, periodStart: getCurrentPeriodStart() };
     }
-    const usage = await getOrCreateUsage(ctx, userId);
+    const usage = await getOrCreateUsage(ctx, ctx.userId);
     return {
       generationCount: usage.generationCount,
       appCount: usage.appCount,
@@ -42,20 +40,19 @@ export const getUsage = query({
   },
 });
 
-export const checkQuota = query({
+export const checkQuota = authedQuery({
   args: {},
   handler: async (ctx) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) {
+    if (!ctx.userId) {
       return { allowed: true } as { allowed: boolean; reason?: string };
     }
 
-    const isPremium = await checkPremiumStatus(ctx, userId);
+    const isPremium = await checkPremiumStatus(ctx, ctx.userId);
     if (isPremium) {
       return { allowed: true } as { allowed: boolean; reason?: string };
     }
 
-    const usage = await getOrCreateUsage(ctx, userId);
+    const usage = await getOrCreateUsage(ctx, ctx.userId);
 
     if (usage.appCount >= FREE_LIMITS.maxApps) {
       return {
@@ -75,17 +72,14 @@ export const checkQuota = query({
   },
 });
 
-export const incrementGeneration = mutation({
+export const incrementGeneration = authedMutation({
   args: {},
   handler: async (ctx) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) return;
-
     const periodStart = getCurrentPeriodStart();
     const existing = await ctx.db
       .query("usage")
       .withIndex("by_userId_period", (q) =>
-        q.eq("userId", userId).eq("periodStart", periodStart),
+        q.eq("userId", ctx.userId).eq("periodStart", periodStart),
       )
       .first();
 
@@ -95,7 +89,7 @@ export const incrementGeneration = mutation({
       });
     } else {
       await ctx.db.insert("usage", {
-        userId,
+        userId: ctx.userId,
         periodStart,
         generationCount: 1,
         appCount: 0,
@@ -104,17 +98,14 @@ export const incrementGeneration = mutation({
   },
 });
 
-export const incrementApp = mutation({
+export const incrementApp = authedMutation({
   args: {},
   handler: async (ctx) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) return;
-
     const periodStart = getCurrentPeriodStart();
     const existing = await ctx.db
       .query("usage")
       .withIndex("by_userId_period", (q) =>
-        q.eq("userId", userId).eq("periodStart", periodStart),
+        q.eq("userId", ctx.userId).eq("periodStart", periodStart),
       )
       .first();
 
@@ -124,7 +115,7 @@ export const incrementApp = mutation({
       });
     } else {
       await ctx.db.insert("usage", {
-        userId,
+        userId: ctx.userId,
         periodStart,
         generationCount: 0,
         appCount: 1,

@@ -1,8 +1,8 @@
 import { v } from "convex/values";
 import { ConvexError } from "convex/values";
 
-import { internalQuery, mutation, query } from "./_generated/server";
-import { assertSLP,getAuthUserId } from "./lib/auth";
+import { internalQuery, query } from "./_generated/server";
+import { authedQuery, slpMutation } from "./lib/customFunctions";
 
 const diagnosisValidator = v.union(
   v.literal("articulation"),
@@ -60,44 +60,42 @@ function generateInviteToken(): string {
   return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
 }
 
-export const list = query({
+export const list = authedQuery({
   args: {
     status: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) return [];
+    if (!ctx.userId) return [];
 
     if (args.status) {
       return await ctx.db
         .query("patients")
         .withIndex("by_slpUserId_status", (q) =>
-          q.eq("slpUserId", userId).eq("status", args.status as "active" | "on-hold" | "discharged" | "pending-intake")
+          q.eq("slpUserId", ctx.userId!).eq("status", args.status as "active" | "on-hold" | "discharged" | "pending-intake")
         )
         .take(500);
     }
     return await ctx.db
       .query("patients")
-      .withIndex("by_slpUserId", (q) => q.eq("slpUserId", userId))
+      .withIndex("by_slpUserId", (q) => q.eq("slpUserId", ctx.userId!))
       .take(500);
   },
 });
 
-export const get = query({
+export const get = authedQuery({
   args: { patientId: v.id("patients") },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new ConvexError("Not authenticated");
+    if (!ctx.userId) throw new ConvexError("Not authenticated");
 
     const patient = await ctx.db.get(args.patientId);
     if (!patient) return null;
 
-    if (patient.slpUserId === userId) return patient;
+    if (patient.slpUserId === ctx.userId) return patient;
 
     const link = await ctx.db
       .query("caregiverLinks")
       .withIndex("by_caregiverUserId_patientId", (q) =>
-        q.eq("caregiverUserId", userId).eq("patientId", args.patientId)
+        q.eq("caregiverUserId", ctx.userId!).eq("patientId", args.patientId)
       )
       .filter((q) => q.eq(q.field("inviteStatus"), "accepted"))
       .first();
@@ -107,7 +105,7 @@ export const get = query({
   },
 });
 
-export const create = mutation({
+export const create = slpMutation({
   args: {
     firstName: v.string(),
     lastName: v.string(),
@@ -122,7 +120,7 @@ export const create = mutation({
     notes: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const slpUserId = await assertSLP(ctx);
+    const slpUserId = ctx.slpUserId;
 
     const firstName = validateName(args.firstName, "First name");
     const lastName = validateName(args.lastName, "Last name");
@@ -182,7 +180,7 @@ export const create = mutation({
   },
 });
 
-export const update = mutation({
+export const update = slpMutation({
   args: {
     patientId: v.id("patients"),
     firstName: v.optional(v.string()),
@@ -197,7 +195,7 @@ export const update = mutation({
     notes: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const slpUserId = await assertSLP(ctx);
+    const slpUserId = ctx.slpUserId;
     const patient = await ctx.db.get(args.patientId);
     if (!patient) throw new ConvexError("Patient not found");
     if (patient.slpUserId !== slpUserId) throw new ConvexError("Not authorized");
@@ -233,13 +231,13 @@ export const update = mutation({
   },
 });
 
-export const updateStatus = mutation({
+export const updateStatus = slpMutation({
   args: {
     patientId: v.id("patients"),
     status: statusValidator,
   },
   handler: async (ctx, args) => {
-    const slpUserId = await assertSLP(ctx);
+    const slpUserId = ctx.slpUserId;
     const patient = await ctx.db.get(args.patientId);
     if (!patient) throw new ConvexError("Patient not found");
     if (patient.slpUserId !== slpUserId) throw new ConvexError("Not authorized");
@@ -268,18 +266,17 @@ export const getPublicFirstName = query({
 });
 
 /** Soft-fail variant of get — returns null instead of throwing when unauthorized. */
-export const getForPlay = query({
+export const getForPlay = authedQuery({
   args: { patientId: v.id("patients") },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) return null;
+    if (!ctx.userId) return null;
     const patient = await ctx.db.get(args.patientId);
     if (!patient) return null;
-    if (patient.slpUserId === userId) return patient;
+    if (patient.slpUserId === ctx.userId) return patient;
     const link = await ctx.db
       .query("caregiverLinks")
       .withIndex("by_caregiverUserId_patientId", (q) =>
-        q.eq("caregiverUserId", userId).eq("patientId", args.patientId)
+        q.eq("caregiverUserId", ctx.userId!).eq("patientId", args.patientId)
       )
       .filter((q) => q.eq(q.field("inviteStatus"), "accepted"))
       .first();
@@ -307,11 +304,10 @@ export const getForContext = query({
   },
 });
 
-export const getStats = query({
+export const getStats = authedQuery({
   args: {},
   handler: async (ctx) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) return { active: 0, onHold: 0, discharged: 0, pendingIntake: 0 };
+    if (!ctx.userId) return { active: 0, onHold: 0, discharged: 0, pendingIntake: 0 };
 
     const statuses = ["active", "on-hold", "discharged", "pending-intake"] as const;
     const counts = await Promise.all(
@@ -319,7 +315,7 @@ export const getStats = query({
         const results = await ctx.db
           .query("patients")
           .withIndex("by_slpUserId_status", (q) =>
-            q.eq("slpUserId", userId).eq("status", status)
+            q.eq("slpUserId", ctx.userId!).eq("status", status)
           )
           .take(500);
         return results.length;
