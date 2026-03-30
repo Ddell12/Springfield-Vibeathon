@@ -455,9 +455,11 @@ export default defineSchema({
     .index("by_patientId_timestamp", ["patientId", "timestamp"]),
 
   speechCoachSessions: defineTable({
-    patientId: v.id("patients"),
-    homeProgramId: v.id("homePrograms"),
+    patientId: v.optional(v.id("patients")),
+    homeProgramId: v.optional(v.id("homePrograms")),
     caregiverUserId: v.string(),
+    userId: v.optional(v.string()),
+    mode: v.optional(v.union(v.literal("standalone"), v.literal("clinical"))),
     agentId: v.string(),
     conversationId: v.optional(v.string()),
     status: v.union(
@@ -479,12 +481,14 @@ export default defineSchema({
     errorMessage: v.optional(v.string()),
   })
     .index("by_patientId_startedAt", ["patientId", "startedAt"])
-    .index("by_homeProgramId", ["homeProgramId"]),
+    .index("by_homeProgramId", ["homeProgramId"])
+    .index("by_userId_startedAt", ["userId", "startedAt"]),
 
   speechCoachProgress: defineTable({
     sessionId: v.id("speechCoachSessions"),
-    patientId: v.id("patients"),
+    patientId: v.optional(v.id("patients")),
     caregiverUserId: v.string(),
+    userId: v.optional(v.string()),
     soundsAttempted: v.array(
       v.object({
         sound: v.string(),
@@ -507,7 +511,8 @@ export default defineSchema({
     analyzedAt: v.number(),
   })
     .index("by_patientId", ["patientId"])
-    .index("by_sessionId", ["sessionId"]),
+    .index("by_sessionId", ["sessionId"])
+    .index("by_userId", ["userId"]),
 
   childApps: defineTable({
     patientId: v.id("patients"),

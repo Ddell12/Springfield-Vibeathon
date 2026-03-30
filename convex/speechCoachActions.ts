@@ -151,6 +151,7 @@ Respond with a JSON object matching this exact shape:
       sessionId: args.sessionId,
       patientId: session.patientId,
       caregiverUserId: session.caregiverUserId,
+      userId: session.userId,
       soundsAttempted: analysis.soundsAttempted,
       overallEngagement: analysis.overallEngagement,
       recommendedNextFocus: analysis.recommendedNextFocus,
@@ -158,37 +159,38 @@ Respond with a JSON object matching this exact shape:
       analyzedAt: Date.now(),
     });
 
-    // 6. Auto-log practice
-    const sessionDuration = session.startedAt && session.endedAt
-      ? Math.round((session.endedAt - session.startedAt) / 60000)
-      : undefined;
-    const soundsList = analysis.soundsAttempted.map((s) => s.sound).join(", ");
+    // 6–7. Practice log + goal progress — clinical mode only (requires patient + program)
+    if (session.patientId && session.homeProgramId) {
+      const sessionDuration = session.startedAt && session.endedAt
+        ? Math.round((session.endedAt - session.startedAt) / 60000)
+        : undefined;
+      const soundsList = analysis.soundsAttempted.map((s) => s.sound).join(", ");
 
-    try {
-      await ctx.runMutation(internal.speechCoach.savePracticeLog, {
-        homeProgramId: session.homeProgramId,
-        patientId: session.patientId,
-        caregiverUserId: session.caregiverUserId,
-        date: new Date().toISOString().slice(0, 10),
-        duration: sessionDuration,
-        notes: `Speech Coach session — practiced ${soundsList}`,
-      });
-    } catch (error) {
-      console.error("[SpeechCoach] Practice log write failed:", error);
-    }
+      try {
+        await ctx.runMutation(internal.speechCoach.savePracticeLog, {
+          homeProgramId: session.homeProgramId,
+          patientId: session.patientId,
+          caregiverUserId: session.caregiverUserId,
+          date: new Date().toISOString().slice(0, 10),
+          duration: sessionDuration,
+          notes: `Speech Coach session — practiced ${soundsList}`,
+        });
+      } catch (error) {
+        console.error("[SpeechCoach] Practice log write failed:", error);
+      }
 
-    // 7. Optional goal progress
-    const avgAccuracy = computeAverageAccuracy(analysis.soundsAttempted);
-    try {
-      await ctx.runMutation(internal.speechCoach.saveGoalProgress, {
-        homeProgramId: session.homeProgramId,
-        patientId: session.patientId,
-        sourceId: args.sessionId as string,
-        accuracy: avgAccuracy,
-        date: new Date().toISOString().slice(0, 10),
-      });
-    } catch (error) {
-      console.error("[SpeechCoach] Goal progress write failed:", error);
+      const avgAccuracy = computeAverageAccuracy(analysis.soundsAttempted);
+      try {
+        await ctx.runMutation(internal.speechCoach.saveGoalProgress, {
+          homeProgramId: session.homeProgramId,
+          patientId: session.patientId,
+          sourceId: args.sessionId as string,
+          accuracy: avgAccuracy,
+          date: new Date().toISOString().slice(0, 10),
+        });
+      } catch (error) {
+        console.error("[SpeechCoach] Goal progress write failed:", error);
+      }
     }
   },
 });

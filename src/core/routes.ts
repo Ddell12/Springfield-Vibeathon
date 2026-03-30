@@ -15,7 +15,7 @@ export const ROUTES = {
   SIGN_IN: "/sign-in",
   SIGN_UP: "/sign-up",
   FAMILY: "/family",
-  SPEECH_COACH: "/family", // Nav entry point — patient selection happens at /family, then redirects to /family/[patientId]/speech-coach
+  SPEECH_COACH: "/speech-coach",
   FAMILY_CHILD: (patientId: string) => `/family/${patientId}` as const,
   FAMILY_MESSAGES: (patientId: string) => `/family/${patientId}/messages` as const,
   FAMILY_PLAY: (patientId: string) => `/family/${patientId}/play` as const,
