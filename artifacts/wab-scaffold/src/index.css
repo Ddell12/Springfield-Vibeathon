@@ -44,9 +44,10 @@
     --radius-lg: 16px;
     --radius-xl: 24px;
 
-    /* Therapy font tokens */
-    --font-heading: "Nunito", system-ui, sans-serif;
-    --font-body: "Inter", system-ui, sans-serif;
+    /* Therapy font tokens — must match DESIGN.md */
+    --font-heading: "Fraunces", Georgia, serif;
+    --font-body: "Instrument Sans", system-ui, sans-serif;
+    --font-mono: "Commit Mono", monospace;
   }
 
   .dark {
