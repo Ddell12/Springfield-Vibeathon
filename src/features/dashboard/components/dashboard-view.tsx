@@ -17,15 +17,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/components/ui
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 import { APP_BRAND } from "@/core/config";
-import { MainPromptInput } from "./main-prompt-input";
+import { DashboardChatBox } from "./dashboard-chat-box";
 import { TemplatesTab } from "./templates-tab";
-
-const TEMPLATE_CHIPS = [
-  "Token Board",
-  "Visual Schedule",
-  "Communication Board",
-  "Social Story",
-];
 
 const VALID_TABS = ["recent", "my-projects", "shared", "templates"] as const;
 type TabValue = (typeof VALID_TABS)[number];
@@ -92,7 +85,7 @@ export function DashboardView() {
       </header>
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden mx-auto max-w-4xl px-6 pb-16 pt-20 text-center">
+      <section className="relative shrink-0 overflow-hidden mx-auto max-w-4xl px-6 pb-16 pt-20 text-center">
         <div className="pointer-events-none absolute -top-20 left-1/2 -translate-x-1/2 h-[300px] w-[600px] rounded-full bg-primary/3 blur-[80px]" />
         <h2 className="relative z-10 mb-4 font-headline text-5xl font-normal tracking-tight text-on-surface">
           What would you like to build?
@@ -101,21 +94,8 @@ export function DashboardView() {
           Describe your idea, and Bridges will build it instantly.
         </p>
 
-        {/* Wide Input */}
-        <MainPromptInput />
-
-        {/* Template Chips */}
-        <div className="flex flex-wrap justify-center gap-3">
-          {TEMPLATE_CHIPS.map((chip) => (
-            <button
-              key={chip}
-              onClick={() => router.push(`/builder?prompt=${encodeURIComponent(`Build a ${chip} for a child`)}`)}
-              className="min-h-[44px] rounded-full bg-surface-container-low px-5 py-2 font-body text-sm text-on-surface-variant transition-colors duration-300 hover:bg-surface-container-high"
-            >
-              {chip}
-            </button>
-          ))}
-        </div>
+        {/* Chat box */}
+        <DashboardChatBox />
       </section>
 
       {/* Tab & Grid Container */}

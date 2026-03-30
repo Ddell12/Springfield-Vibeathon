@@ -67,8 +67,8 @@ vi.mock("@/shared/components/ui/tabs", () => ({
   ),
 }));
 
-vi.mock("../main-prompt-input", () => ({
-  MainPromptInput: () => <div data-testid="prompt-input" />,
+vi.mock("../dashboard-chat-box", () => ({
+  DashboardChatBox: () => <div data-testid="dashboard-chat-box" />,
 }));
 
 vi.mock("@/shared/components/project-card", () => ({
@@ -112,19 +112,9 @@ describe("DashboardView", () => {
     ).toBeInTheDocument();
   });
 
-  it("shows MainPromptInput", () => {
+  it("shows DashboardChatBox", () => {
     render(<DashboardView />);
-    expect(screen.getByTestId("prompt-input")).toBeInTheDocument();
-  });
-
-  it("shows template chips (Token Board, Visual Schedule, etc.)", () => {
-    render(<DashboardView />);
-    expect(screen.getByRole("button", { name: /Token Board/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Visual Schedule/i })).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: /Communication Board/i })
-    ).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Social Story/i })).toBeInTheDocument();
+    expect(screen.getByTestId("dashboard-chat-box")).toBeInTheDocument();
   });
 
   it("shows skeleton placeholders in loading state (useQuery returns undefined)", () => {
@@ -199,13 +189,6 @@ describe("DashboardView", () => {
     const menuBtn = screen.getByRole("button", { name: /Open navigation menu/i });
     menuBtn.click();
     // MobileNavDrawer is mocked, so we just check no crash
-  });
-
-  it("template chip click pushes correct builder URL", () => {
-    render(<DashboardView />);
-    const tokenBoardBtn = screen.getByRole("button", { name: /Token Board/i });
-    tokenBoardBtn.click();
-    // Push is called on the router mock — no crash expected
   });
 
   it("handleTabChange with non-recent tab calls replace with ?tab= param", () => {
