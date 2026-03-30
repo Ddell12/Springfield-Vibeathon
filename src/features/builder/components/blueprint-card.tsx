@@ -33,7 +33,7 @@ export function BlueprintCard({ blueprint }: BlueprintCardProps) {
         {/* Card Header */}
         <div className="bg-surface-container-low px-5 py-3 flex items-center gap-2">
           <MaterialIcon icon="auto_awesome" size="sm" className="text-primary" filled />
-          <h3 className="font-headline font-semibold text-[13px] tracking-wide text-primary uppercase">
+          <h3 className="font-body font-semibold text-[13px] tracking-wide text-primary uppercase">
             App Blueprint
           </h3>
         </div>

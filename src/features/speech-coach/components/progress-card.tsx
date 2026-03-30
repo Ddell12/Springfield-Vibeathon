@@ -32,7 +32,7 @@ export function ProgressCard({ progress }: { progress: ProgressData }) {
       <p className="text-sm leading-relaxed text-foreground">{progress.summary}</p>
 
       <div className="flex flex-col gap-2">
-        <h4 className="font-headline text-sm font-semibold text-foreground">Sounds Practiced</h4>
+        <h4 className="font-body text-sm font-semibold text-foreground">Sounds Practiced</h4>
         {progress.soundsAttempted.map((attempt) => (
           <div key={attempt.sound} className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2">

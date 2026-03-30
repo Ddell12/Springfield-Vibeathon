@@ -62,7 +62,7 @@ export function ProgressCard({ status, activities, startTime }: ProgressCardProp
           </span>
         </div>
       ) : (
-        <p className="mb-3 font-headline text-sm font-semibold text-on-surface">
+        <p className="mb-3 text-sm font-semibold text-on-surface">
           Building your app...
         </p>
       )}
