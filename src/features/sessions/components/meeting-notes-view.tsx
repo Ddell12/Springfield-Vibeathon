@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import { useQuery } from "convex/react";
 import { toast } from "sonner";
 
@@ -78,10 +80,10 @@ export function MeetingNotesView({ appointmentId }: MeetingNotesViewProps) {
           size="sm"
           className="w-fit"
           onClick={() => {
-            toast.info("Retry pipeline from the Convex dashboard.");
+            toast.info("We weren't able to process this session automatically. Please ask your therapist to check the session notes.");
           }}
         >
-          Retry
+          Notify therapist
         </Button>
       </div>
     );
@@ -149,7 +151,7 @@ export function MeetingNotesView({ appointmentId }: MeetingNotesViewProps) {
           <h3 className="font-headline mb-2 text-sm font-semibold text-on-surface">
             SOAP note draft
           </h3>
-          <a
+          <Link
             href={`/patients/${record.patientId}/notes/${record.soapNoteId}`}
             className={cn(
               "inline-flex items-center gap-1.5 text-sm font-medium",
@@ -159,7 +161,7 @@ export function MeetingNotesView({ appointmentId }: MeetingNotesViewProps) {
           >
             <MaterialIcon icon="description" size="sm" />
             Open SOAP note
-          </a>
+          </Link>
         </section>
       )}
 

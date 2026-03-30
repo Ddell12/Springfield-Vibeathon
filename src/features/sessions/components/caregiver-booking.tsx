@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import { useMutation, useQuery } from "convex/react";
 import { toast } from "sonner";
@@ -22,6 +22,7 @@ import {
 import { Button } from "@/shared/components/ui/button";
 
 import { useCalendar } from "../hooks/use-calendar";
+import { useAvailableSlots } from "../hooks/use-appointments";
 import { formatDateTime, getWeekDays, formatTime } from "../lib/time-slots";
 
 interface CaregiverBookingProps {
@@ -46,19 +47,21 @@ export function CaregiverBooking({ slpId }: CaregiverBookingProps) {
   // Caregiver's linked patients
   const links = useQuery(api.caregivers.listByCaregiver, {});
   const patientId: Id<"patients"> | null =
-    links && links.length > 0
-      ? (links[0].patientId as Id<"patients">)
-      : null;
+    links && links.length > 0 ? links[0].patientId : null;
 
-  // Available slots for this week
-  const slots = useQuery(
-    api.appointments.getAvailableSlots,
-    { slpId, weekStart },
-  );
+  // Available slots for this week — skip until links have loaded
+  const slotsRaw = useAvailableSlots(links?.length ? slpId : null, weekStart);
+  const slots = slotsRaw ?? [];
 
   const bookMutation = useMutation(api.appointments.bookAsCaregiver);
 
   const weekDays = getWeekDays(weekStart);
+
+  const today = useMemo(() => {
+    const d = new Date();
+    d.setUTCHours(0, 0, 0, 0);
+    return d;
+  }, []);
 
   function getSlotsForDay(dayIndex: number): Slot[] {
     if (!slots) return [];
@@ -95,7 +98,7 @@ export function CaregiverBooking({ slpId }: CaregiverBookingProps) {
     }
   }
 
-  if (links === undefined || slots === undefined) {
+  if (links === undefined || slotsRaw === undefined) {
     return (
       <div className="flex items-center gap-3 py-8 text-on-surface-variant">
         <span
@@ -120,9 +123,6 @@ export function CaregiverBooking({ slpId }: CaregiverBookingProps) {
       </div>
     );
   }
-
-  const today = new Date();
-  today.setUTCHours(0, 0, 0, 0);
 
   return (
     <div className="flex flex-col gap-4">
@@ -214,6 +214,7 @@ export function CaregiverBooking({ slpId }: CaregiverBookingProps) {
                     <button
                       key={slot.timestamp}
                       type="button"
+                      aria-label={`Book ${DAY_LABELS[day.getUTCDay()]} ${formatDateTime(slot.timestamp)}`}
                       onClick={() => setPendingSlot(slot)}
                       className={cn(
                         "w-full rounded px-1 py-1 text-center",
