@@ -6,10 +6,7 @@ export function CtaSection() {
   return (
     <section className="px-6 py-16 max-w-7xl mx-auto">
       <div className="bg-primary-gradient rounded-3xl px-10 py-16 text-center flex flex-col items-center gap-6 relative overflow-hidden">
-        <div className="pointer-events-none absolute -top-24 -right-24 w-64 h-64 rounded-full border border-white/10" />
-        <div className="pointer-events-none absolute -bottom-16 -left-16 w-48 h-48 rounded-full border border-white/10" />
-
-        <div className="relative z-10 flex flex-col items-center gap-6 max-w-2xl">
+        <div className="flex flex-col items-center gap-6 max-w-2xl">
           <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center">
             <MaterialIcon icon="auto_awesome" className="text-white text-3xl" />
           </div>
