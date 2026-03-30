@@ -2,7 +2,8 @@ import { ROUTES } from "@/core/routes";
 
 export const NAV_ITEMS = [
   { icon: "home", label: "Home", href: ROUTES.DASHBOARD },
-  { icon: "group",                label: "Patients",   href: ROUTES.PATIENTS },
+  { icon: "group", label: "Patients", href: ROUTES.PATIENTS },
+  { icon: "video_call", label: "Sessions", href: ROUTES.SESSIONS },
   { icon: "auto_awesome", label: "Builder", href: ROUTES.BUILDER },
   { icon: "collections_bookmark", label: "Flashcards", href: ROUTES.FLASHCARDS },
   { icon: "record_voice_over", label: "Speech Coach", href: ROUTES.SPEECH_COACH },
@@ -15,6 +16,7 @@ export const NAV_ITEMS = [
 // because the href requires a patientId which varies by active child.
 export const CAREGIVER_NAV_ITEMS = [
   { icon: "home", label: "Home", href: ROUTES.FAMILY },
+  { icon: "video_call", label: "Sessions", href: ROUTES.SESSIONS },
   { icon: "record_voice_over", label: "Speech Coach", href: ROUTES.SPEECH_COACH },
   { icon: "settings", label: "Settings", href: ROUTES.SETTINGS },
 ] as const;
@@ -25,8 +27,9 @@ export function isNavActive(
   _tab: string | null
 ): boolean {
   if (href === "/dashboard") return pathname === "/dashboard";
-  if (href === "/patients")  return pathname.startsWith("/patients");
-  if (href === "/builder")   return pathname.startsWith("/builder");
+  if (href === "/patients") return pathname.startsWith("/patients");
+  if (href === "/sessions") return pathname.startsWith("/sessions");
+  if (href === "/builder") return pathname.startsWith("/builder");
   if (href === "/flashcards") return pathname.startsWith("/flashcards");
   if (href === "/family")    return pathname.startsWith("/family");
   if (href === "/speech-coach") return pathname.startsWith("/speech-coach");
