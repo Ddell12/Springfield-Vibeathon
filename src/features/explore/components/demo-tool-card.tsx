@@ -49,7 +49,7 @@ export function DemoToolCard({
           <span className="inline-block px-2 py-0.5 bg-primary/10 text-primary text-xs font-bold rounded-full mb-2">
             {categoryLabel}
           </span>
-          <h3 className="font-headline font-bold text-lg text-on-surface">
+          <h3 className="font-body font-bold text-lg text-on-surface">
             {title}
           </h3>
           <p className="text-on-surface-variant text-sm mt-1 line-clamp-2">

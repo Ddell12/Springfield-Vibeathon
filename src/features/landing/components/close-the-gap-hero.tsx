@@ -46,7 +46,7 @@ export function CloseTheGapHero() {
             { value: "∞", label: "personalization" },
           ].map(({ value, label }) => (
             <div key={label} className="flex flex-col items-center gap-1">
-              <span className="font-headline text-2xl font-normal text-primary">
+              <span className="text-2xl font-normal text-primary">
                 {value}
               </span>
               <span className="text-xs text-on-surface-variant uppercase tracking-wider">

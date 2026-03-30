@@ -72,7 +72,7 @@ export function HeroSection() {
                 <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center">
                   <MaterialIcon icon="chat_bubble" className="text-primary" size="sm" />
                 </div>
-                <span className="font-headline font-semibold text-sm text-on-surface">
+                <span className="font-semibold text-sm text-on-surface">
                   AI Assistant
                 </span>
               </div>
