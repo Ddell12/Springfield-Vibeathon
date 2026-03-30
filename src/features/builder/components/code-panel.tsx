@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import { copyToClipboard } from "@/core/clipboard";
 import { cn } from "@/core/utils";
@@ -23,6 +23,11 @@ export function CodePanel({ files, status }: CodePanelProps) {
 
   const isGenerating = status === "generating";
 
+  // Compute line numbers for gutter (memoized to avoid re-splitting during streaming)
+  // Must be above early returns to satisfy React's rules of hooks
+  const lines = useMemo(() => selectedFile?.contents.split("\n") ?? [], [selectedFile?.contents]);
+  const lineCount = lines.length;
+
   if (files.length === 0 && !isGenerating) {
     return (
       <div className="flex h-full items-center justify-center bg-surface-container text-on-surface-variant">
@@ -41,10 +46,6 @@ export function CodePanel({ files, status }: CodePanelProps) {
       </div>
     );
   }
-
-  // Compute line numbers for gutter
-  const lines = selectedFile?.contents.split("\n") ?? [];
-  const lineCount = lines.length;
 
   return (
     <div className="flex h-full flex-col overflow-hidden bg-surface-container-low">

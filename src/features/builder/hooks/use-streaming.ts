@@ -460,6 +460,7 @@ export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn 
   const resumeSession = useCallback(
     (args: ResumeSessionArgs) => {
       sessionIdRef.current = args.sessionId;
+      statusRef.current = "live"; // Sync immediately to prevent race with generate()
       dispatch({ type: "RESUME_SESSION", args });
     },
     []

@@ -175,6 +175,7 @@ export function InterviewController({
     return () => {
       cancelled = true;
     };
+  // Only re-fetch when phase changes, not on full state updates
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.phase]);
 

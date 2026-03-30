@@ -95,7 +95,7 @@ describe("AppViewer", () => {
 
     await waitFor(() => {
       const iframe = screen.getByTitle("Therapy activity");
-      expect(iframe).toHaveAttribute("sandbox", "allow-scripts allow-same-origin");
+      expect(iframe).toHaveAttribute("sandbox", "allow-scripts");
     });
   });
 

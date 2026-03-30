@@ -78,8 +78,8 @@ describe("isValidFilePath", () => {
     expect(isValidFilePath("src/data.yaml")).toBe(false);
   });
 
-  it("accepts allowed root config file tailwind.config.ts", () => {
-    expect(isValidFilePath("tailwind.config.ts")).toBe(true);
+  it("rejects tailwind.config.ts (removed from allowlist for security)", () => {
+    expect(isValidFilePath("tailwind.config.ts")).toBe(false);
   });
 
   it("accepts allowed root config file vite.config.ts", () => {

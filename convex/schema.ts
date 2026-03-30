@@ -27,7 +27,8 @@ export default defineSchema({
     archived: v.optional(v.boolean()),
   }).index("by_user", ["userId"])
     .index("by_state", ["state"])
-    .index("by_state_user", ["state", "userId"]),
+    .index("by_state_user", ["state", "userId"])
+    .index("by_user_archived", ["userId", "archived"]),
 
   messages: defineTable({
     sessionId: v.id("sessions"),
@@ -482,7 +483,8 @@ export default defineSchema({
   })
     .index("by_patientId_startedAt", ["patientId", "startedAt"])
     .index("by_homeProgramId", ["homeProgramId"])
-    .index("by_userId_startedAt", ["userId", "startedAt"]),
+    .index("by_userId_startedAt", ["userId", "startedAt"])
+    .index("by_userId_mode_startedAt", ["userId", "mode", "startedAt"]),
 
   speechCoachProgress: defineTable({
     sessionId: v.id("speechCoachSessions"),

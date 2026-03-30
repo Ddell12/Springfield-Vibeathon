@@ -47,9 +47,9 @@ describe("useFlashcardStreaming", () => {
       await result.current.generate("animal sounds");
     });
 
-    // After stream completes with no events, stays generating
-    // (since no status: live event was received)
-    expect(result.current.status).toBe("generating");
+    // After stream completes with no terminal event, transitions to failed
+    // (prevents infinite loading state)
+    expect(result.current.status).toBe("failed");
   });
 
   it("sends correct request to /api/generate", async () => {
@@ -96,6 +96,7 @@ describe("useFlashcardStreaming", () => {
   it("updates activity message from activity event", async () => {
     mockFetchWithEvents([
       { event: "activity", data: { type: "thinking", message: "Creating deck..." } },
+      { event: "status", data: { status: "live" } },
     ]);
     const { result } = renderHook(() => useFlashcardStreaming());
 

@@ -101,9 +101,9 @@ export function PatientProfileWidget({ patient }: PatientProfileWidgetProps) {
               {editInterests.map((interest, i) => (
                 <span key={i} className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
                   {interest}
-                  <button onClick={() => setEditInterests(editInterests.filter((_, idx) => idx !== i))} className="hover:text-destructive">
+                  <Button type="button" variant="ghost" size="icon" className="h-4 w-4 hover:text-destructive" onClick={() => setEditInterests(editInterests.filter((_, idx) => idx !== i))}>
                     <MaterialIcon icon="close" size="sm" />
-                  </button>
+                  </Button>
                 </span>
               ))}
             </div>

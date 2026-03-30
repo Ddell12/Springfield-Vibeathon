@@ -92,6 +92,8 @@ async function main() {
   // ---------------------------------------------------------------------------
   const twConfigPath = join(buildDir, "tailwind.config.js");
   const twConfigRaw = existsSync(twConfigPath) ? readFileSync(twConfigPath, "utf-8") : "";
+  // LLM can no longer write tailwind.config.js (removed from write_file allowlist).
+  // For any pre-existing configs, only safe JSON values are extracted — no JS eval.
   let twExtend = "{}";
   const extendIdx = twConfigRaw.indexOf("extend:");
   if (extendIdx !== -1) {
@@ -107,15 +109,12 @@ async function main() {
         }
       }
     }
-  }
-
-  // Sanitize twExtend: parse the extracted JS object literal and re-serialize
-  // as safe JSON to prevent script injection via crafted tailwind configs.
-  try {
-    const evaluated = new Function(`return (${twExtend})`)();
-    twExtend = JSON.stringify(evaluated);
-  } catch {
-    twExtend = "{}";
+    // Sanitize: only allow valid JSON (no JS expressions, getters, or functions)
+    try {
+      twExtend = JSON.stringify(JSON.parse(twExtend));
+    } catch {
+      twExtend = "{}";
+    }
   }
 
   // ---------------------------------------------------------------------------

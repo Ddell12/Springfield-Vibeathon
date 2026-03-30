@@ -52,6 +52,7 @@ export function useFlashcardStreaming(): UseFlashcardStreamingReturn {
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
         let buffer = "";
+        let reachedTerminal = false;
 
         while (true) {
           const { value, done } = await reader.read();
@@ -75,7 +76,7 @@ export function useFlashcardStreaming(): UseFlashcardStreamingReturn {
                 setSessionId(typed.sessionId as Id<"sessions">);
                 break;
               case "status":
-                if (typed.status === "live") setStatus("live");
+                if (typed.status === "live") { setStatus("live"); reachedTerminal = true; }
                 break;
               case "activity":
                 setActivityMessage(typed.message);
@@ -83,6 +84,7 @@ export function useFlashcardStreaming(): UseFlashcardStreamingReturn {
               case "error":
                 setStatus("failed");
                 setActivityMessage(typed.message);
+                reachedTerminal = true;
                 break;
             }
           }
@@ -94,12 +96,19 @@ export function useFlashcardStreaming(): UseFlashcardStreamingReturn {
             const typed = parseSSEEvent(eventType, data);
             if (!typed) continue;
             if (typed.event === "session") setSessionId(typed.sessionId as Id<"sessions">);
-            if (typed.event === "status" && typed.status === "live") setStatus("live");
+            if (typed.event === "status" && typed.status === "live") { setStatus("live"); reachedTerminal = true; }
             if (typed.event === "error") {
               setStatus("failed");
               setActivityMessage(typed.message);
+              reachedTerminal = true;
             }
           }
+        }
+
+        // Ensure terminal state if stream ended without explicit status/error
+        if (!reachedTerminal) {
+          setStatus("failed");
+          setActivityMessage("Generation ended unexpectedly.");
         }
       } catch (error) {
         if ((error as Error).name !== "AbortError") {

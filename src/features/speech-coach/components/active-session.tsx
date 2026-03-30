@@ -38,6 +38,7 @@ function ActiveSessionInner({
   durationMinutes,
 }: Omit<Props, "signedUrl">) {
   const hasStarted = useRef(false);
+  const wasConnected = useRef(false);
   const { startSession, endSession } = useConversationControls();
   // status: "disconnected" | "connecting" | "connected" | "error"
   const { status } = useConversationStatus();
@@ -45,6 +46,11 @@ function ActiveSessionInner({
   const { isSpeaking } = useConversationMode();
 
   const isConnected = status === "connected";
+
+  // Track successful connection for disconnection detection
+  useEffect(() => {
+    if (status === "connected") wasConnected.current = true;
+  }, [status]);
 
   // Start conversation on mount
   useEffect(() => {
@@ -64,9 +70,9 @@ function ActiveSessionInner({
     });
   }, [startSession, onConversationStarted, onEnd]);
 
-  // Detect disconnection after session started
+  // Detect disconnection only after a successful connection (prevents StrictMode false trigger)
   useEffect(() => {
-    if (hasStarted.current && status === "disconnected") {
+    if (wasConnected.current && status === "disconnected") {
       onEnd();
     }
   }, [status, onEnd]);

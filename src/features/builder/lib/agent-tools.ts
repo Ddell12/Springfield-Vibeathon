@@ -23,7 +23,7 @@ export interface ToolContext {
  */
 export function isValidFilePath(path: string): boolean {
   const allowedRoots =
-    /^(src\/|tailwind\.config\.(ts|js|cjs)$|vite\.config\.(ts|js)$|postcss\.config\.(ts|js|cjs)$)/;
+    /^(src\/|vite\.config\.(ts|js)$|postcss\.config\.(ts|js|cjs)$)/;
   if (!allowedRoots.test(path)) return false;
 
   if (!/^[a-zA-Z0-9\-_.\/]+$/.test(path)) return false;
@@ -79,10 +79,15 @@ export function createAgentTools(ctx: ToolContext) {
           ),
       }),
       run: async ({ name }) => {
-        await ctx.convex.mutation(api.sessions.updateTitle, {
-          sessionId: ctx.sessionId,
-          title: name,
-        });
+        try {
+          await ctx.convex.mutation(api.sessions.updateTitle, {
+            sessionId: ctx.sessionId,
+            title: name,
+          });
+        } catch (err) {
+          console.error("[set_app_name] Failed to update title:", err);
+          return `App name "${name}" noted (save failed, will retry)`;
+        }
         ctx.send("app_name", { name });
         return `App name set to "${name}"`;
       },

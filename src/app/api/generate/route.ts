@@ -39,7 +39,7 @@ function jsonErrorResponse(message: string, status: number): Response {
 }
 
 export async function POST(request: Request): Promise<Response> {
-  // 1. Auth
+  // 1. Auth (catch narrowed in authenticate.ts — only swallows expected Clerk errors)
   const { convex } = await authenticate();
 
   // 2. Validate body
@@ -52,14 +52,14 @@ export async function POST(request: Request): Promise<Response> {
     return jsonErrorResponse(parsed.error.issues[0]?.message ?? "Invalid request", 400);
   }
 
-  // 3. Rate limit
-  const ip = request.headers.get("x-real-ip")
-    ?? request.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
+  // 3. Rate limit — prefer Vercel's trusted header (can't be spoofed by clients)
+  const ip = request.headers.get("x-vercel-forwarded-for")?.split(",")[0]?.trim()
+    ?? request.headers.get("x-real-ip")
     ?? "anonymous";
   try {
     await convex.mutation(api.rate_limit_check.checkGenerateLimit, { key: ip });
-  } catch (e) {
-    return jsonErrorResponse(e instanceof Error ? e.message : "Rate limited", 429);
+  } catch {
+    return jsonErrorResponse("Rate limited — please wait before trying again", 429);
   }
 
   // 4. Extract input

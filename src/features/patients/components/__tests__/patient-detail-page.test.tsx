@@ -47,7 +47,7 @@ vi.mock("../quick-notes", () => ({
 vi.mock("../create-material-button", () => ({
   CreateMaterialButton: () => <button>Create Material</button>,
 }));
-vi.mock("@/features/family/components/child-apps-section", () => ({
+vi.mock("@/shared/components/child-apps-section", () => ({
   ChildAppsSection: () => null,
 }));
 

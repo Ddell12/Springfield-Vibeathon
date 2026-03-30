@@ -3,10 +3,10 @@
 import { useMutation, useQuery } from "convex/react";
 import { Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
-import { api } from "../../../../convex/_generated/api";
-import type { Id } from "../../../../convex/_generated/dataModel";
+import { api } from "../../../convex/_generated/api";
+import type { Id } from "../../../convex/_generated/dataModel";
 import { Button } from "@/shared/components/ui/button";
-import { AppPicker } from "./app-picker";
+import { AppPicker } from "@/features/family/components/app-picker";
 
 interface ChildAppsSectionProps {
   patientId: Id<"patients">;
