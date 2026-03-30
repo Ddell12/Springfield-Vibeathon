@@ -118,6 +118,7 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      "@convex": path.resolve(__dirname, "./convex"),
       // Mock react-resizable-panels in tests — the real library uses ResizeObserver
       // which isn't available in jsdom, causing "n is not a constructor" errors.
       "react-resizable-panels": path.resolve(__dirname, "./__mocks__/react-resizable-panels.tsx"),

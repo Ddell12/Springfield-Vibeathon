@@ -11,6 +11,10 @@ vi.mock("@clerk/nextjs", () => ({
   }),
 }));
 
+vi.mock("@/features/sessions/components/notification-bell", () => ({
+  NotificationBell: () => <div data-testid="notification-bell" />,
+}));
+
 vi.mock("next/link", () => ({
   default: ({ href, children, ...props }: any) => (
     <a href={href} {...props}>
