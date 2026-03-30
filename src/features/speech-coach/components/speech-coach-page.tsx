@@ -156,7 +156,7 @@ export function SpeechCoachPage({ patientId, homeProgramId }: Props) {
             />
           </div>
         )}
-        {activeTab === "history" && <SessionHistory patientId={patientId} />}
+        {activeTab === "history" ? <SessionHistory patientId={patientId} /> : null}
       </div>
     </div>
   );

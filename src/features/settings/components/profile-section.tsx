@@ -1,7 +1,7 @@
 "use client";
 
 import { useUser } from "@clerk/nextjs";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { MaterialIcon } from "@/shared/components/material-icon";
 import { Button } from "@/shared/components/ui/button";
@@ -16,11 +16,12 @@ export function ProfileSection() {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
 
-  // Initialize from Clerk user data once loaded
-  if (isLoaded && user && !nameInitialized) {
-    setDisplayName(user.firstName ?? user.fullName ?? "");
-    setNameInitialized(true);
-  }
+  useEffect(() => {
+    if (isLoaded && user && !nameInitialized) {
+      setDisplayName(user.firstName ?? user.fullName ?? "");
+      setNameInitialized(true);
+    }
+  }, [isLoaded, user, nameInitialized]);
 
   const handleSave = async () => {
     if (!user || !displayName.trim()) return;

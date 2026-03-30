@@ -2,6 +2,7 @@
 
 import { useUser } from "@clerk/nextjs";
 import { useQuery } from "convex/react";
+import dynamic from "next/dynamic";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -13,7 +14,10 @@ import { Button } from "@/shared/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/shared/components/ui/toggle-group";
 
 import { AvailabilityEditor } from "./availability-editor";
-import { BookingModal } from "./booking-modal";
+const BookingModal = dynamic(
+  () => import("./booking-modal").then((m) => ({ default: m.BookingModal })),
+  { ssr: false }
+);
 import { CalendarView } from "./calendar-view";
 import { useAppointmentActions, useAppointments } from "../hooks/use-appointments";
 import { useAvailability } from "../hooks/use-availability";

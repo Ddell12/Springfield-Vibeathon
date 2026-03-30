@@ -38,7 +38,7 @@ function AssistantBubble({ content, isStreaming }: { content: string; isStreamin
         <div className="overflow-x-auto text-sm text-on-surface [&_a]:text-primary [&_a]:underline [&_code]:rounded [&_code]:bg-surface-container-lowest [&_code]:px-1 [&_code]:py-0.5 [&_code]:text-xs [&_code]:font-mono [&_h1]:text-lg [&_h1]:font-bold [&_h2]:text-base [&_h2]:font-semibold [&_h3]:text-sm [&_h3]:font-semibold [&_li]:my-0.5 [&_ol]:my-1 [&_ol]:ml-4 [&_ol]:list-decimal [&_p:last-child]:mb-0 [&_p]:my-1 [&_pre]:my-2 [&_pre]:overflow-x-auto [&_pre]:rounded-lg [&_pre]:bg-surface-container-lowest [&_pre]:p-3 [&_strong]:font-semibold [&_ul]:my-1 [&_ul]:ml-4 [&_ul]:list-disc">
           <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeSanitize]}>{content}</ReactMarkdown>
         </div>
-        {isStreaming && <span className="mt-1 inline-block h-4 w-1 animate-pulse bg-primary/60" />}
+        {isStreaming ? <span className="mt-1 inline-block h-4 w-1 animate-pulse bg-primary/60" /> : null}
       </div>
     </div>
   );
@@ -166,7 +166,7 @@ export function ChatPanel({
           )}
 
           {/* Blueprint card */}
-          {blueprint && <BlueprintCard blueprint={blueprint} />}
+          {blueprint ? <BlueprintCard blueprint={blueprint} /> : null}
 
           {/* Progress tracking card during generation */}
           {(isGenerating || isLive) && (

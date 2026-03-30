@@ -121,6 +121,9 @@ export default defineConfig({
       // Mock react-resizable-panels in tests — the real library uses ResizeObserver
       // which isn't available in jsdom, causing "n is not a constructor" errors.
       "react-resizable-panels": path.resolve(__dirname, "./__mocks__/react-resizable-panels.tsx"),
+      // Mock next/dynamic in tests — the real implementation renders nothing with
+      // ssr:false in JSDOM, breaking tests that check inside dynamic components.
+      "next/dynamic": path.resolve(__dirname, "./__mocks__/next/dynamic.tsx"),
     },
   },
 });

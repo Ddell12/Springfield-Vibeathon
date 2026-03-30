@@ -1,6 +1,7 @@
 "use client";
 
-import { useConvexAuth, useMutation,useQuery } from "convex/react";
+import { useConvexAuth, useMutation, useQuery } from "convex/react";
+import dynamic from "next/dynamic";
 import { Gamepad2, Settings2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -17,7 +18,10 @@ import type { Id } from "../../../../convex/_generated/dataModel";
 import { useFamilyData } from "../hooks/use-family-data";
 import { AppPicker } from "./app-picker";
 import { CelebrationCard } from "./celebration-card";
-import { PinSetupModal } from "./pin-setup-modal";
+const PinSetupModal = dynamic(
+  () => import("./pin-setup-modal").then((m) => ({ default: m.PinSetupModal })),
+  { ssr: false }
+);
 import { StreakTracker } from "./streak-tracker";
 import { TodayActivities } from "./today-activities";
 import { WeeklyProgress } from "./weekly-progress";

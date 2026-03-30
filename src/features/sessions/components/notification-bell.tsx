@@ -47,12 +47,11 @@ function timeAgo(timestamp: number): string {
 export function NotificationBell() {
   const router = useRouter();
   const notifications = useQuery(api.notifications.list);
-  const unreadCount = useQuery(api.notifications.unreadCount);
   const markRead = useMutation(api.notifications.markRead);
   const markAllRead = useMutation(api.notifications.markAllRead);
   const [open, setOpen] = useState(false);
 
-  const count = unreadCount ?? 0;
+  const count = notifications?.filter((n) => !n.read).length ?? 0;
 
   const handleNotificationClick = useCallback(async (id: Id<"notifications">, link?: string) => {
     setOpen(false);

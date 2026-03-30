@@ -1,11 +1,15 @@
 "use client";
 
 import { useMutation, useQuery } from "convex/react";
+import dynamic from "next/dynamic";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { useIsMobile } from "@/core/hooks/use-mobile";
-import { DeleteConfirmationDialog } from "@/shared/components/delete-confirmation-dialog";
+const DeleteConfirmationDialog = dynamic(
+  () => import("@/shared/components/delete-confirmation-dialog").then((m) => ({ default: m.DeleteConfirmationDialog })),
+  { ssr: false }
+);
 import { MaterialIcon } from "@/shared/components/material-icon";
 import { SuggestionChips } from "@/shared/components/suggestion-chips";
 import { Button } from "@/shared/components/ui/button";
@@ -36,7 +40,10 @@ import { DeckList } from "./deck-list";
 import { FlashcardChatPanel } from "./flashcard-chat-panel";
 import { FlashcardPreviewPanel } from "./flashcard-preview-panel";
 import { FlashcardToolbar } from "./flashcard-toolbar";
-import { RenameDeckDialog } from "./rename-deck-dialog";
+const RenameDeckDialog = dynamic(
+  () => import("./rename-deck-dialog").then((m) => ({ default: m.RenameDeckDialog })),
+  { ssr: false }
+);
 
 export function FlashcardPage() {
   const isMobile = useIsMobile();
