@@ -4,6 +4,9 @@ import { authenticate } from "@/app/api/generate/lib/authenticate";
 import { api } from "../../../../../convex/_generated/api";
 import type { Id } from "../../../../../convex/_generated/dataModel";
 
+/** Appointment statuses that allow issuing a LiveKit room token. */
+const JOINABLE_STATUSES = new Set(["scheduled", "in-progress"]);
+
 export async function POST(req: Request): Promise<Response> {
   const { convex, userId } = await authenticate();
   if (!userId) {
@@ -29,6 +32,16 @@ export async function POST(req: Request): Promise<Response> {
 
   if (!appointment) {
     return Response.json({ error: "Appointment not found" }, { status: 404 });
+  }
+
+  // Status gate: only scheduled or in-progress appointments can be joined.
+  if (!JOINABLE_STATUSES.has(appointment.status)) {
+    return Response.json(
+      {
+        error: `Appointment is ${appointment.status} and not joinable`,
+      },
+      { status: 403 },
+    );
   }
 
   const apiKey = process.env.LIVEKIT_API_KEY;
