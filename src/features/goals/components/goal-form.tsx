@@ -104,6 +104,7 @@ export function GoalForm({ patientId, open, onOpenChange, editGoal }: GoalFormPr
           notes: notes || undefined,
         });
       }
+      setAmendmentReason("");
       onOpenChange(false);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to save goal");
