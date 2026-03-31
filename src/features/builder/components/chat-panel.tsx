@@ -1,44 +1,57 @@
 "use client";
 
+import { useUser } from "@clerk/nextjs";
 import { useQuery } from "convex/react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import ReactMarkdown from "react-markdown";
 import rehypeSanitize from "rehype-sanitize";
 import remarkGfm from "remark-gfm";
 
 import { MaterialIcon } from "@/shared/components/material-icon";
-import { SuggestionChips } from "@/shared/components/suggestion-chips";
 import { Button } from "@/shared/components/ui/button";
-import { Input } from "@/shared/components/ui/input";
-import { VoiceInput } from "@/shared/components/voice-input";
 
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 import type { Activity, StreamingStatus } from "../hooks/use-streaming";
-import { THERAPY_SUGGESTIONS } from "../lib/constants";
 import type { TherapyBlueprint } from "../lib/schemas";
+import { ArtifactCard } from "./artifact-card";
 import { BlueprintCard } from "./blueprint-card";
-import { ProgressCard } from "./progress-card";
 
 function UserMessage({ content }: { content: string }) {
+  const { user } = useUser();
+  const initials = [user?.firstName?.[0], user?.lastName?.[0]]
+    .filter(Boolean)
+    .join("")
+    .toUpperCase() || "U";
+
   return (
-    <div className="flex justify-end">
-      <div className="max-w-[85%] break-words rounded-2xl rounded-br-md bg-primary/10 px-4 py-3">
-        <p className="whitespace-pre-wrap text-sm text-on-surface">{content}</p>
+    <div className="flex items-start gap-3">
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-on-surface text-xs font-semibold text-white">
+        {initials}
+      </div>
+      <div className="max-w-[85%] rounded-2xl rounded-tl-sm bg-on-surface/90 px-4 py-3">
+        <p className="whitespace-pre-wrap text-sm text-white">{content}</p>
       </div>
     </div>
   );
 }
 
-function AssistantBubble({ content, isStreaming }: { content: string; isStreaming?: boolean }) {
+function AssistantMessage({ content, isStreaming }: { content: string; isStreaming?: boolean }) {
   if (isStreaming && !content) return null;
   return (
-    <div className="flex justify-start">
-      <div className="max-w-[85%] break-words rounded-2xl rounded-bl-md bg-surface-container px-4 py-3">
+    <div className="flex items-start gap-3">
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+        B
+      </div>
+      <div className="min-w-0 flex-1">
         <div className="overflow-x-auto text-sm text-on-surface [&_a]:text-primary [&_a]:underline [&_code]:rounded [&_code]:bg-surface-container-lowest [&_code]:px-1 [&_code]:py-0.5 [&_code]:text-xs [&_code]:font-mono [&_h1]:text-lg [&_h1]:font-bold [&_h2]:text-base [&_h2]:font-semibold [&_h3]:text-sm [&_h3]:font-semibold [&_li]:my-0.5 [&_ol]:my-1 [&_ol]:ml-4 [&_ol]:list-decimal [&_p:last-child]:mb-0 [&_p]:my-1 [&_pre]:my-2 [&_pre]:overflow-x-auto [&_pre]:rounded-lg [&_pre]:bg-surface-container-lowest [&_pre]:p-3 [&_strong]:font-semibold [&_ul]:my-1 [&_ul]:ml-4 [&_ul]:list-disc">
-          <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeSanitize]}>{content}</ReactMarkdown>
+          <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeSanitize]}>
+            {content}
+          </ReactMarkdown>
         </div>
-        {isStreaming ? <span className="mt-1 inline-block h-4 w-1 animate-pulse bg-primary/60" /> : null}
+        {isStreaming ? (
+          <span className="mt-1 inline-block h-4 w-1 animate-pulse bg-primary/60" />
+        ) : null}
       </div>
     </div>
   );
@@ -54,14 +67,11 @@ function SystemMessage({ content }: { content: string }) {
   );
 }
 
-// --- Main ChatPanel ---
-
 interface ChatPanelProps {
   sessionId: string | null;
   status: StreamingStatus;
   blueprint: TherapyBlueprint | null;
   error: string | null;
-  onGenerate: (prompt: string) => void;
   onRetry?: () => void;
   streamingText: string;
   activities: Activity[];
@@ -69,6 +79,7 @@ interface ChatPanelProps {
   onPendingPromptClear?: () => void;
   narrationMessage?: string | null;
   startTime?: number;
+  appTitle: string;
 }
 
 export function ChatPanel({
@@ -76,189 +87,75 @@ export function ChatPanel({
   status,
   blueprint,
   error,
-  onGenerate,
   onRetry,
   streamingText,
   activities,
   pendingPrompt,
   onPendingPromptClear,
-  narrationMessage,
-  startTime,
+  appTitle,
 }: ChatPanelProps) {
-  const [input, setInput] = useState("");
   const scrollEndRef = useRef<HTMLDivElement>(null);
 
   const messages = useQuery(
     api.messages.list,
-    sessionId ? { sessionId: sessionId as Id<"sessions"> } : "skip"
+    sessionId ? { sessionId: sessionId as Id<"sessions"> } : "skip",
   );
 
   const isGenerating = status === "generating";
   const isLive = status === "live";
-  const isEmpty = !sessionId && status === "idle";
 
-  // Clear pending prompt once real messages arrive from Convex
   useEffect(() => {
     if (pendingPrompt && messages && messages.some((m) => m.role === "user")) {
       onPendingPromptClear?.();
     }
   }, [messages, pendingPrompt, onPendingPromptClear]);
 
-  // Auto-scroll to bottom when new messages arrive or streaming updates
   useEffect(() => {
     if (scrollEndRef.current) {
       scrollEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [messages?.length, streamingText, activities.length, isGenerating, isLive, pendingPrompt]);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!input.trim() || isGenerating) return;
-    onGenerate(input.trim());
-    setInput("");
-  };
-
-  const handleSuggestionSelect = (suggestion: string) => {
-    onGenerate(suggestion);
-  };
-
   return (
-    <div className="flex h-full flex-col">
-      <div className="min-h-0 flex-1 overflow-y-auto p-4">
-        <div className="flex flex-col gap-3">
-          {/* Empty state */}
-          {isEmpty && (
-            <div className="flex h-full flex-col items-center justify-center gap-4 py-16">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10">
-                <MaterialIcon icon="auto_awesome" size="md" className="text-primary" />
-              </div>
-              <div className="text-center">
-                <h2 className="font-headline text-xl font-semibold">
-                  What would you like to build?
-                </h2>
-                <p className="mt-1 text-sm text-on-surface-variant">
-                  Describe a therapy tool and I&apos;ll build it for you.
-                </p>
-              </div>
-              <SuggestionChips
-                suggestions={THERAPY_SUGGESTIONS}
-                onSelect={handleSuggestionSelect}
-              />
-            </div>
-          )}
+    <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
+      <div className="flex flex-col gap-4">
+        {pendingPrompt && (!messages || !messages.some((m) => m.role === "user")) && (
+          <UserMessage content={pendingPrompt} />
+        )}
 
-          {/* Show user's prompt immediately before Convex subscription catches up */}
-          {pendingPrompt && (!messages || !messages.some((m) => m.role === "user")) && (
-            <UserMessage content={pendingPrompt} />
-          )}
+        {messages?.map((msg: { _id: string; role: string; content: string }) => {
+          if (msg.role === "user") return <UserMessage key={msg._id} content={msg.content} />;
+          if (msg.role === "system") return <SystemMessage key={msg._id} content={msg.content} />;
+          return <AssistantMessage key={msg._id} content={msg.content} />;
+        })}
 
-          {/* Persisted messages from Convex */}
-          {messages?.map(
-            (msg: { _id: string; role: string; content: string }) => {
-              if (msg.role === "user") {
-                return <UserMessage key={msg._id} content={msg.content} />;
-              }
-              if (msg.role === "system") {
-                return <SystemMessage key={msg._id} content={msg.content} />;
-              }
-              return <AssistantBubble key={msg._id} content={msg.content} />;
-            }
-          )}
+        {streamingText && <AssistantMessage content={streamingText} isStreaming />}
 
-          {/* Blueprint card */}
-          {blueprint ? <BlueprintCard blueprint={blueprint} /> : null}
+        {blueprint ? <BlueprintCard blueprint={blueprint} /> : null}
 
-          {/* Progress tracking card during generation */}
-          {(isGenerating || isLive) && (
-            <ProgressCard
-              status={status}
-              activities={activities}
-              startTime={startTime ?? 0}
-            />
-          )}
+        {(isGenerating || isLive) && (
+          <ArtifactCard title={appTitle} isGenerating={isGenerating} />
+        )}
 
-          {/* Success state */}
-          {isLive && (
-            <div className="flex items-center gap-2 rounded-xl bg-primary/5 px-4 py-3 dark:bg-primary/10">
-              <MaterialIcon icon="check_circle" size="sm" className="text-primary" filled />
-              <div>
-                <p className="text-sm font-medium text-primary dark:text-primary-fixed-dim">
-                  Your app is ready!
-                </p>
-                <p className="text-xs text-primary/70 dark:text-primary-fixed-dim/70">
-                  Try it out! Tell me if you&apos;d like any changes.
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* Error state */}
-          {error && (
-            <div className="rounded-xl bg-destructive/10 p-4">
-              <p className="text-sm font-medium text-destructive">
-                We hit a small bump
-              </p>
-              <p className="mt-1 text-xs text-destructive/80">Want to try again?</p>
-              {onRetry && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="mt-2 text-destructive hover:text-destructive"
-                  onClick={onRetry}
-                >
-                  Try again
-                </Button>
-              )}
-            </div>
-          )}
-
-          {/* Scroll anchor */}
-          <div ref={scrollEndRef} />
-        </div>
-      </div>
-
-      {/* Input area */}
-      <form
-        onSubmit={handleSubmit}
-        className="bg-surface-container-low px-4 pt-3 pb-4"
-      >
-        <div className="flex items-center gap-2">
-          <VoiceInput
-            onTranscript={(text) => setInput((prev) => (prev ? `${prev} ${text}` : text))}
-            disabled={isGenerating}
-          />
-          <div className="relative flex-1">
-            <MaterialIcon icon="chat" size="xs" className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant/50" />
-            <Input
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder={
-                isLive
-                  ? "Request changes to your app\u2026"
-                  : "Describe the therapy tool you want to build\u2026"
-              }
-              disabled={isGenerating}
-              className="pl-10"
-              aria-label={isLive ? "Request changes to your app" : "Describe the therapy tool you want to build"}
-            />
-          </div>
-          <Button
-            type="submit"
-            disabled={!input.trim() || isGenerating}
-            size="icon"
-            className="shrink-0"
-            aria-label={isGenerating ? "Generating" : isLive ? "Send message" : "Generate app"}
-          >
-            {isGenerating ? (
-              <MaterialIcon icon="progress_activity" size="xs" className="animate-spin" />
-            ) : isLive ? (
-              <MaterialIcon icon="send" size="xs" />
-            ) : (
-              <MaterialIcon icon="auto_fix_high" size="xs" />
+        {error && (
+          <div className="rounded-xl bg-destructive/10 p-4">
+            <p className="text-sm font-medium text-destructive">We hit a small bump</p>
+            <p className="mt-1 text-xs text-destructive/80">Want to try again?</p>
+            {onRetry && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="mt-2 text-destructive hover:text-destructive"
+                onClick={onRetry}
+              >
+                Try again
+              </Button>
             )}
-          </Button>
-        </div>
-      </form>
+          </div>
+        )}
+
+        <div ref={scrollEndRef} />
+      </div>
     </div>
   );
 }
