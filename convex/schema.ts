@@ -192,6 +192,10 @@ export default defineSchema({
     sensoryNotes: v.optional(v.string()),
     behavioralNotes: v.optional(v.string()),
     notes: v.optional(v.string()),
+    icdCodes: v.optional(v.array(v.object({
+      code: v.string(),
+      description: v.string(),
+    }))),
   }).index("by_slpUserId", ["slpUserId"])
     .index("by_slpUserId_status", ["slpUserId", "status"]),
 
@@ -244,7 +248,12 @@ export default defineSchema({
       v.literal("material-generated-for-patient"),
       v.literal("practice-logged"),
       v.literal("message-sent"),
-      v.literal("home-program-assigned")
+      v.literal("home-program-assigned"),
+      v.literal("evaluation-signed"),
+      v.literal("evaluation-unsigned"),
+      v.literal("poc-signed"),
+      v.literal("poc-amended"),
+      v.literal("discharge-signed")
     ),
     details: v.optional(v.string()),
     timestamp: v.number(),
@@ -402,6 +411,15 @@ export default defineSchema({
     startDate: v.string(),
     targetDate: v.optional(v.string()),
     notes: v.optional(v.string()),
+    amendmentLog: v.optional(v.array(v.object({
+      previousGoalText: v.string(),
+      previousTargetAccuracy: v.number(),
+      previousTargetConsecutiveSessions: v.number(),
+      previousStatus: v.string(),
+      changedAt: v.number(),
+      changedBy: v.string(),
+      reason: v.optional(v.string()),
+    }))),
   })
     .index("by_patientId", ["patientId"])
     .index("by_patientId_status", ["patientId", "status"]),
@@ -605,6 +623,107 @@ export default defineSchema({
   })
     .index("by_patientId", ["patientId"])
     .index("by_appId", ["appId"]),
+
+  evaluations: defineTable({
+    patientId: v.id("patients"),
+    slpUserId: v.string(),
+    evaluationDate: v.string(),
+    referralSource: v.optional(v.string()),
+    backgroundHistory: v.string(),
+    assessmentTools: v.array(v.object({
+      name: v.string(),
+      scoresRaw: v.optional(v.string()),
+      scoresStandard: v.optional(v.string()),
+      percentile: v.optional(v.string()),
+      notes: v.optional(v.string()),
+    })),
+    domainFindings: v.object({
+      articulation: v.optional(v.object({ narrative: v.string(), scores: v.optional(v.string()) })),
+      languageReceptive: v.optional(v.object({ narrative: v.string(), scores: v.optional(v.string()) })),
+      languageExpressive: v.optional(v.object({ narrative: v.string(), scores: v.optional(v.string()) })),
+      fluency: v.optional(v.object({ narrative: v.string(), scores: v.optional(v.string()) })),
+      voice: v.optional(v.object({ narrative: v.string(), scores: v.optional(v.string()) })),
+      pragmatics: v.optional(v.object({ narrative: v.string(), scores: v.optional(v.string()) })),
+      aac: v.optional(v.object({ narrative: v.string(), scores: v.optional(v.string()) })),
+    }),
+    behavioralObservations: v.string(),
+    clinicalInterpretation: v.string(),
+    diagnosisCodes: v.array(v.object({ code: v.string(), description: v.string() })),
+    prognosis: v.union(
+      v.literal("excellent"),
+      v.literal("good"),
+      v.literal("fair"),
+      v.literal("guarded")
+    ),
+    recommendations: v.string(),
+    status: v.union(v.literal("draft"), v.literal("complete"), v.literal("signed")),
+    signedAt: v.optional(v.number()),
+  })
+    .index("by_patientId", ["patientId"])
+    .index("by_slpUserId", ["slpUserId"]),
+
+  plansOfCare: defineTable({
+    patientId: v.id("patients"),
+    slpUserId: v.string(),
+    evaluationId: v.optional(v.id("evaluations")),
+    diagnosisCodes: v.array(v.object({ code: v.string(), description: v.string() })),
+    longTermGoals: v.array(v.string()),
+    shortTermGoals: v.array(v.string()),
+    frequency: v.string(),
+    sessionDuration: v.string(),
+    planDuration: v.string(),
+    projectedDischargeDate: v.optional(v.string()),
+    dischargeCriteria: v.string(),
+    physicianName: v.optional(v.string()),
+    physicianNPI: v.optional(v.string()),
+    physicianSignatureOnFile: v.boolean(),
+    physicianSignatureDate: v.optional(v.string()),
+    status: v.union(
+      v.literal("draft"),
+      v.literal("active"),
+      v.literal("amended"),
+      v.literal("expired")
+    ),
+    signedAt: v.optional(v.number()),
+    version: v.number(),
+    previousVersionId: v.optional(v.id("plansOfCare")),
+  })
+    .index("by_patientId", ["patientId"])
+    .index("by_patientId_status", ["patientId", "status"]),
+
+  dischargeSummaries: defineTable({
+    patientId: v.id("patients"),
+    slpUserId: v.string(),
+    serviceStartDate: v.string(),
+    serviceEndDate: v.string(),
+    presentingDiagnosis: v.string(),
+    goalsAchieved: v.array(v.object({
+      goalId: v.string(),
+      shortDescription: v.string(),
+      finalAccuracy: v.number(),
+    })),
+    goalsNotMet: v.array(v.object({
+      goalId: v.string(),
+      shortDescription: v.string(),
+      finalAccuracy: v.number(),
+      reason: v.string(),
+    })),
+    dischargeReason: v.union(
+      v.literal("goals-met"),
+      v.literal("plateau"),
+      v.literal("family-request"),
+      v.literal("insurance-exhausted"),
+      v.literal("transition"),
+      v.literal("other")
+    ),
+    dischargeReasonOther: v.optional(v.string()),
+    narrative: v.string(),
+    recommendations: v.string(),
+    returnCriteria: v.optional(v.string()),
+    status: v.union(v.literal("draft"), v.literal("signed")),
+    signedAt: v.optional(v.number()),
+  })
+    .index("by_patientId", ["patientId"]),
 });
 
 /** Active session states used by current code. Legacy states are read-only. */
