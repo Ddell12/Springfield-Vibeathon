@@ -6,12 +6,14 @@ import { notFound } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
+import { cn } from "@/core/utils";
 import { usePatient } from "@/shared/clinical";
 import { MaterialIcon } from "@/shared/components/material-icon";
 import { Button } from "@/shared/components/ui/button";
 
 import type { Id } from "../../../../convex/_generated/dataModel";
 import {
+  useCreateGroupSessionNote,
   useCreateSessionNote,
   useSessionNote,
   useSignSessionNote,
@@ -21,6 +23,7 @@ import {
   useUpdateSoap,
 } from "../hooks/use-session-notes";
 import { useSoapGeneration } from "../hooks/use-soap-generation";
+import { GroupPatientPicker } from "./group-patient-picker";
 import { type SoapNote,SoapPreview } from "./soap-preview";
 import {
   type SessionType,
@@ -70,6 +73,11 @@ export function SessionNoteEditor({
 
   // ── SOAP generation ────────────────────────────────────────────────────────
   const soap = useSoapGeneration();
+  const createGroupNote = useCreateGroupSessionNote();
+
+  // ── Group session state ────────────────────────────────────────────────────
+  const [isGroupMode, setIsGroupMode] = useState(false);
+  const [groupPatientIds, setGroupPatientIds] = useState<Id<"patients">[]>([]);
 
   // ── Local form state ───────────────────────────────────────────────────────
   const [sessionDate, setSessionDate] = useState(todayString);
@@ -136,6 +144,23 @@ export function SessionNoteEditor({
             sessionType: type,
             structuredData: data,
           });
+        } else if (isGroupMode && groupPatientIds.length >= 2) {
+          // Group mode: include the current patient + selected group patients
+          const allPatientIds = [typedPatientId, ...groupPatientIds.filter(
+            (id) => id !== typedPatientId,
+          )];
+          const noteIds = await createGroupNote({
+            patientIds: allPatientIds,
+            sessionDate: date,
+            sessionDuration: duration,
+            sessionType: type,
+            structuredData: data,
+          });
+          // Navigate to the first note (for the current patient)
+          const firstNoteId = noteIds[0];
+          setCurrentNoteId(firstNoteId);
+          router.replace(`/patients/${patientId}/sessions/${firstNoteId}`);
+          toast.success(`Created group session notes for ${allPatientIds.length} patients`);
         } else {
           const newId = await createNote({
             patientId: typedPatientId,
@@ -158,7 +183,7 @@ export function SessionNoteEditor({
         isSaving.current = false;
       }
     },
-    [createNote, updateNote, typedPatientId, patientId, router]
+    [createNote, createGroupNote, updateNote, typedPatientId, patientId, router, isGroupMode, groupPatientIds]
   );
 
   const scheduleAutoSave = useCallback(
@@ -367,6 +392,49 @@ export function SessionNoteEditor({
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Left column: Structured data form + generate button */}
         <div className="flex flex-col gap-4">
+          {/* Group/Individual mode toggle — only in create mode */}
+          {!noteId && (
+            <div className="flex flex-col gap-3 rounded-xl bg-surface-container/30 p-4">
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => { setIsGroupMode(false); setGroupPatientIds([]); }}
+                  className={cn(
+                    "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-colors duration-300",
+                    !isGroupMode
+                      ? "bg-primary text-white"
+                      : "bg-muted text-muted-foreground hover:bg-muted/80",
+                  )}
+                >
+                  <MaterialIcon icon="person" size="xs" />
+                  Individual
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsGroupMode(true)}
+                  className={cn(
+                    "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-colors duration-300",
+                    isGroupMode
+                      ? "bg-primary text-white"
+                      : "bg-muted text-muted-foreground hover:bg-muted/80",
+                  )}
+                >
+                  <MaterialIcon icon="group" size="xs" />
+                  Group (CPT 92508)
+                </button>
+              </div>
+
+              {isGroupMode && (
+                <GroupPatientPicker
+                  selectedIds={groupPatientIds}
+                  excludePatientId={typedPatientId}
+                  onSelectionChange={setGroupPatientIds}
+                  disabled={isSigned}
+                />
+              )}
+            </div>
+          )}
+
           <StructuredDataForm
             patient={patient}
             sessionDate={sessionDate}
