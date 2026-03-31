@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { useConvexAuth, useQuery } from "convex/react";
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-import { anyApi } from "convex/server";
+
+import { api } from "../../../../convex/_generated/api";
 
 import { cn } from "@/core/utils";
 import { Badge } from "@/shared/components/ui/badge";
@@ -22,7 +22,10 @@ import { type GoalDomain } from "../lib/goal-bank-data";
 import { domainColor, domainLabel } from "../lib/goal-utils";
 
 export interface GoalBankSelection {
+  _id?: string;
   domain: GoalDomain;
+  ageRange?: string;
+  skillLevel?: string;
   shortDescription: string;
   fullGoalText: string;
   defaultTargetAccuracy: number;
@@ -74,18 +77,16 @@ export function GoalBankPicker({ onSelect }: GoalBankPickerProps) {
       }
     : null;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const goals = useQuery(
-    anyApi.goalBank.search as any,
+    api.goalBank.search,
     searchArgs ?? "skip"
-  ) as GoalBankSelection[] | undefined;
+  );
 
   // Skill levels for selected domain
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const skillLevels = useQuery(
-    anyApi.goalBank.listDomainSkillLevels as any,
+    api.goalBank.listDomainSkillLevels,
     isAuthenticated && selectedDomain ? { domain: selectedDomain } : "skip"
-  ) as string[] | undefined;
+  );
 
   function handleDomainChange(value: string) {
     setSelectedDomain(value as GoalDomain | "");
@@ -174,9 +175,9 @@ export function GoalBankPicker({ onSelect }: GoalBankPickerProps) {
       ) : (
         // Goal cards
         <div className="flex flex-col gap-2">
-          {goals.map((goal, idx) => (
+          {goals.map((goal) => (
             <div
-              key={idx}
+              key={goal._id}
               className="flex flex-col gap-2 rounded-lg border border-border p-3 transition-colors duration-300 hover:border-primary/50 hover:bg-muted/50"
             >
               <div className="flex items-start justify-between gap-2">
@@ -190,14 +191,14 @@ export function GoalBankPicker({ onSelect }: GoalBankPickerProps) {
                     >
                       {domainLabel(goal.domain)}
                     </Badge>
-                    {(goal as any).ageRange && (
+                    {goal.ageRange && (
                       <span className="text-xs text-muted-foreground">
-                        {AGE_RANGE_LABELS[(goal as any).ageRange as AgeRange] ?? (goal as any).ageRange}
+                        {AGE_RANGE_LABELS[goal.ageRange as AgeRange] ?? goal.ageRange}
                       </span>
                     )}
-                    {(goal as any).skillLevel && (
+                    {goal.skillLevel && (
                       <span className="text-xs text-muted-foreground">
-                        {(goal as any).skillLevel}
+                        {goal.skillLevel}
                       </span>
                     )}
                   </div>

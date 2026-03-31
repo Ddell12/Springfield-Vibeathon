@@ -102,7 +102,7 @@ export const search = slpQuery({
     // Always include the SLP's own custom goals (not already in results)
     const customGoals = await ctx.db
       .query("goalBank")
-      .withIndex("by_createdBy", (q) => q.eq("createdBy", ctx.slpUserId))
+      .withIndex("by_createdBy", (q) => q.eq("createdBy", ctx.slpUserId ?? undefined))
       .collect();
 
     const resultIds = new Set(results.map((g) => g._id));
