@@ -29,7 +29,11 @@ const SORT_OPTIONS: { label: string; value: SortOption }[] = [
   { label: "A–Z", value: "alphabetical" },
 ];
 
-export function MyToolsPage() {
+interface MyToolsPageProps {
+  embedded?: boolean;
+}
+
+export function MyToolsPage({ embedded = false }: MyToolsPageProps) {
   const sessions = useQuery(api.sessions.list);
   const archiveSession = useMutation(api.sessions.archive);
   const duplicateSession = useMutation(api.sessions.duplicateSession);
@@ -164,36 +168,38 @@ export function MyToolsPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-8 pt-12 pb-24">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
-        <div>
-          <h1 className="font-headline font-normal text-4xl md:text-5xl text-on-surface tracking-tight mb-2">
-            My Apps
-          </h1>
-          <p className="text-on-surface-variant text-lg">
-            {sessions!.length} app{sessions!.length !== 1 ? "s" : ""} created
-          </p>
+      {!embedded && (
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
+          <div>
+            <h1 className="font-headline font-normal text-4xl md:text-5xl text-on-surface tracking-tight mb-2">
+              My Apps
+            </h1>
+            <p className="text-on-surface-variant text-lg">
+              {sessions!.length} app{sessions!.length !== 1 ? "s" : ""} created
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setSelectionMode(!selectionMode);
+                setSelectedIds(new Set());
+              }}
+              className="text-on-surface-variant hover:text-on-surface"
+            >
+              {selectionMode ? "Cancel" : "Select"}
+            </Button>
+            <Link
+              href="/builder"
+              className="bg-primary-gradient text-white px-8 py-4 rounded-lg font-semibold flex items-center gap-2 shadow-lg shadow-primary/10 hover:shadow-primary/20 transition-all active:scale-95"
+            >
+              <MaterialIcon icon="add_circle" />
+              Create New App
+            </Link>
+          </div>
         </div>
-        <div className="flex items-center gap-3">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              setSelectionMode(!selectionMode);
-              setSelectedIds(new Set());
-            }}
-            className="text-on-surface-variant hover:text-on-surface"
-          >
-            {selectionMode ? "Cancel" : "Select"}
-          </Button>
-          <Link
-            href="/builder"
-            className="bg-primary-gradient text-white px-8 py-4 rounded-lg font-semibold flex items-center gap-2 shadow-lg shadow-primary/10 hover:shadow-primary/20 transition-all active:scale-95"
-          >
-            <MaterialIcon icon="add_circle" />
-            Create New App
-          </Link>
-        </div>
-      </div>
+      )}
 
       {/* Search + Sort Bar */}
       <div className="flex flex-col sm:flex-row gap-4 mb-8">
