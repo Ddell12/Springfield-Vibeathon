@@ -1,26 +1,22 @@
-# SP4: Session Workflow Upgrades --- Implementation Plan
+# SP4: Session Workflow Upgrades — Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Add same-day signature warnings, group session notes (CPT 92508), multi-audience progress reports, and physician signature display to make the SLP workflow billing-compliant and multi-audience aware.
-**Architecture:** Four incremental enhancements to existing `sessionNotes` and `progressReports` features. Task 1 is frontend-only (no schema changes). Task 2 adds `groupSessionId`/`groupPatientIds` fields to `sessionNotes` and a `createGroup` mutation. Task 3 adds an `audience` field to `progressReports` and modifies the SSE streaming route. Task 4 reads from SP2's `plansOfCare` table (dependency).
+**Architecture:** Four incremental enhancements to existing `sessionNotes` and `progressReports` features. Task 1 is frontend-only (no schema changes). Tasks 2-3 extend existing Convex tables with optional fields for backward compatibility. Task 4 reads from SP2's `plansOfCare` table (dependency — graceful degradation if table doesn't exist yet).
 **Tech Stack:** Convex (schema, mutations, queries), Next.js App Router, React, Tailwind v4, shadcn/ui, Anthropic SDK (streaming), Vitest + convex-test
 
 ---
 
-## Task 1: Same-Day Signature Warning (Frontend Only)
+## Task 1: Late-Signature Detection Utility
 
 **Files:**
-- `src/features/session-notes/lib/session-utils.ts` (add helper)
-- `src/features/session-notes/components/session-note-card.tsx` (add late badge)
-- `src/features/session-notes/components/session-note-editor.tsx` (add info banner)
-- `src/features/session-notes/__tests__/session-utils.test.ts` (new test file)
+- Create: `src/features/session-notes/__tests__/session-utils.test.ts`
+- Modify: `src/features/session-notes/lib/session-utils.ts:29-END`
 
-### Steps
+- [ ] **Step 1: Write the failing test**
 
-- [ ] **1.1** Write failing tests for the late-signature detection utility.
-
-**File:** `src/features/session-notes/__tests__/session-utils.test.ts`
+Create `src/features/session-notes/__tests__/session-utils.test.ts`:
 
 ```typescript
 import { describe, expect, it } from "vitest";
@@ -32,21 +28,18 @@ import {
 
 describe("isLateSignature", () => {
   it("returns false when signedAt is on same day as sessionDate", () => {
-    // sessionDate = "2026-03-28", signed at noon on 2026-03-28
     const sessionDate = "2026-03-28";
     const signedAt = new Date("2026-03-28T12:00:00Z").getTime();
     expect(isLateSignature(signedAt, sessionDate)).toBe(false);
   });
 
   it("returns false when signedAt is within 24h of end of sessionDate", () => {
-    // sessionDate = "2026-03-28", signed at 11pm on 2026-03-29 (within 24h of EOD)
     const sessionDate = "2026-03-28";
     const signedAt = new Date("2026-03-29T22:59:00Z").getTime();
     expect(isLateSignature(signedAt, sessionDate)).toBe(false);
   });
 
   it("returns true when signedAt is >24h after end of sessionDate", () => {
-    // sessionDate = "2026-03-25", signed 3 days later
     const sessionDate = "2026-03-25";
     const signedAt = new Date("2026-03-28T12:00:00Z").getTime();
     expect(isLateSignature(signedAt, sessionDate)).toBe(true);
@@ -80,20 +73,20 @@ describe("getSignatureDelayDays", () => {
 });
 ```
 
-- [ ] **1.2** Verify tests fail (functions don't exist yet).
+- [ ] **Step 2: Run test to verify it fails**
 
-```bash
-npx vitest run src/features/session-notes/__tests__/session-utils.test.ts
-```
+Run: `npx vitest run src/features/session-notes/__tests__/session-utils.test.ts`
+Expected: FAIL with "is not a function" or "is not exported"
 
-- [ ] **1.3** Implement the late-signature utility functions.
+- [ ] **Step 3: Write minimal implementation**
 
-**File:** `src/features/session-notes/lib/session-utils.ts` -- add at the end:
+Append to `src/features/session-notes/lib/session-utils.ts` after line 28 (after the `accuracyLabel` function):
 
 ```typescript
+
 /**
- * Determine if a session note was signed late (more than 24 hours after
- * the end of the session date). Medicare and most payers expect same-day
+ * Returns true if a session note was signed more than 24 hours after
+ * the end of its session date. Medicare and most payers expect same-day
  * signatures; late signatures can be flagged in audits.
  */
 export function isLateSignature(
@@ -101,39 +94,55 @@ export function isLateSignature(
   sessionDate: string,
 ): boolean {
   if (!signedAt || !sessionDate) return false;
-  const sessionEnd = new Date(sessionDate + "T23:59:59").getTime();
-  const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
-  return signedAt - sessionEnd > TWENTY_FOUR_HOURS;
+  const sessionEnd = new Date(sessionDate + "T23:59:59Z").getTime();
+  const twentyFourHoursMs = 24 * 60 * 60 * 1000;
+  return signedAt - sessionEnd > twentyFourHoursMs;
 }
 
 /**
- * Returns the number of full days between the session date and signature.
- * Returns 0 for same-day, null if signedAt is undefined.
+ * Returns the number of calendar days between the session date and
+ * the signature timestamp, or null if unsigned.
  */
 export function getSignatureDelayDays(
   signedAt: number | undefined,
   sessionDate: string,
 ): number | null {
   if (!signedAt || !sessionDate) return null;
-  const sessionStart = new Date(sessionDate + "T00:00:00").getTime();
-  const diffMs = signedAt - sessionStart;
-  const days = Math.floor(diffMs / (24 * 60 * 60 * 1000));
-  return Math.max(0, days);
+  const sessionDay = new Date(sessionDate + "T00:00:00Z").getTime();
+  const diffMs = signedAt - sessionDay;
+  return Math.max(0, Math.floor(diffMs / (24 * 60 * 60 * 1000)));
 }
 ```
 
-- [ ] **1.4** Verify utility tests pass.
+- [ ] **Step 4: Run test to verify it passes**
 
-```bash
-npx vitest run src/features/session-notes/__tests__/session-utils.test.ts
+Run: `npx vitest run src/features/session-notes/__tests__/session-utils.test.ts`
+Expected: PASS (all 8 tests)
+
+- [ ] **Step 5: Commit**
+
+---
+
+## Task 2: Late-Signature Badge on Session Note Card
+
+**Files:**
+- Modify: `src/features/session-notes/components/session-note-card.tsx:60-118`
+
+- [ ] **Step 1: Add late-signature badge to the card**
+
+In `src/features/session-notes/components/session-note-card.tsx`, add the import at the top (after the existing `session-utils` import line 14):
+
+Replace:
+```typescript
+import {
+  accuracyColor,
+  accuracyLabel,
+  calculateAccuracy,
+  formatDuration,
+} from "../lib/session-utils";
 ```
 
-- [ ] **1.5** Add late-signature badge to `SessionNoteCard`.
-
-**File:** `src/features/session-notes/components/session-note-card.tsx`
-
-After the existing status chip (the `<span>` with `statusStyle.bg`), add a conditional late-signature badge. Add the import at the top:
-
+With:
 ```typescript
 import {
   accuracyColor,
@@ -145,93 +154,274 @@ import {
 } from "../lib/session-utils";
 ```
 
-Inside the `SessionNoteCard` component, after the `statusStyle` line, add:
+Then, after the status chip (after line 116 `{note.status}`, before `</span>`), insert a late-signature badge. Replace the entire return block of `SessionNoteCard` starting at `return (` (line 68) through the closing `);` (line 118):
 
 ```typescript
-const lateSign = isLateSignature(note.signedAt, note.sessionDate);
-const delayDays = getSignatureDelayDays(note.signedAt, note.sessionDate);
+  const isLate = isLateSignature(note.signedAt, note.sessionDate);
+  const delayDays = getSignatureDelayDays(note.signedAt, note.sessionDate);
+
+  return (
+    <Link
+      href={`/patients/${patientId}/sessions/${note._id}`}
+      className="flex items-center gap-3 rounded-xl bg-surface-container px-4 py-3 transition-all duration-300 hover:bg-surface-container-high"
+    >
+      {/* Type icon */}
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10">
+        <MaterialIcon
+          icon={typeIcon}
+          size="sm"
+          className="text-primary"
+        />
+      </div>
+
+      {/* Content */}
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <p className="truncate text-sm font-medium text-foreground">
+            {firstTarget?.target ?? "No targets recorded"}
+          </p>
+          {accuracy !== null && (
+            <span className={cn("text-xs font-medium", accuracyColor(accuracy))}>
+              {accuracyLabel(accuracy)}
+            </span>
+          )}
+        </div>
+        <p className="text-xs text-muted-foreground">
+          {formatSessionDate(note.sessionDate)}
+        </p>
+      </div>
+
+      {/* Late-signature warning badge */}
+      {isLate && delayDays !== null && delayDays > 0 && (
+        <span className="flex shrink-0 items-center gap-1 rounded-full bg-caution-container px-2 py-0.5 text-[10px] font-medium text-on-caution-container">
+          <MaterialIcon icon="schedule" size="xs" />
+          Signed {delayDays}d late
+        </span>
+      )}
+
+      {/* Duration badge */}
+      <Badge variant="secondary" className="shrink-0 text-[10px]">
+        {formatDuration(note.sessionDuration)}
+      </Badge>
+
+      {/* Status chip */}
+      <span
+        className={cn(
+          "flex shrink-0 items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium",
+          statusStyle.bg,
+          statusStyle.text
+        )}
+      >
+        {statusStyle.icon && (
+          <MaterialIcon icon={statusStyle.icon} size="xs" />
+        )}
+        {note.status}
+      </span>
+    </Link>
+  );
 ```
 
-After the status chip `</span>`, add:
+- [ ] **Step 2: Verify the app compiles**
 
-```tsx
-{lateSign && delayDays !== null && (
-  <span className="flex shrink-0 items-center gap-1 rounded-full bg-caution-container px-2 py-0.5 text-[10px] font-medium text-on-caution-container">
-    <MaterialIcon icon="schedule" size="xs" />
-    {delayDays}d late
-  </span>
-)}
-```
+Run: `npx next build --no-lint 2>&1 | tail -5`
+Expected: Build succeeds (or `npx tsc --noEmit` passes)
 
-- [ ] **1.6** Add late-signature info banner to `SessionNoteEditor`.
-
-**File:** `src/features/session-notes/components/session-note-editor.tsx`
-
-Add import:
-
-```typescript
-import { getSignatureDelayDays, isLateSignature } from "../lib/session-utils";
-```
-
-In the derived state section (after `const canSign = ...`), add:
-
-```typescript
-const lateSign = existingNote
-  ? isLateSignature(existingNote.signedAt, existingNote.sessionDate)
-  : false;
-const delayDays = existingNote
-  ? getSignatureDelayDays(existingNote.signedAt, existingNote.sessionDate)
-  : null;
-```
-
-Inside the return JSX, immediately after the header `<div className="mb-6 flex flex-col gap-3">` block closes, add:
-
-```tsx
-{lateSign && delayDays !== null && (
-  <div className="mb-4 flex items-center gap-2 rounded-xl bg-caution-container/50 px-4 py-3 text-sm text-on-caution-container">
-    <MaterialIcon icon="warning" size="sm" />
-    <span>
-      This note was signed <strong>{delayDays} day{delayDays !== 1 ? "s" : ""}</strong> after the session date.
-      Medicare and most payers require same-day signatures.
-    </span>
-  </div>
-)}
-```
-
-- [ ] **1.7** Verify the app builds without errors.
-
-```bash
-npx next build 2>&1 | tail -20
-```
-
-- [ ] **1.8** Commit.
-
-```
-feat(session-notes): add same-day signature warning badge and banner
-
-Late-signed notes (>24h after session date) now show an amber badge
-on the session notes list and an info banner in the note editor,
-helping SLPs maintain billing compliance.
-```
+- [ ] **Step 3: Commit**
 
 ---
 
-## Task 2: Group Session Notes (CPT 92508)
+## Task 3: Late-Signature Info Banner in Session Note Editor
 
 **Files:**
-- `convex/schema.ts` (extend sessionNotes table)
-- `convex/sessionNotes.ts` (add `createGroup` mutation, modify `list` return)
-- `convex/__tests__/sessionNotes.test.ts` (add group tests)
-- `src/features/session-notes/components/group-patient-picker.tsx` (new)
-- `src/features/session-notes/components/session-note-editor.tsx` (add group mode)
-- `src/features/session-notes/components/session-notes-list.tsx` (group display)
-- `src/features/session-notes/hooks/use-session-notes.ts` (add hook)
+- Modify: `src/features/session-notes/components/session-note-editor.tsx:1-14` (imports)
+- Modify: `src/features/session-notes/components/session-note-editor.tsx:320-345` (header area)
 
-### Steps
+- [ ] **Step 1: Add import for late-signature utils**
 
-- [ ] **2.1** Write failing backend tests for `createGroup` mutation.
+In `src/features/session-notes/components/session-note-editor.tsx`, add at the end of the existing imports (after line 29, the `StructuredDataForm` import block):
 
-**File:** `convex/__tests__/sessionNotes.test.ts` -- add at the end:
+```typescript
+import {
+  getSignatureDelayDays,
+  isLateSignature,
+} from "../lib/session-utils";
+```
+
+- [ ] **Step 2: Add late-signature info banner after the header**
+
+Replace the header block (lines 322-344, from `{/* Header */}` through the closing `</div>` of the header):
+
+```typescript
+      {/* Header */}
+      <div className="mb-6 flex flex-col gap-3">
+        <Link
+          href={`/patients/${patientId}`}
+          className="flex items-center gap-1 text-sm text-muted-foreground transition-colors duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] hover:text-foreground"
+        >
+          <MaterialIcon icon="arrow_back" size="sm" />
+          Back to patient
+        </Link>
+
+        <div className="flex items-center justify-between">
+          <h1 className="font-headline text-2xl font-bold text-on-surface">
+            {noteId ? "Edit Session Note" : "New Session Note"}
+          </h1>
+
+          {isSigned && (
+            <div className="flex items-center gap-1.5 rounded-full bg-success/10 px-3 py-1 text-sm font-medium text-success">
+              <MaterialIcon icon="verified" size="xs" />
+              Signed
+            </div>
+          )}
+        </div>
+
+        {/* Late-signature warning banner */}
+        {isSigned &&
+          existingNote &&
+          isLateSignature(existingNote.signedAt, existingNote.sessionDate) && (
+            <div className="flex items-center gap-2 rounded-lg bg-caution-container/50 px-4 py-2.5 text-sm text-on-caution-container">
+              <MaterialIcon icon="warning" size="sm" />
+              <span>
+                This note was signed{" "}
+                <span className="font-semibold">
+                  {getSignatureDelayDays(existingNote.signedAt, existingNote.sessionDate)} days
+                </span>{" "}
+                after the session date. Medicare and most payers expect same-day signatures.
+              </span>
+            </div>
+          )}
+      </div>
+```
+
+- [ ] **Step 3: Verify the app compiles**
+
+Run: `npx tsc --noEmit`
+Expected: No errors
+
+- [ ] **Step 4: Commit**
+
+---
+
+## Task 4: Schema — Add Group Session Fields to sessionNotes
+
+**Files:**
+- Modify: `convex/schema.ts:253-299` (sessionNotes table)
+
+- [ ] **Step 1: Add groupSessionId and groupPatientIds to sessionNotes schema**
+
+In `convex/schema.ts`, replace the `sessionNotes` table definition (lines 253-299):
+
+```typescript
+  sessionNotes: defineTable({
+    patientId: v.id("patients"),
+    slpUserId: v.string(),
+    sessionDate: v.string(),
+    sessionDuration: v.number(),
+    sessionType: v.union(
+      v.literal("in-person"),
+      v.literal("teletherapy"),
+      v.literal("parent-consultation")
+    ),
+    status: v.union(
+      v.literal("draft"),
+      v.literal("in-progress"),
+      v.literal("complete"),
+      v.literal("signed")
+    ),
+    structuredData: v.object({
+      targetsWorkedOn: v.array(v.object({
+        target: v.string(),
+        goalId: v.optional(v.string()),
+        trials: v.optional(v.number()),
+        correct: v.optional(v.number()),
+        promptLevel: v.optional(v.union(
+          v.literal("independent"),
+          v.literal("verbal-cue"),
+          v.literal("model"),
+          v.literal("physical")
+        )),
+        notes: v.optional(v.string()),
+      })),
+      behaviorNotes: v.optional(v.string()),
+      parentFeedback: v.optional(v.string()),
+      homeworkAssigned: v.optional(v.string()),
+      nextSessionFocus: v.optional(v.string()),
+    }),
+    soapNote: v.optional(v.object({
+      subjective: v.string(),
+      objective: v.string(),
+      assessment: v.string(),
+      plan: v.string(),
+    })),
+    aiGenerated: v.boolean(),
+    signedAt: v.optional(v.number()),
+    meetingRecordId: v.optional(v.id("meetingRecords")),
+    // Group session fields (CPT 92508)
+    groupSessionId: v.optional(v.string()),
+    groupPatientIds: v.optional(v.array(v.id("patients"))),
+  })
+    .index("by_patientId_sessionDate", ["patientId", "sessionDate"])
+    .index("by_slpUserId", ["slpUserId"])
+    .index("by_groupSessionId", ["groupSessionId"]),
+```
+
+- [ ] **Step 2: Run `npx convex dev --once` to verify schema pushes**
+
+Run: `npx convex dev --typecheck-only`
+Expected: No errors
+
+- [ ] **Step 3: Commit**
+
+---
+
+## Task 5: Schema — Add Audience Field to progressReports
+
+**Files:**
+- Modify: `convex/schema.ts:435-482` (progressReports table)
+
+- [ ] **Step 1: Add audience field to progressReports schema**
+
+In `convex/schema.ts`, in the `progressReports` table definition, add the `audience` field after `signedAt` (before the closing `})` of the table):
+
+Replace:
+```typescript
+    signedAt: v.optional(v.number()),
+  })
+    .index("by_patientId", ["patientId"])
+    .index("by_patientId_reportType", ["patientId", "reportType"]),
+```
+
+With:
+```typescript
+    signedAt: v.optional(v.number()),
+    audience: v.optional(v.union(
+      v.literal("clinical"),
+      v.literal("parent"),
+      v.literal("iep-team")
+    )),
+  })
+    .index("by_patientId", ["patientId"])
+    .index("by_patientId_reportType", ["patientId", "reportType"]),
+```
+
+- [ ] **Step 2: Verify schema compiles**
+
+Run: `npx convex dev --typecheck-only`
+Expected: No errors
+
+- [ ] **Step 3: Commit**
+
+---
+
+## Task 6: Backend — Group Session createGroup Mutation
+
+**Files:**
+- Modify: `convex/sessionNotes.ts:1-438` (add createGroup mutation)
+- Test: `convex/__tests__/sessionNotes.test.ts`
+
+- [ ] **Step 1: Write the failing test for createGroup**
+
+Append to `convex/__tests__/sessionNotes.test.ts`:
 
 ```typescript
 // ── createGroup ────────────────────────────────────────────────────────────
@@ -241,45 +431,57 @@ describe("sessionNotes.createGroup", () => {
     const t = convexTest(schema, modules).withIdentity(SLP_IDENTITY);
 
     // Create 3 patients
-    const { patientId: p1 } = await t.mutation(api.patients.create, VALID_PATIENT);
+    const { patientId: p1 } = await t.mutation(api.patients.create, {
+      ...VALID_PATIENT,
+      firstName: "Patient",
+      lastName: "One",
+    });
     const { patientId: p2 } = await t.mutation(api.patients.create, {
       ...VALID_PATIENT,
-      firstName: "Bella",
+      firstName: "Patient",
+      lastName: "Two",
     });
     const { patientId: p3 } = await t.mutation(api.patients.create, {
       ...VALID_PATIENT,
-      firstName: "Charlie",
+      firstName: "Patient",
+      lastName: "Three",
     });
 
-    const result = await t.mutation(api.sessionNotes.createGroup, {
+    const noteIds = await t.mutation(api.sessionNotes.createGroup, {
       patientIds: [p1, p2, p3],
       sessionDate: today,
       sessionDuration: 45,
       sessionType: "in-person" as const,
       structuredData: {
         targetsWorkedOn: [
-          { target: "Turn-taking in conversation", trials: 10, correct: 7 },
+          { target: "Group activity: turn-taking" },
         ],
       },
     });
 
-    expect(result.noteIds).toHaveLength(3);
-    expect(result.groupSessionId).toBeDefined();
+    expect(noteIds).toHaveLength(3);
 
-    // All notes should share the same groupSessionId
-    const note1 = await t.query(api.sessionNotes.get, { noteId: result.noteIds[0] });
-    const note2 = await t.query(api.sessionNotes.get, { noteId: result.noteIds[1] });
-    const note3 = await t.query(api.sessionNotes.get, { noteId: result.noteIds[2] });
+    // All notes share the same groupSessionId
+    const note1 = await t.query(api.sessionNotes.get, { noteId: noteIds[0] });
+    const note2 = await t.query(api.sessionNotes.get, { noteId: noteIds[1] });
+    const note3 = await t.query(api.sessionNotes.get, { noteId: noteIds[2] });
 
-    expect(note1!.groupSessionId).toBe(result.groupSessionId);
-    expect(note2!.groupSessionId).toBe(result.groupSessionId);
-    expect(note3!.groupSessionId).toBe(result.groupSessionId);
+    expect(note1!.groupSessionId).toBeDefined();
+    expect(note1!.groupSessionId).toBe(note2!.groupSessionId);
+    expect(note2!.groupSessionId).toBe(note3!.groupSessionId);
 
-    // All notes should have all patient IDs in groupPatientIds
+    // Each note has groupPatientIds listing all 3 patients
+    expect(note1!.groupPatientIds).toEqual(expect.arrayContaining([p1, p2, p3]));
     expect(note1!.groupPatientIds).toHaveLength(3);
-    expect(note1!.groupPatientIds).toContain(p1);
-    expect(note1!.groupPatientIds).toContain(p2);
-    expect(note1!.groupPatientIds).toContain(p3);
+
+    // Each note has correct patientId
+    expect(note1!.patientId).toBe(p1);
+    expect(note2!.patientId).toBe(p2);
+    expect(note3!.patientId).toBe(p3);
+
+    // Shared structured data is copied to each
+    expect(note1!.structuredData.targetsWorkedOn[0].target).toBe("Group activity: turn-taking");
+    expect(note2!.structuredData.targetsWorkedOn[0].target).toBe("Group activity: turn-taking");
   });
 
   it("rejects fewer than 2 patients", async () => {
@@ -290,108 +492,69 @@ describe("sessionNotes.createGroup", () => {
       t.mutation(api.sessionNotes.createGroup, {
         patientIds: [p1],
         sessionDate: today,
-        sessionDuration: 45,
+        sessionDuration: 30,
         sessionType: "in-person" as const,
-        structuredData: {
-          targetsWorkedOn: [{ target: "Test" }],
-        },
+        structuredData: { targetsWorkedOn: [{ target: "Test" }] },
       }),
     ).rejects.toThrow("2");
   });
 
   it("rejects more than 6 patients", async () => {
     const t = convexTest(schema, modules).withIdentity(SLP_IDENTITY);
-
-    const ids = [];
+    const patientIds = [];
     for (let i = 0; i < 7; i++) {
       const { patientId } = await t.mutation(api.patients.create, {
         ...VALID_PATIENT,
-        firstName: `Patient${i}`,
+        firstName: `Patient`,
+        lastName: `${i}`,
       });
-      ids.push(patientId);
+      patientIds.push(patientId);
     }
 
     await expect(
       t.mutation(api.sessionNotes.createGroup, {
-        patientIds: ids,
+        patientIds,
         sessionDate: today,
-        sessionDuration: 45,
+        sessionDuration: 30,
         sessionType: "in-person" as const,
-        structuredData: {
-          targetsWorkedOn: [{ target: "Test" }],
-        },
+        structuredData: { targetsWorkedOn: [{ target: "Test" }] },
       }),
     ).rejects.toThrow("6");
   });
 
-  it("rejects patient not owned by SLP", async () => {
+  it("rejects when SLP does not own a patient", async () => {
     const base = convexTest(schema, modules);
     const slp1 = base.withIdentity(SLP_IDENTITY);
     const slp2 = base.withIdentity(OTHER_SLP);
 
-    const { patientId: p1 } = await slp1.mutation(api.patients.create, VALID_PATIENT);
-    const { patientId: p2 } = await slp2.mutation(api.patients.create, {
+    const { patientId: ownedPatient } = await slp1.mutation(api.patients.create, VALID_PATIENT);
+    const { patientId: otherPatient } = await slp2.mutation(api.patients.create, {
       ...VALID_PATIENT,
-      firstName: "Bella",
+      firstName: "Other",
+      lastName: "Patient",
     });
 
-    // slp1 tries to create group with slp2's patient
     await expect(
       slp1.mutation(api.sessionNotes.createGroup, {
-        patientIds: [p1, p2],
+        patientIds: [ownedPatient, otherPatient],
         sessionDate: today,
-        sessionDuration: 45,
+        sessionDuration: 30,
         sessionType: "in-person" as const,
-        structuredData: {
-          targetsWorkedOn: [{ target: "Test" }],
-        },
+        structuredData: { targetsWorkedOn: [{ target: "Test" }] },
       }),
     ).rejects.toThrow("Not authorized");
   });
 });
 ```
 
-- [ ] **2.2** Verify tests fail (mutation doesn't exist yet).
+- [ ] **Step 2: Run test to verify it fails**
 
-```bash
-npx vitest run convex/__tests__/sessionNotes.test.ts
-```
+Run: `npx vitest run convex/__tests__/sessionNotes.test.ts`
+Expected: FAIL with "api.sessionNotes.createGroup is not a function" or similar
 
-- [ ] **2.3** Add schema fields to `sessionNotes` table.
+- [ ] **Step 3: Implement createGroup mutation**
 
-**File:** `convex/schema.ts`
-
-In the `sessionNotes` table definition, after the `meetingRecordId` field (line 296), add:
-
-```typescript
-groupSessionId: v.optional(v.string()),
-groupPatientIds: v.optional(v.array(v.id("patients"))),
-```
-
-After the existing `.index("by_slpUserId", ["slpUserId"])` index, add:
-
-```typescript
-.index("by_groupSessionId", ["groupSessionId"])
-```
-
-- [ ] **2.4** Implement the `createGroup` mutation.
-
-**File:** `convex/sessionNotes.ts`
-
-Add at the top of the file (imports section):
-
-```typescript
-import { v4 as uuidv4 } from "uuid";
-```
-
-> **Note:** If `uuid` is not available in the Convex runtime, use `crypto.randomUUID()` instead. The `"use node"` directive is NOT needed since `crypto.randomUUID` is available in Convex's V8 runtime. If neither works, use a simple UUID generator:
-> ```typescript
-> function generateGroupId(): string {
->   return `grp_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
-> }
-> ```
-
-Add the mutation after the existing `create` mutation:
+In `convex/sessionNotes.ts`, add after the `create` mutation (after line 228, before the `update` mutation):
 
 ```typescript
 export const createGroup = slpMutation({
@@ -403,21 +566,18 @@ export const createGroup = slpMutation({
     structuredData: structuredDataValidator,
   },
   handler: async (ctx, args) => {
-    // Validate group size (CPT 92508: 2-6 patients)
     if (args.patientIds.length < 2) {
       throw new ConvexError("Group sessions require at least 2 patients");
     }
     if (args.patientIds.length > 6) {
-      throw new ConvexError("Group sessions support a maximum of 6 patients");
+      throw new ConvexError("Group sessions allow a maximum of 6 patients");
     }
 
-    // Validate all patients belong to this SLP
-    for (const patientId of args.patientIds) {
-      const patient = await ctx.db.get(patientId);
+    // Verify the SLP owns all patients
+    for (const pid of args.patientIds) {
+      const patient = await ctx.db.get(pid);
       if (!patient) throw new ConvexError("Patient not found");
-      if (patient.slpUserId !== ctx.slpUserId) {
-        throw new ConvexError("Not authorized — all patients must belong to the same SLP");
-      }
+      if (patient.slpUserId !== ctx.slpUserId) throw new ConvexError("Not authorized");
     }
 
     validateSessionDate(args.sessionDate);
@@ -426,12 +586,12 @@ export const createGroup = slpMutation({
 
     // Generate a shared group session ID
     const groupSessionId = crypto.randomUUID();
+    const now = Date.now();
 
-    // Create one note per patient with shared data
     const noteIds = [];
-    for (const patientId of args.patientIds) {
+    for (const pid of args.patientIds) {
       const noteId = await ctx.db.insert("sessionNotes", {
-        patientId,
+        patientId: pid,
         slpUserId: ctx.slpUserId,
         sessionDate: args.sessionDate,
         sessionDuration: args.sessionDuration,
@@ -445,484 +605,167 @@ export const createGroup = slpMutation({
       noteIds.push(noteId);
 
       await ctx.db.insert("activityLog", {
-        patientId,
+        patientId: pid,
         actorUserId: ctx.slpUserId,
         action: "session-documented",
         details: `Created group session note for ${args.sessionDate} (${args.patientIds.length} patients)`,
-        timestamp: Date.now(),
+        timestamp: now,
       });
     }
 
-    return { noteIds, groupSessionId };
+    return noteIds;
   },
 });
 ```
 
-- [ ] **2.5** Verify backend tests pass.
+- [ ] **Step 4: Run test to verify it passes**
 
-```bash
-npx vitest run convex/__tests__/sessionNotes.test.ts
-```
+Run: `npx vitest run convex/__tests__/sessionNotes.test.ts`
+Expected: PASS (all tests including new createGroup tests)
 
-- [ ] **2.6** Add the `useCreateGroupSessionNote` hook.
-
-**File:** `src/features/session-notes/hooks/use-session-notes.ts`
-
-Add after the existing `useCreateSessionNote`:
-
-```typescript
-export function useCreateGroupSessionNote() {
-  return useMutation(api.sessionNotes.createGroup);
-}
-```
-
-- [ ] **2.7** Create the `GroupPatientPicker` component.
-
-**File:** `src/features/session-notes/components/group-patient-picker.tsx`
-
-```tsx
-"use client";
-
-import { useConvexAuth, useQuery } from "convex/react";
-
-import { cn } from "@/core/utils";
-import { MaterialIcon } from "@/shared/components/material-icon";
-import { Badge } from "@/shared/components/ui/badge";
-
-import { api } from "../../../../convex/_generated/api";
-import type { Id } from "../../../../convex/_generated/dataModel";
-
-interface GroupPatientPickerProps {
-  slpUserId: string;
-  selectedIds: Id<"patients">[];
-  onChange: (ids: Id<"patients">[]) => void;
-  disabled?: boolean;
-}
-
-export function GroupPatientPicker({
-  slpUserId,
-  selectedIds,
-  onChange,
-  disabled,
-}: GroupPatientPickerProps) {
-  const { isAuthenticated } = useConvexAuth();
-  const patients = useQuery(
-    api.patients.list,
-    isAuthenticated ? { status: "active" } : "skip",
-  );
-
-  function togglePatient(id: Id<"patients">) {
-    if (disabled) return;
-    if (selectedIds.includes(id)) {
-      onChange(selectedIds.filter((pid) => pid !== id));
-    } else if (selectedIds.length < 6) {
-      onChange([...selectedIds, id]);
-    }
-  }
-
-  if (patients === undefined) {
-    return <p className="text-sm text-muted-foreground">Loading patients...</p>;
-  }
-
-  return (
-    <div className="flex flex-col gap-2">
-      <div className="flex items-center justify-between">
-        <p className="text-sm font-medium text-foreground">
-          Select Patients (2-6)
-        </p>
-        <Badge variant="secondary">
-          {selectedIds.length}/6 selected
-        </Badge>
-      </div>
-      <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
-        {patients.map((patient) => {
-          const isSelected = selectedIds.includes(patient._id);
-          return (
-            <button
-              key={patient._id}
-              type="button"
-              onClick={() => togglePatient(patient._id)}
-              disabled={disabled || (!isSelected && selectedIds.length >= 6)}
-              className={cn(
-                "flex items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-all duration-300",
-                isSelected
-                  ? "bg-primary/10 text-primary ring-1 ring-primary/30"
-                  : "bg-surface-container hover:bg-surface-container-high",
-                disabled && "opacity-50 cursor-not-allowed",
-              )}
-            >
-              <MaterialIcon
-                icon={isSelected ? "check_circle" : "circle"}
-                size="sm"
-                className={isSelected ? "text-primary" : "text-muted-foreground"}
-              />
-              <span>{patient.firstName} {patient.lastName}</span>
-            </button>
-          );
-        })}
-      </div>
-      {selectedIds.length > 0 && selectedIds.length < 2 && (
-        <p className="text-xs text-caution">
-          Select at least 2 patients for a group session.
-        </p>
-      )}
-    </div>
-  );
-}
-```
-
-- [ ] **2.8** Add group mode toggle to `SessionNoteEditor`.
-
-**File:** `src/features/session-notes/components/session-note-editor.tsx`
-
-Add imports:
-
-```typescript
-import { GroupPatientPicker } from "./group-patient-picker";
-import { useCreateGroupSessionNote } from "../hooks/use-session-notes";
-```
-
-In the component, add state:
-
-```typescript
-const [isGroupMode, setIsGroupMode] = useState(false);
-const [groupPatientIds, setGroupPatientIds] = useState<Id<"patients">[]>([]);
-const createGroupNote = useCreateGroupSessionNote();
-```
-
-Add a mode toggle UI before the `StructuredDataForm`, inside the left column `<div className="flex flex-col gap-4">`:
-
-```tsx
-{/* Group mode toggle — only show in create mode (no existing note) */}
-{!noteId && (
-  <div className="flex items-center gap-3 rounded-xl bg-surface-container/50 px-4 py-3">
-    <button
-      type="button"
-      onClick={() => setIsGroupMode(false)}
-      className={cn(
-        "rounded-lg px-3 py-1.5 text-sm font-medium transition-all duration-300",
-        !isGroupMode
-          ? "bg-primary text-white"
-          : "text-muted-foreground hover:text-foreground",
-      )}
-    >
-      Individual
-    </button>
-    <button
-      type="button"
-      onClick={() => setIsGroupMode(true)}
-      className={cn(
-        "rounded-lg px-3 py-1.5 text-sm font-medium transition-all duration-300",
-        isGroupMode
-          ? "bg-primary text-white"
-          : "text-muted-foreground hover:text-foreground",
-      )}
-    >
-      <MaterialIcon icon="group" size="xs" className="mr-1 inline" />
-      Group (CPT 92508)
-    </button>
-  </div>
-)}
-
-{/* Group patient picker — only show in group mode during creation */}
-{isGroupMode && !noteId && (
-  <GroupPatientPicker
-    slpUserId=""
-    selectedIds={groupPatientIds}
-    onChange={setGroupPatientIds}
-    disabled={isSigned}
-  />
-)}
-```
-
-Modify the `doSave` callback: when in group mode on first save, call `createGroupNote` instead of `createNote`. Add a new function before `doSave`:
-
-```typescript
-const doGroupSave = useCallback(
-  async (
-    date: string,
-    duration: number,
-    type: SessionType,
-    data: StructuredData,
-    patientIds: Id<"patients">[],
-  ) => {
-    if (isSaving.current) return;
-    if (patientIds.length < 2) return;
-    isSaving.current = true;
-    try {
-      const result = await createGroupNote({
-        patientIds,
-        sessionDate: date,
-        sessionDuration: duration,
-        sessionType: type,
-        structuredData: data,
-      });
-      // Navigate to the first note in the group
-      setCurrentNoteId(result.noteIds[0]);
-      router.replace(`/patients/${patientId}/sessions/${result.noteIds[0]}`);
-      toast.success(`Created ${result.noteIds.length} group session notes`);
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to create group session");
-    } finally {
-      isSaving.current = false;
-    }
-  },
-  [createGroupNote, patientId, router],
-);
-```
-
-In `scheduleAutoSave`, at the start check if group mode:
-
-```typescript
-// Inside scheduleAutoSave, before the timeout:
-if (isGroupMode && !currentNoteIdRef.current) {
-  // In group mode, don't auto-save — wait for explicit save
-  return;
-}
-```
-
-Add a "Create Group Session" button that appears when in group mode:
-
-```tsx
-{isGroupMode && !currentNoteId && (
-  <Button
-    onClick={() =>
-      doGroupSave(
-        sessionDate,
-        sessionDuration,
-        sessionType,
-        structuredData,
-        groupPatientIds,
-      )
-    }
-    disabled={groupPatientIds.length < 2 || !structuredData.targetsWorkedOn.some(t => t.target.trim().length > 0)}
-    className="w-full bg-primary-gradient text-white transition-opacity duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] hover:opacity-90"
-  >
-    <MaterialIcon icon="group_add" size="sm" />
-    Create Group Session ({groupPatientIds.length} patients)
-  </Button>
-)}
-```
-
-- [ ] **2.9** Add group note rendering to `SessionNotesList`.
-
-**File:** `src/features/session-notes/components/session-notes-list.tsx`
-
-Modify the rendering logic to group notes by `groupSessionId`. In the component body, before the return:
-
-```typescript
-// Group notes by groupSessionId for display
-const groupedNotes = notes ? (() => {
-  const groups = new Map<string, typeof notes>();
-  const ungrouped: typeof notes = [];
-  for (const note of notes) {
-    if (note.groupSessionId) {
-      const existing = groups.get(note.groupSessionId) ?? [];
-      existing.push(note);
-      groups.set(note.groupSessionId, existing);
-    } else {
-      ungrouped.push(note);
-    }
-  }
-  return { groups, ungrouped };
-})() : null;
-```
-
-Replace the existing `{notes.map(...)}` block with:
-
-```tsx
-{groupedNotes && (
-  <div className="flex flex-col gap-2">
-    {/* Ungrouped (individual) notes */}
-    {groupedNotes.ungrouped.map((note) => (
-      <SessionNoteCard
-        key={note._id}
-        note={note}
-        patientId={patientId}
-      />
-    ))}
-    {/* Group session cards */}
-    {Array.from(groupedNotes.groups.entries()).map(([groupId, groupNotes]) => (
-      <div key={groupId} className="rounded-xl bg-surface-container/50 p-2">
-        <div className="mb-1 flex items-center gap-2 px-2 py-1">
-          <MaterialIcon icon="group" size="sm" className="text-primary" />
-          <span className="text-xs font-medium text-muted-foreground">
-            Group Session ({groupNotes.length} patients)
-          </span>
-        </div>
-        {groupNotes.map((note) => (
-          <SessionNoteCard
-            key={note._id}
-            note={note}
-            patientId={patientId}
-          />
-        ))}
-      </div>
-    ))}
-  </div>
-)}
-```
-
-- [ ] **2.10** Verify the app builds without errors.
-
-```bash
-npx next build 2>&1 | tail -20
-```
-
-- [ ] **2.11** Run all session notes tests.
-
-```bash
-npx vitest run convex/__tests__/sessionNotes.test.ts
-```
-
-- [ ] **2.12** Commit.
-
-```
-feat(session-notes): add group session notes for CPT 92508
-
-SLPs can now create group session notes for 2-6 patients. Notes are
-linked by a shared groupSessionId and displayed as grouped cards in
-the session notes list. Schema extended with groupSessionId and
-groupPatientIds fields.
-```
+- [ ] **Step 5: Commit**
 
 ---
 
-## Task 3: Multi-Audience Progress Reports
+## Task 7: Backend — progressReports.create Accept Audience Param
 
 **Files:**
-- `convex/schema.ts` (extend progressReports table)
-- `convex/progressReports.ts` (modify create mutation)
-- `convex/__tests__/progressReports.test.ts` (add audience tests)
-- `src/features/goals/lib/progress-prompt.ts` (add audience-specific prompts)
-- `src/app/api/generate-report/route.ts` (accept audience param)
-- `src/features/goals/components/progress-report-generator.tsx` (add audience selector)
-- `src/features/goals/components/progress-report-viewer.tsx` (show audience badge)
-- `src/features/goals/hooks/use-report-generation.ts` (pass audience)
+- Modify: `convex/progressReports.ts:76-101` (create mutation)
+- Test: `convex/__tests__/progressReports.test.ts`
 
-### Steps
+- [ ] **Step 1: Write the failing test for audience on create**
 
-- [ ] **3.1** Write failing backend tests for audience field.
-
-**File:** `convex/__tests__/progressReports.test.ts` -- add at the end:
+Append to `convex/__tests__/progressReports.test.ts`:
 
 ```typescript
-describe("progressReports audience field", () => {
-  it("creates report with audience field", async () => {
+describe("progressReports audience", () => {
+  it("stores audience when provided", async () => {
     const t = convexTest(schema, modules).withIdentity(SLP_IDENTITY);
     const { patientId } = await t.mutation(api.patients.create, VALID_PATIENT);
+
     const reportId = await t.mutation(api.progressReports.create, {
       patientId,
       reportType: "weekly-summary" as const,
       periodStart: "2026-03-21",
       periodEnd: "2026-03-28",
       goalSummaries: [VALID_GOAL_SUMMARY],
-      overallNarrative: "Overall good progress this week.",
-      audience: "parent",
+      overallNarrative: "Good progress.",
+      audience: "parent" as const,
     });
+
     const report = await t.query(api.progressReports.get, { reportId });
     expect(report.audience).toBe("parent");
   });
 
-  it("defaults to undefined audience for backward compatibility", async () => {
+  it("defaults to undefined when audience is omitted (backward compat)", async () => {
     const t = convexTest(schema, modules).withIdentity(SLP_IDENTITY);
     const { reportId } = await createReportSetup(t);
     const report = await t.query(api.progressReports.get, { reportId });
     expect(report.audience).toBeUndefined();
   });
-
-  it("accepts all three audience values", async () => {
-    const t = convexTest(schema, modules).withIdentity(SLP_IDENTITY);
-    const { patientId } = await t.mutation(api.patients.create, {
-      ...VALID_PATIENT,
-      firstName: "Test",
-    });
-
-    for (const audience of ["clinical", "parent", "iep-team"] as const) {
-      const reportId = await t.mutation(api.progressReports.create, {
-        patientId,
-        reportType: "monthly-summary" as const,
-        periodStart: "2026-03-01",
-        periodEnd: "2026-03-28",
-        goalSummaries: [VALID_GOAL_SUMMARY],
-        overallNarrative: `Report for ${audience}`,
-        audience,
-      });
-      const report = await t.query(api.progressReports.get, { reportId });
-      expect(report.audience).toBe(audience);
-    }
-  });
 });
 ```
 
-- [ ] **3.2** Verify tests fail (audience field not in schema yet).
+- [ ] **Step 2: Run test to verify it fails**
 
-```bash
-npx vitest run convex/__tests__/progressReports.test.ts
-```
+Run: `npx vitest run convex/__tests__/progressReports.test.ts`
+Expected: FAIL — `audience` arg not accepted by create mutation
 
-- [ ] **3.3** Add `audience` field to `progressReports` schema.
+- [ ] **Step 3: Add audience arg to create mutation**
 
-**File:** `convex/schema.ts`
-
-In the `progressReports` table definition, after the `signedAt` field (line 479), add:
-
-```typescript
-audience: v.optional(v.union(
-  v.literal("clinical"),
-  v.literal("parent"),
-  v.literal("iep-team"),
-)),
-```
-
-- [ ] **3.4** Update the `create` mutation to accept `audience`.
-
-**File:** `convex/progressReports.ts`
-
-Add a validator near the top with the other validators:
+In `convex/progressReports.ts`, add an audience validator at the top (after line 34, after `reportTypeValidator`):
 
 ```typescript
 const audienceValidator = v.optional(v.union(
   v.literal("clinical"),
   v.literal("parent"),
-  v.literal("iep-team"),
+  v.literal("iep-team")
 ));
 ```
 
-In the `create` mutation's `args`, add:
+Then modify the `create` mutation args (line 83) to add `audience`:
 
+Replace:
 ```typescript
-audience: audienceValidator,
-```
+export const create = slpMutation({
+  args: {
+    patientId: v.id("patients"),
+    reportType: reportTypeValidator,
+    periodStart: v.string(),
+    periodEnd: v.string(),
+    goalSummaries: v.array(goalSummaryValidator),
+    overallNarrative: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const patient = await ctx.db.get(args.patientId);
+    if (!patient) throw new ConvexError("Patient not found");
+    if (patient.slpUserId !== ctx.slpUserId) throw new ConvexError("Not authorized");
 
-In the `create` mutation's handler, include `audience` in the insert:
-
-```typescript
-return await ctx.db.insert("progressReports", {
-  patientId: args.patientId,
-  slpUserId: ctx.slpUserId,
-  reportType: args.reportType,
-  periodStart: args.periodStart,
-  periodEnd: args.periodEnd,
-  goalSummaries: args.goalSummaries,
-  overallNarrative: args.overallNarrative,
-  status: "draft",
-  audience: args.audience,
+    return await ctx.db.insert("progressReports", {
+      patientId: args.patientId,
+      slpUserId: ctx.slpUserId,
+      reportType: args.reportType,
+      periodStart: args.periodStart,
+      periodEnd: args.periodEnd,
+      goalSummaries: args.goalSummaries,
+      overallNarrative: args.overallNarrative,
+      status: "draft",
+    });
+  },
 });
 ```
 
-- [ ] **3.5** Verify backend tests pass.
+With:
+```typescript
+export const create = slpMutation({
+  args: {
+    patientId: v.id("patients"),
+    reportType: reportTypeValidator,
+    periodStart: v.string(),
+    periodEnd: v.string(),
+    goalSummaries: v.array(goalSummaryValidator),
+    overallNarrative: v.string(),
+    audience: audienceValidator,
+  },
+  handler: async (ctx, args) => {
+    const patient = await ctx.db.get(args.patientId);
+    if (!patient) throw new ConvexError("Patient not found");
+    if (patient.slpUserId !== ctx.slpUserId) throw new ConvexError("Not authorized");
 
-```bash
-npx vitest run convex/__tests__/progressReports.test.ts
+    return await ctx.db.insert("progressReports", {
+      patientId: args.patientId,
+      slpUserId: ctx.slpUserId,
+      reportType: args.reportType,
+      periodStart: args.periodStart,
+      periodEnd: args.periodEnd,
+      goalSummaries: args.goalSummaries,
+      overallNarrative: args.overallNarrative,
+      status: "draft",
+      audience: args.audience,
+    });
+  },
+});
 ```
 
-- [ ] **3.6** Add audience-specific prompt variants to `progress-prompt.ts`.
+- [ ] **Step 4: Run test to verify it passes**
 
-**File:** `src/features/goals/lib/progress-prompt.ts`
+Run: `npx vitest run convex/__tests__/progressReports.test.ts`
+Expected: PASS (all tests including new audience tests)
 
-Modify the `buildReportPrompt` function signature to accept an optional `audience` parameter:
+- [ ] **Step 5: Commit**
 
+---
+
+## Task 8: Multi-Audience Prompt Variants
+
+**Files:**
+- Modify: `src/features/goals/lib/progress-prompt.ts:30-115` (buildReportPrompt)
+
+- [ ] **Step 1: Add audience parameter to buildReportPrompt**
+
+In `src/features/goals/lib/progress-prompt.ts`, replace the `buildReportPrompt` function signature and the `reportTypeInstructions` block (lines 30-45):
+
+Replace:
 ```typescript
 export function buildReportPrompt(
   patient: PatientContext,
@@ -931,38 +774,102 @@ export function buildReportPrompt(
   periodStart: string,
   periodEnd: string,
   previousNarrative?: string,
-  audience?: "clinical" | "parent" | "iep-team",
 ): string {
+  const reportTypeInstructions: Record<string, string> = {
+    "weekly-summary":
+      "Write a brief, conversational but professional weekly summary. Highlight wins, note any concerns, and suggest focus areas for next week.",
+    "monthly-summary":
+      "Write a moderately detailed monthly summary. Include per-goal progress analysis, overall trends, and recommendations for the coming month.",
+    "iep-progress-report":
+      "Write a formal IEP progress report using educational language. Reference measurable criteria from goal statements. Use phrases appropriate for school district documentation. Note progress toward benchmarks with specific data.",
+  };
 ```
 
-After the existing `reportTypeInstructions` object, add audience-specific instructions:
+With:
+```typescript
+export type ReportAudience = "clinical" | "parent" | "iep-team";
+
+export function buildReportPrompt(
+  patient: PatientContext,
+  goals: GoalWithData[],
+  reportType: "weekly-summary" | "monthly-summary" | "iep-progress-report",
+  periodStart: string,
+  periodEnd: string,
+  previousNarrative?: string,
+  audience?: ReportAudience,
+): string {
+  const reportTypeInstructions: Record<string, string> = {
+    "weekly-summary":
+      "Write a brief, conversational but professional weekly summary. Highlight wins, note any concerns, and suggest focus areas for next week.",
+    "monthly-summary":
+      "Write a moderately detailed monthly summary. Include per-goal progress analysis, overall trends, and recommendations for the coming month.",
+    "iep-progress-report":
+      "Write a formal IEP progress report using educational language. Reference measurable criteria from goal statements. Use phrases appropriate for school district documentation. Note progress toward benchmarks with specific data.",
+  };
+
+  const audienceInstructions: Record<ReportAudience, string> = {
+    clinical:
+      "Write for a clinical audience: use formal medical/SLP terminology, include standard scores where relevant, justify medical necessity, and reference clinician credentials. This is for insurance documentation and clinical records.",
+    parent:
+      "Write for a parent/caregiver audience: use plain, everyday language with no medical jargon. Celebrate progress warmly, explain goals in accessible terms, describe next steps clearly, and suggest home practice activities. Be encouraging but honest.",
+    "iep-team":
+      "Write for an IEP/educational team audience: use IDEA-aligned educational language, frame progress in terms of educational access and classroom participation, reference academic impact, and tie goals to curriculum standards where applicable.",
+  };
+```
+
+Then after the line `${reportTypeInstructions[reportType]}` (around the prompt assembly area), add the audience instruction. Replace:
 
 ```typescript
-const audienceInstructions: Record<string, string> = {
-  "clinical":
-    "Write in formal clinical language using standard scores and medical terminology. Include medical necessity justification, measurable outcomes, and clinician credentials language. Reference ASHA documentation standards.",
-  "parent":
-    "Write in clear, plain language that a parent with no clinical background can understand. Summarize goals in everyday terms. Celebrate progress enthusiastically. Describe next steps in accessible language. Avoid all jargon, abbreviations, and technical terms.",
-  "iep-team":
-    "Write using IDEA-aligned educational framing. Reference impact on educational access and classroom participation. Use phrases appropriate for school district documentation. Tie progress to educational benchmarks. Include how speech-language needs affect the student's ability to access the general education curriculum.",
-};
+  prompt += `\n\n## Report Period: ${periodStart} to ${periodEnd}
+## Report Type: ${reportType}
 
-const selectedAudience = audience ?? "clinical";
+${reportTypeInstructions[reportType]}
+
+## Goals\n`;
 ```
 
-In the prompt construction, after the `${reportTypeInstructions[reportType]}` line, add:
-
+With:
 ```typescript
-prompt += `\n\n## Audience: ${selectedAudience}
-${audienceInstructions[selectedAudience]}`;
+  prompt += `\n\n## Report Period: ${periodStart} to ${periodEnd}
+## Report Type: ${reportType}
+
+${reportTypeInstructions[reportType]}
+${audience ? `\n## Audience\n${audienceInstructions[audience]}` : ""}
+
+## Goals\n`;
 ```
 
-- [ ] **3.7** Modify the API route to accept and pass the `audience` parameter.
+- [ ] **Step 2: Verify TypeScript compiles**
 
-**File:** `src/app/api/generate-report/route.ts`
+Run: `npx tsc --noEmit`
+Expected: No errors
 
-Update the Zod schema:
+- [ ] **Step 3: Commit**
 
+---
+
+## Task 9: SSE Route — Accept and Pass Audience Parameter
+
+**Files:**
+- Modify: `src/app/api/generate-report/route.ts:6-11` (Zod schema)
+- Modify: `src/app/api/generate-report/route.ts:113-121` (prompt builder call)
+- Modify: `src/app/api/generate-report/route.ts:178-185` (convex mutation call)
+
+- [ ] **Step 1: Add audience to the Zod schema**
+
+In `src/app/api/generate-report/route.ts`, replace the `ReportInputSchema` (lines 6-11):
+
+Replace:
+```typescript
+const ReportInputSchema = z.object({
+  patientId: z.string().min(1),
+  reportType: z.enum(["weekly-summary", "monthly-summary", "iep-progress-report"]),
+  periodStart: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  periodEnd: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+});
+```
+
+With:
 ```typescript
 const ReportInputSchema = z.object({
   patientId: z.string().min(1),
@@ -973,318 +880,881 @@ const ReportInputSchema = z.object({
 });
 ```
 
-Destructure `audience` from the parsed body:
+- [ ] **Step 2: Extract audience from parsed body and pass to prompt builder**
 
+Replace the destructuring line (line 62):
+
+Replace:
 ```typescript
-const { patientId, reportType, periodStart, periodEnd, audience } = parsedBody.data;
+  const { patientId, reportType, periodStart, periodEnd } = parsedBody.data;
 ```
 
-Pass `audience` to `buildReportPrompt`:
-
+With:
 ```typescript
-const systemPrompt = buildReportPrompt(
-  patient,
-  goalsWithData,
-  reportType,
-  periodStart,
-  periodEnd,
-  previousNarrative,
-  audience,
-);
+  const { patientId, reportType, periodStart, periodEnd, audience } = parsedBody.data;
 ```
 
-Pass `audience` when saving the report to Convex:
+Replace the `buildReportPrompt` call (lines 113-120):
 
+Replace:
 ```typescript
-const reportId = await convex.mutation(api.progressReports.create, {
-  patientId: pid,
-  reportType,
-  periodStart,
-  periodEnd,
-  goalSummaries,
-  overallNarrative: parsed.overallNarrative,
-  audience: audience ?? "clinical",
-});
-```
-
-- [ ] **3.8** Update the `useReportGeneration` hook to accept `audience`.
-
-**File:** `src/features/goals/hooks/use-report-generation.ts`
-
-Update the `generate` callback's args type:
-
-```typescript
-const generate = useCallback(
-  async (args: {
-    patientId: string;
-    reportType: "weekly-summary" | "monthly-summary" | "iep-progress-report";
-    periodStart: string;
-    periodEnd: string;
-    audience?: "clinical" | "parent" | "iep-team";
-  }) => {
-```
-
-No other changes needed -- `args` is already passed directly to `JSON.stringify(args)`.
-
-- [ ] **3.9** Add audience selector to `ProgressReportGenerator`.
-
-**File:** `src/features/goals/components/progress-report-generator.tsx`
-
-Add state:
-
-```typescript
-type Audience = "clinical" | "parent" | "iep-team";
-```
-
-```typescript
-const [audience, setAudience] = useState<Audience>("clinical");
-```
-
-Add import for RadioGroup (if not available, use buttons):
-
-```typescript
-import { cn } from "@/core/utils";
-```
-
-In the form area (inside `{!reportId && status !== "generating" && (...)}`), after the period date inputs and before the error display, add:
-
-```tsx
-<div className="flex flex-col gap-2">
-  <Label>Audience</Label>
-  <div className="flex gap-2">
-    {([
-      { value: "clinical" as Audience, label: "Clinical", icon: "medical_services" },
-      { value: "parent" as Audience, label: "Parent-Friendly", icon: "family_restroom" },
-      { value: "iep-team" as Audience, label: "IEP Team", icon: "school" },
-    ]).map((opt) => (
-      <button
-        key={opt.value}
-        type="button"
-        onClick={() => setAudience(opt.value)}
-        className={cn(
-          "flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-300",
-          audience === opt.value
-            ? "bg-primary text-white"
-            : "bg-muted text-muted-foreground hover:text-foreground",
-        )}
-      >
-        <MaterialIcon icon={opt.icon} size="xs" />
-        {opt.label}
-      </button>
-    ))}
-  </div>
-</div>
-```
-
-Pass `audience` in `handleGenerate`:
-
-```typescript
-async function handleGenerate() {
-  await generate({
-    patientId: patientId as string,
+  const systemPrompt = buildReportPrompt(
+    patient,
+    goalsWithData,
     reportType,
     periodStart,
     periodEnd,
-    audience,
-  });
-}
+    previousNarrative,
+  );
 ```
 
-- [ ] **3.10** Display audience badge in `ProgressReportViewer`.
-
-**File:** `src/features/goals/components/progress-report-viewer.tsx`
-
-Add a helper near the top of the file:
-
+With:
 ```typescript
-const AUDIENCE_LABELS: Record<string, { label: string; icon: string }> = {
-  clinical: { label: "Clinical", icon: "medical_services" },
-  parent: { label: "Parent-Friendly", icon: "family_restroom" },
-  "iep-team": { label: "IEP Team", icon: "school" },
-};
+  const systemPrompt = buildReportPrompt(
+    patient,
+    goalsWithData,
+    reportType,
+    periodStart,
+    periodEnd,
+    previousNarrative,
+    audience,
+  );
 ```
 
-In the report header section (inside the `<div className="flex items-center justify-between print:hidden">`), after the report type / period display, add:
+- [ ] **Step 3: Pass audience to the Convex mutation**
 
-```tsx
-{report.audience && AUDIENCE_LABELS[report.audience] && (
-  <span className="flex items-center gap-1 rounded-full bg-info-container px-2.5 py-0.5 text-xs font-medium text-on-info-container">
-    <MaterialIcon icon={AUDIENCE_LABELS[report.audience].icon} size="xs" />
-    {AUDIENCE_LABELS[report.audience].label}
-  </span>
-)}
+Replace the `convex.mutation` call (lines 178-185):
+
+Replace:
+```typescript
+          const reportId = await convex.mutation(api.progressReports.create, {
+            patientId: pid,
+            reportType,
+            periodStart,
+            periodEnd,
+            goalSummaries,
+            overallNarrative: parsed.overallNarrative,
+          });
 ```
 
-- [ ] **3.11** Verify the app builds without errors.
-
-```bash
-npx next build 2>&1 | tail -20
+With:
+```typescript
+          const reportId = await convex.mutation(api.progressReports.create, {
+            patientId: pid,
+            reportType,
+            periodStart,
+            periodEnd,
+            goalSummaries,
+            overallNarrative: parsed.overallNarrative,
+            audience,
+          });
 ```
 
-- [ ] **3.12** Run all progress report tests.
+- [ ] **Step 4: Verify TypeScript compiles**
 
-```bash
-npx vitest run convex/__tests__/progressReports.test.ts
-```
+Run: `npx tsc --noEmit`
+Expected: No errors
 
-- [ ] **3.13** Commit.
-
-```
-feat(progress-reports): add multi-audience report generation
-
-Progress reports can now be generated for three audiences: Clinical
-(formal language), Parent-Friendly (plain language), and IEP Team
-(educational framing). Audience selector added to generator, badge
-displayed on viewer, and prompt variants switch AI output style.
-```
+- [ ] **Step 5: Commit**
 
 ---
 
-## Task 4: Physician Signature Display on Reports
-
-> **DEPENDENCY:** This task requires SP2's `plansOfCare` table to exist in the schema. If SP2 has not been implemented yet, this task must be deferred until SP2 lands. The `plansOfCare` table should have at minimum: `patientId`, `physicianSignatureOnFile` (boolean), `physicianName` (string), `physicianNPI` (string), and `physicianSignatureDate` (string).
+## Task 10: Frontend — Audience Selector in Progress Report Generator
 
 **Files:**
-- `src/features/goals/components/progress-report-viewer.tsx` (add physician sig display)
-- `src/features/goals/hooks/use-report-generation.ts` (add plan-of-care query hook)
-- `convex/plansOfCare.ts` (query -- assumed to exist from SP2)
+- Modify: `src/features/goals/components/progress-report-generator.tsx:56-159`
+- Modify: `src/features/goals/hooks/use-report-generation.ts:36-42` (generate args)
 
-### Steps
+- [ ] **Step 1: Add audience to the generate hook args**
 
-- [ ] **4.1** Verify SP2's `plansOfCare` table exists in the schema.
+In `src/features/goals/hooks/use-report-generation.ts`, replace the `generate` callback args type (lines 38-42):
 
-```bash
-grep -n "plansOfCare" convex/schema.ts
+Replace:
+```typescript
+    async (args: {
+      patientId: string;
+      reportType: "weekly-summary" | "monthly-summary" | "iep-progress-report";
+      periodStart: string;
+      periodEnd: string;
+    }) => {
 ```
 
-If this returns no results, **STOP** -- SP2 must be implemented first. Add a comment in the codebase and skip to the commit step.
+With:
+```typescript
+    async (args: {
+      patientId: string;
+      reportType: "weekly-summary" | "monthly-summary" | "iep-progress-report";
+      periodStart: string;
+      periodEnd: string;
+      audience?: "clinical" | "parent" | "iep-team";
+    }) => {
+```
 
-- [ ] **4.2** Add a hook to query the latest Plan of Care for a patient.
+- [ ] **Step 2: Add audience state and radio group to the generator component**
 
-**File:** `src/features/goals/hooks/use-report-generation.ts`
+In `src/features/goals/components/progress-report-generator.tsx`, add the audience state after the `periodEnd` state (after line 64):
 
-Add at the end of the file:
+Replace:
+```typescript
+  const [periodEnd, setPeriodEnd] = useState(period.end);
+
+  const { status, streamedText, reportId, error, generate, reset } = useReportGeneration();
+```
+
+With:
+```typescript
+  const [periodEnd, setPeriodEnd] = useState(period.end);
+  const [audience, setAudience] = useState<"clinical" | "parent" | "iep-team">("clinical");
+
+  const { status, streamedText, reportId, error, generate, reset } = useReportGeneration();
+```
+
+Add the `RadioGroup` import. Replace the existing imports from `@/shared/components/ui/radio-group` — actually, the file does not import RadioGroup yet. Add it after the Label import (line 8):
+
+Replace:
+```typescript
+import { Label } from "@/shared/components/ui/label";
+```
+
+With:
+```typescript
+import { Label } from "@/shared/components/ui/label";
+import {
+  RadioGroup,
+  RadioGroupItem,
+} from "@/shared/components/ui/radio-group";
+```
+
+Pass audience in the generate call. Replace the `handleGenerate` function (lines 75-82):
+
+Replace:
+```typescript
+  async function handleGenerate() {
+    await generate({
+      patientId: patientId as string,
+      reportType,
+      periodStart,
+      periodEnd,
+    });
+  }
+```
+
+With:
+```typescript
+  async function handleGenerate() {
+    await generate({
+      patientId: patientId as string,
+      reportType,
+      periodStart,
+      periodEnd,
+      audience,
+    });
+  }
+```
+
+Add the audience radio group in the form. After the period inputs grid and before the error display, insert the audience selector. Replace:
 
 ```typescript
-export function usePlanOfCare(patientId: Id<"patients"> | null) {
+            </div>
+
+            {error && (
+```
+
+With:
+```typescript
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <Label>Audience</Label>
+              <RadioGroup
+                value={audience}
+                onValueChange={(v) => setAudience(v as "clinical" | "parent" | "iep-team")}
+                className="flex gap-4"
+              >
+                <div className="flex items-center gap-2">
+                  <RadioGroupItem value="clinical" id="audience-clinical" />
+                  <Label htmlFor="audience-clinical" className="text-sm font-normal">
+                    Clinical
+                  </Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <RadioGroupItem value="parent" id="audience-parent" />
+                  <Label htmlFor="audience-parent" className="text-sm font-normal">
+                    Parent-Friendly
+                  </Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <RadioGroupItem value="iep-team" id="audience-iep" />
+                  <Label htmlFor="audience-iep" className="text-sm font-normal">
+                    IEP Team
+                  </Label>
+                </div>
+              </RadioGroup>
+            </div>
+
+            {error && (
+```
+
+- [ ] **Step 3: Verify TypeScript compiles**
+
+Run: `npx tsc --noEmit`
+Expected: No errors
+
+- [ ] **Step 4: Commit**
+
+---
+
+## Task 11: Frontend — Audience Badge on Progress Report Viewer
+
+**Files:**
+- Modify: `src/features/goals/components/progress-report-viewer.tsx:60-74`
+
+- [ ] **Step 1: Add audience badge to report header**
+
+In `src/features/goals/components/progress-report-viewer.tsx`, replace the report header block (lines 61-74):
+
+Replace:
+```typescript
+    <div className="flex flex-col gap-6 print:gap-4">
+      <div className="flex items-center justify-between print:hidden">
+        <div>
+          <p className="text-sm font-medium capitalize">
+            {report.reportType.replace(/-/g, " ")}
+          </p>
+          <p className="text-xs text-muted-foreground">
+            {report.periodStart} to {report.periodEnd}
+          </p>
+        </div>
+        <span className={cn("rounded-full px-2 py-0.5 text-xs font-medium", statusBadgeColor(report.status))}>
+          {report.status.charAt(0).toUpperCase() + report.status.slice(1)}
+        </span>
+      </div>
+```
+
+With:
+```typescript
+    <div className="flex flex-col gap-6 print:gap-4">
+      <div className="flex items-center justify-between print:hidden">
+        <div>
+          <div className="flex items-center gap-2">
+            <p className="text-sm font-medium capitalize">
+              {report.reportType.replace(/-/g, " ")}
+            </p>
+            {report.audience && (
+              <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
+                {report.audience === "clinical"
+                  ? "Clinical"
+                  : report.audience === "parent"
+                    ? "Parent-Friendly"
+                    : "IEP Team"}
+              </span>
+            )}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {report.periodStart} to {report.periodEnd}
+          </p>
+        </div>
+        <span className={cn("rounded-full px-2 py-0.5 text-xs font-medium", statusBadgeColor(report.status))}>
+          {report.status.charAt(0).toUpperCase() + report.status.slice(1)}
+        </span>
+      </div>
+```
+
+- [ ] **Step 2: Verify TypeScript compiles**
+
+Run: `npx tsc --noEmit`
+Expected: No errors
+
+- [ ] **Step 3: Commit**
+
+---
+
+## Task 12: Frontend — Group Patient Picker Component
+
+**Files:**
+- Create: `src/features/session-notes/components/group-patient-picker.tsx`
+
+- [ ] **Step 1: Create the group patient picker component**
+
+Create `src/features/session-notes/components/group-patient-picker.tsx`:
+
+```typescript
+"use client";
+
+import { useConvexAuth, useQuery } from "convex/react";
+
+import { cn } from "@/core/utils";
+import { MaterialIcon } from "@/shared/components/material-icon";
+
+import { api } from "../../../../convex/_generated/api";
+import type { Id } from "../../../../convex/_generated/dataModel";
+
+interface GroupPatientPickerProps {
+  selectedIds: Id<"patients">[];
+  excludePatientId?: Id<"patients">;
+  onSelectionChange: (ids: Id<"patients">[]) => void;
+  disabled?: boolean;
+}
+
+const MIN_GROUP_SIZE = 2;
+const MAX_GROUP_SIZE = 6;
+
+export function GroupPatientPicker({
+  selectedIds,
+  excludePatientId,
+  onSelectionChange,
+  disabled,
+}: GroupPatientPickerProps) {
   const { isAuthenticated } = useConvexAuth();
-  return useQuery(
-    api.plansOfCare.getLatestForPatient,
-    isAuthenticated && patientId ? { patientId } : "skip",
+  const patients = useQuery(
+    api.patients.list,
+    isAuthenticated ? { status: "active" } : "skip",
+  );
+
+  if (!patients) {
+    return (
+      <p className="py-4 text-center text-sm text-muted-foreground">
+        Loading patients...
+      </p>
+    );
+  }
+
+  const available = excludePatientId
+    ? patients.filter((p) => p._id !== excludePatientId)
+    : patients;
+
+  function togglePatient(id: Id<"patients">) {
+    if (disabled) return;
+    if (selectedIds.includes(id)) {
+      onSelectionChange(selectedIds.filter((sid) => sid !== id));
+    } else if (selectedIds.length < MAX_GROUP_SIZE) {
+      onSelectionChange([...selectedIds, id]);
+    }
+  }
+
+  const atMax = selectedIds.length >= MAX_GROUP_SIZE;
+
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center justify-between">
+        <p className="text-sm font-medium text-foreground">
+          Select patients ({MIN_GROUP_SIZE}-{MAX_GROUP_SIZE})
+        </p>
+        <p className="text-xs text-muted-foreground">
+          {selectedIds.length} selected
+        </p>
+      </div>
+
+      <div className="flex max-h-48 flex-col gap-1 overflow-y-auto rounded-lg border border-border p-2">
+        {available.length === 0 ? (
+          <p className="py-4 text-center text-sm text-muted-foreground">
+            No active patients found
+          </p>
+        ) : (
+          available.map((patient) => {
+            const isSelected = selectedIds.includes(patient._id);
+            const isDisabledItem = disabled || (!isSelected && atMax);
+            return (
+              <button
+                key={patient._id}
+                type="button"
+                disabled={isDisabledItem}
+                onClick={() => togglePatient(patient._id)}
+                className={cn(
+                  "flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm transition-colors duration-200",
+                  isSelected
+                    ? "bg-primary/10 text-primary"
+                    : "hover:bg-muted",
+                  isDisabledItem && !isSelected && "cursor-not-allowed opacity-50",
+                )}
+              >
+                <MaterialIcon
+                  icon={isSelected ? "check_box" : "check_box_outline_blank"}
+                  size="sm"
+                  className={isSelected ? "text-primary" : "text-muted-foreground"}
+                />
+                <span>
+                  {patient.firstName} {patient.lastName}
+                </span>
+              </button>
+            );
+          })
+        )}
+      </div>
+
+      {selectedIds.length > 0 && selectedIds.length < MIN_GROUP_SIZE && (
+        <p className="text-xs text-caution">
+          Select at least {MIN_GROUP_SIZE} patients for a group session
+        </p>
+      )}
+    </div>
   );
 }
 ```
 
-> **Note:** If `api.plansOfCare.getLatestForPatient` does not exist in SP2's implementation, the query name may differ. Check `convex/plansOfCare.ts` for the correct export name. If SP2 uses a different query pattern, create a simple query:
+- [ ] **Step 2: Verify TypeScript compiles**
 
-**File:** `convex/plansOfCare.ts` (only if the query doesn't already exist -- add this query)
+Run: `npx tsc --noEmit`
+Expected: No errors
 
-```typescript
-export const getLatestForPatient = slpQuery({
-  args: { patientId: v.id("patients") },
-  handler: async (ctx, args) => {
-    const patient = await ctx.db.get(args.patientId);
-    if (!patient) return null;
-    if (patient.slpUserId !== ctx.slpUserId) return null;
-
-    const plans = await ctx.db
-      .query("plansOfCare")
-      .withIndex("by_patientId", (q) => q.eq("patientId", args.patientId))
-      .order("desc")
-      .take(1);
-
-    return plans[0] ?? null;
-  },
-});
-```
-
-- [ ] **4.3** Add physician signature display to `ProgressReportViewer`.
-
-**File:** `src/features/goals/components/progress-report-viewer.tsx`
-
-Add the hook import:
-
-```typescript
-import { usePlanOfCare } from "../hooks/use-report-generation";
-```
-
-Inside the component, after the `report` query, add:
-
-```typescript
-const planOfCare = usePlanOfCare(report?.patientId ?? null);
-```
-
-After the overall summary section and before the action buttons, add:
-
-```tsx
-{/* Physician Signature Status */}
-<div className="flex flex-col gap-1 rounded-lg bg-muted/30 px-4 py-3 print:break-inside-avoid">
-  <h4 className="text-sm font-semibold">Physician Signature</h4>
-  {planOfCare?.physicianSignatureOnFile ? (
-    <div className="flex items-center gap-2 text-sm text-success">
-      <MaterialIcon icon="verified" size="sm" />
-      <span>
-        Signature on file — {planOfCare.physicianName}
-        {planOfCare.physicianNPI && ` (NPI: ${planOfCare.physicianNPI})`}
-        {planOfCare.physicianSignatureDate && (
-          <span className="text-muted-foreground">
-            {" "}— signed {planOfCare.physicianSignatureDate}
-          </span>
-        )}
-      </span>
-    </div>
-  ) : (
-    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-      <MaterialIcon icon="pending" size="sm" />
-      <span>Physician signature: Not on file</span>
-    </div>
-  )}
-</div>
-```
-
-- [ ] **4.4** Verify the app builds without errors.
-
-```bash
-npx next build 2>&1 | tail -20
-```
-
-- [ ] **4.5** Commit.
-
-```
-feat(progress-reports): display physician signature status from Plan of Care
-
-Progress report viewer now shows whether a physician signature is on
-file (from SP2's plansOfCare table), including physician name, NPI,
-and signature date. Displays "Not on file" when no POC exists.
-```
+- [ ] **Step 3: Commit**
 
 ---
 
-## Verification
+## Task 13: Frontend — Group Mode Toggle in Session Note Editor
 
-- [ ] **V.1** Run the full test suite to ensure no regressions.
+**Files:**
+- Modify: `src/features/session-notes/components/session-note-editor.tsx`
+- Modify: `src/features/session-notes/hooks/use-session-notes.ts`
 
-```bash
-npx vitest run
+- [ ] **Step 1: Add useCreateGroupSessionNote hook**
+
+Append to `src/features/session-notes/hooks/use-session-notes.ts`:
+
+```typescript
+export function useCreateGroupSessionNote() {
+  return useMutation(api.sessionNotes.createGroup);
+}
 ```
 
-- [ ] **V.2** Run a build to verify no TypeScript or compilation errors.
+- [ ] **Step 2: Add group mode to session note editor**
 
-```bash
-npx next build
+In `src/features/session-notes/components/session-note-editor.tsx`, add the imports for the group picker and the new hook. After the existing `useDeleteSessionNote` is not imported, but after the `use-session-notes` imports (line 22), add:
+
+Replace:
+```typescript
+import {
+  useCreateSessionNote,
+  useSessionNote,
+  useSignSessionNote,
+  useUnsignSessionNote,
+  useUpdateSessionNote,
+  useUpdateSessionNoteStatus,
+  useUpdateSoap,
+} from "../hooks/use-session-notes";
 ```
+
+With:
+```typescript
+import {
+  useCreateGroupSessionNote,
+  useCreateSessionNote,
+  useSessionNote,
+  useSignSessionNote,
+  useUnsignSessionNote,
+  useUpdateSessionNote,
+  useUpdateSessionNoteStatus,
+  useUpdateSoap,
+} from "../hooks/use-session-notes";
+import { GroupPatientPicker } from "./group-patient-picker";
+```
+
+Add the group mode state and mutation. After line 66 (`const soap = useSoapGeneration();`), add:
+
+Replace:
+```typescript
+  // ── SOAP generation ────────────────────────────────────────────────────────
+  const soap = useSoapGeneration();
+
+  // ── Local form state ───────────────────────────────────────────────────────
+```
+
+With:
+```typescript
+  // ── SOAP generation ────────────────────────────────────────────────────────
+  const soap = useSoapGeneration();
+  const createGroupNote = useCreateGroupSessionNote();
+
+  // ── Group session state ────────────────────────────────────────────────────
+  const [isGroupMode, setIsGroupMode] = useState(false);
+  const [groupPatientIds, setGroupPatientIds] = useState<
+    import("../../../../convex/_generated/dataModel").Id<"patients">[]
+  >([]);
+
+  // ── Local form state ───────────────────────────────────────────────────────
+```
+
+Add the group mode toggle and picker to the form. In the return JSX, after the `{/* Two-column layout */}` comment and before `<StructuredDataForm`, insert the group mode UI. Replace:
+
+```typescript
+        <div className="flex flex-col gap-4">
+          <StructuredDataForm
+```
+
+With:
+```typescript
+        <div className="flex flex-col gap-4">
+          {/* Group/Individual mode toggle — only in create mode */}
+          {!noteId && (
+            <div className="flex flex-col gap-3 rounded-xl bg-surface-container/30 p-4">
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => { setIsGroupMode(false); setGroupPatientIds([]); }}
+                  className={cn(
+                    "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-colors duration-300",
+                    !isGroupMode
+                      ? "bg-primary text-white"
+                      : "bg-muted text-muted-foreground hover:bg-muted/80",
+                  )}
+                >
+                  <MaterialIcon icon="person" size="xs" />
+                  Individual
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsGroupMode(true)}
+                  className={cn(
+                    "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-colors duration-300",
+                    isGroupMode
+                      ? "bg-primary text-white"
+                      : "bg-muted text-muted-foreground hover:bg-muted/80",
+                  )}
+                >
+                  <MaterialIcon icon="group" size="xs" />
+                  Group (CPT 92508)
+                </button>
+              </div>
+
+              {isGroupMode && (
+                <GroupPatientPicker
+                  selectedIds={groupPatientIds}
+                  excludePatientId={typedPatientId}
+                  onSelectionChange={setGroupPatientIds}
+                  disabled={isSigned}
+                />
+              )}
+            </div>
+          )}
+
+          <StructuredDataForm
+```
+
+Finally, modify the `doSave` function to handle group creation. In the `doSave` callback, replace the `else` branch (the create path, around lines 136-148):
+
+Replace:
+```typescript
+        } else {
+          const newId = await createNote({
+            patientId: typedPatientId,
+            sessionDate: date,
+            sessionDuration: duration,
+            sessionType: type,
+            structuredData: data,
+          });
+          setCurrentNoteId(newId);
+          // Update URL to include the new note ID without a full navigation
+          router.replace(
+            `/patients/${patientId}/sessions/${newId}`
+          );
+        }
+```
+
+With:
+```typescript
+        } else if (isGroupMode && groupPatientIds.length >= 2) {
+          // Group mode: include the current patient + selected group patients
+          const allPatientIds = [typedPatientId, ...groupPatientIds.filter(
+            (id) => id !== typedPatientId,
+          )];
+          const noteIds = await createGroupNote({
+            patientIds: allPatientIds,
+            sessionDate: date,
+            sessionDuration: duration,
+            sessionType: type,
+            structuredData: data,
+          });
+          // Navigate to the first note (for the current patient)
+          const firstNoteId = noteIds[0];
+          setCurrentNoteId(firstNoteId);
+          router.replace(`/patients/${patientId}/sessions/${firstNoteId}`);
+          toast.success(`Created group session notes for ${allPatientIds.length} patients`);
+        } else {
+          const newId = await createNote({
+            patientId: typedPatientId,
+            sessionDate: date,
+            sessionDuration: duration,
+            sessionType: type,
+            structuredData: data,
+          });
+          setCurrentNoteId(newId);
+          router.replace(
+            `/patients/${patientId}/sessions/${newId}`
+          );
+        }
+```
+
+- [ ] **Step 3: Verify TypeScript compiles**
+
+Run: `npx tsc --noEmit`
+Expected: No errors
+
+- [ ] **Step 4: Commit**
+
+---
+
+## Task 14: Frontend — Group Badge on Session Notes List
+
+**Files:**
+- Modify: `src/features/session-notes/components/session-note-card.tsx:60-68`
+
+- [ ] **Step 1: Add group badge to session note card**
+
+In `src/features/session-notes/components/session-note-card.tsx`, add a group badge indicator. After the `accuracy` calculation (around line 66) and before the `return`, add:
+
+Replace:
+```typescript
+  const accuracy = firstTarget
+    ? calculateAccuracy(firstTarget.correct, firstTarget.trials)
+    : null;
+
+  const isLate = isLateSignature(note.signedAt, note.sessionDate);
+```
+
+With:
+```typescript
+  const accuracy = firstTarget
+    ? calculateAccuracy(firstTarget.correct, firstTarget.trials)
+    : null;
+  const isGroup = !!note.groupSessionId;
+  const groupSize = note.groupPatientIds?.length ?? 0;
+
+  const isLate = isLateSignature(note.signedAt, note.sessionDate);
+```
+
+Then, after the type icon div and before the content div, insert a group badge. Replace:
+
+```typescript
+      {/* Content */}
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <p className="truncate text-sm font-medium text-foreground">
+            {firstTarget?.target ?? "No targets recorded"}
+```
+
+With:
+```typescript
+      {/* Content */}
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <p className="truncate text-sm font-medium text-foreground">
+            {firstTarget?.target ?? "No targets recorded"}
+          </p>
+          {isGroup && (
+            <span className="flex shrink-0 items-center gap-0.5 rounded-full bg-info-container px-1.5 py-0.5 text-[10px] font-medium text-on-info-container">
+              <MaterialIcon icon="group" size="xs" />
+              {groupSize}
+            </span>
+          )}
+```
+
+Note: This requires removing the duplicate closing of the accuracy line. The full corrected content div should be:
+
+```typescript
+      {/* Content */}
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <p className="truncate text-sm font-medium text-foreground">
+            {firstTarget?.target ?? "No targets recorded"}
+          </p>
+          {isGroup && (
+            <span className="flex shrink-0 items-center gap-0.5 rounded-full bg-info-container px-1.5 py-0.5 text-[10px] font-medium text-on-info-container">
+              <MaterialIcon icon="group" size="xs" />
+              {groupSize}
+            </span>
+          )}
+          {accuracy !== null && (
+            <span className={cn("text-xs font-medium", accuracyColor(accuracy))}>
+              {accuracyLabel(accuracy)}
+            </span>
+          )}
+        </div>
+        <p className="text-xs text-muted-foreground">
+          {formatSessionDate(note.sessionDate)}
+        </p>
+      </div>
+```
+
+- [ ] **Step 2: Verify TypeScript compiles**
+
+Run: `npx tsc --noEmit`
+Expected: No errors
+
+- [ ] **Step 3: Commit**
+
+---
+
+## Task 15: Frontend — Physician Signature Display on Progress Reports
+
+**Files:**
+- Modify: `src/features/goals/components/progress-report-viewer.tsx:23-30` (add hook)
+- Modify: `src/features/goals/components/progress-report-viewer.tsx:139-145` (add display)
+
+This feature depends on SP2's `plansOfCare` table. If the table doesn't exist yet, the query returns `undefined` and we show "Not on file" gracefully.
+
+- [ ] **Step 1: Create a safe query hook for plan of care physician signature**
+
+First, check if `plansOfCare` exists. If SP2 hasn't been implemented yet, create a placeholder hook that returns `undefined`. Add after the existing imports in `progress-report-viewer.tsx`:
+
+Replace:
+```typescript
+import {
+  useMarkReportReviewed,
+  useReport,
+  useSignReport,
+  useUnsignReport,
+  useUpdateReportNarrative,
+} from "../hooks/use-report-generation";
+```
+
+With:
+```typescript
+import {
+  useMarkReportReviewed,
+  useReport,
+  useSignReport,
+  useUnsignReport,
+  useUpdateReportNarrative,
+} from "../hooks/use-report-generation";
+
+// Physician signature data from Plan of Care (SP2 dependency).
+// Returns undefined if plansOfCare table does not exist yet.
+interface PhysicianSigInfo {
+  onFile: boolean;
+  physicianName?: string;
+  signatureDate?: string;
+}
+function usePhysicianSignature(_patientId: Id<"patients">): PhysicianSigInfo | undefined {
+  // SP2 dependency: plansOfCare table may not exist yet.
+  // When SP2 is implemented, replace this with:
+  //   const poc = useQuery(api.plansOfCare.getActive, { patientId });
+  //   if (!poc) return undefined;
+  //   return {
+  //     onFile: poc.physicianSignatureOnFile ?? false,
+  //     physicianName: poc.physicianName,
+  //     signatureDate: poc.physicianSignatureDate,
+  //   };
+  return undefined;
+}
+```
+
+- [ ] **Step 2: Add physician signature display to the report viewer**
+
+In `progress-report-viewer.tsx`, after the `const [saving, setSaving]` line, add:
+
+Replace:
+```typescript
+  const [saving, setSaving] = useState(false);
+
+  if (!report) {
+```
+
+With:
+```typescript
+  const [saving, setSaving] = useState(false);
+  const physicianSig = report ? usePhysicianSignature(report.patientId) : undefined;
+
+  if (!report) {
+```
+
+Then, before the print footer div (the `<div className="hidden print:block` block), insert the physician signature section:
+
+Replace:
+```typescript
+      <div className="hidden print:block print:mt-8 print:border-t print:pt-4">
+        <p className="text-xs text-muted-foreground">
+          Generated by Bridges | {new Date().toLocaleDateString()}
+        </p>
+      </div>
+```
+
+With:
+```typescript
+      {/* Physician signature status */}
+      <div className="flex items-center gap-2 rounded-lg bg-muted/30 px-4 py-3 print:break-inside-avoid">
+        <MaterialIcon
+          icon={physicianSig?.onFile ? "verified" : "pending"}
+          size="sm"
+          className={physicianSig?.onFile ? "text-success" : "text-muted-foreground"}
+        />
+        <div className="flex flex-col">
+          {physicianSig?.onFile ? (
+            <>
+              <p className="text-sm font-medium text-foreground">
+                Physician signature on file
+              </p>
+              {physicianSig.physicianName && (
+                <p className="text-xs text-muted-foreground">
+                  {physicianSig.physicianName}
+                  {physicianSig.signatureDate && ` - Signed ${physicianSig.signatureDate}`}
+                </p>
+              )}
+            </>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              Physician signature: Not on file
+            </p>
+          )}
+        </div>
+      </div>
+
+      <div className="hidden print:block print:mt-8 print:border-t print:pt-4">
+        <p className="text-xs text-muted-foreground">
+          Generated by Bridges | {new Date().toLocaleDateString()}
+        </p>
+      </div>
+```
+
+- [ ] **Step 3: Verify TypeScript compiles**
+
+Run: `npx tsc --noEmit`
+Expected: No errors
+
+- [ ] **Step 4: Commit**
+
+---
+
+## Task 16: Run Full Test Suite
+
+**Files:** None (verification only)
+
+- [ ] **Step 1: Run all Convex backend tests**
+
+Run: `npx vitest run convex/__tests__/sessionNotes.test.ts convex/__tests__/progressReports.test.ts`
+Expected: PASS (all tests)
+
+- [ ] **Step 2: Run all frontend tests**
+
+Run: `npx vitest run src/features/session-notes/__tests__/session-utils.test.ts`
+Expected: PASS (all tests)
+
+- [ ] **Step 3: Run full project test suite**
+
+Run: `npm test`
+Expected: PASS (all 636+ tests)
+
+- [ ] **Step 4: Final commit (if any fixes were needed)**
 
 ---
 
 ## Task Summary
 
-| # | Task | Type | Files Changed | Tests Added | Dependencies |
-|---|------|------|--------------|-------------|--------------|
-| 1 | Same-day signature warning | Frontend only | 3 modified, 1 new test | 7 unit tests | None |
-| 2 | Group session notes (CPT 92508) | Schema + Backend + Frontend | 2 schema, 2 backend, 4 frontend | 4 backend tests | None |
-| 3 | Multi-audience progress reports | Schema + API route + Frontend | 1 schema, 2 backend, 3 frontend, 1 route | 3 backend tests | None |
-| 4 | Physician signature display | Frontend (read-only) | 2 frontend, 0-1 backend query | 0 (display only) | **SP2 `plansOfCare` table** |
-
-**Total estimated tests added:** 14
-**Schema changes:** `sessionNotes` (+2 fields, +1 index), `progressReports` (+1 field)
-**New files:** `group-patient-picker.tsx`, `session-utils.test.ts`
+| Task | Description | Type | Files | Estimated Time |
+|------|-------------|------|-------|----------------|
+| 1 | Late-signature detection utility (TDD) | Backend util + test | 2 | 5 min |
+| 2 | Late-signature badge on session note card | Frontend | 1 | 3 min |
+| 3 | Late-signature info banner in editor | Frontend | 1 | 3 min |
+| 4 | Schema: group session fields on sessionNotes | Schema | 1 | 2 min |
+| 5 | Schema: audience field on progressReports | Schema | 1 | 2 min |
+| 6 | Backend: createGroup mutation (TDD) | Backend + test | 2 | 10 min |
+| 7 | Backend: progressReports.create accept audience (TDD) | Backend + test | 2 | 5 min |
+| 8 | Multi-audience prompt variants | Backend | 1 | 5 min |
+| 9 | SSE route: accept and pass audience param | API route | 1 | 3 min |
+| 10 | Audience selector in report generator | Frontend + hook | 2 | 5 min |
+| 11 | Audience badge on report viewer | Frontend | 1 | 3 min |
+| 12 | Group patient picker component | Frontend (new) | 1 | 5 min |
+| 13 | Group mode toggle in session note editor | Frontend + hook | 2 | 8 min |
+| 14 | Group badge on session notes list | Frontend | 1 | 3 min |
+| 15 | Physician signature display on reports | Frontend | 1 | 5 min |
+| 16 | Run full test suite | Verification | 0 | 5 min |
+| **Total** | | | **20 files** | **~72 min** |
