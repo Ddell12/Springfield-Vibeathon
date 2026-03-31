@@ -50,7 +50,7 @@ export function SuperbillViewer({ recordId, open, onOpenChange }: SuperbillViewe
           <div className="animate-pulse h-48 rounded-xl bg-surface-container" />
         ) : (
           <>
-            <div className="superbill-content space-y-6 rounded-xl border border-surface-container-high p-6 print:border-black print:p-0">
+            <div id="superbill-print-root" className="superbill-content space-y-6 rounded-xl border border-surface-container-high p-6 print:border-black print:p-0">
               <div className="border-b border-surface-container-high pb-4 print:border-black">
                 <h2 className="text-lg font-bold text-on-surface">
                   {profile?.practiceName ?? "Practice Name"}
@@ -160,35 +160,36 @@ export function SuperbillViewer({ recordId, open, onOpenChange }: SuperbillViewe
               </div>
             </div>
 
-            <div className="flex justify-end print:hidden">
+            <div className="flex justify-end gap-2 print:hidden">
               <Button
+                type="button"
                 onClick={handlePrint}
-                className="bg-primary-gradient text-white"
+                className="bg-gradient-to-br from-primary to-primary-container text-white hover:opacity-90 gap-2"
               >
-                <MaterialIcon icon="print" size="sm" />
-                Print / Save as PDF
+                <MaterialIcon icon="download" size="sm" />
+                Download PDF
               </Button>
             </div>
           </>
         )}
-      </DialogContent>
-
-      <style>{`
-        @media print {
-          body > *:not([data-radix-portal]) { display: none !important; }
-          [data-radix-portal] [role="dialog"] {
-            position: static !important;
-            transform: none !important;
-            max-width: 100% !important;
-            max-height: none !important;
-            box-shadow: none !important;
-            border: none !important;
+        <style>{`
+          @media print {
+            body > *:not([data-radix-portal]) { display: none !important; }
+            [data-radix-portal] [role="dialog"] {
+              position: static !important;
+              transform: none !important;
+              max-width: 100% !important;
+              max-height: none !important;
+              box-shadow: none !important;
+              border: none !important;
+            }
+            [data-radix-portal] [role="dialog"] > *:not(#superbill-print-root) {
+              display: none !important;
+            }
+            #superbill-print-root { display: block !important; }
           }
-          .print\\:hidden { display: none !important; }
-          .print\\:border-black { border-color: black !important; }
-          .print\\:p-0 { padding: 0 !important; }
-        }
-      `}</style>
+        `}</style>
+      </DialogContent>
     </Dialog>
   );
 }

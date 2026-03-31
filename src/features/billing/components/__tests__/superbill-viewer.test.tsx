@@ -98,7 +98,7 @@ describe("SuperbillViewer", () => {
     expect(screen.getByText("$150.00")).toBeInTheDocument();
   });
 
-  it("renders Print / Save as PDF button", () => {
+  it("renders Download PDF button", () => {
     render(
       <SuperbillViewer
         recordId={"record-1" as any}
@@ -107,6 +107,6 @@ describe("SuperbillViewer", () => {
       />,
     );
 
-    expect(screen.getByRole("button", { name: /print/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /download pdf/i })).toBeInTheDocument();
   });
 });
