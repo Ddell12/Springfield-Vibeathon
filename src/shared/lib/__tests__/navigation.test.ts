@@ -33,4 +33,29 @@ describe("isNavActive", () => {
   it("matches /builder prefix", () => {
     expect(isNavActive("/builder", "/builder/abc123", null)).toBe(true);
   });
+  it("matches /patients prefix", () => {
+    expect(isNavActive("/patients", "/patients", null)).toBe(true);
+    expect(isNavActive("/patients", "/patients/abc", null)).toBe(true);
+    expect(isNavActive("/patients", "/sessions", null)).toBe(false);
+  });
+  it("matches /sessions prefix", () => {
+    expect(isNavActive("/sessions", "/sessions", null)).toBe(true);
+    expect(isNavActive("/sessions", "/sessions/abc/call", null)).toBe(true);
+  });
+  it("matches /billing prefix", () => {
+    expect(isNavActive("/billing", "/billing", null)).toBe(true);
+    expect(isNavActive("/billing", "/billing/upgrade", null)).toBe(true);
+  });
+  it("matches /speech-coach prefix", () => {
+    expect(isNavActive("/speech-coach", "/speech-coach", null)).toBe(true);
+    expect(isNavActive("/speech-coach", "/speech-coach/session", null)).toBe(true);
+  });
+  it("matches /family prefix", () => {
+    expect(isNavActive("/family", "/family", null)).toBe(true);
+    expect(isNavActive("/family", "/family/child/123", null)).toBe(true);
+  });
+  it("fallback: matches href exactly", () => {
+    expect(isNavActive("/settings", "/settings", null)).toBe(true);
+    expect(isNavActive("/settings", "/settings/profile", null)).toBe(false);
+  });
 });

@@ -26,6 +26,7 @@ export function isNavActive(
   if (href === "/sessions")     return pathname.startsWith("/sessions");
   if (href === "/billing")      return pathname.startsWith("/billing");
   if (href === "/speech-coach") return pathname.startsWith("/speech-coach");
+  // /family used by caregiver redirect logic in DashboardSidebar, not a visible nav item
   if (href === "/family")       return pathname.startsWith("/family");
   if (href === "/library")      return pathname === "/library";
   return pathname === href;
