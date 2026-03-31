@@ -13,18 +13,26 @@ interface InputBarProps {
   className?: string;
   showGuidedPill?: boolean;
   onGuidedClick?: () => void;
+  mode?: "app" | "flashcards";
+  onModeChange?: (mode: "app" | "flashcards") => void;
 }
 
 export function InputBar({
   value,
   onChange,
   onSubmit,
-  placeholder = "What would you like to build?",
+  placeholder,
   isGenerating,
   className,
   showGuidedPill,
   onGuidedClick,
+  mode = "app",
+  onModeChange,
 }: InputBarProps) {
+  const resolvedPlaceholder =
+    mode === "flashcards"
+      ? "Describe the flashcard set you want to build…"
+      : placeholder ?? "What would you like to build?";
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     onChange(e.target.value);
     // scrollHeight is a runtime DOM value — no Tailwind equivalent for dynamic height measurement
@@ -60,13 +68,33 @@ export function InputBar({
         value={value}
         onChange={handleChange}
         onKeyDown={handleKeyDown}
-        placeholder={placeholder}
+        placeholder={resolvedPlaceholder}
         disabled={isGenerating}
         rows={1}
-        aria-label={placeholder}
+        aria-label={resolvedPlaceholder}
         className="w-full resize-none overflow-hidden border-0 bg-transparent text-sm outline-none placeholder:text-on-surface-variant/40 disabled:opacity-60 min-h-[24px] max-h-[200px]"
       />
       <div className="mt-2 flex items-center gap-2 border-t border-outline-variant/10 pt-2">
+        {!isGenerating && onModeChange && (
+          <div role="group" aria-label="Build mode" className="flex rounded-full border border-outline-variant/30 overflow-hidden">
+            {(["app", "flashcards"] as const).map((m) => (
+              <button
+                key={m}
+                type="button"
+                aria-label={m === "app" ? "Switch to App mode" : "Switch to Flashcards mode"}
+                onClick={() => onModeChange(m)}
+                className={cn(
+                  "px-2.5 py-0.5 text-xs font-medium transition-colors",
+                  mode === m
+                    ? "bg-primary text-white"
+                    : "text-on-surface-variant hover:bg-surface-container-low",
+                )}
+              >
+                {m === "app" ? "App" : "Flashcards"}
+              </button>
+            ))}
+          </div>
+        )}
         <VoiceInput
           onTranscript={(text) => onChange(value ? `${value} ${text}` : text)}
           disabled={isGenerating}

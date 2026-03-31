@@ -38,6 +38,8 @@ interface ChatColumnProps {
   mobilePanel?: "chat" | "preview";
   onMobilePanelChange?: (panel: "chat" | "preview") => void;
   onArtifactClick?: () => void;
+  mode?: "app" | "flashcards";
+  onModeChange?: (mode: "app" | "flashcards") => void;
 }
 
 export function ChatColumn({
@@ -61,6 +63,8 @@ export function ChatColumn({
   mobilePanel,
   onMobilePanelChange,
   onArtifactClick,
+  mode,
+  onModeChange,
 }: ChatColumnProps) {
   const [input, setInput] = useState("");
 
@@ -177,6 +181,8 @@ export function ChatColumn({
           }
           isGenerating={status === "generating"}
           showGuidedPill
+          mode={mode}
+          onModeChange={onModeChange}
         />
       </div>
     </div>

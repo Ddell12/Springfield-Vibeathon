@@ -38,6 +38,9 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
     : null) as Id<"patients"> | null;
 
   const isMobile = useIsMobile();
+  // Note: mode is not reset by reset() — if a same-mount "New app" flow is added
+  // that calls reset() without navigating away, mode will need to be explicitly reset.
+  const [mode, setMode] = useState<"app" | "flashcards">("app");
   const [viewMode, setViewMode] = useState<ViewMode>("preview");
   const [deviceSize, setDeviceSize] = useState<DeviceSize>("desktop");
 
@@ -139,11 +142,12 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
   }, [bundleHtml, mobilePanel]);
 
   const handleGenerate = useCallback((prompt: string, blueprint?: TherapyBlueprint) => {
-    lastPromptRef.current = prompt;
     setPendingPrompt(prompt);
     setGenerationStartTime(Date.now());
-    generate(prompt, blueprint ?? undefined, patientId ?? undefined);
-  }, [generate, patientId]);
+    const finalPrompt = mode === "flashcards" ? `[FLASHCARD MODE] ${prompt}` : prompt;
+    lastPromptRef.current = finalPrompt;  // store the prefixed prompt so retries include mode
+    generate(finalPrompt, blueprint ?? undefined, patientId ?? undefined);
+  }, [generate, patientId, mode]);
 
   const handleRetry = useCallback(() => {
     if (lastPromptRef.current) {
@@ -321,6 +325,8 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
                   isMobile={isMobile}
                   mobilePanel={mobilePanel}
                   onMobilePanelChange={setMobilePanel}
+                  mode={mode}
+                  onModeChange={setMode}
                 />
               ) : (
                 <div className="flex h-full flex-col">
@@ -377,6 +383,8 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
                     onNameEditEnd={handleNameEditEnd}
                     patientId={patientId}
                     onArtifactClick={() => setPreviewVisible(true)}
+                    mode={mode}
+                    onModeChange={setMode}
                   />
                 </ResizablePanel>
 
@@ -419,6 +427,8 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
                   onNameEditEnd={handleNameEditEnd}
                   patientId={patientId}
                   onArtifactClick={() => setPreviewVisible(true)}
+                  mode={mode}
+                  onModeChange={setMode}
                 />
               </div>
             )
