@@ -105,7 +105,7 @@ export function DashboardSidebar() {
               key={item.label}
               href={item.href}
               className={cn(
-                "flex items-center gap-3 rounded-xl px-2 py-2 transition-all duration-200 active:scale-95",
+                "flex items-center gap-3 rounded-xl px-2 py-2 transition-all duration-300 active:scale-95",
                 collapsed ? "justify-center" : "",
                 isActive
                   ? "bg-primary text-white shadow-sm shadow-primary/20"
@@ -207,7 +207,7 @@ export function DashboardSidebar() {
               <div className="my-1 border-t border-outline-variant/20" />
               <button
                 type="button"
-                onClick={() => signOut(() => router.push("/sign-in"))}
+                onClick={() => signOut({ redirectUrl: "/sign-in" })}
                 className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-on-surface hover:bg-surface-container-high transition-colors"
               >
                 <MaterialIcon icon="logout" size="sm" />
