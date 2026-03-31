@@ -78,7 +78,7 @@ export default function MeetBridgesPage() {
         <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-3">
           {ROLES.map(({ icon: Icon, title, description }) => (
             <div key={title} className="rounded-3xl bg-surface p-8">
-              <div className="flex size-12 items-center justify-center rounded-2xl bg-teal-subtle">
+              <div className="flex size-12 items-center justify-center rounded-2xl bg-accent">
                 <Icon className="size-6 text-primary" />
               </div>
               <h3 className="mt-4 text-base font-semibold text-on-surface">{title}</h3>
@@ -96,7 +96,7 @@ export default function MeetBridgesPage() {
         <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-3">
           {APP_TYPES.map(({ icon: Icon, title, description }) => (
             <div key={title} className="rounded-3xl bg-surface p-8">
-              <div className="flex size-12 items-center justify-center rounded-2xl bg-teal-subtle">
+              <div className="flex size-12 items-center justify-center rounded-2xl bg-accent">
                 <Icon className="size-6 text-primary" />
               </div>
               <h3 className="mt-4 text-base font-semibold text-on-surface">{title}</h3>
