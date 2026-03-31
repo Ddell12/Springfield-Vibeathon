@@ -4,6 +4,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { MaterialIcon } from "@/shared/components/material-icon";
+import { Button } from "@/shared/components/ui/button";
 import {
   Tabs,
   TabsContent,
@@ -26,6 +27,7 @@ export function ClinicalBillingDashboard() {
   const [activeTab, setActiveTab] = useState<Tab>("unbilled");
   const [editingId, setEditingId] = useState<Id<"billingRecords"> | null>(null);
   const [superbillId, setSuperbillId] = useState<Id<"billingRecords"> | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
 
   const draftRecords = useBillingRecords("draft");
   const finalizedRecords = useBillingRecords("finalized");
@@ -83,11 +85,17 @@ export function ClinicalBillingDashboard() {
 
   return (
     <div className="flex flex-col gap-6 p-4 sm:p-6 lg:p-8">
-      <div>
-        <h1 className="font-display text-2xl font-semibold text-on-surface">Clinical Billing</h1>
-        <p className="text-sm text-on-surface-variant mt-1">
-          Manage billing records and generate superbills
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="font-display text-2xl font-semibold text-on-surface">Clinical Billing</h1>
+          <p className="text-sm text-on-surface-variant mt-1">
+            Manage billing records and generate superbills
+          </p>
+        </div>
+        <Button type="button" onClick={() => setCreateOpen(true)}>
+          <MaterialIcon icon="add" size="sm" />
+          New Record
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -205,6 +213,11 @@ export function ClinicalBillingDashboard() {
           }}
         />
       )}
+
+      <BillingRecordEditor
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+      />
 
       {superbillId && (
         <SuperbillViewer

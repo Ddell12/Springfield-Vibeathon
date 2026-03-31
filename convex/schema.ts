@@ -783,7 +783,7 @@ export default defineSchema({
   billingRecords: defineTable({
     patientId: v.id("patients"),
     slpUserId: v.string(),
-    sessionNoteId: v.id("sessionNotes"),
+    sessionNoteId: v.optional(v.id("sessionNotes")),
     dateOfService: v.string(),
     cptCode: v.string(),
     cptDescription: v.string(),
