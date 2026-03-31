@@ -211,6 +211,18 @@ export function AppointmentDetailPage({ paramsPromise }: AppointmentDetailPagePr
             </>
           )}
 
+          {isSLP && appointment.status === "in-progress" && (
+            <Button
+              asChild
+              className="bg-gradient-to-br from-[#00595c] to-[#0d7377] text-white"
+            >
+              <Link href={`/sessions/${id}/call`}>
+                <MaterialIcon icon="videocam" size="sm" />
+                Rejoin session
+              </Link>
+            </Button>
+          )}
+
           {isCaregiver && appointment.status === "in-progress" && (
             <Button
               asChild

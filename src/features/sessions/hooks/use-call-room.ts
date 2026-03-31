@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
+import { toast } from "sonner";
 
 type CallState = "idle" | "connecting" | "connected" | "disconnected";
 
@@ -31,6 +32,7 @@ export function useCallRoom(appointmentId: string) {
     } catch (error) {
       console.error("[useCallRoom] Token fetch failed:", error);
       setCallState("idle");
+      toast.error("Could not connect to the session. Please try again.");
     }
   }, [appointmentId]);
 

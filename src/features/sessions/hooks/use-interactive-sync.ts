@@ -49,6 +49,13 @@ export function useInteractiveSync() {
   const sendContent = useCallback(
     (message: ContentUpdate | ContentControl) => {
       void sendContentRaw(encode(message), { reliable: true });
+      // LiveKit does not echo data messages back to the sender, so we mirror
+      // local state immediately to keep the SLP's view in sync with what was sent.
+      if (message.type === "content-update") {
+        setCurrentContent(message);
+      } else if (message.type === "content-clear") {
+        setCurrentContent(null);
+      }
     },
     [sendContentRaw],
   );
@@ -70,5 +77,5 @@ export function useInteractiveSync() {
     sendContent,
     sendInteraction,
     getInteractionLog,
-  };
+  } as const;
 }

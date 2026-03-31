@@ -1,6 +1,6 @@
 "use client";
 
-import "@livekit/components-styles";
+// Styles loaded via useEffect in call-page.tsx — JS import triggers Tailwind v4 CSS resolution error
 import { LiveKitRoom, RoomAudioRenderer } from "@livekit/components-react";
 import type { LocalUserChoices } from "@livekit/components-react";
 import { useCallback, useEffect, useRef, useState } from "react";

@@ -16,6 +16,7 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
+        // Default policy: block camera everywhere except call pages
         source: "/(.*)",
         headers: [
           { key: "Cross-Origin-Embedder-Policy", value: "credentialless" },
@@ -25,6 +26,13 @@ const nextConfig: NextConfig = {
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
           { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
           { key: "Permissions-Policy", value: "camera=(), microphone=(self), geolocation=()" },
+        ],
+      },
+      {
+        // Allow camera + microphone on teletherapy call pages
+        source: "/sessions/:id/call",
+        headers: [
+          { key: "Permissions-Policy", value: "camera=(self), microphone=(self), geolocation=()" },
         ],
       },
     ];

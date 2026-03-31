@@ -23,7 +23,7 @@ function relativeTime(timestamp: number): string {
 }
 
 export function InteractivePanel({ isSLP, appointmentId: _appointmentId }: InteractivePanelProps) {
-  const { currentContent, lastInteraction, sendContent } = useInteractiveSync();
+  const { currentContent, lastInteraction, sendContent, sendInteraction } = useInteractiveSync();
   const [pickerOpen, setPickerOpen] = useState(false);
   const [, forceUpdate] = useState(0);
 
@@ -134,6 +134,7 @@ export function InteractivePanel({ isSLP, appointmentId: _appointmentId }: Inter
           content={currentContent}
           isSLP={isSLP}
           onSLPInteraction={handleSLPInteraction}
+          onPatientInteraction={!isSLP ? sendInteraction : undefined}
         />
       </div>
 

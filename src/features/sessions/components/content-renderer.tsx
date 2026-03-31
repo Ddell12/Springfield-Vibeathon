@@ -5,18 +5,20 @@ import Image from "next/image";
 import { Button } from "@/shared/components/ui/button";
 import { MaterialIcon } from "@/shared/components/material-icon";
 import { cn } from "@/core/utils";
-import type { ContentControl, ContentUpdate } from "../types";
+import type { ContentControl, ContentUpdate, Interaction } from "../types";
 
 type ContentRendererProps = {
   content: ContentUpdate | null;
   isSLP: boolean;
   onSLPInteraction?: (control: ContentControl) => void;
+  onPatientInteraction?: (interaction: Interaction) => void;
 };
 
 export function ContentRenderer({
   content,
   isSLP,
   onSLPInteraction,
+  onPatientInteraction,
 }: ContentRendererProps) {
   const [cardRevealed, setCardRevealed] = useState(
     () => Boolean(content?.payload?.revealed),
@@ -93,13 +95,45 @@ export function ContentRenderer({
           </p>
         )}
 
-        {/* Card face */}
+        {/* Card face — tappable for patient to log interaction */}
         <div
-          role="region"
-          aria-label="Flashcard"
+          role={!isSLP && onPatientInteraction ? "button" : "region"}
+          aria-label={!isSLP && onPatientInteraction ? `Tap to select "${front}"` : "Flashcard"}
+          tabIndex={!isSLP && onPatientInteraction ? 0 : undefined}
+          onClick={
+            !isSLP && onPatientInteraction
+              ? () =>
+                  onPatientInteraction({
+                    type: "interaction",
+                    action: "tapped",
+                    target: front,
+                    timestamp: Date.now(),
+                  })
+              : undefined
+          }
+          onKeyDown={
+            !isSLP && onPatientInteraction
+              ? (e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    onPatientInteraction({
+                      type: "interaction",
+                      action: "tapped",
+                      target: front,
+                      timestamp: Date.now(),
+                    });
+                  }
+                }
+              : undefined
+          }
           className={cn(
             "flex flex-1 flex-col items-center justify-center rounded-xl bg-white p-8 text-center shadow-sm",
             "min-h-[180px]",
+            !isSLP && onPatientInteraction && [
+              "cursor-pointer select-none",
+              "transition-transform duration-150 ease-[cubic-bezier(0.4,0,0.2,1)]",
+              "active:scale-[0.97] hover:shadow-md",
+            ],
           )}
         >
           <p className="font-headline text-2xl text-stone-800">{front || "—"}</p>
@@ -109,6 +143,11 @@ export function ContentRenderer({
             <div className="mt-4 border-t border-stone-100 pt-4 w-full">
               <p className="font-body text-base text-stone-600">{back}</p>
             </div>
+          )}
+
+          {/* Tap hint for patient */}
+          {!isSLP && onPatientInteraction && (
+            <p className="mt-3 font-body text-xs text-stone-400">Tap to respond</p>
           )}
         </div>
 

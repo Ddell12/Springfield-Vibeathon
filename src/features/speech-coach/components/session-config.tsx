@@ -5,7 +5,6 @@ import { useState } from "react";
 import { cn } from "@/core/utils";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
-import { ToggleGroup, ToggleGroupItem } from "@/shared/components/ui/toggle-group";
 
 const TARGET_SOUNDS = [
   { id: "/s/", label: "/s/ & /z/" },
@@ -78,7 +77,7 @@ export function SessionConfig({ speechCoachConfig, onStart, lastRecommended, isL
                 "flex cursor-pointer items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors duration-300",
                 selectedSounds.includes(sound.id)
                   ? "bg-primary text-primary-foreground"
-                  : "bg-muted text-muted-foreground hover:bg-muted/80"
+                  : "bg-surface-container-high text-on-surface-variant hover:bg-surface-container-highest"
               )}
             >
               <input
@@ -104,28 +103,29 @@ export function SessionConfig({ speechCoachConfig, onStart, lastRecommended, isL
         <h3 className="font-body text-lg font-semibold text-foreground">
           How old is your child?
         </h3>
-        <ToggleGroup
-          type="single"
-          value={ageRange}
-          onValueChange={(value) => {
-            if (value) setAgeRange(value as "2-4" | "5-7");
-          }}
-          className="mt-3 flex gap-3"
-        >
+        <div className="mt-3 flex gap-3">
           {(["2-4", "5-7"] as const).map((range) => (
-            <ToggleGroupItem
+            <label
               key={range}
-              value={range}
               className={cn(
-                "rounded-lg px-6 py-3 text-sm font-medium transition-colors duration-300",
-                "data-[state=on]:bg-primary data-[state=on]:text-primary-foreground",
-                "bg-muted text-muted-foreground hover:bg-muted/80"
+                "flex cursor-pointer items-center rounded-lg px-6 py-3 text-sm font-medium transition-colors duration-300",
+                ageRange === range
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-surface-container-high text-on-surface-variant hover:bg-surface-container-highest"
               )}
             >
+              <input
+                type="radio"
+                className="sr-only"
+                name="ageRange"
+                value={range}
+                checked={ageRange === range}
+                onChange={() => setAgeRange(range)}
+              />
               Ages {range}
-            </ToggleGroupItem>
+            </label>
           ))}
-        </ToggleGroup>
+        </div>
       </div>
 
       {/* Duration */}
@@ -133,28 +133,29 @@ export function SessionConfig({ speechCoachConfig, onStart, lastRecommended, isL
         <h3 className="font-body text-lg font-semibold text-foreground">
           How long?
         </h3>
-        <ToggleGroup
-          type="single"
-          value={String(duration)}
-          onValueChange={(value) => {
-            if (value) setDuration(Number(value) as 5 | 10);
-          }}
-          className="mt-3 flex gap-3"
-        >
+        <div className="mt-3 flex gap-3">
           {([5, 10] as const).map((mins) => (
-            <ToggleGroupItem
+            <label
               key={mins}
-              value={String(mins)}
               className={cn(
-                "rounded-lg px-6 py-3 text-sm font-medium transition-colors duration-300",
-                "data-[state=on]:bg-primary data-[state=on]:text-primary-foreground",
-                "bg-muted text-muted-foreground hover:bg-muted/80"
+                "flex cursor-pointer items-center rounded-lg px-6 py-3 text-sm font-medium transition-colors duration-300",
+                duration === mins
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-surface-container-high text-on-surface-variant hover:bg-surface-container-highest"
               )}
             >
+              <input
+                type="radio"
+                className="sr-only"
+                name="duration"
+                value={mins}
+                checked={duration === mins}
+                onChange={() => setDuration(mins)}
+              />
               {mins} minutes
-            </ToggleGroupItem>
+            </label>
           ))}
-        </ToggleGroup>
+        </div>
       </div>
 
       {/* Focus area */}
@@ -172,7 +173,7 @@ export function SessionConfig({ speechCoachConfig, onStart, lastRecommended, isL
       </div>
 
       {/* Tip */}
-      <div className="rounded-lg bg-muted/50 p-4">
+      <div className="rounded-lg bg-surface-container-high p-4">
         <p className="text-sm text-muted-foreground">
           Sit with your child in a quiet space. The coach will guide the session with fun word games and lots of encouragement!
         </p>
