@@ -7,19 +7,21 @@ import { cn } from "@/core/utils";
 import { MaterialIcon } from "@/shared/components/material-icon";
 import { Button } from "@/shared/components/ui/button";
 
+import { PracticeProfileForm } from "@/features/intake/components/practice-profile-form";
 import { BillingSection } from "../../billing/components/billing-section";
 import { AccountSection } from "./account-section";
 import { AppearanceSection } from "./appearance-section";
 import { ProfileSection } from "./profile-section";
 import { SettingsSidebar } from "./settings-sidebar";
 
-export type SettingsSection = "profile" | "account" | "appearance" | "billing";
+export type SettingsSection = "profile" | "account" | "appearance" | "billing" | "practice";
 
 const SECTION_LABELS: Record<SettingsSection, string> = {
   profile: "Profile",
   account: "Account",
   appearance: "Appearance",
   billing: "Billing",
+  practice: "Practice",
 };
 
 export function SettingsPage() {
@@ -107,6 +109,7 @@ export function SettingsPage() {
           {section === "account" ? <AccountSection /> : null}
           {section === "appearance" ? <AppearanceSection /> : null}
           {section === "billing" ? <BillingSection /> : null}
+          {section === "practice" ? <PracticeProfileForm /> : null}
         </div>
       </main>
     </div>
