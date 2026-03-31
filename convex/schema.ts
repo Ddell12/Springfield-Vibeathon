@@ -481,6 +481,11 @@ export default defineSchema({
       v.literal("signed")
     ),
     signedAt: v.optional(v.number()),
+    audience: v.optional(v.union(
+      v.literal("clinical"),
+      v.literal("parent"),
+      v.literal("iep-team")
+    )),
   })
     .index("by_patientId", ["patientId"])
     .index("by_patientId_reportType", ["patientId", "reportType"]),
