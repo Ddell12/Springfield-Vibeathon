@@ -79,20 +79,20 @@ describe("MarketingHeader", () => {
 
   it("highlights active nav link when pathname matches", async () => {
     const { usePathname } = await import("next/navigation");
-    vi.mocked(usePathname).mockReturnValue("/builder");
+    vi.mocked(usePathname).mockReturnValue("/demo-tools");
 
     render(<MarketingHeader />);
 
     const platformLinks = screen.getAllByText("Platform");
     const desktopLink = platformLinks.find(
-      (el) => el.closest("a")?.getAttribute("href") === "/builder"
+      (el) => el.closest("a")?.getAttribute("href") === "/demo-tools"
     );
     expect(desktopLink).toBeDefined();
     expect(desktopLink?.className).toContain("bg-surface");
 
     const learnLinks = screen.getAllByText("Learn");
     const learnLink = learnLinks.find(
-      (el) => el.closest("a")?.getAttribute("href") === "/explore"
+      (el) => el.closest("a")?.getAttribute("href") === "/learn"
     );
     expect(learnLink?.className).toContain("text-on-surface-variant");
   });

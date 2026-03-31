@@ -18,10 +18,10 @@ import {
 
 const navLinks = [
   { href: "/demo-tools", label: "Meet Bridges" },
-  { href: "/builder", label: "Platform" },
-  { href: "/library?tab=templates", label: "Solutions" },
+  { href: "/demo-tools", label: "Platform" },
+  { href: "/explore", label: "Solutions" },
   { href: "/pricing", label: "Pricing" },
-  { href: "/explore", label: "Learn" },
+  { href: "/learn", label: "Learn" },
 ];
 
 function MarketingHeaderContent() {
@@ -51,7 +51,7 @@ function MarketingHeaderContent() {
           <div className="hidden md:flex items-center gap-1">
             {navLinks.map(({ href, label }) => (
               <Link
-                key={href}
+                key={label}
                 href={href}
                 className={cn(
                   "inline-flex min-h-[44px] items-center rounded-full px-3 py-2 text-sm font-medium transition-colors",
