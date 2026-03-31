@@ -227,6 +227,66 @@ export const create = slpMutation({
   },
 });
 
+export const createGroup = slpMutation({
+  args: {
+    patientIds: v.array(v.id("patients")),
+    sessionDate: v.string(),
+    sessionDuration: v.number(),
+    sessionType: sessionTypeValidator,
+    structuredData: structuredDataValidator,
+  },
+  handler: async (ctx, args) => {
+    if (args.patientIds.length < 2) {
+      throw new ConvexError("Group sessions require at least 2 patients");
+    }
+    if (args.patientIds.length > 6) {
+      throw new ConvexError("Group sessions allow a maximum of 6 patients");
+    }
+
+    // Verify the SLP owns all patients
+    for (const pid of args.patientIds) {
+      const patient = await ctx.db.get(pid);
+      if (!patient) throw new ConvexError("Patient not found");
+      if (patient.slpUserId !== ctx.slpUserId) throw new ConvexError("Not authorized");
+    }
+
+    validateSessionDate(args.sessionDate);
+    validateSessionDuration(args.sessionDuration);
+    validateTargets(args.structuredData.targetsWorkedOn);
+
+    // Generate a shared group session ID
+    const groupSessionId = crypto.randomUUID();
+    const now = Date.now();
+
+    const noteIds = [];
+    for (const pid of args.patientIds) {
+      const noteId = await ctx.db.insert("sessionNotes", {
+        patientId: pid,
+        slpUserId: ctx.slpUserId,
+        sessionDate: args.sessionDate,
+        sessionDuration: args.sessionDuration,
+        sessionType: args.sessionType,
+        status: "draft",
+        structuredData: args.structuredData,
+        aiGenerated: false,
+        groupSessionId,
+        groupPatientIds: args.patientIds,
+      });
+      noteIds.push(noteId);
+
+      await ctx.db.insert("activityLog", {
+        patientId: pid,
+        actorUserId: ctx.slpUserId,
+        action: "session-documented",
+        details: `Created group session note for ${args.sessionDate} (${args.patientIds.length} patients)`,
+        timestamp: now,
+      });
+    }
+
+    return noteIds;
+  },
+});
+
 export const update = slpMutation({
   args: {
     noteId: v.id("sessionNotes"),

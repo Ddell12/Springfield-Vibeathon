@@ -375,3 +375,125 @@ describe("sessionNotes.getLatestSoap", () => {
     expect(latest!.soapNote).toEqual(VALID_SOAP);
   });
 });
+
+// ── createGroup ────────────────────────────────────────────────────────────
+
+describe("sessionNotes.createGroup", () => {
+  it("creates one note per patient with shared groupSessionId", async () => {
+    const t = convexTest(schema, modules).withIdentity(SLP_IDENTITY);
+
+    // Create 3 patients
+    const { patientId: p1 } = await t.mutation(api.patients.create, {
+      ...VALID_PATIENT,
+      firstName: "Patient",
+      lastName: "One",
+    });
+    const { patientId: p2 } = await t.mutation(api.patients.create, {
+      ...VALID_PATIENT,
+      firstName: "Patient",
+      lastName: "Two",
+    });
+    const { patientId: p3 } = await t.mutation(api.patients.create, {
+      ...VALID_PATIENT,
+      firstName: "Patient",
+      lastName: "Three",
+    });
+
+    const noteIds = await t.mutation(api.sessionNotes.createGroup, {
+      patientIds: [p1, p2, p3],
+      sessionDate: today,
+      sessionDuration: 45,
+      sessionType: "in-person" as const,
+      structuredData: {
+        targetsWorkedOn: [
+          { target: "Group activity: turn-taking" },
+        ],
+      },
+    });
+
+    expect(noteIds).toHaveLength(3);
+
+    // All notes share the same groupSessionId
+    const note1 = await t.query(api.sessionNotes.get, { noteId: noteIds[0] });
+    const note2 = await t.query(api.sessionNotes.get, { noteId: noteIds[1] });
+    const note3 = await t.query(api.sessionNotes.get, { noteId: noteIds[2] });
+
+    expect(note1!.groupSessionId).toBeDefined();
+    expect(note1!.groupSessionId).toBe(note2!.groupSessionId);
+    expect(note2!.groupSessionId).toBe(note3!.groupSessionId);
+
+    // Each note has groupPatientIds listing all 3 patients
+    expect(note1!.groupPatientIds).toEqual(expect.arrayContaining([p1, p2, p3]));
+    expect(note1!.groupPatientIds).toHaveLength(3);
+
+    // Each note has correct patientId
+    expect(note1!.patientId).toBe(p1);
+    expect(note2!.patientId).toBe(p2);
+    expect(note3!.patientId).toBe(p3);
+
+    // Shared structured data is copied to each
+    expect(note1!.structuredData.targetsWorkedOn[0].target).toBe("Group activity: turn-taking");
+    expect(note2!.structuredData.targetsWorkedOn[0].target).toBe("Group activity: turn-taking");
+  });
+
+  it("rejects fewer than 2 patients", async () => {
+    const t = convexTest(schema, modules).withIdentity(SLP_IDENTITY);
+    const { patientId: p1 } = await t.mutation(api.patients.create, VALID_PATIENT);
+
+    await expect(
+      t.mutation(api.sessionNotes.createGroup, {
+        patientIds: [p1],
+        sessionDate: today,
+        sessionDuration: 30,
+        sessionType: "in-person" as const,
+        structuredData: { targetsWorkedOn: [{ target: "Test" }] },
+      }),
+    ).rejects.toThrow("2");
+  });
+
+  it("rejects more than 6 patients", async () => {
+    const t = convexTest(schema, modules).withIdentity(SLP_IDENTITY);
+    const patientIds = [];
+    for (let i = 0; i < 7; i++) {
+      const { patientId } = await t.mutation(api.patients.create, {
+        ...VALID_PATIENT,
+        firstName: `Patient`,
+        lastName: `${i}`,
+      });
+      patientIds.push(patientId);
+    }
+
+    await expect(
+      t.mutation(api.sessionNotes.createGroup, {
+        patientIds,
+        sessionDate: today,
+        sessionDuration: 30,
+        sessionType: "in-person" as const,
+        structuredData: { targetsWorkedOn: [{ target: "Test" }] },
+      }),
+    ).rejects.toThrow("6");
+  });
+
+  it("rejects when SLP does not own a patient", async () => {
+    const base = convexTest(schema, modules);
+    const slp1 = base.withIdentity(SLP_IDENTITY);
+    const slp2 = base.withIdentity(OTHER_SLP);
+
+    const { patientId: ownedPatient } = await slp1.mutation(api.patients.create, VALID_PATIENT);
+    const { patientId: otherPatient } = await slp2.mutation(api.patients.create, {
+      ...VALID_PATIENT,
+      firstName: "Other",
+      lastName: "Patient",
+    });
+
+    await expect(
+      slp1.mutation(api.sessionNotes.createGroup, {
+        patientIds: [ownedPatient, otherPatient],
+        sessionDate: today,
+        sessionDuration: 30,
+        sessionType: "in-person" as const,
+        structuredData: { targetsWorkedOn: [{ target: "Test" }] },
+      }),
+    ).rejects.toThrow("Not authorized");
+  });
+});
