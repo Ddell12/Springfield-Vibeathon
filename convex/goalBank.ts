@@ -33,9 +33,10 @@ export const seed = internalMutation({
     const existing = await ctx.db
       .query("goalBank")
       .withIndex("by_domain", (q) => q.eq("domain", "articulation"))
+      .filter((q) => q.eq(q.field("isCustom"), false))
       .first();
 
-    if (existing && !existing.isCustom) return;
+    if (existing) return;
 
     for (const entry of GOAL_BANK_SEED) {
       await ctx.db.insert("goalBank", {
@@ -80,7 +81,7 @@ export const search = slpQuery({
         .withIndex("by_domain", (q) => q.eq("domain", args.domain!))
         .take(200);
     } else {
-      results = await ctx.db.query("goalBank").take(300);
+      results = await ctx.db.query("goalBank").collect();
     }
 
     // Apply keyword filter
@@ -96,6 +97,27 @@ export const search = slpQuery({
     // Apply skillLevel filter when not already applied via index
     if (args.skillLevel && !args.domain) {
       results = results.filter((g) => g.skillLevel === args.skillLevel);
+    }
+
+    // Always include the SLP's own custom goals (not already in results)
+    const customGoals = await ctx.db
+      .query("goalBank")
+      .withIndex("by_createdBy", (q) => q.eq("createdBy", ctx.slpUserId))
+      .collect();
+
+    const resultIds = new Set(results.map((g) => g._id));
+    for (const goal of customGoals) {
+      if (!resultIds.has(goal._id)) {
+        // Only add if no domain/ageRange/skillLevel filter would exclude it
+        if (args.domain && goal.domain !== args.domain) continue;
+        if (args.ageRange && goal.ageRange !== args.ageRange) continue;
+        if (args.skillLevel && goal.skillLevel !== args.skillLevel) continue;
+        if (args.keyword) {
+          const kw = args.keyword.toLowerCase();
+          if (!goal.shortDescription.toLowerCase().includes(kw) && !goal.fullGoalText.toLowerCase().includes(kw)) continue;
+        }
+        results.push(goal);
+      }
     }
 
     return results;
