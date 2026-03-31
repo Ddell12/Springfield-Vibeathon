@@ -105,16 +105,9 @@ describe("POST /api/livekit/token", () => {
       userId: "random-user-999",
       getToken: vi.fn().mockResolvedValue("mock-convex-token"),
     });
-    // First query: appointment
-    mockQuery
-      .mockResolvedValueOnce({
-        _id: "appt-1",
-        slpId: "slp-user-123",
-        patientId: "patient-1",
-        status: "scheduled",
-      })
-      // Second query: caregiver link check
-      .mockResolvedValueOnce(null);
+    // appointments.get calls assertPatientAccess internally — it throws for
+    // unauthorized users. The route's catch block maps this to 403.
+    mockQuery.mockRejectedValueOnce(new Error("Not authorized"));
 
     const res = await POST(makeRequest({ appointmentId: "appt-1" }));
     expect(res.status).toBe(403);
@@ -180,7 +173,8 @@ Run: `cd /Users/desha/Springfield-Vibeathon && git add src/app/api/livekit/token
 
 **Files:**
 - Modify: `src/app/api/livekit/token/route.ts:1-58`
-- Create: `convex/caregiverLinkQueries.ts` (internal query for caregiver link lookup from Next.js route)
+
+> **Note:** An earlier draft of this plan created `convex/caregiverLinkQueries.ts`. That approach was abandoned — `api.appointments.get` already calls `assertPatientAccess` which handles authorization. Do NOT create `caregiverLinkQueries.ts`.
 
 - [ ] **Step 1: Create the internal caregiver link query**
 
@@ -558,7 +552,12 @@ export const getBySlpId = query({
 Run: `cd /Users/desha/Springfield-Vibeathon && npx vitest run convex/__tests__/practiceProfile.test.ts`
 Expected: PASS (all 4 tests)
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 5: Regenerate Convex types**
+
+Run: `cd /Users/desha/Springfield-Vibeathon && npx convex dev --once`
+Expected: `practiceProfile` functions registered in `_generated/api.ts`. This is required before any frontend tasks that import `api.practiceProfile`.
+
+- [ ] **Step 6: Commit**
 Run: `cd /Users/desha/Springfield-Vibeathon && git add convex/practiceProfile.ts convex/__tests__/practiceProfile.test.ts && git commit -m "feat(backend): add practiceProfile CRUD with tests"`
 
 ---
