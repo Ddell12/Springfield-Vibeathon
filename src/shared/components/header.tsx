@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 
 import { APP_NAME } from "@/core/config";
 import { cn } from "@/core/utils";
@@ -10,17 +10,31 @@ import { Button } from "@/shared/components/ui/button";
 import {
   Sheet,
   SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
   SheetTrigger,
 } from "@/shared/components/ui/sheet";
 
 const navLinks = [
   { href: "/builder", label: "Builder" },
-  { href: "/templates", label: "Templates" },
-  { href: "/my-tools", label: "My Apps" },
+  { href: "/library?tab=templates", label: "Templates" },
+  { href: "/library?tab=my-apps", label: "My Apps" },
 ];
 
 export function Header() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const isActiveLink = (href: string) => {
+    const [targetPath, targetQuery] = href.split("?");
+    if (pathname !== targetPath) return false;
+    if (!targetQuery) return true;
+    const params = new URLSearchParams(targetQuery);
+    return [...params.entries()].every(
+      ([key, value]) => searchParams.get(key) === value
+    );
+  };
 
   return (
     <header className="h-16 bg-surface w-full">
@@ -39,7 +53,7 @@ export function Header() {
               variant="ghost"
               className={cn(
                 "text-sm font-medium",
-                pathname === href
+                isActiveLink(href)
                   ? "text-primary bg-primary/10"
                   : "text-foreground"
               )}
@@ -58,6 +72,12 @@ export function Header() {
               </Button>
             </SheetTrigger>
             <SheetContent side="right" className="w-64">
+              <SheetHeader className="sr-only">
+                <SheetTitle>Navigation menu</SheetTitle>
+                <SheetDescription>
+                  Open the builder or library sections of Bridges.
+                </SheetDescription>
+              </SheetHeader>
               <nav className="flex flex-col gap-2 mt-8">
                 {navLinks.map(({ href, label }) => (
                   <Button
@@ -66,7 +86,7 @@ export function Header() {
                     variant="ghost"
                     className={cn(
                       "justify-start text-sm font-medium",
-                      pathname === href
+                      isActiveLink(href)
                         ? "text-primary bg-primary/10"
                         : "text-foreground"
                     )}

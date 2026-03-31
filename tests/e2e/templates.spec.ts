@@ -1,18 +1,23 @@
 import { expect, test } from "@playwright/test";
 
 test.describe("Templates page", () => {
-  test("heading 'Start with a Template' is visible", async ({ page }) => {
-    await page.goto("/templates");
+  test.describe.configure({ mode: "serial" });
 
-    const heading = page.getByRole("heading", { name: /start with a template/i });
+  test("library opens with the templates tab selected", async ({ page }) => {
+    await page.goto("/library?tab=templates");
+
+    const heading = page.getByRole("heading", { name: /library/i });
     await expect(heading).toBeVisible();
+    await expect(page.getByRole("tab", { name: "Templates" })).toHaveAttribute(
+      "data-state",
+      "active"
+    );
   });
 
-  test("template cards render with builder links", async ({ page }) => {
-    await page.goto("/templates");
+  test("embedded templates render search and template cards", async ({ page }) => {
+    await page.goto("/library?tab=templates");
 
-    // TemplatesPage renders <Link href="/builder?prompt=..."> for each THERAPY_SEED_PROMPTS entry
-    // These are static imports — no Convex connection required
+    await expect(page.getByRole("textbox", { name: /search templates/i })).toBeVisible();
     const templateLinks = page.locator("a[href^='/builder?prompt=']");
     await expect(templateLinks.first()).toBeVisible();
     const count = await templateLinks.count();
@@ -20,9 +25,8 @@ test.describe("Templates page", () => {
   });
 
   test("each card has 'Click to build' text", async ({ page }) => {
-    await page.goto("/templates");
+    await page.goto("/library?tab=templates");
 
-    // Each template card footer renders a static "Click to build" paragraph
     const clickToBuild = page.getByText(/click to build/i);
     await expect(clickToBuild.first()).toBeVisible();
     const count = await clickToBuild.count();
@@ -30,9 +34,8 @@ test.describe("Templates page", () => {
   });
 
   test("clicking a template navigates to /builder with prompt", async ({ page }) => {
-    await page.goto("/templates");
+    await page.goto("/library?tab=templates");
 
-    // Click the first template card and verify we land on the builder with a prompt param
     const firstCard = page.locator("a[href^='/builder?prompt=']").first();
     await firstCard.click();
 
@@ -40,7 +43,7 @@ test.describe("Templates page", () => {
   });
 
   test("CTA 'Build a Custom App' links to /builder", async ({ page }) => {
-    await page.goto("/templates");
+    await page.goto("/library?tab=templates");
 
     const cta = page.getByRole("link", { name: /build a custom app/i });
     await expect(cta).toBeVisible();

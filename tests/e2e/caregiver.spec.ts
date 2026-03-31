@@ -1,6 +1,11 @@
 // tests/e2e/caregiver.spec.ts
 import { expect, test } from "./fixtures";
 
+test.skip(
+  !process.env.E2E_CAREGIVER_EMAIL || !process.env.E2E_CAREGIVER_PASSWORD,
+  "E2E caregiver creds not set"
+);
+
 /**
  * Caregiver E2E test suite.
  * Uses the caregiverPage fixture — already signed in as e2e+clerk_test+caregiver@bridges.ai.
@@ -24,7 +29,7 @@ test.describe("caregiver sign-in redirect", () => {
 });
 
 test.describe("caregiver nav", () => {
-  test("sidebar shows Home, Sessions, Speech Coach, Tools — not Patients or Billing", async ({
+  test("sidebar shows Home, Sessions, Speech Coach, Tools, Settings — not Patients or Billing", async ({
     caregiverPage: page,
   }) => {
     await page.goto("/");
@@ -36,6 +41,7 @@ test.describe("caregiver nav", () => {
     await expect(nav.getByRole("link", { name: "Sessions" })).toBeVisible();
     await expect(nav.getByRole("link", { name: "Speech Coach" })).toBeVisible();
     await expect(nav.getByRole("link", { name: "Tools" })).toBeVisible();
+    await expect(nav.getByRole("link", { name: "Settings" })).toBeVisible();
 
     await expect(nav.getByRole("link", { name: "Patients" })).not.toBeVisible();
     await expect(nav.getByRole("link", { name: "Billing" })).not.toBeVisible();
@@ -152,12 +158,11 @@ test.describe("tools — caregiver access allowed", () => {
     await expect(page.getByRole("heading", { name: /page not found/i })).not.toBeVisible();
   });
 
-  test("/flashcards loads without redirect", async ({ caregiverPage: page }) => {
+  test("/flashcards redirects back to /family", async ({ caregiverPage: page }) => {
     await page.goto("/flashcards");
-    await page.waitForLoadState("networkidle");
+    await page.waitForURL(/\/family/, { timeout: 6_000 });
 
-    expect(page.url()).toContain("/flashcards");
-    await expect(page.getByRole("heading", { name: /page not found/i })).not.toBeVisible();
+    expect(page.url()).toContain("/family");
   });
 });
 

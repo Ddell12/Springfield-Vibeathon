@@ -25,13 +25,13 @@ test.describe("Explore page", () => {
     expect(href).toContain("/builder");
   });
 
-  test("'Browse Templates' CTA links to /templates", async ({ page }) => {
+  test("'Browse Templates' CTA links to the library templates tab", async ({ page }) => {
     await page.goto("/explore");
 
     const cta = page.getByRole("link", { name: /browse templates/i });
     await expect(cta).toBeVisible();
     const href = await cta.getAttribute("href");
-    expect(href).toContain("/templates");
+    expect(href).toContain("/library?tab=templates");
   });
 
   test("header includes Explore nav link", async ({ page }) => {

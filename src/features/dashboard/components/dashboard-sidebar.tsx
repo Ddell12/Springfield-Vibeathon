@@ -44,9 +44,7 @@ export function DashboardSidebar() {
     "/speech-coach",
     "/sessions",
     "/builder",
-    "/flashcards",
-    "/my-tools",
-    "/templates",
+    "/library",
   ];
 
   useEffect(() => {
@@ -66,8 +64,8 @@ export function DashboardSidebar() {
     <aside
       aria-label="Main navigation"
       className={cn(
-        "fixed left-0 top-0 z-50 hidden h-screen flex-col bg-surface-container transition-all duration-300 md:flex overflow-hidden",
-        collapsed ? "w-14" : "w-56",
+        "hidden h-screen shrink-0 flex-col overflow-hidden border-r border-outline-variant/40 bg-surface-container transition-[width] duration-300 md:flex",
+        collapsed ? "w-14" : "w-44",
       )}
     >
       {/* Collapse toggle + wordmark */}
@@ -91,7 +89,7 @@ export function DashboardSidebar() {
           href="/builder?new=1"
           aria-label="New App"
           className={cn(
-            "flex items-center gap-2 rounded-xl bg-gradient-to-br from-primary to-primary-container text-white shadow-sm transition-all hover:opacity-90 active:scale-95",
+            "flex items-center gap-2 rounded-xl border border-outline-variant/60 bg-surface text-on-surface shadow-sm transition-colors hover:bg-surface-container-high active:scale-95",
             collapsed ? "h-10 w-10 justify-center" : "px-3 py-2",
           )}
         >
@@ -114,7 +112,7 @@ export function DashboardSidebar() {
                 "flex items-center gap-3 rounded-xl px-2 py-2 transition-all duration-300 active:scale-95",
                 collapsed ? "justify-center" : "",
                 isActive
-                  ? "bg-primary text-white shadow-sm shadow-primary/20"
+                  ? "bg-primary/10 text-on-surface"
                   : "text-on-surface-variant hover:bg-surface-container-high",
               )}
             >

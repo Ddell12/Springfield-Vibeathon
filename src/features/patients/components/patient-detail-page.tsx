@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { type ReactNode, use } from "react";
 
+import { IntakeStatusWidget } from "@/features/intake/components/intake-status-widget";
 import { ChildAppsSection } from "@/shared/components/child-apps-section";
 import { MaterialIcon } from "@/shared/components/material-icon";
 import { Button } from "@/shared/components/ui/button";
@@ -16,7 +17,6 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/components/ui/tabs";
 
 import type { Id } from "../../../../convex/_generated/dataModel";
-import { IntakeStatusWidget } from "@/features/intake/components/intake-status-widget";
 import { usePatient } from "../hooks/use-patients";
 import { ActivityTimeline } from "./activity-timeline";
 import { AssignedMaterials } from "./assigned-materials";
@@ -109,9 +109,9 @@ export function PatientDetailPage({ paramsPromise, clinicalWidgets }: PatientDet
             size="sm"
             className="bg-gradient-to-br from-primary to-primary-container text-white hover:opacity-90 shadow-sm"
           >
-            <Link href={`/patients/${patient._id}/collect`}>
+            <Link href={`/patients/${patient._id}/sessions/new`}>
               <MaterialIcon icon="play_circle" size="sm" />
-              Start Session
+              New Session Note
             </Link>
           </Button>
 

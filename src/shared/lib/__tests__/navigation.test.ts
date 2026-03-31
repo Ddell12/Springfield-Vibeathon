@@ -23,18 +23,19 @@ describe("NAV_ITEMS", () => {
 });
 
 describe("CAREGIVER_NAV_ITEMS", () => {
-  it("has exactly 4 items", () => {
-    expect(CAREGIVER_NAV_ITEMS).toHaveLength(4);
+  it("has exactly 5 items", () => {
+    expect(CAREGIVER_NAV_ITEMS).toHaveLength(5);
   });
   it("first item is Home linking to /family", () => {
     expect(CAREGIVER_NAV_ITEMS[0].label).toBe("Home");
     expect(CAREGIVER_NAV_ITEMS[0].href).toBe("/family");
   });
-  it("contains Sessions, Speech Coach, Tools", () => {
+  it("contains Sessions, Speech Coach, Tools, and Settings", () => {
     const labels = CAREGIVER_NAV_ITEMS.map((i) => i.label);
     expect(labels).toContain("Sessions");
     expect(labels).toContain("Speech Coach");
     expect(labels).toContain("Tools");
+    expect(labels).toContain("Settings");
   });
   it("Tools links to /builder", () => {
     const tools = CAREGIVER_NAV_ITEMS.find((i) => i.label === "Tools");

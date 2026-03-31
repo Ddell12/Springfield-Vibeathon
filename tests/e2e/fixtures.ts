@@ -1,5 +1,5 @@
 import { clerk } from "@clerk/testing/playwright";
-import { expect, type Page,test as base } from "@playwright/test";
+import { expect, type Page,test as base, type TestInfo } from "@playwright/test";
 
 type AuthFixtures = {
   authedPage: Page;
@@ -33,12 +33,10 @@ async function signInAs(page: Page, email: string, password: string) {
   await page.waitForLoadState("networkidle");
 }
 
-function requireEnv(name: string): string {
+function requireEnvOrSkip(name: string, testInfo: TestInfo): string {
   const value = process.env[name];
-  if (!value) {
-    throw new Error(`${name} must be set for authenticated tests`);
-  }
-  return value;
+  testInfo.skip(!value, `${name} must be set for authenticated tests`);
+  return value!;
 }
 
 /**
@@ -49,23 +47,23 @@ function requireEnv(name: string): string {
  * - `caregiverPage` — Caregiver role (publicMetadata.role = "caregiver")
  */
 export const test = base.extend<AuthFixtures>({
-  authedPage: async ({ page }, use) => {
-    const email = requireEnv("E2E_CLERK_USER_EMAIL");
-    const password = requireEnv("E2E_CLERK_USER_PASSWORD");
+  authedPage: async ({ page }, use, testInfo) => {
+    const email = requireEnvOrSkip("E2E_CLERK_USER_EMAIL", testInfo);
+    const password = requireEnvOrSkip("E2E_CLERK_USER_PASSWORD", testInfo);
     await signInAs(page, email, password);
     await use(page);
   },
 
-  slpPage: async ({ page }, use) => {
-    const email = requireEnv("E2E_SLP_EMAIL");
-    const password = requireEnv("E2E_SLP_PASSWORD");
+  slpPage: async ({ page }, use, testInfo) => {
+    const email = requireEnvOrSkip("E2E_SLP_EMAIL", testInfo);
+    const password = requireEnvOrSkip("E2E_SLP_PASSWORD", testInfo);
     await signInAs(page, email, password);
     await use(page);
   },
 
-  caregiverPage: async ({ page }, use) => {
-    const email = requireEnv("E2E_CAREGIVER_EMAIL");
-    const password = requireEnv("E2E_CAREGIVER_PASSWORD");
+  caregiverPage: async ({ page }, use, testInfo) => {
+    const email = requireEnvOrSkip("E2E_CAREGIVER_EMAIL", testInfo);
+    const password = requireEnvOrSkip("E2E_CAREGIVER_PASSWORD", testInfo);
     await signInAs(page, email, password);
     await use(page);
   },

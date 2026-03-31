@@ -17,13 +17,13 @@ test.describe("Landing page", () => {
     expect(href).toContain("/builder");
   });
 
-  test("'View Templates' CTA links to /templates", async ({ page }) => {
+  test("'View Templates' CTA links to the library templates tab", async ({ page }) => {
     await page.goto("/");
 
     const cta = page.getByRole("link", { name: /view templates/i });
     await expect(cta.first()).toBeVisible();
     const href = await cta.first().getAttribute("href");
-    expect(href).toContain("/templates");
+    expect(href).toContain("/library?tab=templates");
   });
 
   test("header shows 'Bridges' brand", async ({ page }) => {
@@ -34,11 +34,12 @@ test.describe("Landing page", () => {
     await expect(brand.first()).toBeVisible();
   });
 
-  test("how-it-works section renders", async ({ page }) => {
+  test("value proposition section renders", async ({ page }) => {
     await page.goto("/");
 
-    // HowItWorks renders an h2 "How it Works" with three step cards
-    const heading = page.getByRole("heading", { name: /how it works/i });
+    const heading = page.getByRole("heading", {
+      name: /built for the people who matter most/i,
+    });
     await expect(heading).toBeVisible();
   });
 

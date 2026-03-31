@@ -8,7 +8,14 @@ import { useState } from "react";
 import { cn } from "@/core/utils";
 import { NotificationBell } from "@/features/sessions/components/notification-bell";
 import { MaterialIcon } from "@/shared/components/material-icon";
-import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/shared/components/ui/sheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/shared/components/ui/sheet";
 import { CAREGIVER_NAV_ITEMS, isNavActive, NAV_ITEMS } from "@/shared/lib/navigation";
 
 interface AppHeaderProps {
@@ -38,7 +45,12 @@ export function AppHeader({ title, className }: AppHeaderProps) {
             </button>
           </SheetTrigger>
           <SheetContent side="left" className="w-64 p-0">
-            <SheetTitle className="sr-only">Navigation</SheetTitle>
+            <SheetHeader className="sr-only">
+              <SheetTitle>Navigation</SheetTitle>
+              <SheetDescription>
+                Open the primary app navigation for the current user.
+              </SheetDescription>
+            </SheetHeader>
             <nav className="flex flex-col gap-1 p-3 pt-14">
               {navItems.map((item) => {
                 const active = isNavActive(item.href, pathname);

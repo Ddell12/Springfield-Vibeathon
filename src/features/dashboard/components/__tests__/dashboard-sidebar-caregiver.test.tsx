@@ -38,13 +38,17 @@ beforeEach(() => {
 });
 
 describe("DashboardSidebar (caregiver)", () => {
-  it("renders Sessions and Speech Coach only", () => {
+  it("renders caregiver navigation including Settings", () => {
     render(<DashboardSidebar />);
-    expect(screen.getByText("Sessions")).toBeInTheDocument();
-    expect(screen.getByText("Speech Coach")).toBeInTheDocument();
-    expect(screen.queryByText("Patients")).not.toBeInTheDocument();
-    expect(screen.queryByText("Billing")).not.toBeInTheDocument();
-    expect(screen.queryByText("Library")).not.toBeInTheDocument();
+    const nav = screen.getByRole("navigation", { name: "Primary" });
+    expect(nav).toHaveTextContent("Home");
+    expect(nav).toHaveTextContent("Sessions");
+    expect(nav).toHaveTextContent("Speech Coach");
+    expect(nav).toHaveTextContent("Tools");
+    expect(nav).toHaveTextContent("Settings");
+    expect(nav).not.toHaveTextContent("Patients");
+    expect(nav).not.toHaveTextContent("Billing");
+    expect(nav).not.toHaveTextContent("Library");
   });
 
   it("does not redirect caregiver on /builder", async () => {
@@ -67,6 +71,15 @@ describe("DashboardSidebar (caregiver)", () => {
 
   it("does not redirect caregiver on /my-tools", async () => {
     mockPathname("/my-tools");
+    mockCaregiver();
+    render(<DashboardSidebar />);
+    await waitFor(() => {
+      expect(mockReplace).not.toHaveBeenCalled();
+    });
+  });
+
+  it("does not redirect caregiver on /templates", async () => {
+    mockPathname("/templates");
     mockCaregiver();
     render(<DashboardSidebar />);
     await waitFor(() => {

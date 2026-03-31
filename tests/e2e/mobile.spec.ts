@@ -10,58 +10,55 @@ test.describe("Mobile — authenticated", () => {
   );
 
   test("sidebar hidden on mobile", async ({ authedPage }) => {
-    await authedPage.goto("/dashboard");
+    await authedPage.goto("/builder");
     // Sidebar has `hidden md:flex` — at mobile width it must not be visible
     await expect(authedPage.locator("aside")).toBeHidden();
   });
 
-  test("hamburger menu visible on dashboard", async ({ authedPage }) => {
-    await authedPage.goto("/dashboard");
+  test("hamburger menu visible on builder", async ({ authedPage }) => {
+    await authedPage.goto("/builder");
     await expect(
-      authedPage.getByLabel("Open navigation menu")
+      authedPage.getByLabel("Open navigation")
     ).toBeVisible();
   });
 
   test("hamburger opens mobile nav drawer", async ({ authedPage }) => {
-    await authedPage.goto("/dashboard");
-    await authedPage.getByLabel("Open navigation menu").click();
-    // Sheet content should contain "Bridges" brand text
-    await expect(authedPage.getByText("Bridges")).toBeVisible();
+    await authedPage.goto("/builder");
+    await authedPage.getByLabel("Open navigation").click();
+    await expect(authedPage.getByRole("link", { name: /builder/i })).toBeVisible();
   });
 
   test("drawer has all nav items", async ({ authedPage }) => {
-    await authedPage.goto("/dashboard");
-    await authedPage.getByLabel("Open navigation menu").click();
+    await authedPage.goto("/builder");
+    await authedPage.getByLabel("Open navigation").click();
     // Wait for Sheet animation to complete
     await authedPage.waitForTimeout(300);
-    await expect(authedPage.getByText(/home/i)).toBeVisible();
     await expect(authedPage.getByText(/builder/i)).toBeVisible();
-    await expect(authedPage.getByText(/flashcards/i)).toBeVisible();
-    await expect(authedPage.getByText(/templates/i)).toBeVisible();
-    await expect(authedPage.getByText(/my apps/i)).toBeVisible();
+    await expect(authedPage.getByText(/patients/i)).toBeVisible();
+    await expect(authedPage.getByText(/sessions/i)).toBeVisible();
+    await expect(authedPage.getByText(/billing/i)).toBeVisible();
+    await expect(authedPage.getByText(/speech coach/i)).toBeVisible();
+    await expect(authedPage.getByText(/library/i)).toBeVisible();
   });
 
-  test("drawer has 'New Project' button", async ({ authedPage }) => {
-    await authedPage.goto("/dashboard");
-    await authedPage.getByLabel("Open navigation menu").click();
-    await expect(
-      authedPage.getByRole("link", { name: /new project/i })
-    ).toBeVisible();
+  test("mobile header still shows notifications and user menu", async ({ authedPage }) => {
+    await authedPage.goto("/builder");
+    await expect(authedPage.getByRole("button", { name: /notifications/i })).toBeVisible();
+    await expect(authedPage.getByRole("button", { name: /open user menu/i })).toBeVisible();
   });
 
   test("closing drawer hides it", async ({ authedPage }) => {
-    await authedPage.goto("/dashboard");
-    await authedPage.getByLabel("Open navigation menu").click();
+    await authedPage.goto("/builder");
+    await authedPage.getByLabel("Open navigation").click();
     // Wait for sheet to open
-    await expect(authedPage.getByText("Bridges")).toBeVisible();
-    await authedPage.getByLabel("Close navigation").click();
+    await expect(authedPage.getByRole("link", { name: /builder/i })).toBeVisible();
+    await authedPage.getByRole("button", { name: /close/i }).click();
     // Sheet content should no longer be visible
-    await expect(authedPage.getByText("Bridges")).toBeHidden();
+    await expect(authedPage.getByRole("link", { name: /builder/i })).toBeHidden();
   });
 
-  test("'Bridges' branding in drawer", async ({ authedPage }) => {
+  test("/dashboard redirects to /builder on mobile", async ({ authedPage }) => {
     await authedPage.goto("/dashboard");
-    await authedPage.getByLabel("Open navigation menu").click();
-    await expect(authedPage.getByText("Bridges")).toBeVisible();
+    await expect(authedPage).toHaveURL(/\/builder/);
   });
 });

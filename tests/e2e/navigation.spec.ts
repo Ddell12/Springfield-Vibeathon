@@ -7,42 +7,43 @@ test.describe("Navigation — authenticated", () => {
   );
 
   test("sidebar is visible on desktop viewport", async ({ authedPage }) => {
-    await authedPage.goto("/dashboard");
+    await authedPage.goto("/builder");
     await expect(authedPage.locator("aside")).toBeVisible();
   });
 
   test("sidebar contains all nav items", async ({ authedPage }) => {
-    await authedPage.goto("/dashboard");
+    await authedPage.goto("/builder");
     const sidebar = authedPage.locator("aside");
-    await expect(sidebar.getByRole("link", { name: /home/i })).toBeVisible();
     await expect(sidebar.locator('a[href="/builder"]')).toBeVisible();
-    await expect(sidebar.locator('a[href="/flashcards"]')).toBeVisible();
-    await expect(sidebar.locator('a[href="/templates"]')).toBeVisible();
-    await expect(sidebar.locator('a[href="/my-tools"]')).toBeVisible();
+    await expect(sidebar.locator('a[href="/patients"]')).toBeVisible();
+    await expect(sidebar.locator('a[href="/sessions"]')).toBeVisible();
+    await expect(sidebar.locator('a[href="/billing"]')).toBeVisible();
+    await expect(sidebar.locator('a[href="/speech-coach"]')).toBeVisible();
+    await expect(sidebar.locator('a[href="/library"]')).toBeVisible();
   });
 
   test("clicking Builder nav link navigates to /builder", async ({
     authedPage,
   }) => {
-    await authedPage.goto("/dashboard");
+    await authedPage.goto("/library");
     const sidebar = authedPage.locator("aside");
     await sidebar.locator('a[href="/builder"]').click();
     await expect(authedPage).toHaveURL(/\/builder/);
   });
 
-  test("clicking Templates nav link navigates to /templates", async ({
+  test("clicking Library nav link navigates to /library", async ({
     authedPage,
   }) => {
-    await authedPage.goto("/dashboard");
+    await authedPage.goto("/builder");
     const sidebar = authedPage.locator("aside");
-    await sidebar.locator('a[href="/templates"]').click();
-    await expect(authedPage).toHaveURL(/\/templates/);
+    await sidebar.locator('a[href="/library"]').click();
+    await expect(authedPage).toHaveURL(/\/library/);
   });
 
   test("active nav item has visual distinction", async ({ authedPage }) => {
-    await authedPage.goto("/templates");
+    await authedPage.goto("/library");
     const sidebar = authedPage.locator("aside");
-    const templatesLink = sidebar.locator('a[href="/templates"]');
+    const templatesLink = sidebar.locator('a[href="/library"]');
     // Active link should carry a distinguishing class (e.g. bg-primary, aria-current, or data-active)
     const isActive =
       (await templatesLink.getAttribute("aria-current").catch(() => null)) ===
@@ -61,7 +62,7 @@ test.describe("Navigation — authenticated", () => {
   });
 
   test("UserButton or sign-in link visible", async ({ authedPage }) => {
-    await authedPage.goto("/dashboard");
+    await authedPage.goto("/builder");
     const userIndicator = authedPage.locator(
       "[data-clerk-component], .cl-userButtonTrigger, a[href='/sign-in']"
     );

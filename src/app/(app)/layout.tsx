@@ -9,11 +9,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <Suspense>
         <DashboardSidebar />
       </Suspense>
-      {/* md:ml-14 = collapsed sidebar width (w-14). Sidebar uses fixed overlay positioning —
-          content is visible under expanded sidebar. Push-content behavior is a future enhancement. */}
       <main
         id="main-content"
-        className="flex flex-1 flex-col overflow-y-auto md:ml-14 transition-[margin] duration-300"
+        className="flex min-w-0 flex-1 flex-col overflow-y-auto"
       >
         <AppHeader />
         {children}

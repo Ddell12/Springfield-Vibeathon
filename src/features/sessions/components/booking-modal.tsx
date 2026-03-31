@@ -1,13 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
 
 import { extractErrorMessage } from "@/core/utils";
-import { toast } from "sonner";
 import { Button } from "@/shared/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -22,8 +23,8 @@ import {
 } from "@/shared/components/ui/select";
 import { Textarea } from "@/shared/components/ui/textarea";
 
-import { formatDateTime } from "../lib/time-slots";
 import type { Id } from "../../../../convex/_generated/dataModel";
+import { formatDateTime } from "../lib/time-slots";
 
 type PatientOption = {
   _id: Id<"patients">;
@@ -83,6 +84,9 @@ export function BookingModal({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="font-headline">Book session</DialogTitle>
+          <DialogDescription>
+            Choose the patient for this time slot and include any session context.
+          </DialogDescription>
         </DialogHeader>
         {slotTimestamp && (
           <p className="text-sm text-on-surface-variant">
