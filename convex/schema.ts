@@ -629,6 +629,40 @@ export default defineSchema({
     .index("by_patientId_sessionDate", ["patientId", "sessionDate"])
     .index("by_sessionNoteId", ["sessionNoteId"])
     .index("by_goalId", ["goalId"]),
+
+  goalBank: defineTable({
+    domain: v.union(
+      v.literal("articulation"),
+      v.literal("language-receptive"),
+      v.literal("language-expressive"),
+      v.literal("fluency"),
+      v.literal("voice"),
+      v.literal("pragmatic-social"),
+      v.literal("aac"),
+      v.literal("feeding")
+    ),
+    ageRange: v.union(
+      v.literal("0-3"),
+      v.literal("3-5"),
+      v.literal("5-8"),
+      v.literal("8-12"),
+      v.literal("12-18"),
+      v.literal("adult")
+    ),
+    skillLevel: v.string(),
+    shortDescription: v.string(),
+    fullGoalText: v.string(),
+    defaultTargetAccuracy: v.number(),
+    defaultConsecutiveSessions: v.number(),
+    exampleBaseline: v.optional(v.string()),
+    typicalCriterion: v.optional(v.string()),
+    isCustom: v.boolean(),
+    createdBy: v.optional(v.string()),
+  })
+    .index("by_domain", ["domain"])
+    .index("by_domain_ageRange", ["domain", "ageRange"])
+    .index("by_domain_skillLevel", ["domain", "skillLevel"])
+    .index("by_createdBy", ["createdBy"]),
 });
 
 /** Active session states used by current code. Legacy states are read-only. */
