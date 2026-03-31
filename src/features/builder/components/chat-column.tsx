@@ -29,7 +29,6 @@ interface ChatColumnProps {
   pendingPrompt?: string | null;
   onPendingPromptClear?: () => void;
   narrationMessage?: string | null;
-  startTime: number;
   appName: string;
   isEditingName?: boolean;
   onNameEditStart?: () => void;

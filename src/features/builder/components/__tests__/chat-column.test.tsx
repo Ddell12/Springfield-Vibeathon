@@ -60,7 +60,6 @@ const baseProps = {
   streamingText: "",
   activities: [],
   appName: "My Token App",
-  startTime: Date.now(),
 };
 
 describe("ChatColumn", () => {

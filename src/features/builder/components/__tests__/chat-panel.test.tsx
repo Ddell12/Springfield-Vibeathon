@@ -45,7 +45,6 @@ const defaultProps = {
   error: null as string | null,
   streamingText: "",
   activities: [] as { id: string; type: "thinking" | "writing_file" | "file_written" | "complete"; message: string; path?: string; timestamp: number }[],
-  narrationMessage: null as string | null,
   appTitle: "Untitled App",
 };
 

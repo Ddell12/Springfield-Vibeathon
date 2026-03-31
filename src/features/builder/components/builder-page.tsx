@@ -311,7 +311,6 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
                   pendingPrompt={pendingPrompt}
                   onPendingPromptClear={() => setPendingPrompt(null)}
                   narrationMessage={narrationMessage}
-                  startTime={generationStartTime}
                   appName={appName}
                   isEditingName={isEditingName}
                   onNameEditStart={() => setIsEditingName(true)}
@@ -322,23 +321,35 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
                   onMobilePanelChange={setMobilePanel}
                 />
               ) : (
-                <PreviewColumn
-                  bundleHtml={bundleHtml}
-                  status={status}
-                  error={error ?? undefined}
-                  deviceSize="mobile"
-                  buildFailed={buildFailed}
-                  activityMessage={narrationMessage ?? undefined}
-                  onRetry={handleRetry}
-                  viewMode={viewMode}
-                  onViewChange={setViewMode}
-                  files={files}
-                  onPublish={handleShare}
-                  onClose={() => {
-                    reset();
-                    router.push("/builder");
-                  }}
-                />
+                <div className="flex h-full flex-col">
+                  {/* Mobile panel back strip */}
+                  <div className="flex h-10 flex-shrink-0 items-center gap-2 border-b border-outline-variant/20 bg-surface px-4">
+                    <button
+                      type="button"
+                      onClick={() => setMobilePanel("chat")}
+                      className="flex items-center gap-1.5 text-sm font-medium text-on-surface-variant hover:text-on-surface"
+                    >
+                      ← Back to chat
+                    </button>
+                  </div>
+                  <PreviewColumn
+                    bundleHtml={bundleHtml}
+                    status={status}
+                    error={error ?? undefined}
+                    deviceSize="mobile"
+                    buildFailed={buildFailed}
+                    activityMessage={narrationMessage ?? undefined}
+                    onRetry={handleRetry}
+                    viewMode={viewMode}
+                    onViewChange={setViewMode}
+                    files={files}
+                    onPublish={handleShare}
+                    onClose={() => {
+                      reset();
+                      router.push("/builder");
+                    }}
+                  />
+                </div>
               )}
             </div>
           ) : (
@@ -357,7 +368,6 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
                   pendingPrompt={pendingPrompt}
                   onPendingPromptClear={() => setPendingPrompt(null)}
                   narrationMessage={narrationMessage}
-                  startTime={generationStartTime}
                   appName={appName}
                   isEditingName={isEditingName}
                   onNameEditStart={() => setIsEditingName(true)}
