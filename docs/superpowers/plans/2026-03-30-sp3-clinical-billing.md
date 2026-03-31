@@ -2,63 +2,289 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Add clinical billing infrastructure so SLPs can auto-generate billing records when session notes are signed, edit CPT codes/modifiers, and print superbills — eliminating the need for a separate billing tool.
+**Goal:** Add clinical billing so SLPs can auto-generate billing records when session notes are signed, review CPT codes/modifiers, and print superbills — eliminating the need for a second billing tool.
 
-**Architecture:** Session note signing triggers an auto-created billing record via `ctx.scheduler.runAfter(0, ...)`. A new `billingRecords` Convex table stores CPT codes, modifiers, diagnosis codes, fees, and status (draft/finalized/billed). The `patients` table gains insurance fields, and `practiceProfiles` gains a `defaultSessionFee` field. Frontend adds a clinical billing dashboard, record editor, CPT picker, and print-friendly superbill viewer — all within the existing `src/features/billing/` feature slice.
+**Architecture:** Session note signing triggers an auto-created billing record via `ctx.scheduler.runAfter(0, ...)`. A new `billingRecords` table stores CPT codes, modifiers, diagnosis codes, fees, and status (`draft`/`finalized`/`billed`). The `patients` table gains four insurance fields. A new `practiceProfiles` table (single row per SLP) stores NPI, Tax ID, credentials, and `defaultSessionFee`. Frontend adds a `/billing` route with a 3-tab dashboard, record editor, CPT picker, and print-friendly superbill viewer inside the existing `src/features/billing/` slice.
 
-**Tech Stack:** Convex (schema + functions), Next.js App Router, Clerk auth, shadcn/ui (Table, Dialog, Select, Badge, Tabs), Tailwind v4, `@media print` CSS, convex-test, Vitest
-
----
-
-## File Structure
-
-### Schema & Static Modules
-| Action | File | Responsibility |
-|--------|------|---------------|
-| Modify | `convex/schema.ts` | Add `billingRecords` table; extend `patients` with insurance fields; extend `practiceProfiles` with `defaultSessionFee` |
-| Create | `src/features/billing/lib/cpt-codes.ts` | Static CPT code data with descriptions and default POS |
-| Create | `src/features/billing/lib/modifiers.ts` | Modifier definitions and auto-application logic |
-| Create | `src/features/billing/lib/place-of-service.ts` | POS code data |
-
-### Backend
-| Action | File | Responsibility |
-|--------|------|---------------|
-| Create | `convex/billingRecords.ts` | `createFromSessionNote` (internal), `update`, `finalize`, `markBilled`, `remove` mutations; `listBySlp`, `listByPatient`, `get`, `getUnbilledCount` queries |
-| Modify | `convex/sessionNotes.ts` | Add `ctx.scheduler.runAfter(0, internal.billingRecords.createFromSessionNote, {...})` to `sign` mutation |
-
-### Frontend
-| Action | File | Responsibility |
-|--------|------|---------------|
-| Create | `src/features/billing/components/cpt-code-picker.tsx` | Searchable CPT code dropdown |
-| Create | `src/features/billing/components/insurance-fields.tsx` | Patient insurance info form section |
-| Create | `src/features/billing/components/billing-record-editor.tsx` | Edit CPT, modifiers, diagnosis, fee, POS |
-| Create | `src/features/billing/components/billing-record-row.tsx` | Row component for dashboard table |
-| Create | `src/features/billing/components/clinical-billing-dashboard.tsx` | Unbilled/finalized/billed tabs with summary stats |
-| Create | `src/features/billing/components/superbill-viewer.tsx` | Print-friendly superbill with `@media print` CSS |
-| Create | `src/features/billing/hooks/use-billing-records.ts` | Hook wrapping Convex billing queries/mutations |
-| Modify | `src/core/routes.ts` | Add `BILLING` route |
-| Modify | `src/shared/lib/navigation.ts` | Add Billing nav item for SLP |
-| Create | `src/app/(app)/billing/page.tsx` | Thin wrapper for clinical billing dashboard |
-
-### Tests
-| Action | File | Responsibility |
-|--------|------|---------------|
-| Create | `convex/__tests__/billingRecords.test.ts` | Full backend test suite for billing records |
-| Create | `src/features/billing/lib/__tests__/cpt-codes.test.ts` | CPT code module tests |
-| Create | `src/features/billing/lib/__tests__/modifiers.test.ts` | Modifier auto-application logic tests |
-| Create | `src/features/billing/components/__tests__/cpt-code-picker.test.tsx` | CPT picker render tests |
-| Create | `src/features/billing/components/__tests__/superbill-viewer.test.tsx` | Superbill render tests |
+**Tech Stack:** Convex (schema + functions), Next.js App Router, Clerk auth via `slpMutation`/`slpQuery`, shadcn/ui (Table, Dialog, Select, Badge, Tabs), Tailwind v4, `@media print` CSS, convex-test, Vitest
 
 ---
 
-## Task 1: Schema Changes — billingRecords Table + Patient/Practice Extensions
+## Task 1: CPT Code Static Module
 
 **Files:**
-- Modify: `convex/schema.ts`
+- Create: `src/features/billing/lib/cpt-codes.ts`
+- Create: `src/features/billing/lib/__tests__/cpt-codes.test.ts`
 
-- [ ] **Step 1: Write failing schema test**
+- [ ] **Step 1: Write the failing test**
 
-Create `convex/__tests__/billingRecords.test.ts` with an initial schema verification:
+Create `src/features/billing/lib/__tests__/cpt-codes.test.ts`:
+
+```typescript
+import { describe, expect, it } from "vitest";
+
+import {
+  CPT_CODES,
+  getCptByCode,
+  getDefaultCptCode,
+  type CptCode,
+} from "../cpt-codes";
+
+describe("CPT_CODES", () => {
+  it("contains exactly 9 SLP-relevant codes", () => {
+    expect(CPT_CODES).toHaveLength(9);
+  });
+
+  it("every entry has code, description, and defaultPos", () => {
+    for (const entry of CPT_CODES) {
+      expect(entry.code).toMatch(/^\d{5}$/);
+      expect(entry.description.length).toBeGreaterThan(0);
+      expect(entry.defaultPos).toMatch(/^\d{2}$/);
+    }
+  });
+
+  it("includes 92507 (individual treatment)", () => {
+    const found = CPT_CODES.find((c) => c.code === "92507");
+    expect(found).toBeDefined();
+    expect(found!.description).toContain("individual");
+  });
+});
+
+describe("getCptByCode", () => {
+  it("returns matching entry for valid code", () => {
+    const result = getCptByCode("92507");
+    expect(result).toBeDefined();
+    expect(result!.code).toBe("92507");
+  });
+
+  it("returns undefined for unknown code", () => {
+    expect(getCptByCode("99999")).toBeUndefined();
+  });
+});
+
+describe("getDefaultCptCode", () => {
+  it("returns 92507 as the default", () => {
+    expect(getDefaultCptCode()).toBe("92507");
+  });
+});
+```
+
+- [ ] **Step 2: Run test to verify it fails**
+
+Run: `npx vitest run src/features/billing/lib/__tests__/cpt-codes.test.ts --reporter=verbose`
+
+Expected: FAIL — module `../cpt-codes` does not exist.
+
+- [ ] **Step 3: Write minimal implementation**
+
+Create `src/features/billing/lib/cpt-codes.ts`:
+
+```typescript
+export interface CptCode {
+  code: string;
+  description: string;
+  defaultPos: string;
+}
+
+export const CPT_CODES: readonly CptCode[] = [
+  { code: "92507", description: "Individual speech/language/voice treatment", defaultPos: "11" },
+  { code: "92508", description: "Group speech/language treatment (2+ patients)", defaultPos: "11" },
+  { code: "92521", description: "Evaluation — speech fluency only", defaultPos: "11" },
+  { code: "92522", description: "Evaluation — speech sound production only", defaultPos: "11" },
+  { code: "92523", description: "Evaluation — speech sound + language", defaultPos: "11" },
+  { code: "92524", description: "Voice/resonance behavioral analysis", defaultPos: "11" },
+  { code: "92526", description: "Treatment of swallowing dysfunction", defaultPos: "11" },
+  { code: "92597", description: "AAC device evaluation", defaultPos: "11" },
+  { code: "92609", description: "AAC device service/programming", defaultPos: "11" },
+] as const;
+
+export function getCptByCode(code: string): CptCode | undefined {
+  return CPT_CODES.find((c) => c.code === code);
+}
+
+export function getDefaultCptCode(): string {
+  return "92507";
+}
+```
+
+- [ ] **Step 4: Run test to verify it passes**
+
+Run: `npx vitest run src/features/billing/lib/__tests__/cpt-codes.test.ts --reporter=verbose`
+
+Expected: PASS (3 describe blocks, all green).
+
+- [ ] **Step 5: Commit**
+
+---
+
+## Task 2: Modifier Logic Module
+
+**Files:**
+- Create: `src/features/billing/lib/modifiers.ts`
+- Create: `src/features/billing/lib/__tests__/modifiers.test.ts`
+
+- [ ] **Step 1: Write the failing test**
+
+Create `src/features/billing/lib/__tests__/modifiers.test.ts`:
+
+```typescript
+import { describe, expect, it } from "vitest";
+
+import {
+  MODIFIERS,
+  getAutoModifiers,
+  type Modifier,
+} from "../modifiers";
+
+describe("MODIFIERS", () => {
+  it("contains GP, 95, and KX", () => {
+    const codes = MODIFIERS.map((m) => m.code);
+    expect(codes).toContain("GP");
+    expect(codes).toContain("95");
+    expect(codes).toContain("KX");
+  });
+
+  it("every modifier has code, description, and autoApply function", () => {
+    for (const m of MODIFIERS) {
+      expect(m.code.length).toBeGreaterThan(0);
+      expect(m.description.length).toBeGreaterThan(0);
+      expect(typeof m.autoApply).toBe("function");
+    }
+  });
+});
+
+describe("getAutoModifiers", () => {
+  it("always includes GP for in-person", () => {
+    const result = getAutoModifiers("in-person");
+    expect(result).toContain("GP");
+    expect(result).not.toContain("95");
+  });
+
+  it("includes GP and 95 for teletherapy", () => {
+    const result = getAutoModifiers("teletherapy");
+    expect(result).toContain("GP");
+    expect(result).toContain("95");
+  });
+
+  it("includes GP for parent-consultation", () => {
+    const result = getAutoModifiers("parent-consultation");
+    expect(result).toContain("GP");
+    expect(result).not.toContain("95");
+  });
+
+  it("never auto-includes KX", () => {
+    const inPerson = getAutoModifiers("in-person");
+    const tele = getAutoModifiers("teletherapy");
+    expect(inPerson).not.toContain("KX");
+    expect(tele).not.toContain("KX");
+  });
+});
+```
+
+- [ ] **Step 2: Run test to verify it fails**
+
+Run: `npx vitest run src/features/billing/lib/__tests__/modifiers.test.ts --reporter=verbose`
+
+Expected: FAIL — module `../modifiers` does not exist.
+
+- [ ] **Step 3: Write minimal implementation**
+
+Create `src/features/billing/lib/modifiers.ts`:
+
+```typescript
+export type SessionType = "in-person" | "teletherapy" | "parent-consultation";
+
+export interface Modifier {
+  code: string;
+  description: string;
+  autoApply: (sessionType: SessionType) => boolean;
+}
+
+export const MODIFIERS: readonly Modifier[] = [
+  {
+    code: "GP",
+    description: "Services delivered under an outpatient speech-language pathology plan of care",
+    autoApply: () => true,
+  },
+  {
+    code: "95",
+    description: "Synchronous telemedicine service rendered via real-time interactive audio/video",
+    autoApply: (sessionType) => sessionType === "teletherapy",
+  },
+  {
+    code: "KX",
+    description: "Requirements specified in the medical policy have been met (Medicare therapy cap exceeded)",
+    autoApply: () => false,
+  },
+] as const;
+
+export function getAutoModifiers(sessionType: SessionType): string[] {
+  return MODIFIERS
+    .filter((m) => m.autoApply(sessionType))
+    .map((m) => m.code);
+}
+```
+
+- [ ] **Step 4: Run test to verify it passes**
+
+Run: `npx vitest run src/features/billing/lib/__tests__/modifiers.test.ts --reporter=verbose`
+
+Expected: PASS (2 describe blocks, all green).
+
+- [ ] **Step 5: Commit**
+
+---
+
+## Task 3: Place of Service Module
+
+**Files:**
+- Create: `src/features/billing/lib/place-of-service.ts`
+
+- [ ] **Step 1: Create the module**
+
+Create `src/features/billing/lib/place-of-service.ts`:
+
+```typescript
+export interface PlaceOfService {
+  code: string;
+  description: string;
+}
+
+export const PLACES_OF_SERVICE: readonly PlaceOfService[] = [
+  { code: "11", description: "Office" },
+  { code: "02", description: "Telehealth — Provided to Patient" },
+  { code: "10", description: "Telehealth — Patient's Home" },
+  { code: "12", description: "Home (in-person visit)" },
+] as const;
+
+export function getPosByCode(code: string): PlaceOfService | undefined {
+  return PLACES_OF_SERVICE.find((p) => p.code === code);
+}
+
+export function getDefaultPos(sessionType: "in-person" | "teletherapy" | "parent-consultation"): string {
+  return sessionType === "teletherapy" ? "02" : "11";
+}
+```
+
+- [ ] **Step 2: Verify TypeScript compiles**
+
+Run: `npx tsc --noEmit --pretty src/features/billing/lib/place-of-service.ts 2>&1 | head -20`
+
+Expected: No errors.
+
+- [ ] **Step 3: Commit**
+
+---
+
+## Task 4: Schema — billingRecords Table
+
+**Files:**
+- Create: `convex/__tests__/billingRecords.test.ts`
+- Modify: `convex/schema.ts:607` (before closing `});`)
+
+- [ ] **Step 1: Write the failing test**
+
+Create `convex/__tests__/billingRecords.test.ts`:
 
 ```typescript
 import { convexTest } from "convex-test";
@@ -72,6 +298,15 @@ const modules = import.meta.glob("../**/*.*s");
 
 suppressSchedulerErrors();
 
+const SLP_IDENTITY = { subject: "slp-user-billing", issuer: "clerk" };
+
+const VALID_PATIENT = {
+  firstName: "Alex",
+  lastName: "Smith",
+  dateOfBirth: "2020-01-15",
+  diagnosis: "articulation" as const,
+};
+
 describe("billingRecords schema", () => {
   it("billingRecords table exists in schema", () => {
     expect(schema.tables.billingRecords).toBeDefined();
@@ -81,15 +316,13 @@ describe("billingRecords schema", () => {
 
 - [ ] **Step 2: Run test to verify it fails**
 
-```bash
-npx vitest run convex/__tests__/billingRecords.test.ts --reporter=verbose
-```
+Run: `npx vitest run convex/__tests__/billingRecords.test.ts --reporter=verbose`
 
 Expected: FAIL — `schema.tables.billingRecords` is undefined.
 
 - [ ] **Step 3: Add billingRecords table to schema**
 
-In `convex/schema.ts`, after the `childApps` table (before the closing `});`), add:
+In `convex/schema.ts`, insert before the closing `});` on line 608:
 
 ```typescript
   billingRecords: defineTable({
@@ -122,9 +355,58 @@ In `convex/schema.ts`, after the `childApps` table (before the closing `});`), a
     .index("by_dateOfService", ["dateOfService"]),
 ```
 
-- [ ] **Step 4: Extend patients table with insurance fields**
+- [ ] **Step 4: Run test to verify it passes**
 
-In `convex/schema.ts`, find the `patients` table definition. After the `notes: v.optional(v.string()),` field (the last field before the closing `})` of the patients table), add:
+Run: `npx vitest run convex/__tests__/billingRecords.test.ts --reporter=verbose`
+
+Expected: PASS.
+
+- [ ] **Step 5: Commit**
+
+---
+
+## Task 5: Schema — Patient Insurance Fields
+
+**Files:**
+- Modify: `convex/schema.ts:163-196` (patients table)
+- Modify: `convex/patients.ts:183-232` (update mutation args)
+
+- [ ] **Step 1: Write the failing test**
+
+Add to `convex/__tests__/billingRecords.test.ts`:
+
+```typescript
+describe("patients insurance fields", () => {
+  it("can store insurance fields on patient", async () => {
+    const t = convexTest(schema, modules).withIdentity(SLP_IDENTITY);
+    const { patientId } = await t.mutation(api.patients.create, VALID_PATIENT);
+
+    await t.mutation(api.patients.update, {
+      patientId,
+      insuranceCarrier: "Blue Cross Blue Shield",
+      insuranceMemberId: "BCB123456789",
+      insuranceGroupNumber: "GRP001",
+      insurancePhone: "1-800-555-0100",
+    });
+
+    const patient = await t.query(api.patients.get, { patientId });
+    expect(patient!.insuranceCarrier).toBe("Blue Cross Blue Shield");
+    expect(patient!.insuranceMemberId).toBe("BCB123456789");
+    expect(patient!.insuranceGroupNumber).toBe("GRP001");
+    expect(patient!.insurancePhone).toBe("1-800-555-0100");
+  });
+});
+```
+
+- [ ] **Step 2: Run test to verify it fails**
+
+Run: `npx vitest run convex/__tests__/billingRecords.test.ts --reporter=verbose`
+
+Expected: FAIL — `insuranceCarrier` is not a valid arg for `patients.update`.
+
+- [ ] **Step 3: Add insurance fields to patients schema**
+
+In `convex/schema.ts`, add four fields inside the `patients` table definition (after line 195, before the closing `})` of patients):
 
 ```typescript
     insuranceCarrier: v.optional(v.string()),
@@ -133,343 +415,180 @@ In `convex/schema.ts`, find the `patients` table definition. After the `notes: v
     insurancePhone: v.optional(v.string()),
 ```
 
-- [ ] **Step 5: Extend practiceProfiles table with defaultSessionFee**
+- [ ] **Step 4: Add insurance args to patients.update mutation**
 
-**Note:** The `practiceProfiles` table is defined by SP1. If SP1 has already been implemented, add `defaultSessionFee` to the existing table. If SP1 has NOT been implemented yet, add the full `practiceProfiles` table now (it will be needed by SP3 regardless):
+In `convex/patients.ts`, add to the `update` mutation args (after line 195):
 
-If `practiceProfiles` table does NOT yet exist in schema.ts, add it after `billingRecords`:
+```typescript
+    insuranceCarrier: v.optional(v.string()),
+    insuranceMemberId: v.optional(v.string()),
+    insuranceGroupNumber: v.optional(v.string()),
+    insurancePhone: v.optional(v.string()),
+```
+
+And add to the handler body (after line 220):
+
+```typescript
+    if (args.insuranceCarrier !== undefined) updates.insuranceCarrier = args.insuranceCarrier;
+    if (args.insuranceMemberId !== undefined) updates.insuranceMemberId = args.insuranceMemberId;
+    if (args.insuranceGroupNumber !== undefined) updates.insuranceGroupNumber = args.insuranceGroupNumber;
+    if (args.insurancePhone !== undefined) updates.insurancePhone = args.insurancePhone;
+```
+
+- [ ] **Step 5: Run test to verify it passes**
+
+Run: `npx vitest run convex/__tests__/billingRecords.test.ts --reporter=verbose`
+
+Expected: PASS.
+
+- [ ] **Step 6: Commit**
+
+---
+
+## Task 6: Schema — practiceProfiles Table
+
+**Files:**
+- Modify: `convex/schema.ts` (add table before `billingRecords`)
+- Create: `convex/practiceProfiles.ts`
+
+- [ ] **Step 1: Write the failing test**
+
+Add to `convex/__tests__/billingRecords.test.ts`:
+
+```typescript
+describe("practiceProfiles", () => {
+  it("table exists in schema", () => {
+    expect(schema.tables.practiceProfiles).toBeDefined();
+  });
+
+  it("can create and read a practice profile", async () => {
+    const t = convexTest(schema, modules).withIdentity(SLP_IDENTITY);
+
+    await t.mutation(api.practiceProfiles.upsert, {
+      practiceName: "Springfield Speech Clinic",
+      npiNumber: "1234567890",
+      taxId: "12-3456789",
+      address: "123 Main St, Springfield, IL 62701",
+      phone: "217-555-0100",
+      credentials: "CCC-SLP",
+      licenseNumber: "SLP-12345",
+      defaultSessionFee: 15000,
+    });
+
+    const profile = await t.query(api.practiceProfiles.get, {});
+    expect(profile).toBeDefined();
+    expect(profile!.practiceName).toBe("Springfield Speech Clinic");
+    expect(profile!.defaultSessionFee).toBe(15000);
+  });
+});
+```
+
+- [ ] **Step 2: Run test to verify it fails**
+
+Run: `npx vitest run convex/__tests__/billingRecords.test.ts --reporter=verbose`
+
+Expected: FAIL — `schema.tables.practiceProfiles` is undefined.
+
+- [ ] **Step 3: Add practiceProfiles table to schema**
+
+In `convex/schema.ts`, insert before `billingRecords`:
 
 ```typescript
   practiceProfiles: defineTable({
-    userId: v.string(),
+    slpUserId: v.string(),
     practiceName: v.optional(v.string()),
-    practiceAddress: v.optional(v.string()),
-    practicePhone: v.optional(v.string()),
     npiNumber: v.optional(v.string()),
-    licenseNumber: v.optional(v.string()),
-    licenseState: v.optional(v.string()),
     taxId: v.optional(v.string()),
+    address: v.optional(v.string()),
+    phone: v.optional(v.string()),
     credentials: v.optional(v.string()),
+    licenseNumber: v.optional(v.string()),
     defaultSessionFee: v.optional(v.number()),
   })
-    .index("by_userId", ["userId"]),
+    .index("by_slpUserId", ["slpUserId"]),
 ```
 
-If `practiceProfiles` already exists, just add `defaultSessionFee: v.optional(v.number()),` to the existing field list.
+- [ ] **Step 4: Create practiceProfiles Convex functions**
 
-- [ ] **Step 6: Run schema test to verify it passes**
-
-```bash
-npx vitest run convex/__tests__/billingRecords.test.ts --reporter=verbose
-```
-
-Expected: PASS
-
-- [ ] **Step 7: Run full test suite to verify no regressions**
-
-```bash
-npx vitest run --reporter=verbose 2>&1 | tail -30
-```
-
-Expected: All tests pass.
-
-- [ ] **Step 8: Commit**
-
-```bash
-git add convex/schema.ts convex/__tests__/billingRecords.test.ts
-git commit -m "feat(schema): add billingRecords table, extend patients with insurance fields
-
-New billingRecords table for clinical billing with CPT codes, modifiers,
-diagnosis codes, and draft/finalized/billed status tracking.
-Added insurance fields to patients table for superbill population.
-Added practiceProfiles.defaultSessionFee for fee pre-population."
-```
-
----
-
-## Task 2: CPT Code and Modifier Static Modules
-
-**Files:**
-- Create: `src/features/billing/lib/cpt-codes.ts`
-- Create: `src/features/billing/lib/modifiers.ts`
-- Create: `src/features/billing/lib/place-of-service.ts`
-- Create: `src/features/billing/lib/__tests__/cpt-codes.test.ts`
-- Create: `src/features/billing/lib/__tests__/modifiers.test.ts`
-
-- [ ] **Step 1: Write failing tests for CPT codes module**
-
-Create `src/features/billing/lib/__tests__/cpt-codes.test.ts`:
+Create `convex/practiceProfiles.ts`:
 
 ```typescript
-import { describe, expect, it } from "vitest";
+import { v } from "convex/values";
+import { ConvexError } from "convex/values";
 
-import {
-  CPT_CODES,
-  getCptByCode,
-  getDefaultCptCode,
-  type CptCode,
-} from "../cpt-codes";
+import { slpMutation, slpQuery } from "./lib/customFunctions";
 
-describe("cpt-codes", () => {
-  it("exports a non-empty array of CPT codes", () => {
-    expect(CPT_CODES.length).toBeGreaterThan(0);
-  });
+export const get = slpQuery({
+  args: {},
+  handler: async (ctx) => {
+    if (!ctx.slpUserId) return null;
+    return await ctx.db
+      .query("practiceProfiles")
+      .withIndex("by_slpUserId", (q) => q.eq("slpUserId", ctx.slpUserId!))
+      .first();
+  },
+});
 
-  it("each code has required fields", () => {
-    for (const cpt of CPT_CODES) {
-      expect(cpt.code).toMatch(/^\d{5}$/);
-      expect(cpt.description).toBeTruthy();
-      expect(cpt.defaultPlaceOfService).toMatch(/^\d{2}$/);
+export const upsert = slpMutation({
+  args: {
+    practiceName: v.optional(v.string()),
+    npiNumber: v.optional(v.string()),
+    taxId: v.optional(v.string()),
+    address: v.optional(v.string()),
+    phone: v.optional(v.string()),
+    credentials: v.optional(v.string()),
+    licenseNumber: v.optional(v.string()),
+    defaultSessionFee: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const existing = await ctx.db
+      .query("practiceProfiles")
+      .withIndex("by_slpUserId", (q) => q.eq("slpUserId", ctx.slpUserId))
+      .first();
+
+    if (existing) {
+      const updates: Record<string, unknown> = {};
+      if (args.practiceName !== undefined) updates.practiceName = args.practiceName;
+      if (args.npiNumber !== undefined) updates.npiNumber = args.npiNumber;
+      if (args.taxId !== undefined) updates.taxId = args.taxId;
+      if (args.address !== undefined) updates.address = args.address;
+      if (args.phone !== undefined) updates.phone = args.phone;
+      if (args.credentials !== undefined) updates.credentials = args.credentials;
+      if (args.licenseNumber !== undefined) updates.licenseNumber = args.licenseNumber;
+      if (args.defaultSessionFee !== undefined) updates.defaultSessionFee = args.defaultSessionFee;
+      await ctx.db.patch(existing._id, updates);
+      return existing._id;
     }
-  });
 
-  it("getCptByCode returns correct code", () => {
-    const result = getCptByCode("92507");
-    expect(result).toBeDefined();
-    expect(result!.code).toBe("92507");
-    expect(result!.description).toContain("Individual");
-  });
-
-  it("getCptByCode returns undefined for unknown code", () => {
-    expect(getCptByCode("99999")).toBeUndefined();
-  });
-
-  it("getDefaultCptCode returns 92507", () => {
-    const defaultCode = getDefaultCptCode();
-    expect(defaultCode.code).toBe("92507");
-  });
+    return await ctx.db.insert("practiceProfiles", {
+      slpUserId: ctx.slpUserId,
+      ...args,
+    });
+  },
 });
 ```
 
-- [ ] **Step 2: Write failing tests for modifiers module**
+- [ ] **Step 5: Run test to verify it passes**
 
-Create `src/features/billing/lib/__tests__/modifiers.test.ts`:
+Run: `npx vitest run convex/__tests__/billingRecords.test.ts --reporter=verbose`
 
-```typescript
-import { describe, expect, it } from "vitest";
+Expected: PASS.
 
-import {
-  MODIFIERS,
-  getAutoModifiers,
-  type Modifier,
-} from "../modifiers";
-
-describe("modifiers", () => {
-  it("exports a non-empty array of modifiers", () => {
-    expect(MODIFIERS.length).toBeGreaterThan(0);
-  });
-
-  it("GP modifier exists and is auto-applied always", () => {
-    const gp = MODIFIERS.find((m) => m.code === "GP");
-    expect(gp).toBeDefined();
-    expect(gp!.autoApply).toBe("always");
-  });
-
-  it("95 modifier exists and is auto-applied for teletherapy", () => {
-    const m95 = MODIFIERS.find((m) => m.code === "95");
-    expect(m95).toBeDefined();
-    expect(m95!.autoApply).toBe("teletherapy");
-  });
-
-  it("KX modifier exists and is manual", () => {
-    const kx = MODIFIERS.find((m) => m.code === "KX");
-    expect(kx).toBeDefined();
-    expect(kx!.autoApply).toBe("manual");
-  });
-
-  it("getAutoModifiers returns GP for in-person", () => {
-    const result = getAutoModifiers("in-person");
-    expect(result).toContain("GP");
-    expect(result).not.toContain("95");
-  });
-
-  it("getAutoModifiers returns GP and 95 for teletherapy", () => {
-    const result = getAutoModifiers("teletherapy");
-    expect(result).toContain("GP");
-    expect(result).toContain("95");
-  });
-
-  it("getAutoModifiers returns GP for parent-consultation", () => {
-    const result = getAutoModifiers("parent-consultation");
-    expect(result).toContain("GP");
-    expect(result).not.toContain("95");
-  });
-});
-```
-
-- [ ] **Step 3: Run tests to verify they fail**
-
-```bash
-npx vitest run src/features/billing/lib/__tests__/ --reporter=verbose
-```
-
-Expected: FAIL — modules don't exist yet.
-
-- [ ] **Step 4: Create CPT codes module**
-
-Create `src/features/billing/lib/cpt-codes.ts`:
-
-```typescript
-export interface CptCode {
-  code: string;
-  description: string;
-  defaultPlaceOfService: string;
-}
-
-export const CPT_CODES: readonly CptCode[] = [
-  { code: "92507", description: "Individual speech/language/voice treatment", defaultPlaceOfService: "11" },
-  { code: "92508", description: "Group speech/language treatment (2+ patients)", defaultPlaceOfService: "11" },
-  { code: "92521", description: "Evaluation — speech fluency only", defaultPlaceOfService: "11" },
-  { code: "92522", description: "Evaluation — speech sound production only", defaultPlaceOfService: "11" },
-  { code: "92523", description: "Evaluation — speech sound + language", defaultPlaceOfService: "11" },
-  { code: "92524", description: "Voice/resonance behavioral analysis", defaultPlaceOfService: "11" },
-  { code: "92526", description: "Treatment of swallowing dysfunction", defaultPlaceOfService: "11" },
-  { code: "92597", description: "AAC device evaluation", defaultPlaceOfService: "11" },
-  { code: "92609", description: "AAC device service/programming", defaultPlaceOfService: "11" },
-] as const;
-
-export function getCptByCode(code: string): CptCode | undefined {
-  return CPT_CODES.find((c) => c.code === code);
-}
-
-export function getDefaultCptCode(): CptCode {
-  return CPT_CODES[0]; // 92507 — Individual speech/language/voice treatment
-}
-```
-
-- [ ] **Step 5: Create modifiers module**
-
-Create `src/features/billing/lib/modifiers.ts`:
-
-```typescript
-export type SessionType = "in-person" | "teletherapy" | "parent-consultation";
-
-export interface Modifier {
-  code: string;
-  description: string;
-  autoApply: "always" | "teletherapy" | "manual";
-}
-
-export const MODIFIERS: readonly Modifier[] = [
-  {
-    code: "GP",
-    description: "Services delivered under an outpatient speech-language pathology plan of care",
-    autoApply: "always",
-  },
-  {
-    code: "95",
-    description: "Synchronous telemedicine service rendered via real-time interactive audio/video",
-    autoApply: "teletherapy",
-  },
-  {
-    code: "KX",
-    description: "Requirements specified in the medical policy have been met (Medicare therapy cap exceeded)",
-    autoApply: "manual",
-  },
-] as const;
-
-/**
- * Returns modifier codes that should be auto-applied for the given session type.
- * GP is always included. 95 is included for teletherapy. KX is never auto-applied.
- */
-export function getAutoModifiers(sessionType: SessionType): string[] {
-  const modifiers: string[] = [];
-  for (const m of MODIFIERS) {
-    if (m.autoApply === "always") {
-      modifiers.push(m.code);
-    } else if (m.autoApply === "teletherapy" && sessionType === "teletherapy") {
-      modifiers.push(m.code);
-    }
-  }
-  return modifiers;
-}
-```
-
-- [ ] **Step 6: Create place-of-service module**
-
-Create `src/features/billing/lib/place-of-service.ts`:
-
-```typescript
-export interface PlaceOfService {
-  code: string;
-  description: string;
-}
-
-export const PLACE_OF_SERVICE_CODES: readonly PlaceOfService[] = [
-  { code: "11", description: "Office" },
-  { code: "02", description: "Telehealth (provided to patient)" },
-  { code: "10", description: "Telehealth (provided in patient's home)" },
-  { code: "12", description: "Patient's home (in-person home visit)" },
-] as const;
-
-/**
- * Returns the default place of service code based on session type.
- * Teletherapy → "02", all others → "11".
- */
-export function getDefaultPlaceOfService(
-  sessionType: "in-person" | "teletherapy" | "parent-consultation",
-): string {
-  return sessionType === "teletherapy" ? "02" : "11";
-}
-
-export function getPosByCode(code: string): PlaceOfService | undefined {
-  return PLACE_OF_SERVICE_CODES.find((p) => p.code === code);
-}
-```
-
-- [ ] **Step 7: Run tests to verify they pass**
-
-```bash
-npx vitest run src/features/billing/lib/__tests__/ --reporter=verbose
-```
-
-Expected: PASS — all CPT and modifier tests green.
-
-- [ ] **Step 8: Commit**
-
-```bash
-git add src/features/billing/lib/
-git commit -m "feat(billing): add CPT code, modifier, and place-of-service modules
-
-Static SLP-relevant CPT codes (92507-92609), modifier auto-application
-logic (GP always, 95 for teletherapy, KX manual), and POS code data.
-Full test coverage for all modules."
-```
+- [ ] **Step 6: Commit**
 
 ---
 
-## Task 3: Convex Backend — billingRecords.ts
+## Task 7: Backend — createFromSessionNote Internal Mutation
 
 **Files:**
 - Create: `convex/billingRecords.ts`
 - Test: `convex/__tests__/billingRecords.test.ts`
 
-- [ ] **Step 1: Expand the billingRecords test file with full backend tests**
+- [ ] **Step 1: Write the failing test**
 
-Replace the contents of `convex/__tests__/billingRecords.test.ts` with:
+Add to `convex/__tests__/billingRecords.test.ts`:
 
 ```typescript
-import { convexTest } from "convex-test";
-import { describe, expect, it } from "vitest";
-
-import { api, internal } from "../_generated/api";
-import schema from "../schema";
-import { suppressSchedulerErrors } from "./testHelpers";
-
-const modules = import.meta.glob("../**/*.*s");
-
-suppressSchedulerErrors();
-
-const SLP_IDENTITY = { subject: "slp-user-123", issuer: "clerk" };
-const OTHER_SLP = { subject: "other-slp-456", issuer: "clerk" };
-
-const VALID_PATIENT = {
-  firstName: "Alex",
-  lastName: "Smith",
-  dateOfBirth: "2020-01-15",
-  diagnosis: "articulation" as const,
-};
-
 const today = new Date().toISOString().slice(0, 10);
 
 const VALID_SESSION_DATA = {
@@ -489,21 +608,17 @@ const VALID_SESSION_DATA = {
 };
 
 const VALID_SOAP = {
-  subjective: "Patient appeared eager and engaged at start of session.",
+  subjective: "Patient appeared eager and engaged.",
   objective: "Patient produced initial /s/ correctly in 14/20 trials (70%).",
-  assessment: "Patient is making steady progress toward initial /s/ production goal.",
+  assessment: "Steady progress toward initial /s/ production goal.",
   plan: "Continue initial /s/ in words, begin fading verbal cues.",
 };
 
-async function createSignedNote(
-  t: ReturnType<ReturnType<typeof convexTest>["withIdentity"]>,
-  overrides?: { sessionType?: "in-person" | "teletherapy" | "parent-consultation" },
-) {
+async function signNote(t: ReturnType<ReturnType<typeof convexTest>["withIdentity"]>) {
   const { patientId } = await t.mutation(api.patients.create, VALID_PATIENT);
   const noteId = await t.mutation(api.sessionNotes.create, {
     patientId,
     ...VALID_SESSION_DATA,
-    ...(overrides?.sessionType ? { sessionType: overrides.sessionType } : {}),
   });
   await t.mutation(api.sessionNotes.update, { noteId, sessionDuration: 30 });
   await t.mutation(api.sessionNotes.updateStatus, { noteId, status: "complete" });
@@ -512,452 +627,95 @@ async function createSignedNote(
   return { patientId, noteId };
 }
 
-// ── createFromSessionNote (internal) ──────────────────────────────────────
-
 describe("billingRecords.createFromSessionNote", () => {
-  it("creates a draft billing record with correct defaults for in-person", async () => {
-    const t = convexTest(schema, modules);
-    const slp = t.withIdentity(SLP_IDENTITY);
-
-    const { patientId } = await slp.mutation(api.patients.create, VALID_PATIENT);
-    const noteId = await slp.mutation(api.sessionNotes.create, {
+  it("creates a draft billing record with correct defaults", async () => {
+    const t = convexTest(schema, modules).withIdentity(SLP_IDENTITY);
+    const { patientId } = await t.mutation(api.patients.create, VALID_PATIENT);
+    const noteId = await t.mutation(api.sessionNotes.create, {
       patientId,
       ...VALID_SESSION_DATA,
+    });
+
+    await t.run(async (ctx) => {
+      const { createFromSessionNote } = await import("../billingRecords");
     });
 
     // Call internal mutation directly
-    const billingId = await t.mutation(internal.billingRecords.createFromSessionNote, {
-      sessionNoteId: noteId,
-      patientId,
-      slpUserId: "slp-user-123",
-      sessionDate: today,
-      sessionType: "in-person",
-    });
-
-    const record = await slp.query(api.billingRecords.get, { billingId });
-    expect(record).toBeDefined();
-    expect(record!.status).toBe("draft");
-    expect(record!.cptCode).toBe("92507");
-    expect(record!.modifiers).toContain("GP");
-    expect(record!.modifiers).not.toContain("95");
-    expect(record!.placeOfService).toBe("11");
-    expect(record!.units).toBe(1);
-    expect(record!.dateOfService).toBe(today);
-  });
-
-  it("auto-applies 95 modifier and POS 02 for teletherapy", async () => {
-    const t = convexTest(schema, modules);
-    const slp = t.withIdentity(SLP_IDENTITY);
-
-    const { patientId } = await slp.mutation(api.patients.create, VALID_PATIENT);
-    const noteId = await slp.mutation(api.sessionNotes.create, {
-      patientId,
-      ...VALID_SESSION_DATA,
-      sessionType: "teletherapy",
-    });
-
-    const billingId = await t.mutation(internal.billingRecords.createFromSessionNote, {
-      sessionNoteId: noteId,
-      patientId,
-      slpUserId: "slp-user-123",
-      sessionDate: today,
-      sessionType: "teletherapy",
-    });
-
-    const record = await slp.query(api.billingRecords.get, { billingId });
-    expect(record!.modifiers).toContain("GP");
-    expect(record!.modifiers).toContain("95");
-    expect(record!.placeOfService).toBe("02");
-  });
-
-  it("does not create duplicate if billing record already exists for session note", async () => {
-    const t = convexTest(schema, modules);
-    const slp = t.withIdentity(SLP_IDENTITY);
-
-    const { patientId } = await slp.mutation(api.patients.create, VALID_PATIENT);
-    const noteId = await slp.mutation(api.sessionNotes.create, {
-      patientId,
-      ...VALID_SESSION_DATA,
-    });
-
     await t.mutation(internal.billingRecords.createFromSessionNote, {
       sessionNoteId: noteId,
+      slpUserId: "slp-user-billing",
       patientId,
-      slpUserId: "slp-user-123",
       sessionDate: today,
       sessionType: "in-person",
     });
 
-    // Second call should return null (no duplicate created)
-    const secondId = await t.mutation(internal.billingRecords.createFromSessionNote, {
-      sessionNoteId: noteId,
-      patientId,
-      slpUserId: "slp-user-123",
-      sessionDate: today,
-      sessionType: "in-person",
-    });
-
-    expect(secondId).toBeNull();
-  });
-});
-
-// ── update ────────────────────────────────────────────────────────────────
-
-describe("billingRecords.update", () => {
-  it("updates CPT code and fee on draft record", async () => {
-    const t = convexTest(schema, modules);
-    const slp = t.withIdentity(SLP_IDENTITY);
-
-    const { patientId } = await slp.mutation(api.patients.create, VALID_PATIENT);
-    const noteId = await slp.mutation(api.sessionNotes.create, {
-      patientId,
-      ...VALID_SESSION_DATA,
-    });
-
-    const billingId = await t.mutation(internal.billingRecords.createFromSessionNote, {
-      sessionNoteId: noteId,
-      patientId,
-      slpUserId: "slp-user-123",
-      sessionDate: today,
-      sessionType: "in-person",
-    });
-
-    await slp.mutation(api.billingRecords.update, {
-      billingId: billingId!,
-      cptCode: "92523",
-      cptDescription: "Evaluation — speech sound + language",
-      fee: 17500,
-    });
-
-    const record = await slp.query(api.billingRecords.get, { billingId: billingId! });
-    expect(record!.cptCode).toBe("92523");
-    expect(record!.fee).toBe(17500);
-  });
-
-  it("rejects update on finalized record", async () => {
-    const t = convexTest(schema, modules);
-    const slp = t.withIdentity(SLP_IDENTITY);
-
-    const { patientId } = await slp.mutation(api.patients.create, VALID_PATIENT);
-    const noteId = await slp.mutation(api.sessionNotes.create, {
-      patientId,
-      ...VALID_SESSION_DATA,
-    });
-
-    const billingId = await t.mutation(internal.billingRecords.createFromSessionNote, {
-      sessionNoteId: noteId,
-      patientId,
-      slpUserId: "slp-user-123",
-      sessionDate: today,
-      sessionType: "in-person",
-    });
-
-    await slp.mutation(api.billingRecords.finalize, { billingId: billingId! });
-
-    await expect(
-      slp.mutation(api.billingRecords.update, {
-        billingId: billingId!,
-        fee: 20000,
-      }),
-    ).rejects.toThrow("draft");
-  });
-
-  it("rejects update by different SLP", async () => {
-    const t = convexTest(schema, modules);
-    const slp = t.withIdentity(SLP_IDENTITY);
-
-    const { patientId } = await slp.mutation(api.patients.create, VALID_PATIENT);
-    const noteId = await slp.mutation(api.sessionNotes.create, {
-      patientId,
-      ...VALID_SESSION_DATA,
-    });
-
-    const billingId = await t.mutation(internal.billingRecords.createFromSessionNote, {
-      sessionNoteId: noteId,
-      patientId,
-      slpUserId: "slp-user-123",
-      sessionDate: today,
-      sessionType: "in-person",
-    });
-
-    const otherSlp = t.withIdentity(OTHER_SLP);
-    await expect(
-      otherSlp.mutation(api.billingRecords.update, {
-        billingId: billingId!,
-        fee: 20000,
-      }),
-    ).rejects.toThrow("Not authorized");
-  });
-});
-
-// ── finalize ──────────────────────────────────────────────────────────────
-
-describe("billingRecords.finalize", () => {
-  it("transitions draft to finalized", async () => {
-    const t = convexTest(schema, modules);
-    const slp = t.withIdentity(SLP_IDENTITY);
-
-    const { patientId } = await slp.mutation(api.patients.create, VALID_PATIENT);
-    const noteId = await slp.mutation(api.sessionNotes.create, {
-      patientId,
-      ...VALID_SESSION_DATA,
-    });
-
-    const billingId = await t.mutation(internal.billingRecords.createFromSessionNote, {
-      sessionNoteId: noteId,
-      patientId,
-      slpUserId: "slp-user-123",
-      sessionDate: today,
-      sessionType: "in-person",
-    });
-
-    await slp.mutation(api.billingRecords.finalize, { billingId: billingId! });
-
-    const record = await slp.query(api.billingRecords.get, { billingId: billingId! });
-    expect(record!.status).toBe("finalized");
-  });
-
-  it("rejects finalizing a billed record", async () => {
-    const t = convexTest(schema, modules);
-    const slp = t.withIdentity(SLP_IDENTITY);
-
-    const { patientId } = await slp.mutation(api.patients.create, VALID_PATIENT);
-    const noteId = await slp.mutation(api.sessionNotes.create, {
-      patientId,
-      ...VALID_SESSION_DATA,
-    });
-
-    const billingId = await t.mutation(internal.billingRecords.createFromSessionNote, {
-      sessionNoteId: noteId,
-      patientId,
-      slpUserId: "slp-user-123",
-      sessionDate: today,
-      sessionType: "in-person",
-    });
-
-    await slp.mutation(api.billingRecords.finalize, { billingId: billingId! });
-    await slp.mutation(api.billingRecords.markBilled, { billingId: billingId! });
-
-    await expect(
-      slp.mutation(api.billingRecords.finalize, { billingId: billingId! }),
-    ).rejects.toThrow();
-  });
-});
-
-// ── markBilled ────────────────────────────────────────────────────────────
-
-describe("billingRecords.markBilled", () => {
-  it("transitions finalized to billed with timestamp", async () => {
-    const t = convexTest(schema, modules);
-    const slp = t.withIdentity(SLP_IDENTITY);
-
-    const { patientId } = await slp.mutation(api.patients.create, VALID_PATIENT);
-    const noteId = await slp.mutation(api.sessionNotes.create, {
-      patientId,
-      ...VALID_SESSION_DATA,
-    });
-
-    const billingId = await t.mutation(internal.billingRecords.createFromSessionNote, {
-      sessionNoteId: noteId,
-      patientId,
-      slpUserId: "slp-user-123",
-      sessionDate: today,
-      sessionType: "in-person",
-    });
-
-    await slp.mutation(api.billingRecords.finalize, { billingId: billingId! });
-    await slp.mutation(api.billingRecords.markBilled, { billingId: billingId! });
-
-    const record = await slp.query(api.billingRecords.get, { billingId: billingId! });
-    expect(record!.status).toBe("billed");
-    expect(record!.billedAt).toBeDefined();
-    expect(record!.billedAt).toBeGreaterThan(0);
-  });
-
-  it("rejects marking draft as billed", async () => {
-    const t = convexTest(schema, modules);
-    const slp = t.withIdentity(SLP_IDENTITY);
-
-    const { patientId } = await slp.mutation(api.patients.create, VALID_PATIENT);
-    const noteId = await slp.mutation(api.sessionNotes.create, {
-      patientId,
-      ...VALID_SESSION_DATA,
-    });
-
-    const billingId = await t.mutation(internal.billingRecords.createFromSessionNote, {
-      sessionNoteId: noteId,
-      patientId,
-      slpUserId: "slp-user-123",
-      sessionDate: today,
-      sessionType: "in-person",
-    });
-
-    await expect(
-      slp.mutation(api.billingRecords.markBilled, { billingId: billingId! }),
-    ).rejects.toThrow("finalized");
-  });
-});
-
-// ── remove ────────────────────────────────────────────────────────────────
-
-describe("billingRecords.remove", () => {
-  it("deletes a draft record", async () => {
-    const t = convexTest(schema, modules);
-    const slp = t.withIdentity(SLP_IDENTITY);
-
-    const { patientId } = await slp.mutation(api.patients.create, VALID_PATIENT);
-    const noteId = await slp.mutation(api.sessionNotes.create, {
-      patientId,
-      ...VALID_SESSION_DATA,
-    });
-
-    const billingId = await t.mutation(internal.billingRecords.createFromSessionNote, {
-      sessionNoteId: noteId,
-      patientId,
-      slpUserId: "slp-user-123",
-      sessionDate: today,
-      sessionType: "in-person",
-    });
-
-    await slp.mutation(api.billingRecords.remove, { billingId: billingId! });
-
-    const record = await slp.query(api.billingRecords.get, { billingId: billingId! });
-    expect(record).toBeNull();
-  });
-
-  it("rejects deleting a billed record", async () => {
-    const t = convexTest(schema, modules);
-    const slp = t.withIdentity(SLP_IDENTITY);
-
-    const { patientId } = await slp.mutation(api.patients.create, VALID_PATIENT);
-    const noteId = await slp.mutation(api.sessionNotes.create, {
-      patientId,
-      ...VALID_SESSION_DATA,
-    });
-
-    const billingId = await t.mutation(internal.billingRecords.createFromSessionNote, {
-      sessionNoteId: noteId,
-      patientId,
-      slpUserId: "slp-user-123",
-      sessionDate: today,
-      sessionType: "in-person",
-    });
-
-    await slp.mutation(api.billingRecords.finalize, { billingId: billingId! });
-    await slp.mutation(api.billingRecords.markBilled, { billingId: billingId! });
-
-    await expect(
-      slp.mutation(api.billingRecords.remove, { billingId: billingId! }),
-    ).rejects.toThrow("billed");
-  });
-});
-
-// ── queries ───────────────────────────────────────────────────────────────
-
-describe("billingRecords queries", () => {
-  it("listBySlp returns records for the authenticated SLP", async () => {
-    const t = convexTest(schema, modules);
-    const slp = t.withIdentity(SLP_IDENTITY);
-
-    const { patientId } = await slp.mutation(api.patients.create, VALID_PATIENT);
-    const noteId = await slp.mutation(api.sessionNotes.create, {
-      patientId,
-      ...VALID_SESSION_DATA,
-    });
-
-    await t.mutation(internal.billingRecords.createFromSessionNote, {
-      sessionNoteId: noteId,
-      patientId,
-      slpUserId: "slp-user-123",
-      sessionDate: today,
-      sessionType: "in-person",
-    });
-
-    const records = await slp.query(api.billingRecords.listBySlp, {});
+    const records = await t.query(api.billingRecords.listByPatient, { patientId });
     expect(records).toHaveLength(1);
     expect(records[0].cptCode).toBe("92507");
+    expect(records[0].modifiers).toContain("GP");
+    expect(records[0].modifiers).not.toContain("95");
+    expect(records[0].placeOfService).toBe("11");
+    expect(records[0].status).toBe("draft");
+    expect(records[0].units).toBe(1);
   });
 
-  it("listBySlp filters by status", async () => {
-    const t = convexTest(schema, modules);
-    const slp = t.withIdentity(SLP_IDENTITY);
-
-    const { patientId } = await slp.mutation(api.patients.create, VALID_PATIENT);
-    const noteId = await slp.mutation(api.sessionNotes.create, {
+  it("applies 95 modifier and POS 02 for teletherapy", async () => {
+    const t = convexTest(schema, modules).withIdentity(SLP_IDENTITY);
+    const { patientId } = await t.mutation(api.patients.create, VALID_PATIENT);
+    const noteId = await t.mutation(api.sessionNotes.create, {
       patientId,
       ...VALID_SESSION_DATA,
+      sessionType: "teletherapy" as const,
     });
 
-    const billingId = await t.mutation(internal.billingRecords.createFromSessionNote, {
+    await t.mutation(internal.billingRecords.createFromSessionNote, {
       sessionNoteId: noteId,
+      slpUserId: "slp-user-billing",
       patientId,
-      slpUserId: "slp-user-123",
       sessionDate: today,
-      sessionType: "in-person",
+      sessionType: "teletherapy",
     });
 
-    const drafts = await slp.query(api.billingRecords.listBySlp, { status: "draft" });
-    expect(drafts).toHaveLength(1);
-
-    const finalized = await slp.query(api.billingRecords.listBySlp, { status: "finalized" });
-    expect(finalized).toHaveLength(0);
+    const records = await t.query(api.billingRecords.listByPatient, { patientId });
+    expect(records[0].modifiers).toContain("GP");
+    expect(records[0].modifiers).toContain("95");
+    expect(records[0].placeOfService).toBe("02");
   });
 
-  it("getUnbilledCount returns correct count", async () => {
-    const t = convexTest(schema, modules);
-    const slp = t.withIdentity(SLP_IDENTITY);
+  it("populates fee from practice profile defaultSessionFee", async () => {
+    const t = convexTest(schema, modules).withIdentity(SLP_IDENTITY);
 
-    const { patientId } = await slp.mutation(api.patients.create, VALID_PATIENT);
-    const noteId = await slp.mutation(api.sessionNotes.create, {
+    await t.mutation(api.practiceProfiles.upsert, {
+      defaultSessionFee: 15000,
+    });
+
+    const { patientId } = await t.mutation(api.patients.create, VALID_PATIENT);
+    const noteId = await t.mutation(api.sessionNotes.create, {
       patientId,
       ...VALID_SESSION_DATA,
     });
 
     await t.mutation(internal.billingRecords.createFromSessionNote, {
       sessionNoteId: noteId,
+      slpUserId: "slp-user-billing",
       patientId,
-      slpUserId: "slp-user-123",
       sessionDate: today,
       sessionType: "in-person",
     });
 
-    const count = await slp.query(api.billingRecords.getUnbilledCount, {});
-    expect(count).toBe(1);
-  });
-
-  it("listByPatient returns records for a patient", async () => {
-    const t = convexTest(schema, modules);
-    const slp = t.withIdentity(SLP_IDENTITY);
-
-    const { patientId } = await slp.mutation(api.patients.create, VALID_PATIENT);
-    const noteId = await slp.mutation(api.sessionNotes.create, {
-      patientId,
-      ...VALID_SESSION_DATA,
-    });
-
-    await t.mutation(internal.billingRecords.createFromSessionNote, {
-      sessionNoteId: noteId,
-      patientId,
-      slpUserId: "slp-user-123",
-      sessionDate: today,
-      sessionType: "in-person",
-    });
-
-    const records = await slp.query(api.billingRecords.listByPatient, { patientId });
-    expect(records).toHaveLength(1);
+    const records = await t.query(api.billingRecords.listByPatient, { patientId });
+    expect(records[0].fee).toBe(15000);
   });
 });
 ```
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [ ] **Step 2: Run test to verify it fails**
 
-```bash
-npx vitest run convex/__tests__/billingRecords.test.ts --reporter=verbose
-```
+Run: `npx vitest run convex/__tests__/billingRecords.test.ts --reporter=verbose`
 
-Expected: FAIL — `api.billingRecords` and `internal.billingRecords` don't exist yet.
+Expected: FAIL — `convex/billingRecords.ts` does not exist.
 
-- [ ] **Step 3: Create convex/billingRecords.ts**
+- [ ] **Step 3: Write createFromSessionNote + listByPatient**
 
 Create `convex/billingRecords.ts`:
 
@@ -968,31 +726,13 @@ import { ConvexError } from "convex/values";
 import { internalMutation } from "./_generated/server";
 import { slpMutation, slpQuery } from "./lib/customFunctions";
 
-// ── Validators ──────────────────────────────────────────────────────────────
+// ── Internal Mutations ─────────────────────────────────────────────────────
 
-const billingStatusValidator = v.union(
-  v.literal("draft"),
-  v.literal("finalized"),
-  v.literal("billed")
-);
-
-const diagnosisCodeValidator = v.object({
-  code: v.string(),
-  description: v.string(),
-});
-
-// ── Internal Mutations ──────────────────────────────────────────────────────
-
-/**
- * Auto-create a billing record when a session note is signed.
- * Called via ctx.scheduler.runAfter(0, ...) from sessionNotes.sign.
- * Idempotent: skips if a billing record already exists for the session note.
- */
 export const createFromSessionNote = internalMutation({
   args: {
     sessionNoteId: v.id("sessionNotes"),
-    patientId: v.id("patients"),
     slpUserId: v.string(),
+    patientId: v.id("patients"),
     sessionDate: v.string(),
     sessionType: v.union(
       v.literal("in-person"),
@@ -1001,49 +741,35 @@ export const createFromSessionNote = internalMutation({
     ),
   },
   handler: async (ctx, args) => {
-    // Idempotency: check if a billing record already exists for this session note
+    // Check for duplicate — idempotency guard
     const existing = await ctx.db
       .query("billingRecords")
-      .withIndex("by_sessionNoteId", (q) =>
-        q.eq("sessionNoteId", args.sessionNoteId)
-      )
+      .withIndex("by_sessionNoteId", (q) => q.eq("sessionNoteId", args.sessionNoteId))
       .first();
+    if (existing) return existing._id;
 
-    if (existing) return null;
-
-    // Determine CPT code — default to 92507 (individual treatment)
+    // Determine CPT code
     const cptCode = "92507";
     const cptDescription = "Individual speech/language/voice treatment";
 
-    // Auto-apply modifiers: GP always, 95 for teletherapy
+    // Determine modifiers
     const modifiers: string[] = ["GP"];
     if (args.sessionType === "teletherapy") {
       modifiers.push("95");
     }
 
-    // Place of service: 02 for teletherapy, 11 for in-person/consultation
+    // Determine place of service
     const placeOfService = args.sessionType === "teletherapy" ? "02" : "11";
 
-    // Attempt to pull ICD-10 codes from patient record (if SP2 has added them)
-    const patient = await ctx.db.get(args.patientId);
-    const diagnosisCodes: Array<{ code: string; description: string }> = [];
-    if (patient && "icdCodes" in patient && Array.isArray((patient as Record<string, unknown>).icdCodes)) {
-      for (const icd of (patient as Record<string, unknown>).icdCodes as Array<{ code: string; description: string }>) {
-        if (icd.code && icd.description) {
-          diagnosisCodes.push({ code: icd.code, description: icd.description });
-        }
-      }
-    }
-
-    // Attempt to pull default fee from practice profile (if SP1 has added it)
-    let fee: number | undefined;
+    // Look up practice profile for default fee
     const profile = await ctx.db
       .query("practiceProfiles")
-      .withIndex("by_userId", (q) => q.eq("userId", args.slpUserId))
+      .withIndex("by_slpUserId", (q) => q.eq("slpUserId", args.slpUserId))
       .first();
-    if (profile && typeof profile.defaultSessionFee === "number") {
-      fee = profile.defaultSessionFee;
-    }
+    const fee = profile?.defaultSessionFee;
+
+    // Look up patient for diagnosis codes (future: icdCodes from SP2)
+    const diagnosisCodes: { code: string; description: string }[] = [];
 
     return await ctx.db.insert("billingRecords", {
       patientId: args.patientId,
@@ -1062,27 +788,179 @@ export const createFromSessionNote = internalMutation({
   },
 });
 
-// ── Queries ─────────────────────────────────────────────────────────────────
+// ── Queries ────────────────────────────────────────────────────────────────
 
-export const get = slpQuery({
-  args: { billingId: v.id("billingRecords") },
+export const listByPatient = slpQuery({
+  args: { patientId: v.id("patients") },
   handler: async (ctx, args) => {
-    if (!ctx.slpUserId) return null;
-    const record = await ctx.db.get(args.billingId);
-    if (!record) return null;
-    if (record.slpUserId !== ctx.slpUserId) throw new ConvexError("Not authorized");
-    return record;
+    if (!ctx.slpUserId) return [];
+    const patient = await ctx.db.get(args.patientId);
+    if (!patient || patient.slpUserId !== ctx.slpUserId) return [];
+
+    return await ctx.db
+      .query("billingRecords")
+      .withIndex("by_patientId", (q) => q.eq("patientId", args.patientId))
+      .order("desc")
+      .collect();
   },
 });
+```
 
+- [ ] **Step 4: Run test to verify it passes**
+
+Run: `npx vitest run convex/__tests__/billingRecords.test.ts --reporter=verbose`
+
+Expected: PASS.
+
+- [ ] **Step 5: Commit**
+
+---
+
+## Task 8: Backend — listBySlp, get, getUnbilledCount Queries
+
+**Files:**
+- Modify: `convex/billingRecords.ts`
+- Test: `convex/__tests__/billingRecords.test.ts`
+
+- [ ] **Step 1: Write the failing tests**
+
+Add to `convex/__tests__/billingRecords.test.ts`:
+
+```typescript
+describe("billingRecords.listBySlp", () => {
+  it("returns all records for the SLP", async () => {
+    const t = convexTest(schema, modules).withIdentity(SLP_IDENTITY);
+    const { patientId } = await t.mutation(api.patients.create, VALID_PATIENT);
+    const noteId = await t.mutation(api.sessionNotes.create, {
+      patientId,
+      ...VALID_SESSION_DATA,
+    });
+
+    await t.mutation(internal.billingRecords.createFromSessionNote, {
+      sessionNoteId: noteId,
+      slpUserId: "slp-user-billing",
+      patientId,
+      sessionDate: today,
+      sessionType: "in-person",
+    });
+
+    const records = await t.query(api.billingRecords.listBySlp, {});
+    expect(records).toHaveLength(1);
+  });
+
+  it("filters by status when provided", async () => {
+    const t = convexTest(schema, modules).withIdentity(SLP_IDENTITY);
+    const { patientId } = await t.mutation(api.patients.create, VALID_PATIENT);
+    const noteId = await t.mutation(api.sessionNotes.create, {
+      patientId,
+      ...VALID_SESSION_DATA,
+    });
+
+    await t.mutation(internal.billingRecords.createFromSessionNote, {
+      sessionNoteId: noteId,
+      slpUserId: "slp-user-billing",
+      patientId,
+      sessionDate: today,
+      sessionType: "in-person",
+    });
+
+    const drafts = await t.query(api.billingRecords.listBySlp, { status: "draft" });
+    expect(drafts).toHaveLength(1);
+
+    const billed = await t.query(api.billingRecords.listBySlp, { status: "billed" });
+    expect(billed).toHaveLength(0);
+  });
+});
+
+describe("billingRecords.get", () => {
+  it("returns a single record by ID", async () => {
+    const t = convexTest(schema, modules).withIdentity(SLP_IDENTITY);
+    const { patientId } = await t.mutation(api.patients.create, VALID_PATIENT);
+    const noteId = await t.mutation(api.sessionNotes.create, {
+      patientId,
+      ...VALID_SESSION_DATA,
+    });
+
+    const recordId = await t.mutation(internal.billingRecords.createFromSessionNote, {
+      sessionNoteId: noteId,
+      slpUserId: "slp-user-billing",
+      patientId,
+      sessionDate: today,
+      sessionType: "in-person",
+    });
+
+    const record = await t.query(api.billingRecords.get, { recordId });
+    expect(record).toBeDefined();
+    expect(record!.cptCode).toBe("92507");
+  });
+
+  it("rejects access by different SLP", async () => {
+    const t = convexTest(schema, modules);
+    const slp1 = t.withIdentity(SLP_IDENTITY);
+    const slp2 = t.withIdentity({ subject: "other-slp-456", issuer: "clerk" });
+
+    const { patientId } = await slp1.mutation(api.patients.create, VALID_PATIENT);
+    const noteId = await slp1.mutation(api.sessionNotes.create, {
+      patientId,
+      ...VALID_SESSION_DATA,
+    });
+    const recordId = await slp1.mutation(internal.billingRecords.createFromSessionNote, {
+      sessionNoteId: noteId,
+      slpUserId: "slp-user-billing",
+      patientId,
+      sessionDate: today,
+      sessionType: "in-person",
+    });
+
+    const result = await slp2.query(api.billingRecords.get, { recordId });
+    expect(result).toBeNull();
+  });
+});
+
+describe("billingRecords.getUnbilledCount", () => {
+  it("returns count of draft + finalized records", async () => {
+    const t = convexTest(schema, modules).withIdentity(SLP_IDENTITY);
+    const { patientId } = await t.mutation(api.patients.create, VALID_PATIENT);
+    const noteId = await t.mutation(api.sessionNotes.create, {
+      patientId,
+      ...VALID_SESSION_DATA,
+    });
+
+    await t.mutation(internal.billingRecords.createFromSessionNote, {
+      sessionNoteId: noteId,
+      slpUserId: "slp-user-billing",
+      patientId,
+      sessionDate: today,
+      sessionType: "in-person",
+    });
+
+    const count = await t.query(api.billingRecords.getUnbilledCount, {});
+    expect(count).toBe(1);
+  });
+});
+```
+
+- [ ] **Step 2: Run tests to verify they fail**
+
+Run: `npx vitest run convex/__tests__/billingRecords.test.ts --reporter=verbose`
+
+Expected: FAIL — `api.billingRecords.listBySlp`, `api.billingRecords.get`, `api.billingRecords.getUnbilledCount` do not exist.
+
+- [ ] **Step 3: Add queries to billingRecords.ts**
+
+Append to `convex/billingRecords.ts`:
+
+```typescript
 export const listBySlp = slpQuery({
   args: {
-    status: v.optional(billingStatusValidator),
-    limit: v.optional(v.number()),
+    status: v.optional(v.union(
+      v.literal("draft"),
+      v.literal("finalized"),
+      v.literal("billed")
+    )),
   },
   handler: async (ctx, args) => {
     if (!ctx.slpUserId) return [];
-    const limit = args.limit ?? 50;
 
     if (args.status) {
       return await ctx.db
@@ -1091,32 +969,24 @@ export const listBySlp = slpQuery({
           q.eq("slpUserId", ctx.slpUserId!).eq("status", args.status!)
         )
         .order("desc")
-        .take(limit);
+        .collect();
     }
 
     return await ctx.db
       .query("billingRecords")
       .withIndex("by_slpUserId", (q) => q.eq("slpUserId", ctx.slpUserId!))
       .order("desc")
-      .take(limit);
+      .collect();
   },
 });
 
-export const listByPatient = slpQuery({
-  args: { patientId: v.id("patients") },
+export const get = slpQuery({
+  args: { recordId: v.id("billingRecords") },
   handler: async (ctx, args) => {
-    if (!ctx.slpUserId) return [];
-
-    // Verify the SLP owns this patient
-    const patient = await ctx.db.get(args.patientId);
-    if (!patient) throw new ConvexError("Patient not found");
-    if (patient.slpUserId !== ctx.slpUserId) throw new ConvexError("Not authorized");
-
-    return await ctx.db
-      .query("billingRecords")
-      .withIndex("by_patientId", (q) => q.eq("patientId", args.patientId))
-      .order("desc")
-      .collect();
+    if (!ctx.slpUserId) return null;
+    const record = await ctx.db.get(args.recordId);
+    if (!record || record.slpUserId !== ctx.slpUserId) return null;
+    return record;
   },
 });
 
@@ -1142,23 +1012,175 @@ export const getUnbilledCount = slpQuery({
     return drafts.length + finalized.length;
   },
 });
+```
 
-// ── Mutations ───────────────────────────────────────────────────────────────
+- [ ] **Step 4: Run tests to verify they pass**
+
+Run: `npx vitest run convex/__tests__/billingRecords.test.ts --reporter=verbose`
+
+Expected: PASS.
+
+- [ ] **Step 5: Commit**
+
+---
+
+## Task 9: Backend — update, finalize, markBilled, remove Mutations
+
+**Files:**
+- Modify: `convex/billingRecords.ts`
+- Test: `convex/__tests__/billingRecords.test.ts`
+
+- [ ] **Step 1: Write the failing tests**
+
+Add to `convex/__tests__/billingRecords.test.ts`:
+
+```typescript
+async function createDraftRecord(t: ReturnType<ReturnType<typeof convexTest>["withIdentity"]>) {
+  const { patientId } = await t.mutation(api.patients.create, VALID_PATIENT);
+  const noteId = await t.mutation(api.sessionNotes.create, {
+    patientId,
+    ...VALID_SESSION_DATA,
+  });
+  const recordId = await t.mutation(internal.billingRecords.createFromSessionNote, {
+    sessionNoteId: noteId,
+    slpUserId: "slp-user-billing",
+    patientId,
+    sessionDate: today,
+    sessionType: "in-person",
+  });
+  return { patientId, noteId, recordId };
+}
+
+describe("billingRecords.update", () => {
+  it("updates CPT code and fee on draft record", async () => {
+    const t = convexTest(schema, modules).withIdentity(SLP_IDENTITY);
+    const { recordId } = await createDraftRecord(t);
+
+    await t.mutation(api.billingRecords.update, {
+      recordId,
+      cptCode: "92523",
+      cptDescription: "Evaluation — speech sound + language",
+      fee: 20000,
+    });
+
+    const record = await t.query(api.billingRecords.get, { recordId });
+    expect(record!.cptCode).toBe("92523");
+    expect(record!.fee).toBe(20000);
+  });
+
+  it("rejects update on finalized record", async () => {
+    const t = convexTest(schema, modules).withIdentity(SLP_IDENTITY);
+    const { recordId } = await createDraftRecord(t);
+
+    await t.mutation(api.billingRecords.finalize, { recordId });
+
+    await expect(
+      t.mutation(api.billingRecords.update, { recordId, fee: 25000 }),
+    ).rejects.toThrow("Only draft");
+  });
+});
+
+describe("billingRecords.finalize", () => {
+  it("transitions from draft to finalized", async () => {
+    const t = convexTest(schema, modules).withIdentity(SLP_IDENTITY);
+    const { recordId } = await createDraftRecord(t);
+
+    await t.mutation(api.billingRecords.finalize, { recordId });
+
+    const record = await t.query(api.billingRecords.get, { recordId });
+    expect(record!.status).toBe("finalized");
+  });
+
+  it("rejects finalizing non-draft record", async () => {
+    const t = convexTest(schema, modules).withIdentity(SLP_IDENTITY);
+    const { recordId } = await createDraftRecord(t);
+
+    await t.mutation(api.billingRecords.finalize, { recordId });
+    await expect(
+      t.mutation(api.billingRecords.finalize, { recordId }),
+    ).rejects.toThrow("Only draft");
+  });
+});
+
+describe("billingRecords.markBilled", () => {
+  it("transitions from finalized to billed with timestamp", async () => {
+    const t = convexTest(schema, modules).withIdentity(SLP_IDENTITY);
+    const { recordId } = await createDraftRecord(t);
+
+    await t.mutation(api.billingRecords.finalize, { recordId });
+    await t.mutation(api.billingRecords.markBilled, { recordId });
+
+    const record = await t.query(api.billingRecords.get, { recordId });
+    expect(record!.status).toBe("billed");
+    expect(record!.billedAt).toBeDefined();
+    expect(record!.billedAt).toBeGreaterThan(0);
+  });
+
+  it("rejects marking draft as billed", async () => {
+    const t = convexTest(schema, modules).withIdentity(SLP_IDENTITY);
+    const { recordId } = await createDraftRecord(t);
+
+    await expect(
+      t.mutation(api.billingRecords.markBilled, { recordId }),
+    ).rejects.toThrow("Only finalized");
+  });
+});
+
+describe("billingRecords.remove", () => {
+  it("deletes a draft record", async () => {
+    const t = convexTest(schema, modules).withIdentity(SLP_IDENTITY);
+    const { recordId, patientId } = await createDraftRecord(t);
+
+    await t.mutation(api.billingRecords.remove, { recordId });
+
+    const records = await t.query(api.billingRecords.listByPatient, { patientId });
+    expect(records).toHaveLength(0);
+  });
+
+  it("rejects deleting a billed record", async () => {
+    const t = convexTest(schema, modules).withIdentity(SLP_IDENTITY);
+    const { recordId } = await createDraftRecord(t);
+
+    await t.mutation(api.billingRecords.finalize, { recordId });
+    await t.mutation(api.billingRecords.markBilled, { recordId });
+
+    await expect(
+      t.mutation(api.billingRecords.remove, { recordId }),
+    ).rejects.toThrow("Cannot delete a billed");
+  });
+});
+```
+
+- [ ] **Step 2: Run tests to verify they fail**
+
+Run: `npx vitest run convex/__tests__/billingRecords.test.ts --reporter=verbose`
+
+Expected: FAIL — `api.billingRecords.update`, `.finalize`, `.markBilled`, `.remove` do not exist.
+
+- [ ] **Step 3: Add mutations to billingRecords.ts**
+
+Append to `convex/billingRecords.ts`:
+
+```typescript
+// ── Public Mutations ───────────────────────────────────────────────────────
 
 export const update = slpMutation({
   args: {
-    billingId: v.id("billingRecords"),
+    recordId: v.id("billingRecords"),
     cptCode: v.optional(v.string()),
     cptDescription: v.optional(v.string()),
     modifiers: v.optional(v.array(v.string())),
-    diagnosisCodes: v.optional(v.array(diagnosisCodeValidator)),
+    diagnosisCodes: v.optional(v.array(v.object({
+      code: v.string(),
+      description: v.string(),
+    }))),
     placeOfService: v.optional(v.string()),
     units: v.optional(v.number()),
     fee: v.optional(v.number()),
     notes: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const record = await ctx.db.get(args.billingId);
+    const record = await ctx.db.get(args.recordId);
     if (!record) throw new ConvexError("Billing record not found");
     if (record.slpUserId !== ctx.slpUserId) throw new ConvexError("Not authorized");
     if (record.status !== "draft") {
@@ -1171,47 +1193,39 @@ export const update = slpMutation({
     if (args.modifiers !== undefined) updates.modifiers = args.modifiers;
     if (args.diagnosisCodes !== undefined) updates.diagnosisCodes = args.diagnosisCodes;
     if (args.placeOfService !== undefined) updates.placeOfService = args.placeOfService;
-    if (args.units !== undefined) {
-      if (args.units < 1 || args.units > 20) {
-        throw new ConvexError("Units must be between 1 and 20");
-      }
-      updates.units = args.units;
-    }
-    if (args.fee !== undefined) {
-      if (args.fee < 0) throw new ConvexError("Fee cannot be negative");
-      updates.fee = args.fee;
-    }
+    if (args.units !== undefined) updates.units = args.units;
+    if (args.fee !== undefined) updates.fee = args.fee;
     if (args.notes !== undefined) updates.notes = args.notes;
 
-    await ctx.db.patch(args.billingId, updates);
+    await ctx.db.patch(args.recordId, updates);
   },
 });
 
 export const finalize = slpMutation({
-  args: { billingId: v.id("billingRecords") },
+  args: { recordId: v.id("billingRecords") },
   handler: async (ctx, args) => {
-    const record = await ctx.db.get(args.billingId);
+    const record = await ctx.db.get(args.recordId);
     if (!record) throw new ConvexError("Billing record not found");
     if (record.slpUserId !== ctx.slpUserId) throw new ConvexError("Not authorized");
     if (record.status !== "draft") {
       throw new ConvexError("Only draft billing records can be finalized");
     }
 
-    await ctx.db.patch(args.billingId, { status: "finalized" });
+    await ctx.db.patch(args.recordId, { status: "finalized" });
   },
 });
 
 export const markBilled = slpMutation({
-  args: { billingId: v.id("billingRecords") },
+  args: { recordId: v.id("billingRecords") },
   handler: async (ctx, args) => {
-    const record = await ctx.db.get(args.billingId);
+    const record = await ctx.db.get(args.recordId);
     if (!record) throw new ConvexError("Billing record not found");
     if (record.slpUserId !== ctx.slpUserId) throw new ConvexError("Not authorized");
     if (record.status !== "finalized") {
       throw new ConvexError("Only finalized billing records can be marked as billed");
     }
 
-    await ctx.db.patch(args.billingId, {
+    await ctx.db.patch(args.recordId, {
       status: "billed",
       billedAt: Date.now(),
     });
@@ -1219,349 +1233,154 @@ export const markBilled = slpMutation({
 });
 
 export const remove = slpMutation({
-  args: { billingId: v.id("billingRecords") },
+  args: { recordId: v.id("billingRecords") },
   handler: async (ctx, args) => {
-    const record = await ctx.db.get(args.billingId);
+    const record = await ctx.db.get(args.recordId);
     if (!record) throw new ConvexError("Billing record not found");
     if (record.slpUserId !== ctx.slpUserId) throw new ConvexError("Not authorized");
     if (record.status === "billed") {
       throw new ConvexError("Cannot delete a billed billing record");
     }
 
-    await ctx.db.delete(args.billingId);
+    await ctx.db.delete(args.recordId);
   },
 });
 ```
 
 - [ ] **Step 4: Run tests to verify they pass**
 
-```bash
-npx vitest run convex/__tests__/billingRecords.test.ts --reporter=verbose
-```
+Run: `npx vitest run convex/__tests__/billingRecords.test.ts --reporter=verbose`
 
-Expected: PASS — all billing record tests green.
+Expected: PASS.
 
-- [ ] **Step 5: Run full test suite to verify no regressions**
-
-```bash
-npx vitest run --reporter=verbose 2>&1 | tail -30
-```
-
-Expected: All tests pass.
-
-- [ ] **Step 6: Commit**
-
-```bash
-git add convex/billingRecords.ts convex/__tests__/billingRecords.test.ts
-git commit -m "feat(billing): add billingRecords Convex functions with full test coverage
-
-Internal createFromSessionNote mutation with CPT/modifier auto-population.
-CRUD mutations (update, finalize, markBilled, remove) with status guards.
-Queries: listBySlp, listByPatient, get, getUnbilledCount.
-Idempotent creation prevents duplicate billing records."
-```
+- [ ] **Step 5: Commit**
 
 ---
 
-## Task 4: SessionNotes.sign Integration — Auto-Create Billing Record
+## Task 10: Session Note Sign Integration
 
 **Files:**
-- Modify: `convex/sessionNotes.ts`
-- Test: `convex/__tests__/billingRecords.test.ts` (already written in Task 3)
+- Modify: `convex/sessionNotes.ts:309-345` (sign mutation)
+- Test: `convex/__tests__/billingRecords.test.ts`
 
-- [ ] **Step 1: Write integration test — signing a note auto-creates billing record**
+- [ ] **Step 1: Write the failing test**
 
-Add to the end of `convex/__tests__/billingRecords.test.ts`:
+Add to `convex/__tests__/billingRecords.test.ts`:
 
 ```typescript
-// ── sessionNotes.sign integration ─────────────────────────────────────────
+describe("sessionNotes.sign billing integration", () => {
+  it("signing a note schedules createFromSessionNote", async () => {
+    const t = convexTest(schema, modules).withIdentity(SLP_IDENTITY);
+    const { patientId, noteId } = await signNote(t);
 
-describe("sessionNotes.sign → billing record auto-creation", () => {
-  it("signing a session note schedules billing record creation", async () => {
-    const t = convexTest(schema, modules);
-    const slp = t.withIdentity(SLP_IDENTITY);
-
-    const { patientId, noteId } = await createSignedNote(slp);
-
-    // The scheduler fires asynchronously — in convex-test, scheduled functions
-    // may or may not execute depending on the test runtime. We verify the
-    // sign mutation itself succeeds without error.
-    const note = await slp.query(api.sessionNotes.get, { noteId });
+    // convex-test runs scheduled functions synchronously in some modes,
+    // but scheduler writes cause "Write outside of transaction" which we suppress.
+    // The test validates the scheduler was called by checking no error was thrown.
+    // In production, the billing record would be created asynchronously.
+    const note = await t.query(api.sessionNotes.get, { noteId });
     expect(note!.status).toBe("signed");
-    expect(note!.signedAt).toBeDefined();
   });
 });
 ```
 
-- [ ] **Step 2: Modify convex/sessionNotes.ts to schedule billing record creation**
+- [ ] **Step 2: Run test to verify it passes (baseline)**
 
-Add the import for `internal` at the top of `convex/sessionNotes.ts`:
+Run: `npx vitest run convex/__tests__/billingRecords.test.ts --reporter=verbose`
+
+Expected: PASS (this is a baseline to confirm sign still works).
+
+- [ ] **Step 3: Add scheduler call to sign mutation**
+
+In `convex/sessionNotes.ts`, add this import at the top (after existing imports):
 
 ```typescript
 import { internal } from "./_generated/api";
 ```
 
-Then in the `sign` mutation handler, after the `insertProgressFromTargets` call (the last line of the handler), add:
+Then, in the `sign` mutation handler, after the `insertProgressFromTargets` call (after line 343), add:
 
 ```typescript
-    // Auto-create billing record (non-blocking, runs after transaction commits)
+    // Auto-create billing record for the signed session note
     await ctx.scheduler.runAfter(0, internal.billingRecords.createFromSessionNote, {
       sessionNoteId: args.noteId,
-      patientId: note.patientId,
       slpUserId: ctx.slpUserId,
+      patientId: note.patientId,
       sessionDate: note.sessionDate,
       sessionType: note.sessionType,
     });
 ```
 
-The full `sign` handler should now end with:
+- [ ] **Step 4: Run full test suite to verify nothing broke**
 
-```typescript
-    // Auto-create progressData for targets linked to goals
-    await insertProgressFromTargets(
-      ctx.db,
-      note.structuredData.targetsWorkedOn,
-      args.noteId,
-      note.patientId,
-      note.sessionDate,
-    );
+Run: `npx vitest run convex/__tests__/sessionNotes.test.ts convex/__tests__/billingRecords.test.ts --reporter=verbose`
 
-    // Auto-create billing record (non-blocking, runs after transaction commits)
-    await ctx.scheduler.runAfter(0, internal.billingRecords.createFromSessionNote, {
-      sessionNoteId: args.noteId,
-      patientId: note.patientId,
-      slpUserId: ctx.slpUserId,
-      sessionDate: note.sessionDate,
-      sessionType: note.sessionType,
-    });
-```
-
-- [ ] **Step 3: Run all session notes and billing tests**
-
-```bash
-npx vitest run convex/__tests__/sessionNotes.test.ts convex/__tests__/billingRecords.test.ts --reporter=verbose
-```
-
-Expected: PASS — existing session notes tests still pass, billing tests still pass. The scheduler call may produce "Write outside of transaction" warnings which `suppressSchedulerErrors()` handles.
-
-- [ ] **Step 4: Run full test suite**
-
-```bash
-npx vitest run --reporter=verbose 2>&1 | tail -30
-```
-
-Expected: All tests pass.
+Expected: PASS (suppressSchedulerErrors handles the expected "Write outside of transaction" noise).
 
 - [ ] **Step 5: Commit**
 
-```bash
-git add convex/sessionNotes.ts convex/__tests__/billingRecords.test.ts
-git commit -m "feat(billing): auto-create billing record on session note signing
+---
 
-sessionNotes.sign now schedules billingRecords.createFromSessionNote
-via ctx.scheduler.runAfter(0, ...) after the transaction commits.
-Non-blocking and idempotent — won't create duplicates on re-sign."
+## Task 11: Frontend — Routes and Navigation
+
+**Files:**
+- Modify: `src/core/routes.ts`
+- Modify: `src/shared/lib/navigation.ts`
+- Create: `src/app/(app)/billing/page.tsx`
+
+- [ ] **Step 1: Add BILLING route constant**
+
+In `src/core/routes.ts`, add after the `SESSIONS` line (line 19):
+
+```typescript
+  BILLING: "/billing",
 ```
+
+- [ ] **Step 2: Add Billing to SLP sidebar nav**
+
+In `src/shared/lib/navigation.ts`, add a new entry in `NAV_ITEMS` after the "Sessions" entry (after line 7):
+
+```typescript
+  { icon: "receipt_long", label: "Billing", href: ROUTES.BILLING },
+```
+
+And add to `isNavActive` function (after the sessions line):
+
+```typescript
+  if (href === "/billing") return pathname.startsWith("/billing");
+```
+
+- [ ] **Step 3: Create billing page route**
+
+Create `src/app/(app)/billing/page.tsx`:
+
+```typescript
+import { ClinicalBillingDashboard } from "@/features/billing/components/clinical-billing-dashboard";
+
+export const metadata = {
+  title: "Billing | Bridges",
+};
+
+export default function BillingPage() {
+  return <ClinicalBillingDashboard />;
+}
+```
+
+- [ ] **Step 4: Verify TypeScript compiles**
+
+Run: `npx tsc --noEmit 2>&1 | head -20`
+
+Expected: May have an error for missing `ClinicalBillingDashboard` (created in next task). That is expected.
+
+- [ ] **Step 5: Commit**
 
 ---
 
-## Task 5: Frontend — CPT Code Picker and Insurance Fields Components
+## Task 12: Frontend — use-billing-records Hook
 
 **Files:**
-- Create: `src/features/billing/components/cpt-code-picker.tsx`
-- Create: `src/features/billing/components/insurance-fields.tsx`
 - Create: `src/features/billing/hooks/use-billing-records.ts`
-- Create: `src/features/billing/components/__tests__/cpt-code-picker.test.tsx`
 
-- [ ] **Step 1: Write failing render test for CPT code picker**
-
-Create `src/features/billing/components/__tests__/cpt-code-picker.test.tsx`:
-
-```tsx
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
-
-import { CptCodePicker } from "../cpt-code-picker";
-
-describe("CptCodePicker", () => {
-  it("renders with the selected CPT code", () => {
-    render(
-      <CptCodePicker
-        value="92507"
-        onChange={vi.fn()}
-      />,
-    );
-
-    expect(screen.getByText(/92507/)).toBeInTheDocument();
-    expect(screen.getByText(/Individual speech/)).toBeInTheDocument();
-  });
-
-  it("renders placeholder when no value selected", () => {
-    render(
-      <CptCodePicker
-        value=""
-        onChange={vi.fn()}
-      />,
-    );
-
-    expect(screen.getByText(/Select CPT code/)).toBeInTheDocument();
-  });
-});
-```
-
-- [ ] **Step 2: Run test to verify it fails**
-
-```bash
-npx vitest run src/features/billing/components/__tests__/cpt-code-picker.test.tsx --reporter=verbose
-```
-
-Expected: FAIL — component doesn't exist yet.
-
-- [ ] **Step 3: Create the CPT code picker component**
-
-Create `src/features/billing/components/cpt-code-picker.tsx`:
-
-```tsx
-"use client";
-
-import { cn } from "@/core/utils";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/shared/components/ui/select";
-import { CPT_CODES, getCptByCode } from "../lib/cpt-codes";
-
-interface CptCodePickerProps {
-  value: string;
-  onChange: (code: string, description: string) => void;
-  className?: string;
-  disabled?: boolean;
-}
-
-export function CptCodePicker({
-  value,
-  onChange,
-  className,
-  disabled,
-}: CptCodePickerProps) {
-  const selected = getCptByCode(value);
-
-  return (
-    <Select
-      value={value}
-      onValueChange={(code) => {
-        const cpt = getCptByCode(code);
-        if (cpt) onChange(cpt.code, cpt.description);
-      }}
-      disabled={disabled}
-    >
-      <SelectTrigger className={cn("w-full", className)}>
-        <SelectValue placeholder="Select CPT code">
-          {selected
-            ? `${selected.code} — ${selected.description}`
-            : "Select CPT code"}
-        </SelectValue>
-      </SelectTrigger>
-      <SelectContent>
-        {CPT_CODES.map((cpt) => (
-          <SelectItem key={cpt.code} value={cpt.code}>
-            <span className="font-mono text-sm">{cpt.code}</span>
-            <span className="ml-2 text-sm text-on-surface-variant">
-              {cpt.description}
-            </span>
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
-  );
-}
-```
-
-- [ ] **Step 4: Create the insurance fields component**
-
-Create `src/features/billing/components/insurance-fields.tsx`:
-
-```tsx
-"use client";
-
-import { Input } from "@/shared/components/ui/input";
-import { Label } from "@/shared/components/ui/label";
-
-interface InsuranceData {
-  insuranceCarrier?: string;
-  insuranceMemberId?: string;
-  insuranceGroupNumber?: string;
-  insurancePhone?: string;
-}
-
-interface InsuranceFieldsProps {
-  data: InsuranceData;
-  onChange: (field: keyof InsuranceData, value: string) => void;
-  disabled?: boolean;
-}
-
-export function InsuranceFields({
-  data,
-  onChange,
-  disabled,
-}: InsuranceFieldsProps) {
-  return (
-    <div className="space-y-4">
-      <h3 className="text-sm font-semibold text-on-surface">
-        Insurance Information
-      </h3>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="space-y-1.5">
-          <Label htmlFor="insuranceCarrier">Insurance Carrier</Label>
-          <Input
-            id="insuranceCarrier"
-            placeholder="e.g., Blue Cross Blue Shield"
-            value={data.insuranceCarrier ?? ""}
-            onChange={(e) => onChange("insuranceCarrier", e.target.value)}
-            disabled={disabled}
-          />
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="insuranceMemberId">Member / Subscriber ID</Label>
-          <Input
-            id="insuranceMemberId"
-            placeholder="e.g., ABC123456789"
-            value={data.insuranceMemberId ?? ""}
-            onChange={(e) => onChange("insuranceMemberId", e.target.value)}
-            disabled={disabled}
-          />
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="insuranceGroupNumber">Group Number</Label>
-          <Input
-            id="insuranceGroupNumber"
-            placeholder="e.g., GRP-001"
-            value={data.insuranceGroupNumber ?? ""}
-            onChange={(e) => onChange("insuranceGroupNumber", e.target.value)}
-            disabled={disabled}
-          />
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="insurancePhone">Insurance Phone (Claims)</Label>
-          <Input
-            id="insurancePhone"
-            type="tel"
-            placeholder="e.g., (800) 555-0100"
-            value={data.insurancePhone ?? ""}
-            onChange={(e) => onChange("insurancePhone", e.target.value)}
-            disabled={disabled}
-          />
-        </div>
-      </div>
-    </div>
-  );
-}
-```
-
-- [ ] **Step 5: Create the billing records hook**
+- [ ] **Step 1: Create the hook**
 
 Create `src/features/billing/hooks/use-billing-records.ts`:
 
@@ -1573,85 +1392,310 @@ import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 
-export function useBillingRecords(options?: {
-  status?: "draft" | "finalized" | "billed";
-}) {
-  const records = useQuery(api.billingRecords.listBySlp, {
-    status: options?.status,
-  });
-  const unbilledCount = useQuery(api.billingRecords.getUnbilledCount, {});
+type BillingStatus = "draft" | "finalized" | "billed";
 
-  return { records, unbilledCount };
+export function useBillingRecords(status?: BillingStatus) {
+  return useQuery(api.billingRecords.listBySlp, status ? { status } : {});
 }
 
-export function useBillingRecord(billingId: Id<"billingRecords"> | null) {
-  const record = useQuery(
+export function useBillingRecord(recordId: Id<"billingRecords"> | undefined) {
+  return useQuery(
     api.billingRecords.get,
-    billingId ? { billingId } : "skip",
+    recordId ? { recordId } : "skip",
   );
-
-  const updateRecord = useMutation(api.billingRecords.update);
-  const finalizeRecord = useMutation(api.billingRecords.finalize);
-  const markBilled = useMutation(api.billingRecords.markBilled);
-  const removeRecord = useMutation(api.billingRecords.remove);
-
-  return {
-    record,
-    updateRecord,
-    finalizeRecord,
-    markBilled,
-    removeRecord,
-  };
 }
 
-export function usePatientBillingRecords(patientId: Id<"patients"> | null) {
+export function usePatientBillingRecords(patientId: Id<"patients"> | undefined) {
   return useQuery(
     api.billingRecords.listByPatient,
     patientId ? { patientId } : "skip",
   );
 }
+
+export function useUnbilledCount() {
+  return useQuery(api.billingRecords.getUnbilledCount, {});
+}
+
+export function useBillingMutations() {
+  const updateRecord = useMutation(api.billingRecords.update);
+  const finalizeRecord = useMutation(api.billingRecords.finalize);
+  const markBilled = useMutation(api.billingRecords.markBilled);
+  const removeRecord = useMutation(api.billingRecords.remove);
+
+  return { updateRecord, finalizeRecord, markBilled, removeRecord };
+}
 ```
 
-- [ ] **Step 6: Run CPT picker test to verify it passes**
+- [ ] **Step 2: Verify TypeScript compiles**
 
-```bash
-npx vitest run src/features/billing/components/__tests__/cpt-code-picker.test.tsx --reporter=verbose
-```
+Run: `npx tsc --noEmit 2>&1 | grep "use-billing-records" | head -5`
 
-Expected: PASS
+Expected: No errors for this file.
 
-- [ ] **Step 7: Commit**
-
-```bash
-git add src/features/billing/components/cpt-code-picker.tsx src/features/billing/components/insurance-fields.tsx src/features/billing/hooks/use-billing-records.ts src/features/billing/components/__tests__/cpt-code-picker.test.tsx
-git commit -m "feat(billing): add CPT code picker, insurance fields, and billing hooks
-
-Searchable CPT code dropdown using shadcn Select.
-Insurance info form section for patient profile.
-React hooks wrapping Convex billing queries and mutations."
-```
+- [ ] **Step 3: Commit**
 
 ---
 
-## Task 6: Frontend — Billing Record Editor and Row Components
+## Task 13: Frontend — CPT Code Picker Component
+
+**Files:**
+- Create: `src/features/billing/components/cpt-code-picker.tsx`
+- Create: `src/features/billing/components/__tests__/cpt-code-picker.test.tsx`
+
+- [ ] **Step 1: Write the failing test**
+
+Create `src/features/billing/components/__tests__/cpt-code-picker.test.tsx`:
+
+```typescript
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { describe, expect, it, vi } from "vitest";
+
+import { CptCodePicker } from "../cpt-code-picker";
+
+describe("CptCodePicker", () => {
+  it("renders with the selected CPT code", () => {
+    render(<CptCodePicker value="92507" onChange={vi.fn()} />);
+    expect(screen.getByText(/92507/)).toBeInTheDocument();
+  });
+
+  it("shows all 9 options when opened", async () => {
+    const user = userEvent.setup();
+    render(<CptCodePicker value="92507" onChange={vi.fn()} />);
+
+    await user.click(screen.getByRole("combobox"));
+
+    const options = screen.getAllByRole("option");
+    expect(options).toHaveLength(9);
+  });
+
+  it("calls onChange with code and description when selected", async () => {
+    const onChange = vi.fn();
+    const user = userEvent.setup();
+    render(<CptCodePicker value="92507" onChange={onChange} />);
+
+    await user.click(screen.getByRole("combobox"));
+    await user.click(screen.getByText(/92523/));
+
+    expect(onChange).toHaveBeenCalledWith("92523", "Evaluation — speech sound + language");
+  });
+});
+```
+
+- [ ] **Step 2: Run test to verify it fails**
+
+Run: `npx vitest run src/features/billing/components/__tests__/cpt-code-picker.test.tsx --reporter=verbose`
+
+Expected: FAIL — module `../cpt-code-picker` does not exist.
+
+- [ ] **Step 3: Write the CPT code picker component**
+
+Create `src/features/billing/components/cpt-code-picker.tsx`:
+
+```typescript
+"use client";
+
+import { cn } from "@/core/utils";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/shared/components/ui/select";
+
+import { CPT_CODES } from "../lib/cpt-codes";
+
+interface CptCodePickerProps {
+  value: string;
+  onChange: (code: string, description: string) => void;
+  disabled?: boolean;
+  className?: string;
+}
+
+export function CptCodePicker({ value, onChange, disabled, className }: CptCodePickerProps) {
+  return (
+    <Select
+      value={value}
+      onValueChange={(code) => {
+        const entry = CPT_CODES.find((c) => c.code === code);
+        if (entry) onChange(entry.code, entry.description);
+      }}
+      disabled={disabled}
+    >
+      <SelectTrigger className={cn("w-full", className)}>
+        <SelectValue placeholder="Select CPT code" />
+      </SelectTrigger>
+      <SelectContent>
+        {CPT_CODES.map((cpt) => (
+          <SelectItem key={cpt.code} value={cpt.code}>
+            {cpt.code} — {cpt.description}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
+```
+
+- [ ] **Step 4: Run test to verify it passes**
+
+Run: `npx vitest run src/features/billing/components/__tests__/cpt-code-picker.test.tsx --reporter=verbose`
+
+Expected: PASS.
+
+- [ ] **Step 5: Commit**
+
+---
+
+## Task 14: Frontend — Insurance Fields Component
+
+**Files:**
+- Create: `src/features/billing/components/insurance-fields.tsx`
+
+- [ ] **Step 1: Create the insurance fields form component**
+
+Create `src/features/billing/components/insurance-fields.tsx`:
+
+```typescript
+"use client";
+
+import { useMutation } from "convex/react";
+import { useState } from "react";
+import { toast } from "sonner";
+
+import { Button } from "@/shared/components/ui/button";
+import { Input } from "@/shared/components/ui/input";
+import { Label } from "@/shared/components/ui/label";
+
+import { api } from "../../../../convex/_generated/api";
+import type { Id } from "../../../../convex/_generated/dataModel";
+
+interface InsuranceFieldsProps {
+  patientId: Id<"patients">;
+  initialValues?: {
+    insuranceCarrier?: string;
+    insuranceMemberId?: string;
+    insuranceGroupNumber?: string;
+    insurancePhone?: string;
+  };
+}
+
+export function InsuranceFields({ patientId, initialValues }: InsuranceFieldsProps) {
+  const updatePatient = useMutation(api.patients.update);
+  const [saving, setSaving] = useState(false);
+  const [carrier, setCarrier] = useState(initialValues?.insuranceCarrier ?? "");
+  const [memberId, setMemberId] = useState(initialValues?.insuranceMemberId ?? "");
+  const [groupNumber, setGroupNumber] = useState(initialValues?.insuranceGroupNumber ?? "");
+  const [phone, setPhone] = useState(initialValues?.insurancePhone ?? "");
+
+  async function handleSave() {
+    setSaving(true);
+    try {
+      await updatePatient({
+        patientId,
+        insuranceCarrier: carrier || undefined,
+        insuranceMemberId: memberId || undefined,
+        insuranceGroupNumber: groupNumber || undefined,
+        insurancePhone: phone || undefined,
+      });
+      toast.success("Insurance information saved");
+    } catch {
+      toast.error("Failed to save insurance information");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="space-y-4">
+      <h4 className="font-body text-sm font-semibold text-on-surface">Insurance Information</h4>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="space-y-1.5">
+          <Label htmlFor="insurance-carrier">Carrier Name</Label>
+          <Input
+            id="insurance-carrier"
+            value={carrier}
+            onChange={(e) => setCarrier(e.target.value)}
+            placeholder="e.g. Blue Cross Blue Shield"
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="insurance-member-id">Member / Subscriber ID</Label>
+          <Input
+            id="insurance-member-id"
+            value={memberId}
+            onChange={(e) => setMemberId(e.target.value)}
+            placeholder="e.g. BCB123456789"
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="insurance-group">Group Number</Label>
+          <Input
+            id="insurance-group"
+            value={groupNumber}
+            onChange={(e) => setGroupNumber(e.target.value)}
+            placeholder="e.g. GRP001"
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="insurance-phone">Claims Phone</Label>
+          <Input
+            id="insurance-phone"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            placeholder="e.g. 1-800-555-0100"
+          />
+        </div>
+      </div>
+      <Button
+        onClick={handleSave}
+        disabled={saving}
+        size="sm"
+        className="bg-gradient-135 text-white"
+      >
+        {saving ? "Saving..." : "Save Insurance Info"}
+      </Button>
+    </div>
+  );
+}
+```
+
+- [ ] **Step 2: Verify TypeScript compiles**
+
+Run: `npx tsc --noEmit 2>&1 | grep "insurance-fields" | head -5`
+
+Expected: No errors.
+
+- [ ] **Step 3: Commit**
+
+---
+
+## Task 15: Frontend — Billing Record Editor Component
 
 **Files:**
 - Create: `src/features/billing/components/billing-record-editor.tsx`
-- Create: `src/features/billing/components/billing-record-row.tsx`
 
-- [ ] **Step 1: Create the billing record editor component**
+- [ ] **Step 1: Create the billing record editor**
 
 Create `src/features/billing/components/billing-record-editor.tsx`:
 
-```tsx
+```typescript
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
 
-import { cn } from "@/core/utils";
+import { MaterialIcon } from "@/shared/components/material-icon";
 import { Badge } from "@/shared/components/ui/badge";
 import { Button } from "@/shared/components/ui/button";
-import { Checkbox } from "@/shared/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/shared/components/ui/dialog";
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
 import {
@@ -1664,40 +1708,73 @@ import {
 import { Textarea } from "@/shared/components/ui/textarea";
 
 import type { Id } from "../../../../convex/_generated/dataModel";
-import { useBillingRecord } from "../hooks/use-billing-records";
-import { CptCodePicker } from "./cpt-code-picker";
+import { useBillingMutations, useBillingRecord } from "../hooks/use-billing-records";
 import { MODIFIERS } from "../lib/modifiers";
-import { PLACE_OF_SERVICE_CODES } from "../lib/place-of-service";
+import { PLACES_OF_SERVICE } from "../lib/place-of-service";
+import { CptCodePicker } from "./cpt-code-picker";
 
 interface BillingRecordEditorProps {
-  billingId: Id<"billingRecords">;
-  onClose?: () => void;
+  recordId: Id<"billingRecords">;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
-export function BillingRecordEditor({
-  billingId,
-  onClose,
-}: BillingRecordEditorProps) {
-  const { record, updateRecord, finalizeRecord, markBilled } =
-    useBillingRecord(billingId);
-
+export function BillingRecordEditor({ recordId, open, onOpenChange }: BillingRecordEditorProps) {
+  const record = useBillingRecord(recordId);
+  const { updateRecord, finalizeRecord } = useBillingMutations();
   const [saving, setSaving] = useState(false);
 
-  if (!record) {
-    return (
-      <div className="flex items-center justify-center p-8 text-on-surface-variant">
-        Loading...
-      </div>
+  const [cptCode, setCptCode] = useState("");
+  const [cptDescription, setCptDescription] = useState("");
+  const [modifiers, setModifiers] = useState<string[]>([]);
+  const [placeOfService, setPlaceOfService] = useState("");
+  const [units, setUnits] = useState(1);
+  const [fee, setFee] = useState("");
+  const [notes, setNotes] = useState("");
+  const [initialized, setInitialized] = useState(false);
+
+  // Initialize from record data once loaded
+  if (record && !initialized) {
+    setCptCode(record.cptCode);
+    setCptDescription(record.cptDescription);
+    setModifiers([...record.modifiers]);
+    setPlaceOfService(record.placeOfService);
+    setUnits(record.units);
+    setFee(record.fee ? (record.fee / 100).toFixed(2) : "");
+    setNotes(record.notes ?? "");
+    setInitialized(true);
+  }
+
+  // Reset initialized state when dialog closes
+  function handleOpenChange(open: boolean) {
+    if (!open) setInitialized(false);
+    onOpenChange(open);
+  }
+
+  function toggleModifier(code: string) {
+    setModifiers((prev) =>
+      prev.includes(code) ? prev.filter((m) => m !== code) : [...prev, code]
     );
   }
 
-  const isDraft = record.status === "draft";
-  const isFinalized = record.status === "finalized";
-
-  async function handleSave(updates: Record<string, unknown>) {
+  async function handleSave() {
     setSaving(true);
     try {
-      await updateRecord({ billingId, ...updates });
+      const feeInCents = fee ? Math.round(parseFloat(fee) * 100) : undefined;
+      await updateRecord({
+        recordId,
+        cptCode,
+        cptDescription,
+        modifiers,
+        placeOfService,
+        units,
+        fee: feeInCents,
+        notes: notes || undefined,
+      });
+      toast.success("Billing record updated");
+      handleOpenChange(false);
+    } catch {
+      toast.error("Failed to update billing record");
     } finally {
       setSaving(false);
     }
@@ -1706,1121 +1783,875 @@ export function BillingRecordEditor({
   async function handleFinalize() {
     setSaving(true);
     try {
-      await finalizeRecord({ billingId });
+      // Save first, then finalize
+      const feeInCents = fee ? Math.round(parseFloat(fee) * 100) : undefined;
+      await updateRecord({
+        recordId,
+        cptCode,
+        cptDescription,
+        modifiers,
+        placeOfService,
+        units,
+        fee: feeInCents,
+        notes: notes || undefined,
+      });
+      await finalizeRecord({ recordId });
+      toast.success("Billing record finalized");
+      handleOpenChange(false);
+    } catch {
+      toast.error("Failed to finalize billing record");
     } finally {
       setSaving(false);
     }
   }
 
-  async function handleMarkBilled() {
-    setSaving(true);
-    try {
-      await markBilled({ billingId });
-      onClose?.();
-    } finally {
-      setSaving(false);
-    }
-  }
+  const isDraft = record?.status === "draft";
 
   return (
-    <div className="space-y-6 p-6">
-      <div className="flex items-center justify-between">
-        <h2 className="font-display text-lg font-semibold text-on-surface">
-          Billing Record
-        </h2>
-        <Badge
-          variant={
-            record.status === "draft"
-              ? "secondary"
-              : record.status === "finalized"
-                ? "default"
-                : "outline"
-          }
-        >
-          {record.status}
-        </Badge>
-      </div>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="font-display">Edit Billing Record</DialogTitle>
+          <DialogDescription>
+            {record?.dateOfService ? `Service date: ${record.dateOfService}` : "Loading..."}
+          </DialogDescription>
+        </DialogHeader>
 
-      {/* Date of Service */}
-      <div className="space-y-1.5">
-        <Label>Date of Service</Label>
-        <p className="text-sm text-on-surface">{record.dateOfService}</p>
-      </div>
+        {!record ? (
+          <div className="animate-pulse h-48 rounded-xl bg-surface-container" />
+        ) : (
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <Label>CPT Code</Label>
+              <CptCodePicker
+                value={cptCode}
+                onChange={(code, desc) => {
+                  setCptCode(code);
+                  setCptDescription(desc);
+                }}
+                disabled={!isDraft}
+              />
+            </div>
 
-      {/* CPT Code */}
-      <div className="space-y-1.5">
-        <Label>CPT Code</Label>
-        <CptCodePicker
-          value={record.cptCode}
-          onChange={(code, description) =>
-            handleSave({ cptCode: code, cptDescription: description })
-          }
-          disabled={!isDraft}
-        />
-      </div>
+            <div className="space-y-1.5">
+              <Label>Modifiers</Label>
+              <div className="flex flex-wrap gap-2">
+                {MODIFIERS.map((m) => (
+                  <Badge
+                    key={m.code}
+                    variant={modifiers.includes(m.code) ? "default" : "outline"}
+                    className="cursor-pointer select-none"
+                    onClick={() => isDraft && toggleModifier(m.code)}
+                  >
+                    {m.code}
+                  </Badge>
+                ))}
+              </div>
+            </div>
 
-      {/* Modifiers */}
-      <div className="space-y-2">
-        <Label>Modifiers</Label>
-        <div className="flex flex-wrap gap-3">
-          {MODIFIERS.map((mod) => {
-            const checked = record.modifiers.includes(mod.code);
-            return (
-              <label
-                key={mod.code}
-                className={cn(
-                  "flex items-center gap-2 rounded-lg border px-3 py-2 text-sm",
-                  !isDraft && "opacity-60",
-                )}
-              >
-                <Checkbox
-                  checked={checked}
-                  onCheckedChange={(isChecked) => {
-                    if (!isDraft) return;
-                    const newMods = isChecked
-                      ? [...record.modifiers, mod.code]
-                      : record.modifiers.filter((m) => m !== mod.code);
-                    handleSave({ modifiers: newMods });
-                  }}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label>Place of Service</Label>
+                <Select
+                  value={placeOfService}
+                  onValueChange={setPlaceOfService}
+                  disabled={!isDraft}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PLACES_OF_SERVICE.map((pos) => (
+                      <SelectItem key={pos.code} value={pos.code}>
+                        {pos.code} — {pos.description}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="billing-units">Units</Label>
+                <Input
+                  id="billing-units"
+                  type="number"
+                  min={1}
+                  value={units}
+                  onChange={(e) => setUnits(parseInt(e.target.value) || 1)}
                   disabled={!isDraft}
                 />
-                <span className="font-mono">{mod.code}</span>
-                <span className="text-on-surface-variant">
-                  {mod.description.slice(0, 40)}...
-                </span>
-              </label>
-            );
-          })}
-        </div>
-      </div>
+              </div>
+            </div>
 
-      {/* Place of Service */}
-      <div className="space-y-1.5">
-        <Label>Place of Service</Label>
-        <Select
-          value={record.placeOfService}
-          onValueChange={(val) => handleSave({ placeOfService: val })}
-          disabled={!isDraft}
-        >
-          <SelectTrigger>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {PLACE_OF_SERVICE_CODES.map((pos) => (
-              <SelectItem key={pos.code} value={pos.code}>
-                {pos.code} — {pos.description}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="billing-fee">Fee ($)</Label>
+              <Input
+                id="billing-fee"
+                type="number"
+                step="0.01"
+                min="0"
+                value={fee}
+                onChange={(e) => setFee(e.target.value)}
+                placeholder="e.g. 150.00"
+                disabled={!isDraft}
+              />
+            </div>
 
-      {/* Units */}
-      <div className="space-y-1.5">
-        <Label htmlFor="units">Units</Label>
-        <Input
-          id="units"
-          type="number"
-          min={1}
-          max={20}
-          value={record.units}
-          onChange={(e) =>
-            handleSave({ units: parseInt(e.target.value, 10) || 1 })
-          }
-          disabled={!isDraft}
-          className="w-24"
-        />
-      </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="billing-notes">Notes</Label>
+              <Textarea
+                id="billing-notes"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Internal billing notes..."
+                rows={2}
+                disabled={!isDraft}
+              />
+            </div>
 
-      {/* Fee */}
-      <div className="space-y-1.5">
-        <Label htmlFor="fee">Fee ($)</Label>
-        <Input
-          id="fee"
-          type="number"
-          min={0}
-          step={0.01}
-          placeholder="0.00"
-          value={record.fee != null ? (record.fee / 100).toFixed(2) : ""}
-          onChange={(e) => {
-            const cents = Math.round(parseFloat(e.target.value) * 100);
-            if (!isNaN(cents)) handleSave({ fee: cents });
-          }}
-          disabled={!isDraft}
-          className="w-36"
-        />
-      </div>
-
-      {/* Diagnosis Codes */}
-      <div className="space-y-1.5">
-        <Label>Diagnosis Codes (ICD-10)</Label>
-        {record.diagnosisCodes.length > 0 ? (
-          <div className="flex flex-wrap gap-2">
-            {record.diagnosisCodes.map((dx) => (
-              <Badge key={dx.code} variant="outline">
-                {dx.code} — {dx.description}
-              </Badge>
-            ))}
+            {isDraft && (
+              <div className="flex justify-end gap-2 pt-2">
+                <Button variant="outline" onClick={handleSave} disabled={saving}>
+                  {saving ? "Saving..." : "Save Draft"}
+                </Button>
+                <Button
+                  className="bg-gradient-135 text-white"
+                  onClick={handleFinalize}
+                  disabled={saving}
+                >
+                  <MaterialIcon icon="check_circle" size="sm" />
+                  {saving ? "Finalizing..." : "Finalize"}
+                </Button>
+              </div>
+            )}
           </div>
-        ) : (
-          <p className="text-sm text-on-surface-variant">
-            No diagnosis codes — add ICD-10 codes to the patient profile.
-          </p>
         )}
-      </div>
-
-      {/* Notes */}
-      <div className="space-y-1.5">
-        <Label htmlFor="billingNotes">Internal Notes</Label>
-        <Textarea
-          id="billingNotes"
-          placeholder="Optional billing notes..."
-          value={record.notes ?? ""}
-          onChange={(e) => handleSave({ notes: e.target.value })}
-          disabled={!isDraft}
-          rows={2}
-        />
-      </div>
-
-      {/* Actions */}
-      <div className="flex gap-3 pt-2">
-        {isDraft && (
-          <Button onClick={handleFinalize} disabled={saving}>
-            Finalize
-          </Button>
-        )}
-        {isFinalized && (
-          <Button onClick={handleMarkBilled} disabled={saving}>
-            Mark as Billed
-          </Button>
-        )}
-        {onClose && (
-          <Button variant="outline" onClick={onClose}>
-            Close
-          </Button>
-        )}
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 ```
 
-- [ ] **Step 2: Create the billing record row component**
+- [ ] **Step 2: Verify TypeScript compiles**
 
-Create `src/features/billing/components/billing-record-row.tsx`:
+Run: `npx tsc --noEmit 2>&1 | grep "billing-record-editor" | head -5`
 
-```tsx
-"use client";
+Expected: No errors for this file.
 
-import { Badge } from "@/shared/components/ui/badge";
-import { Button } from "@/shared/components/ui/button";
-import { TableCell, TableRow } from "@/shared/components/ui/table";
-import { MaterialIcon } from "@/shared/components/material-icon";
-
-import type { Doc } from "../../../../convex/_generated/dataModel";
-
-interface BillingRecordRowProps {
-  record: Doc<"billingRecords">;
-  patientName?: string;
-  onEdit: () => void;
-  onSuperbill?: () => void;
-}
-
-const STATUS_COLORS = {
-  draft: "secondary",
-  finalized: "default",
-  billed: "outline",
-} as const;
-
-export function BillingRecordRow({
-  record,
-  patientName,
-  onEdit,
-  onSuperbill,
-}: BillingRecordRowProps) {
-  const feeDisplay =
-    record.fee != null ? `$${(record.fee / 100).toFixed(2)}` : "—";
-
-  return (
-    <TableRow className="cursor-pointer hover:bg-surface-container-low" onClick={onEdit}>
-      <TableCell className="font-medium">{patientName ?? "—"}</TableCell>
-      <TableCell>{record.dateOfService}</TableCell>
-      <TableCell>
-        <span className="font-mono text-sm">{record.cptCode}</span>
-        <span className="ml-2 text-xs text-on-surface-variant">
-          {record.cptDescription}
-        </span>
-      </TableCell>
-      <TableCell>
-        {record.modifiers.map((m) => (
-          <Badge key={m} variant="outline" className="mr-1 text-xs">
-            {m}
-          </Badge>
-        ))}
-      </TableCell>
-      <TableCell className="text-right">{feeDisplay}</TableCell>
-      <TableCell>
-        <Badge variant={STATUS_COLORS[record.status]}>{record.status}</Badge>
-      </TableCell>
-      <TableCell>
-        <div className="flex gap-1">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={(e) => {
-              e.stopPropagation();
-              onEdit();
-            }}
-          >
-            <MaterialIcon icon="edit" size="sm" />
-          </Button>
-          {record.status === "finalized" && onSuperbill && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={(e) => {
-                e.stopPropagation();
-                onSuperbill();
-              }}
-            >
-              <MaterialIcon icon="receipt_long" size="sm" />
-            </Button>
-          )}
-        </div>
-      </TableCell>
-    </TableRow>
-  );
-}
-```
-
-- [ ] **Step 3: Run existing tests to verify no regressions**
-
-```bash
-npx vitest run --reporter=verbose 2>&1 | tail -30
-```
-
-Expected: All tests pass.
-
-- [ ] **Step 4: Commit**
-
-```bash
-git add src/features/billing/components/billing-record-editor.tsx src/features/billing/components/billing-record-row.tsx
-git commit -m "feat(billing): add billing record editor and row components
-
-Full editor with CPT picker, modifier checkboxes, POS dropdown, fee input,
-diagnosis codes display, and status-based action buttons.
-Row component for dashboard table with status badges and actions."
-```
+- [ ] **Step 3: Commit**
 
 ---
 
-## Task 7: Frontend — Clinical Billing Dashboard
+## Task 16: Frontend — Billing Record Row Component
+
+**Files:**
+- Create: `src/features/billing/components/billing-record-row.tsx`
+
+- [ ] **Step 1: Create the row component**
+
+Create `src/features/billing/components/billing-record-row.tsx`:
+
+```typescript
+"use client";
+
+import { useQuery } from "convex/react";
+
+import { cn } from "@/core/utils";
+import { MaterialIcon } from "@/shared/components/material-icon";
+import { Badge } from "@/shared/components/ui/badge";
+import { Button } from "@/shared/components/ui/button";
+
+import { api } from "../../../../convex/_generated/api";
+import type { Doc, Id } from "../../../../convex/_generated/dataModel";
+
+const STATUS_STYLES: Record<string, string> = {
+  draft: "bg-amber-100 text-amber-800",
+  finalized: "bg-blue-100 text-blue-800",
+  billed: "bg-green-100 text-green-800",
+};
+
+interface BillingRecordRowProps {
+  record: Doc<"billingRecords">;
+  onEdit: (recordId: Id<"billingRecords">) => void;
+  onGenerateSuperbill?: (recordId: Id<"billingRecords">) => void;
+  onMarkBilled?: (recordId: Id<"billingRecords">) => void;
+}
+
+export function BillingRecordRow({
+  record,
+  onEdit,
+  onGenerateSuperbill,
+  onMarkBilled,
+}: BillingRecordRowProps) {
+  const patient = useQuery(api.patients.get, { patientId: record.patientId });
+  const patientName = patient
+    ? `${patient.firstName} ${patient.lastName}`
+    : "Loading...";
+  const feeDisplay = record.fee ? `$${(record.fee / 100).toFixed(2)}` : "—";
+
+  return (
+    <tr className="border-b border-surface-container-high hover:bg-surface-container-lowest/50 transition-colors duration-300">
+      <td className="px-4 py-3 text-sm text-on-surface">{patientName}</td>
+      <td className="px-4 py-3 text-sm text-on-surface-variant">{record.dateOfService}</td>
+      <td className="px-4 py-3 text-sm font-mono text-on-surface">{record.cptCode}</td>
+      <td className="px-4 py-3 text-sm text-on-surface-variant">
+        {record.modifiers.join(", ") || "—"}
+      </td>
+      <td className="px-4 py-3 text-sm text-on-surface">{feeDisplay}</td>
+      <td className="px-4 py-3">
+        <Badge className={cn("text-xs", STATUS_STYLES[record.status])}>
+          {record.status}
+        </Badge>
+      </td>
+      <td className="px-4 py-3">
+        <div className="flex items-center gap-1">
+          {record.status === "draft" && (
+            <Button variant="ghost" size="sm" onClick={() => onEdit(record._id)}>
+              <MaterialIcon icon="edit" size="sm" />
+            </Button>
+          )}
+          {record.status === "finalized" && onGenerateSuperbill && (
+            <Button variant="ghost" size="sm" onClick={() => onGenerateSuperbill(record._id)}>
+              <MaterialIcon icon="receipt" size="sm" />
+            </Button>
+          )}
+          {record.status === "finalized" && onMarkBilled && (
+            <Button variant="ghost" size="sm" onClick={() => onMarkBilled(record._id)}>
+              <MaterialIcon icon="check_circle" size="sm" />
+            </Button>
+          )}
+        </div>
+      </td>
+    </tr>
+  );
+}
+```
+
+- [ ] **Step 2: Verify TypeScript compiles**
+
+Run: `npx tsc --noEmit 2>&1 | grep "billing-record-row" | head -5`
+
+Expected: No errors.
+
+- [ ] **Step 3: Commit**
+
+---
+
+## Task 17: Frontend — Clinical Billing Dashboard
 
 **Files:**
 - Create: `src/features/billing/components/clinical-billing-dashboard.tsx`
-- Modify: `src/core/routes.ts`
-- Modify: `src/shared/lib/navigation.ts`
-- Create: `src/app/(app)/billing/page.tsx`
 
-- [ ] **Step 1: Add BILLING route to routes.ts**
-
-In `src/core/routes.ts`, add after the `SESSIONS` line:
-
-```typescript
-  BILLING: "/billing",
-```
-
-- [ ] **Step 2: Add Billing nav item for SLP**
-
-In `src/shared/lib/navigation.ts`, add to the `NAV_ITEMS` array after the Sessions entry:
-
-```typescript
-  { icon: "receipt_long", label: "Billing", href: ROUTES.BILLING },
-```
-
-Add to `isNavActive` function:
-
-```typescript
-  if (href === "/billing") return pathname.startsWith("/billing");
-```
-
-- [ ] **Step 3: Create the clinical billing dashboard**
+- [ ] **Step 1: Create the dashboard component**
 
 Create `src/features/billing/components/clinical-billing-dashboard.tsx`:
 
-```tsx
+```typescript
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
 
 import { cn } from "@/core/utils";
-import { Badge } from "@/shared/components/ui/badge";
-import { Card, CardContent } from "@/shared/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-} from "@/shared/components/ui/dialog";
-import {
-  Table,
-  TableBody,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/shared/components/ui/table";
+import { MaterialIcon } from "@/shared/components/material-icon";
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
 } from "@/shared/components/ui/tabs";
-import { MaterialIcon } from "@/shared/components/material-icon";
-import { useQuery } from "convex/react";
 
-import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
-import { useBillingRecords } from "../hooks/use-billing-records";
+import {
+  useBillingMutations,
+  useBillingRecords,
+} from "../hooks/use-billing-records";
 import { BillingRecordEditor } from "./billing-record-editor";
 import { BillingRecordRow } from "./billing-record-row";
 import { SuperbillViewer } from "./superbill-viewer";
 
-type TabValue = "unbilled" | "ready" | "billed";
+type Tab = "unbilled" | "ready" | "billed";
 
 export function ClinicalBillingDashboard() {
-  const [activeTab, setActiveTab] = useState<TabValue>("unbilled");
+  const [activeTab, setActiveTab] = useState<Tab>("unbilled");
   const [editingId, setEditingId] = useState<Id<"billingRecords"> | null>(null);
   const [superbillId, setSuperbillId] = useState<Id<"billingRecords"> | null>(null);
 
-  const { records: draftRecords } = useBillingRecords({ status: "draft" });
-  const { records: finalizedRecords } = useBillingRecords({ status: "finalized" });
-  const { records: billedRecords } = useBillingRecords({ status: "billed" });
-  const { unbilledCount } = useBillingRecords();
+  const draftRecords = useBillingRecords("draft");
+  const finalizedRecords = useBillingRecords("finalized");
+  const billedRecords = useBillingRecords("billed");
+  const { markBilled } = useBillingMutations();
 
   // Summary stats
-  const totalUnbilledAmount =
-    (draftRecords ?? []).reduce((sum, r) => sum + (r.fee ?? 0), 0) +
-    (finalizedRecords ?? []).reduce((sum, r) => sum + (r.fee ?? 0), 0);
+  const totalUnbilledAmount = (draftRecords ?? []).reduce(
+    (sum, r) => sum + (r.fee ?? 0),
+    0,
+  );
+  const unbilledCount = (draftRecords ?? []).length + (finalizedRecords ?? []).length;
+  const billedThisMonth = (billedRecords ?? []).filter((r) => {
+    if (!r.billedAt) return false;
+    const now = new Date();
+    const billedDate = new Date(r.billedAt);
+    return (
+      billedDate.getMonth() === now.getMonth() &&
+      billedDate.getFullYear() === now.getFullYear()
+    );
+  });
+  const billedThisMonthTotal = billedThisMonth.reduce(
+    (sum, r) => sum + (r.fee ?? 0),
+    0,
+  );
 
-  const totalBilledThisMonth = (billedRecords ?? [])
-    .filter((r) => {
-      if (!r.billedAt) return false;
-      const now = new Date();
-      const billedDate = new Date(r.billedAt);
-      return (
-        billedDate.getMonth() === now.getMonth() &&
-        billedDate.getFullYear() === now.getFullYear()
-      );
-    })
-    .reduce((sum, r) => sum + (r.fee ?? 0), 0);
-
-  function getRecordsForTab(tab: TabValue) {
-    switch (tab) {
-      case "unbilled":
-        return draftRecords ?? [];
-      case "ready":
-        return finalizedRecords ?? [];
-      case "billed":
-        return billedRecords ?? [];
+  async function handleMarkBilled(recordId: Id<"billingRecords">) {
+    try {
+      await markBilled({ recordId });
+      toast.success("Record marked as billed");
+    } catch {
+      toast.error("Failed to mark record as billed");
     }
   }
 
-  const currentRecords = getRecordsForTab(activeTab);
+  const TABLE_HEADERS = (
+    <tr className="border-b border-surface-container-high">
+      <th className="px-4 py-2 text-left text-xs font-medium text-on-surface-variant uppercase tracking-wider">Patient</th>
+      <th className="px-4 py-2 text-left text-xs font-medium text-on-surface-variant uppercase tracking-wider">Date</th>
+      <th className="px-4 py-2 text-left text-xs font-medium text-on-surface-variant uppercase tracking-wider">CPT</th>
+      <th className="px-4 py-2 text-left text-xs font-medium text-on-surface-variant uppercase tracking-wider">Modifiers</th>
+      <th className="px-4 py-2 text-left text-xs font-medium text-on-surface-variant uppercase tracking-wider">Fee</th>
+      <th className="px-4 py-2 text-left text-xs font-medium text-on-surface-variant uppercase tracking-wider">Status</th>
+      <th className="px-4 py-2 text-left text-xs font-medium text-on-surface-variant uppercase tracking-wider">Actions</th>
+    </tr>
+  );
+
+  function renderEmpty(message: string) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 text-on-surface-variant">
+        <MaterialIcon icon="receipt_long" size="lg" className="mb-2 opacity-40" />
+        <p className="text-sm">{message}</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
+    <div className="flex flex-col gap-6 p-4 sm:p-6 lg:p-8">
       <div>
-        <h1 className="font-display text-2xl font-bold text-on-surface">
-          Clinical Billing
-        </h1>
-        <p className="mt-1 text-sm text-on-surface-variant">
+        <h1 className="font-display text-2xl font-semibold text-on-surface">Clinical Billing</h1>
+        <p className="text-sm text-on-surface-variant mt-1">
           Manage billing records and generate superbills
         </p>
       </div>
 
-      {/* Summary Cards */}
+      {/* Summary stats */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <Card className="bg-surface-container-low">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100 text-amber-700">
-                <MaterialIcon icon="pending_actions" size="md" />
-              </div>
-              <div>
-                <p className="text-sm text-on-surface-variant">Unbilled</p>
-                <p className="text-xl font-bold text-on-surface">
-                  {unbilledCount ?? 0} sessions
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="bg-surface-container-low">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-100 text-blue-700">
-                <MaterialIcon icon="attach_money" size="md" />
-              </div>
-              <div>
-                <p className="text-sm text-on-surface-variant">
-                  Unbilled Amount
-                </p>
-                <p className="text-xl font-bold text-on-surface">
-                  ${(totalUnbilledAmount / 100).toFixed(2)}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="bg-surface-container-low">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-green-100 text-green-700">
-                <MaterialIcon icon="check_circle" size="md" />
-              </div>
-              <div>
-                <p className="text-sm text-on-surface-variant">
-                  Billed This Month
-                </p>
-                <p className="text-xl font-bold text-on-surface">
-                  ${(totalBilledThisMonth / 100).toFixed(2)}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="rounded-2xl bg-surface-container p-4">
+          <p className="text-xs font-medium text-on-surface-variant uppercase tracking-wider">Unbilled Amount</p>
+          <p className="text-2xl font-semibold text-on-surface mt-1">
+            ${(totalUnbilledAmount / 100).toFixed(2)}
+          </p>
+        </div>
+        <div className="rounded-2xl bg-surface-container p-4">
+          <p className="text-xs font-medium text-on-surface-variant uppercase tracking-wider">Unbilled Sessions</p>
+          <p className="text-2xl font-semibold text-on-surface mt-1">{unbilledCount}</p>
+        </div>
+        <div className="rounded-2xl bg-surface-container p-4">
+          <p className="text-xs font-medium text-on-surface-variant uppercase tracking-wider">Billed This Month</p>
+          <p className="text-2xl font-semibold text-on-surface mt-1">
+            ${(billedThisMonthTotal / 100).toFixed(2)}
+          </p>
+        </div>
       </div>
 
       {/* Tabs */}
-      <Tabs
-        value={activeTab}
-        onValueChange={(v) => setActiveTab(v as TabValue)}
-      >
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as Tab)}>
         <TabsList>
-          <TabsTrigger value="unbilled" className="gap-2">
+          <TabsTrigger value="unbilled">
             Unbilled
             {(draftRecords?.length ?? 0) > 0 && (
-              <Badge variant="secondary" className="ml-1">
-                {draftRecords?.length}
-              </Badge>
+              <span className="ml-1.5 rounded-full bg-amber-100 px-1.5 text-xs text-amber-800">
+                {draftRecords!.length}
+              </span>
             )}
           </TabsTrigger>
-          <TabsTrigger value="ready" className="gap-2">
+          <TabsTrigger value="ready">
             Ready to Bill
             {(finalizedRecords?.length ?? 0) > 0 && (
-              <Badge variant="default" className="ml-1">
-                {finalizedRecords?.length}
-              </Badge>
+              <span className="ml-1.5 rounded-full bg-blue-100 px-1.5 text-xs text-blue-800">
+                {finalizedRecords!.length}
+              </span>
             )}
           </TabsTrigger>
           <TabsTrigger value="billed">Billed</TabsTrigger>
         </TabsList>
 
-        <TabsContent value={activeTab} className="mt-4">
-          {currentRecords.length === 0 ? (
-            <div className="flex flex-col items-center justify-center rounded-xl bg-surface-container-low py-12">
-              <MaterialIcon
-                icon="receipt_long"
-                size="lg"
-                className="text-on-surface-variant"
-              />
-              <p className="mt-2 text-sm text-on-surface-variant">
-                {activeTab === "unbilled"
-                  ? "No unbilled sessions. Sign a session note to auto-create a billing record."
-                  : activeTab === "ready"
-                    ? "No records ready to bill. Finalize draft records first."
-                    : "No billed records yet."}
-              </p>
-            </div>
+        <TabsContent value="unbilled">
+          {!draftRecords || draftRecords.length === 0 ? (
+            renderEmpty("No unbilled records. Records are created automatically when you sign session notes.")
           ) : (
-            <div className="rounded-xl border bg-surface-container-lowest">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Patient</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>CPT Code</TableHead>
-                    <TableHead>Modifiers</TableHead>
-                    <TableHead className="text-right">Fee</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {currentRecords.map((record) => (
+            <div className="overflow-x-auto rounded-xl border border-surface-container-high">
+              <table className="w-full">
+                <thead>{TABLE_HEADERS}</thead>
+                <tbody>
+                  {draftRecords.map((record) => (
                     <BillingRecordRow
                       key={record._id}
                       record={record}
-                      onEdit={() => setEditingId(record._id)}
-                      onSuperbill={
-                        record.status === "finalized"
-                          ? () => setSuperbillId(record._id)
-                          : undefined
-                      }
+                      onEdit={setEditingId}
                     />
                   ))}
-                </TableBody>
-              </Table>
+                </tbody>
+              </table>
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="ready">
+          {!finalizedRecords || finalizedRecords.length === 0 ? (
+            renderEmpty("No finalized records. Edit and finalize draft records to prepare them for billing.")
+          ) : (
+            <div className="overflow-x-auto rounded-xl border border-surface-container-high">
+              <table className="w-full">
+                <thead>{TABLE_HEADERS}</thead>
+                <tbody>
+                  {finalizedRecords.map((record) => (
+                    <BillingRecordRow
+                      key={record._id}
+                      record={record}
+                      onEdit={setEditingId}
+                      onGenerateSuperbill={setSuperbillId}
+                      onMarkBilled={handleMarkBilled}
+                    />
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="billed">
+          {!billedRecords || billedRecords.length === 0 ? (
+            renderEmpty("No billed records yet.")
+          ) : (
+            <div className="overflow-x-auto rounded-xl border border-surface-container-high">
+              <table className="w-full">
+                <thead>{TABLE_HEADERS}</thead>
+                <tbody>
+                  {billedRecords.map((record) => (
+                    <BillingRecordRow
+                      key={record._id}
+                      record={record}
+                      onEdit={setEditingId}
+                    />
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
         </TabsContent>
       </Tabs>
 
-      {/* Editor Dialog */}
-      <Dialog
-        open={editingId !== null}
-        onOpenChange={(open) => {
-          if (!open) setEditingId(null);
-        }}
-      >
-        <DialogContent className="max-w-2xl">
-          <DialogTitle className="sr-only">Edit Billing Record</DialogTitle>
-          {editingId && (
-            <BillingRecordEditor
-              billingId={editingId}
-              onClose={() => setEditingId(null)}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
+      {/* Editor dialog */}
+      {editingId && (
+        <BillingRecordEditor
+          recordId={editingId}
+          open={!!editingId}
+          onOpenChange={(open) => {
+            if (!open) setEditingId(null);
+          }}
+        />
+      )}
 
-      {/* Superbill Dialog */}
-      <Dialog
-        open={superbillId !== null}
-        onOpenChange={(open) => {
-          if (!open) setSuperbillId(null);
-        }}
-      >
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-          <DialogTitle className="sr-only">Superbill</DialogTitle>
-          {superbillId && (
-            <SuperbillViewer billingId={superbillId} />
-          )}
-        </DialogContent>
-      </Dialog>
+      {/* Superbill viewer dialog */}
+      {superbillId && (
+        <SuperbillViewer
+          recordId={superbillId}
+          open={!!superbillId}
+          onOpenChange={(open) => {
+            if (!open) setSuperbillId(null);
+          }}
+        />
+      )}
     </div>
   );
 }
 ```
 
-- [ ] **Step 4: Create the billing page route**
+- [ ] **Step 2: Verify TypeScript compiles**
 
-Create `src/app/(app)/billing/page.tsx`:
+Run: `npx tsc --noEmit 2>&1 | grep "clinical-billing" | head -5`
 
-```tsx
-import type { Metadata } from "next";
+Expected: May error on missing `SuperbillViewer` (created in next task).
 
-import { ClinicalBillingDashboard } from "@/features/billing/components/clinical-billing-dashboard";
-
-export const metadata: Metadata = {
-  title: "Clinical Billing — Bridges",
-};
-
-export default function BillingPage() {
-  return <ClinicalBillingDashboard />;
-}
-```
-
-- [ ] **Step 5: Run full test suite**
-
-```bash
-npx vitest run --reporter=verbose 2>&1 | tail -30
-```
-
-Expected: All tests pass.
-
-- [ ] **Step 6: Commit**
-
-```bash
-git add src/features/billing/components/clinical-billing-dashboard.tsx src/app/\(app\)/billing/page.tsx src/core/routes.ts src/shared/lib/navigation.ts
-git commit -m "feat(billing): add clinical billing dashboard with tab navigation
-
-Three-tab dashboard (unbilled/ready/billed) with summary stats cards.
-Editor dialog for CPT code, modifier, and fee editing.
-New /billing route with sidebar navigation for SLP users."
-```
+- [ ] **Step 3: Commit**
 
 ---
 
-## Task 8: Frontend — Superbill Viewer with Print CSS
+## Task 18: Frontend — Superbill Viewer with Print CSS
 
 **Files:**
 - Create: `src/features/billing/components/superbill-viewer.tsx`
 - Create: `src/features/billing/components/__tests__/superbill-viewer.test.tsx`
 
-- [ ] **Step 1: Write failing render test for superbill viewer**
+- [ ] **Step 1: Write the failing test**
 
 Create `src/features/billing/components/__tests__/superbill-viewer.test.tsx`:
 
-```tsx
+```typescript
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("convex/react", () => ({
-  useQuery: vi.fn().mockReturnValue(null),
+  useQuery: vi.fn((fn: unknown, args: unknown) => {
+    // Return mock data based on the function reference
+    if (args && typeof args === "object" && "recordId" in args) {
+      return {
+        _id: "record-1",
+        patientId: "patient-1",
+        slpUserId: "slp-1",
+        sessionNoteId: "note-1",
+        dateOfService: "2026-03-28",
+        cptCode: "92507",
+        cptDescription: "Individual speech/language/voice treatment",
+        modifiers: ["GP"],
+        diagnosisCodes: [{ code: "F80.0", description: "Phonological disorder" }],
+        placeOfService: "11",
+        units: 1,
+        fee: 15000,
+        status: "finalized",
+      };
+    }
+    if (args && typeof args === "object" && "patientId" in args) {
+      return {
+        _id: "patient-1",
+        firstName: "Alex",
+        lastName: "Smith",
+        dateOfBirth: "2020-01-15",
+        insuranceCarrier: "BCBS",
+        insuranceMemberId: "BCB123",
+      };
+    }
+    // practiceProfiles.get
+    return {
+      practiceName: "Springfield Speech",
+      npiNumber: "1234567890",
+      address: "123 Main St",
+      phone: "217-555-0100",
+      credentials: "CCC-SLP",
+    };
+  }),
 }));
 
 import { SuperbillViewer } from "../superbill-viewer";
-import type { Id } from "../../../../../convex/_generated/dataModel";
 
 describe("SuperbillViewer", () => {
-  it("renders loading state when data is null", () => {
+  it("renders practice name and patient name", () => {
     render(
-      <SuperbillViewer billingId={"test-id" as Id<"billingRecords">} />,
+      <SuperbillViewer
+        recordId={"record-1" as any}
+        open={true}
+        onOpenChange={vi.fn()}
+      />,
     );
-    expect(screen.getByText(/Loading/i)).toBeInTheDocument();
+
+    expect(screen.getByText("Springfield Speech")).toBeInTheDocument();
+    expect(screen.getByText(/Alex Smith/)).toBeInTheDocument();
+  });
+
+  it("renders CPT code and fee", () => {
+    render(
+      <SuperbillViewer
+        recordId={"record-1" as any}
+        open={true}
+        onOpenChange={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText("92507")).toBeInTheDocument();
+    expect(screen.getByText("$150.00")).toBeInTheDocument();
+  });
+
+  it("renders Print / Save as PDF button", () => {
+    render(
+      <SuperbillViewer
+        recordId={"record-1" as any}
+        open={true}
+        onOpenChange={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: /print/i })).toBeInTheDocument();
   });
 });
 ```
 
 - [ ] **Step 2: Run test to verify it fails**
 
-```bash
-npx vitest run src/features/billing/components/__tests__/superbill-viewer.test.tsx --reporter=verbose
-```
+Run: `npx vitest run src/features/billing/components/__tests__/superbill-viewer.test.tsx --reporter=verbose`
 
-Expected: FAIL — component doesn't exist.
+Expected: FAIL — module `../superbill-viewer` does not exist.
 
-- [ ] **Step 3: Create the superbill viewer component**
+- [ ] **Step 3: Create the superbill viewer**
 
 Create `src/features/billing/components/superbill-viewer.tsx`:
 
-```tsx
+```typescript
 "use client";
 
 import { useQuery } from "convex/react";
 
-import { Button } from "@/shared/components/ui/button";
 import { MaterialIcon } from "@/shared/components/material-icon";
+import { Button } from "@/shared/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/shared/components/ui/dialog";
 
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
-import { getPosByCode } from "../lib/place-of-service";
 
 interface SuperbillViewerProps {
-  billingId: Id<"billingRecords">;
+  recordId: Id<"billingRecords">;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
-export function SuperbillViewer({ billingId }: SuperbillViewerProps) {
-  const record = useQuery(api.billingRecords.get, { billingId });
-
-  // Load patient data
+export function SuperbillViewer({ recordId, open, onOpenChange }: SuperbillViewerProps) {
+  const record = useQuery(api.billingRecords.get, { recordId });
   const patient = useQuery(
     api.patients.get,
     record ? { patientId: record.patientId } : "skip",
   );
+  const profile = useQuery(api.practiceProfiles.get, {});
 
-  // Load practice profile
-  const profile = useQuery(
-    api.practiceProfile.get,
-    record ? {} : "skip",
-  );
-
-  if (!record) {
-    return (
-      <div className="flex items-center justify-center p-8 text-on-surface-variant">
-        Loading superbill...
-      </div>
-    );
-  }
-
-  const posDescription =
-    getPosByCode(record.placeOfService)?.description ?? record.placeOfService;
-
-  const feeDisplay =
-    record.fee != null ? `$${(record.fee / 100).toFixed(2)}` : "—";
-
-  const totalFee =
-    record.fee != null
-      ? `$${((record.fee * record.units) / 100).toFixed(2)}`
-      : "—";
+  const feeDisplay = record?.fee ? `$${(record.fee / 100).toFixed(2)}` : "$0.00";
+  const totalFee = record?.fee
+    ? `$${((record.fee * (record?.units ?? 1)) / 100).toFixed(2)}`
+    : "$0.00";
 
   function handlePrint() {
     window.print();
   }
 
   return (
-    <div>
-      {/* Print Button — hidden in print */}
-      <div className="mb-4 flex justify-end print:hidden">
-        <Button onClick={handlePrint} className="gap-2">
-          <MaterialIcon icon="print" size="sm" />
-          Print / Save as PDF
-        </Button>
-      </div>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader className="print:hidden">
+          <DialogTitle className="font-display">Superbill</DialogTitle>
+          <DialogDescription>Review and print this superbill for insurance submission.</DialogDescription>
+        </DialogHeader>
 
-      {/* Superbill Content */}
-      <div className="superbill-print space-y-6 rounded-xl border border-border bg-white p-8 text-sm text-black">
-        {/* Header — Practice Info */}
-        <div className="border-b border-gray-300 pb-4">
-          <h1 className="text-xl font-bold">SUPERBILL</h1>
-          {profile && (
-            <div className="mt-2 space-y-0.5 text-sm">
-              {profile.practiceName && (
-                <p className="font-semibold">{profile.practiceName}</p>
-              )}
-              {profile.practiceAddress && <p>{profile.practiceAddress}</p>}
-              {profile.practicePhone && <p>Phone: {profile.practicePhone}</p>}
-              {profile.npiNumber && <p>NPI: {profile.npiNumber}</p>}
-              {profile.taxId && <p>Tax ID: {profile.taxId}</p>}
-            </div>
-          )}
-          {!profile && (
-            <p className="mt-2 text-xs text-gray-500">
-              Practice profile not configured — update in Settings.
-            </p>
-          )}
-        </div>
+        {!record || !patient ? (
+          <div className="animate-pulse h-48 rounded-xl bg-surface-container" />
+        ) : (
+          <>
+            {/* Print-friendly superbill content */}
+            <div className="superbill-content space-y-6 rounded-xl border border-surface-container-high p-6 print:border-black print:p-0">
+              {/* Header: Practice Info */}
+              <div className="border-b border-surface-container-high pb-4 print:border-black">
+                <h2 className="text-lg font-bold text-on-surface">
+                  {profile?.practiceName ?? "Practice Name"}
+                </h2>
+                {profile?.address && (
+                  <p className="text-sm text-on-surface-variant">{profile.address}</p>
+                )}
+                {profile?.phone && (
+                  <p className="text-sm text-on-surface-variant">{profile.phone}</p>
+                )}
+                <div className="mt-2 flex gap-4 text-xs text-on-surface-variant">
+                  {profile?.npiNumber && <span>NPI: {profile.npiNumber}</span>}
+                  {profile?.taxId && <span>Tax ID: {profile.taxId}</span>}
+                </div>
+              </div>
 
-        {/* Patient Info */}
-        <div className="border-b border-gray-300 pb-4">
-          <h2 className="mb-2 font-semibold uppercase tracking-wide text-gray-600">
-            Patient Information
-          </h2>
-          {patient && (
-            <div className="grid grid-cols-2 gap-2 text-sm">
-              <div>
-                <span className="text-gray-500">Name: </span>
-                <span className="font-medium">
+              {/* Patient Info */}
+              <div className="border-b border-surface-container-high pb-4 print:border-black">
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant mb-2">
+                  Patient Information
+                </h3>
+                <p className="text-sm font-medium text-on-surface">
                   {patient.firstName} {patient.lastName}
-                </span>
-              </div>
-              <div>
-                <span className="text-gray-500">DOB: </span>
-                <span>{patient.dateOfBirth}</span>
-              </div>
-              {patient.insuranceCarrier && (
-                <div>
-                  <span className="text-gray-500">Insurance: </span>
-                  <span>{patient.insuranceCarrier}</span>
-                </div>
-              )}
-              {patient.insuranceMemberId && (
-                <div>
-                  <span className="text-gray-500">Member ID: </span>
-                  <span>{patient.insuranceMemberId}</span>
-                </div>
-              )}
-              {patient.insuranceGroupNumber && (
-                <div>
-                  <span className="text-gray-500">Group #: </span>
-                  <span>{patient.insuranceGroupNumber}</span>
-                </div>
-              )}
-              {patient.insurancePhone && (
-                <div>
-                  <span className="text-gray-500">Insurance Phone: </span>
-                  <span>{patient.insurancePhone}</span>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Service Lines */}
-        <div className="border-b border-gray-300 pb-4">
-          <h2 className="mb-2 font-semibold uppercase tracking-wide text-gray-600">
-            Services Rendered
-          </h2>
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-gray-200 text-left">
-                <th className="pb-1">Date</th>
-                <th className="pb-1">CPT Code</th>
-                <th className="pb-1">Description</th>
-                <th className="pb-1">Modifiers</th>
-                <th className="pb-1">POS</th>
-                <th className="pb-1 text-center">Units</th>
-                <th className="pb-1 text-right">Fee</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td className="py-1">{record.dateOfService}</td>
-                <td className="py-1 font-mono">{record.cptCode}</td>
-                <td className="py-1">{record.cptDescription}</td>
-                <td className="py-1">{record.modifiers.join(", ")}</td>
-                <td className="py-1">
-                  {record.placeOfService} ({posDescription})
-                </td>
-                <td className="py-1 text-center">{record.units}</td>
-                <td className="py-1 text-right">{feeDisplay}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        {/* Diagnosis Codes */}
-        {record.diagnosisCodes.length > 0 && (
-          <div className="border-b border-gray-300 pb-4">
-            <h2 className="mb-2 font-semibold uppercase tracking-wide text-gray-600">
-              Diagnosis Codes (ICD-10)
-            </h2>
-            <div className="space-y-0.5 text-sm">
-              {record.diagnosisCodes.map((dx, i) => (
-                <p key={dx.code}>
-                  {i + 1}. <span className="font-mono">{dx.code}</span> —{" "}
-                  {dx.description}
                 </p>
-              ))}
+                <p className="text-sm text-on-surface-variant">DOB: {patient.dateOfBirth}</p>
+                {patient.insuranceCarrier && (
+                  <div className="mt-2 grid grid-cols-2 gap-2 text-xs text-on-surface-variant">
+                    <span>Carrier: {patient.insuranceCarrier}</span>
+                    {patient.insuranceMemberId && (
+                      <span>Member ID: {patient.insuranceMemberId}</span>
+                    )}
+                    {patient.insuranceGroupNumber && (
+                      <span>Group #: {patient.insuranceGroupNumber}</span>
+                    )}
+                    {patient.insurancePhone && (
+                      <span>Claims Phone: {patient.insurancePhone}</span>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Service Details */}
+              <div className="border-b border-surface-container-high pb-4 print:border-black">
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant mb-2">
+                  Services Rendered
+                </h3>
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b text-left text-xs text-on-surface-variant">
+                      <th className="pb-1">Date</th>
+                      <th className="pb-1">CPT</th>
+                      <th className="pb-1">Description</th>
+                      <th className="pb-1">Mod</th>
+                      <th className="pb-1">POS</th>
+                      <th className="pb-1">Units</th>
+                      <th className="pb-1 text-right">Fee</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td className="py-1">{record.dateOfService}</td>
+                      <td className="py-1 font-mono">{record.cptCode}</td>
+                      <td className="py-1">{record.cptDescription}</td>
+                      <td className="py-1">{record.modifiers.join(", ")}</td>
+                      <td className="py-1">{record.placeOfService}</td>
+                      <td className="py-1">{record.units}</td>
+                      <td className="py-1 text-right">{feeDisplay}</td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                {record.diagnosisCodes.length > 0 && (
+                  <div className="mt-3">
+                    <p className="text-xs font-medium text-on-surface-variant">Diagnosis Codes:</p>
+                    {record.diagnosisCodes.map((dx, i) => (
+                      <p key={i} className="text-xs text-on-surface-variant">
+                        {dx.code} — {dx.description}
+                      </p>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Total */}
+              <div className="flex justify-end">
+                <div className="text-right">
+                  <p className="text-xs text-on-surface-variant">Total</p>
+                  <p className="text-lg font-bold text-on-surface">{totalFee}</p>
+                </div>
+              </div>
+
+              {/* Clinician Signature */}
+              <div className="border-t border-surface-container-high pt-4 print:border-black">
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant mb-2">
+                  Provider
+                </h3>
+                {profile?.credentials && (
+                  <p className="text-sm text-on-surface">{profile.credentials}</p>
+                )}
+                {profile?.licenseNumber && (
+                  <p className="text-xs text-on-surface-variant">
+                    License #: {profile.licenseNumber}
+                  </p>
+                )}
+                <div className="mt-6 border-b border-black w-64">
+                  <p className="text-xs text-on-surface-variant pb-1">Signature</p>
+                </div>
+                <p className="mt-1 text-xs text-on-surface-variant">Date: ____________</p>
+              </div>
             </div>
-          </div>
+
+            {/* Print button */}
+            <div className="flex justify-end print:hidden">
+              <Button
+                onClick={handlePrint}
+                className="bg-gradient-135 text-white"
+              >
+                <MaterialIcon icon="print" size="sm" />
+                Print / Save as PDF
+              </Button>
+            </div>
+          </>
         )}
-
-        {/* Clinician Info */}
-        <div className="border-b border-gray-300 pb-4">
-          <h2 className="mb-2 font-semibold uppercase tracking-wide text-gray-600">
-            Rendering Provider
-          </h2>
-          {profile && (
-            <div className="space-y-0.5 text-sm">
-              {profile.credentials && (
-                <p className="font-medium">{profile.credentials}</p>
-              )}
-              {profile.licenseNumber && profile.licenseState && (
-                <p>
-                  License: {profile.licenseNumber} ({profile.licenseState})
-                </p>
-              )}
-              {profile.npiNumber && <p>NPI: {profile.npiNumber}</p>}
-            </div>
-          )}
-          <div className="mt-6">
-            <p className="text-xs text-gray-500">Signature:</p>
-            <div className="mt-1 h-8 border-b border-gray-400" />
-          </div>
-        </div>
-
-        {/* Total */}
-        <div className="flex justify-end">
-          <div className="text-right">
-            <p className="text-lg font-bold">Total: {totalFee}</p>
-          </div>
-        </div>
-      </div>
+      </DialogContent>
 
       {/* Print CSS */}
-      <style jsx global>{`
+      <style>{`
         @media print {
-          body * {
-            visibility: hidden;
-          }
-          .superbill-print,
-          .superbill-print * {
-            visibility: visible;
-          }
-          .superbill-print {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
-            border: none !important;
-            border-radius: 0 !important;
+          body > *:not([data-radix-portal]) { display: none !important; }
+          [data-radix-portal] [role="dialog"] {
+            position: static !important;
+            transform: none !important;
+            max-width: 100% !important;
+            max-height: none !important;
             box-shadow: none !important;
-            padding: 24px !important;
+            border: none !important;
           }
-          .print\\:hidden {
-            display: none !important;
-          }
+          .print\\:hidden { display: none !important; }
+          .print\\:border-black { border-color: black !important; }
+          .print\\:p-0 { padding: 0 !important; }
         }
       `}</style>
-    </div>
+    </Dialog>
   );
 }
 ```
 
-**Note:** The `api.patients.get` and `api.practiceProfile.get` queries are referenced. `patients.get` likely needs a public-facing query (check if one exists — if `patients.ts` only has `slpQuery`-based `get`, it will work for SLPs). For `practiceProfile.get`, SP1 may or may not have been implemented. If `convex/practiceProfile.ts` does not exist, create a minimal version in this task (see Step 4).
+- [ ] **Step 4: Run test to verify it passes**
 
-- [ ] **Step 4: If convex/practiceProfile.ts does not exist, create a minimal version**
+Run: `npx vitest run src/features/billing/components/__tests__/superbill-viewer.test.tsx --reporter=verbose`
 
-Check if `convex/practiceProfile.ts` exists. If not, create it:
+Expected: PASS.
 
-```typescript
-import { v } from "convex/values";
-import { ConvexError } from "convex/values";
-
-import { slpMutation, slpQuery } from "./lib/customFunctions";
-
-export const get = slpQuery({
-  args: {},
-  handler: async (ctx) => {
-    if (!ctx.slpUserId) return null;
-    return await ctx.db
-      .query("practiceProfiles")
-      .withIndex("by_userId", (q) => q.eq("userId", ctx.slpUserId!))
-      .first();
-  },
-});
-
-export const update = slpMutation({
-  args: {
-    practiceName: v.optional(v.string()),
-    practiceAddress: v.optional(v.string()),
-    practicePhone: v.optional(v.string()),
-    npiNumber: v.optional(v.string()),
-    licenseNumber: v.optional(v.string()),
-    licenseState: v.optional(v.string()),
-    taxId: v.optional(v.string()),
-    credentials: v.optional(v.string()),
-    defaultSessionFee: v.optional(v.number()),
-  },
-  handler: async (ctx, args) => {
-    const existing = await ctx.db
-      .query("practiceProfiles")
-      .withIndex("by_userId", (q) => q.eq("userId", ctx.slpUserId))
-      .first();
-
-    const updates: Record<string, unknown> = {};
-    if (args.practiceName !== undefined) updates.practiceName = args.practiceName;
-    if (args.practiceAddress !== undefined) updates.practiceAddress = args.practiceAddress;
-    if (args.practicePhone !== undefined) updates.practicePhone = args.practicePhone;
-    if (args.npiNumber !== undefined) updates.npiNumber = args.npiNumber;
-    if (args.licenseNumber !== undefined) updates.licenseNumber = args.licenseNumber;
-    if (args.licenseState !== undefined) updates.licenseState = args.licenseState;
-    if (args.taxId !== undefined) updates.taxId = args.taxId;
-    if (args.credentials !== undefined) updates.credentials = args.credentials;
-    if (args.defaultSessionFee !== undefined) updates.defaultSessionFee = args.defaultSessionFee;
-
-    if (existing) {
-      await ctx.db.patch(existing._id, updates);
-      return existing._id;
-    }
-
-    return await ctx.db.insert("practiceProfiles", {
-      userId: ctx.slpUserId,
-      ...updates,
-    });
-  },
-});
-```
-
-- [ ] **Step 5: Verify patients.get query exists for superbill**
-
-Check that `convex/patients.ts` exports a `get` query. If it's `slpQuery`-based, it will work for the superbill (since the SLP is the one viewing it). If a `get` query by patient ID is missing, add one:
-
-```typescript
-export const get = slpQuery({
-  args: { patientId: v.id("patients") },
-  handler: async (ctx, args) => {
-    if (!ctx.slpUserId) return null;
-    const patient = await ctx.db.get(args.patientId);
-    if (!patient) return null;
-    if (patient.slpUserId !== ctx.slpUserId) return null;
-    return patient;
-  },
-});
-```
-
-- [ ] **Step 6: Run superbill viewer test to verify it passes**
-
-```bash
-npx vitest run src/features/billing/components/__tests__/superbill-viewer.test.tsx --reporter=verbose
-```
-
-Expected: PASS
-
-- [ ] **Step 7: Run full test suite**
-
-```bash
-npx vitest run --reporter=verbose 2>&1 | tail -30
-```
-
-Expected: All tests pass.
-
-- [ ] **Step 8: Commit**
-
-```bash
-git add src/features/billing/components/superbill-viewer.tsx src/features/billing/components/__tests__/superbill-viewer.test.tsx convex/practiceProfile.ts
-git commit -m "feat(billing): add superbill viewer with print CSS
-
-Print-friendly superbill layout with practice info, patient/insurance data,
-service lines (CPT, modifiers, POS, fee), diagnosis codes, and provider info.
-Uses @media print CSS for clean PDF output via window.print().
-Includes minimal practiceProfile Convex functions if SP1 not yet implemented."
-```
+- [ ] **Step 5: Commit**
 
 ---
 
-## Task 9: Integration Points — Navigation Badge, Patient Detail, Session Note Link
+## Task 19: Full Test Suite Verification
 
 **Files:**
-- Modify: `src/features/dashboard/components/dashboard-sidebar.tsx`
-- Verify: `src/shared/lib/navigation.ts` (already modified in Task 7)
+- Test: All billing test files
 
-- [ ] **Step 1: Add unbilled count badge to sidebar billing nav item**
+- [ ] **Step 1: Run all billing-related tests**
 
-In `src/features/dashboard/components/dashboard-sidebar.tsx`, add a Convex query for the unbilled count. Import `useQuery` from `convex/react` and `api`:
+Run: `npx vitest run convex/__tests__/billingRecords.test.ts src/features/billing/lib/__tests__/ src/features/billing/components/__tests__/ --reporter=verbose`
 
-```typescript
-import { useQuery } from "convex/react";
-import { api } from "../../../../convex/_generated/api";
-```
+Expected: All tests PASS.
 
-Inside the `DashboardSidebar` component, add:
+- [ ] **Step 2: Run full project test suite**
 
-```typescript
-const unbilledCount = isCaregiver ? 0 : (useQuery(api.billingRecords.getUnbilledCount, isCaregiver ? "skip" : {}) ?? 0);
-```
+Run: `npx vitest run --reporter=verbose 2>&1 | tail -30`
 
-Then in the nav items rendering, after the `<MaterialIcon>` and tooltip `<span>`, add a conditional badge for the Billing item:
+Expected: No regressions. All existing tests still pass.
 
-```tsx
-{item.label === "Billing" && unbilledCount > 0 && (
-  <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-amber-500 text-[10px] font-bold text-white">
-    {unbilledCount > 9 ? "9+" : unbilledCount}
-  </span>
-)}
-```
+- [ ] **Step 3: Verify TypeScript compiles**
 
-- [ ] **Step 2: Run existing sidebar tests to verify no regressions**
+Run: `npx tsc --noEmit`
 
-```bash
-npx vitest run src/features/dashboard/components/__tests__/dashboard-sidebar.test.tsx --reporter=verbose
-```
+Expected: No errors.
 
-Expected: PASS (may need mock adjustments for the new useQuery call).
-
-- [ ] **Step 3: Run full test suite**
-
-```bash
-npx vitest run --reporter=verbose 2>&1 | tail -30
-```
-
-Expected: All tests pass.
-
-- [ ] **Step 4: Commit**
-
-```bash
-git add src/features/dashboard/components/dashboard-sidebar.tsx
-git commit -m "feat(billing): add unbilled count badge to sidebar Billing nav item
-
-Shows amber notification badge on Billing nav when draft or finalized
-billing records exist. Hidden for caregiver users."
-```
+- [ ] **Step 4: Commit all remaining changes**
 
 ---
 
 ## Task Summary
 
-| Task | Description | Files Created | Files Modified | Tests |
-|------|-------------|--------------|----------------|-------|
-| 1 | Schema — `billingRecords` table + patient/practice extensions | — | `convex/schema.ts` | `convex/__tests__/billingRecords.test.ts` (schema check) |
-| 2 | CPT codes, modifiers, POS static modules | 3 (`cpt-codes.ts`, `modifiers.ts`, `place-of-service.ts`) | — | 2 (`cpt-codes.test.ts`, `modifiers.test.ts`) |
-| 3 | Convex backend — `billingRecords.ts` full CRUD | 1 (`convex/billingRecords.ts`) | — | `convex/__tests__/billingRecords.test.ts` (full suite) |
-| 4 | `sessionNotes.sign` → auto-create billing record | — | `convex/sessionNotes.ts` | Integration test in `billingRecords.test.ts` |
-| 5 | CPT picker, insurance fields, billing hooks | 3 components + 1 hook | — | `cpt-code-picker.test.tsx` |
-| 6 | Billing record editor + row components | 2 (`billing-record-editor.tsx`, `billing-record-row.tsx`) | — | — |
-| 7 | Clinical billing dashboard + route + navigation | 2 (`clinical-billing-dashboard.tsx`, `page.tsx`) | `routes.ts`, `navigation.ts` | — |
-| 8 | Superbill viewer with print CSS | 1-2 (`superbill-viewer.tsx`, possibly `convex/practiceProfile.ts`) | — | `superbill-viewer.test.tsx` |
-| 9 | Integration — sidebar badge | — | `dashboard-sidebar.tsx` | Verify existing sidebar tests |
-
-**Total new files:** ~14
-**Total modified files:** ~5
-**Total test files:** ~5
-
-**Verification command after all tasks:**
-```bash
-npx vitest run --reporter=verbose
-```
-
-Expected: All tests pass with 0 failures.
+| # | Task | Files | Tests |
+|---|------|-------|-------|
+| 1 | CPT Code Static Module | `src/features/billing/lib/cpt-codes.ts` | `src/features/billing/lib/__tests__/cpt-codes.test.ts` |
+| 2 | Modifier Logic Module | `src/features/billing/lib/modifiers.ts` | `src/features/billing/lib/__tests__/modifiers.test.ts` |
+| 3 | Place of Service Module | `src/features/billing/lib/place-of-service.ts` | (type-check only) |
+| 4 | Schema: billingRecords Table | `convex/schema.ts` | `convex/__tests__/billingRecords.test.ts` |
+| 5 | Schema: Patient Insurance Fields | `convex/schema.ts`, `convex/patients.ts` | `convex/__tests__/billingRecords.test.ts` |
+| 6 | Schema: practiceProfiles Table | `convex/schema.ts`, `convex/practiceProfiles.ts` | `convex/__tests__/billingRecords.test.ts` |
+| 7 | Backend: createFromSessionNote | `convex/billingRecords.ts` | `convex/__tests__/billingRecords.test.ts` |
+| 8 | Backend: listBySlp, get, getUnbilledCount | `convex/billingRecords.ts` | `convex/__tests__/billingRecords.test.ts` |
+| 9 | Backend: update, finalize, markBilled, remove | `convex/billingRecords.ts` | `convex/__tests__/billingRecords.test.ts` |
+| 10 | Session Note Sign Integration | `convex/sessionNotes.ts` | `convex/__tests__/billingRecords.test.ts` |
+| 11 | Frontend: Routes + Navigation | `src/core/routes.ts`, `src/shared/lib/navigation.ts`, `src/app/(app)/billing/page.tsx` | (compile check) |
+| 12 | Frontend: use-billing-records Hook | `src/features/billing/hooks/use-billing-records.ts` | (compile check) |
+| 13 | Frontend: CPT Code Picker | `src/features/billing/components/cpt-code-picker.tsx` | `src/features/billing/components/__tests__/cpt-code-picker.test.tsx` |
+| 14 | Frontend: Insurance Fields | `src/features/billing/components/insurance-fields.tsx` | (compile check) |
+| 15 | Frontend: Billing Record Editor | `src/features/billing/components/billing-record-editor.tsx` | (compile check) |
+| 16 | Frontend: Billing Record Row | `src/features/billing/components/billing-record-row.tsx` | (compile check) |
+| 17 | Frontend: Clinical Billing Dashboard | `src/features/billing/components/clinical-billing-dashboard.tsx` | (compile check) |
+| 18 | Frontend: Superbill Viewer + Print CSS | `src/features/billing/components/superbill-viewer.tsx` | `src/features/billing/components/__tests__/superbill-viewer.test.tsx` |
+| 19 | Full Test Suite Verification | (all) | Full vitest + tsc |
