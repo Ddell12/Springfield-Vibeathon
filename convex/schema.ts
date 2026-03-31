@@ -605,6 +605,35 @@ export default defineSchema({
   })
     .index("by_patientId", ["patientId"])
     .index("by_appId", ["appId"]),
+
+  billingRecords: defineTable({
+    patientId: v.id("patients"),
+    slpUserId: v.string(),
+    sessionNoteId: v.id("sessionNotes"),
+    dateOfService: v.string(),
+    cptCode: v.string(),
+    cptDescription: v.string(),
+    modifiers: v.array(v.string()),
+    diagnosisCodes: v.array(v.object({
+      code: v.string(),
+      description: v.string(),
+    })),
+    placeOfService: v.string(),
+    units: v.number(),
+    fee: v.optional(v.number()),
+    status: v.union(
+      v.literal("draft"),
+      v.literal("finalized"),
+      v.literal("billed")
+    ),
+    billedAt: v.optional(v.number()),
+    notes: v.optional(v.string()),
+  })
+    .index("by_patientId", ["patientId"])
+    .index("by_slpUserId", ["slpUserId"])
+    .index("by_slpUserId_status", ["slpUserId", "status"])
+    .index("by_sessionNoteId", ["sessionNoteId"])
+    .index("by_dateOfService", ["dateOfService"]),
 });
 
 /** Active session states used by current code. Legacy states are read-only. */
