@@ -1,6 +1,11 @@
 {
   "version": 1,
   "skills": {
+    "agent-browser": {
+      "source": "vercel-labs/agent-browser",
+      "sourceType": "github",
+      "computedHash": "6bee044f51bfe9bcc20e2a779ca2a31fae5c6b0095ad30b264ecef9a27cb3ce6"
+    },
     "agents": {
       "source": "elevenlabs/skills",
       "sourceType": "github",
@@ -70,6 +75,11 @@
       "source": "google-labs-code/stitch-skills",
       "sourceType": "github",
       "computedHash": "e04912a9719b855afa733cc928d30dde0b8a5b91707ca27b98f0efcb8d9310a9"
+    },
+    "using-superpowers": {
+      "source": "obra/superpowers",
+      "sourceType": "github",
+      "computedHash": "af9db85109491dbe11f36b13724835f0f03583a5e026bf496b3b257e27a3f753"
     }
   }
 }
