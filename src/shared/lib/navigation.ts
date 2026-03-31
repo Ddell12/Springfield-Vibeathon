@@ -16,20 +16,16 @@ export const CAREGIVER_NAV_ITEMS = [
   { icon: "auto_awesome",      label: "Tools",        href: ROUTES.BUILDER },
 ] as const;
 
-export function isNavActive(
-  href: string,
-  pathname: string,
-  _tab: string | null
-): boolean {
-  if (href === "/builder")      return pathname.startsWith("/builder") ||
-                                       pathname.startsWith("/flashcards") ||
-                                       pathname.startsWith("/my-tools") ||
-                                       pathname.startsWith("/templates");
-  if (href === "/patients")     return pathname.startsWith("/patients");
-  if (href === "/sessions")     return pathname.startsWith("/sessions");
-  if (href === "/billing")      return pathname.startsWith("/billing");
-  if (href === "/speech-coach") return pathname.startsWith("/speech-coach");
-  if (href === "/family")       return pathname.startsWith("/family");
-  if (href === "/library")      return pathname === "/library";
+export function isNavActive(href: string, pathname: string): boolean {
+  if (href === ROUTES.BUILDER)      return pathname.startsWith(ROUTES.BUILDER) ||
+                                           pathname.startsWith(ROUTES.FLASHCARDS) ||
+                                           pathname.startsWith(ROUTES.MY_TOOLS) ||
+                                           pathname.startsWith(ROUTES.TEMPLATES);
+  if (href === ROUTES.PATIENTS)     return pathname.startsWith(ROUTES.PATIENTS);
+  if (href === ROUTES.SESSIONS)     return pathname.startsWith(ROUTES.SESSIONS);
+  if (href === ROUTES.BILLING)      return pathname.startsWith(ROUTES.BILLING);
+  if (href === ROUTES.SPEECH_COACH) return pathname.startsWith(ROUTES.SPEECH_COACH);
+  if (href === ROUTES.FAMILY)       return pathname.startsWith(ROUTES.FAMILY);
+  if (href === ROUTES.LIBRARY)      return pathname === ROUTES.LIBRARY;
   return pathname === href;
 }

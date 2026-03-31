@@ -2,7 +2,7 @@
 
 import { Show, UserButton, useUser } from "@clerk/nextjs";
 import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useState } from "react";
 
 import { cn } from "@/core/utils";
@@ -19,8 +19,6 @@ interface AppHeaderProps {
 export function AppHeader({ title, className }: AppHeaderProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const tab = searchParams.get("tab");
   const { user } = useUser();
   const role = (user?.publicMetadata as { role?: string })?.role;
   const navItems = role === "caregiver" ? CAREGIVER_NAV_ITEMS : NAV_ITEMS;
@@ -43,7 +41,7 @@ export function AppHeader({ title, className }: AppHeaderProps) {
             <SheetTitle className="sr-only">Navigation</SheetTitle>
             <nav className="flex flex-col gap-1 p-3 pt-14">
               {navItems.map((item) => {
-                const active = isNavActive(item.href, pathname, tab);
+                const active = isNavActive(item.href, pathname);
                 return (
                   <Link
                     key={item.label}

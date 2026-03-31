@@ -48,41 +48,42 @@ describe("CAREGIVER_NAV_ITEMS", () => {
 });
 
 describe("isNavActive", () => {
-  it("matches /library exactly", () => {
-    expect(isNavActive("/library", "/library", null)).toBe(true);
-    expect(isNavActive("/library", "/library?tab=my-apps", null)).toBe(false);
+  it("matches /library exactly, not sub-paths", () => {
+    expect(isNavActive("/library", "/library")).toBe(true);
+    expect(isNavActive("/library", "/library/featured")).toBe(false);
+    expect(isNavActive("/library", "/libraries")).toBe(false);
   });
   it("matches /builder prefix", () => {
-    expect(isNavActive("/builder", "/builder/abc123", null)).toBe(true);
+    expect(isNavActive("/builder", "/builder/abc123")).toBe(true);
   });
   it("matches /builder when on /flashcards (Tools active state)", () => {
-    expect(isNavActive("/builder", "/flashcards", null)).toBe(true);
-    expect(isNavActive("/builder", "/my-tools", null)).toBe(true);
-    expect(isNavActive("/builder", "/templates", null)).toBe(true);
+    expect(isNavActive("/builder", "/flashcards")).toBe(true);
+    expect(isNavActive("/builder", "/my-tools")).toBe(true);
+    expect(isNavActive("/builder", "/templates")).toBe(true);
   });
   it("matches /patients prefix", () => {
-    expect(isNavActive("/patients", "/patients", null)).toBe(true);
-    expect(isNavActive("/patients", "/patients/abc", null)).toBe(true);
-    expect(isNavActive("/patients", "/sessions", null)).toBe(false);
+    expect(isNavActive("/patients", "/patients")).toBe(true);
+    expect(isNavActive("/patients", "/patients/abc")).toBe(true);
+    expect(isNavActive("/patients", "/sessions")).toBe(false);
   });
   it("matches /sessions prefix", () => {
-    expect(isNavActive("/sessions", "/sessions", null)).toBe(true);
-    expect(isNavActive("/sessions", "/sessions/abc/call", null)).toBe(true);
+    expect(isNavActive("/sessions", "/sessions")).toBe(true);
+    expect(isNavActive("/sessions", "/sessions/abc/call")).toBe(true);
   });
   it("matches /billing prefix", () => {
-    expect(isNavActive("/billing", "/billing", null)).toBe(true);
-    expect(isNavActive("/billing", "/billing/upgrade", null)).toBe(true);
+    expect(isNavActive("/billing", "/billing")).toBe(true);
+    expect(isNavActive("/billing", "/billing/upgrade")).toBe(true);
   });
   it("matches /speech-coach prefix", () => {
-    expect(isNavActive("/speech-coach", "/speech-coach", null)).toBe(true);
-    expect(isNavActive("/speech-coach", "/speech-coach/session", null)).toBe(true);
+    expect(isNavActive("/speech-coach", "/speech-coach")).toBe(true);
+    expect(isNavActive("/speech-coach", "/speech-coach/session")).toBe(true);
   });
   it("matches /family prefix", () => {
-    expect(isNavActive("/family", "/family", null)).toBe(true);
-    expect(isNavActive("/family", "/family/child/123", null)).toBe(true);
+    expect(isNavActive("/family", "/family")).toBe(true);
+    expect(isNavActive("/family", "/family/child/123")).toBe(true);
   });
   it("fallback: matches href exactly", () => {
-    expect(isNavActive("/settings", "/settings", null)).toBe(true);
-    expect(isNavActive("/settings", "/settings/profile", null)).toBe(false);
+    expect(isNavActive("/settings", "/settings")).toBe(true);
+    expect(isNavActive("/settings", "/settings/profile")).toBe(false);
   });
 });

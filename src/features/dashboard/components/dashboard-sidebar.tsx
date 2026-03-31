@@ -3,7 +3,7 @@
 import { useClerk, useUser, Show } from "@clerk/nextjs";
 import { useQuery } from "convex/react";
 import Link from "next/link";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { api } from "../../../../convex/_generated/api";
@@ -15,8 +15,6 @@ import { CAREGIVER_NAV_ITEMS, isNavActive, NAV_ITEMS } from "@/shared/lib/naviga
 
 export function DashboardSidebar() {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const tab = searchParams.get("tab");
   const { user } = useUser();
   const { signOut } = useClerk();
   const router = useRouter();
@@ -100,7 +98,7 @@ export function DashboardSidebar() {
       {/* Nav items */}
       <nav aria-label="Primary" className="flex flex-col gap-1 px-2">
         {navItems.map((item) => {
-          const isActive = isNavActive(item.href, pathname, tab);
+          const isActive = isNavActive(item.href, pathname);
           return (
             <Link
               key={item.label}
