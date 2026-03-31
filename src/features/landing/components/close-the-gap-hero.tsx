@@ -67,7 +67,7 @@ export function CloseTheGapHero() {
             <MaterialIcon icon="arrow_forward" size="sm" />
           </Link>
           <Link
-            href="/templates"
+            href="/library?tab=templates"
             className="w-full sm:w-auto bg-surface-container-low text-on-surface px-8 py-4 rounded-lg text-base font-bold inline-flex items-center justify-center hover:bg-surface-container-high transition-colors duration-300 min-h-[52px]"
           >
             Browse Templates

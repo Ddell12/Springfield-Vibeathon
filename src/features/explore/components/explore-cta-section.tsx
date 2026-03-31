@@ -18,7 +18,7 @@ export function ExploreCtaSection() {
           Start Building — It&apos;s Free
         </Link>
         <Link
-          href="/templates"
+          href="/library?tab=templates"
           className="px-8 py-4 rounded-lg font-semibold text-lg text-on-surface-variant bg-surface-container hover:bg-surface-container-low transition-all duration-300"
         >
           Browse Templates

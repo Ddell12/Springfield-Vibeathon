@@ -28,7 +28,7 @@ export function CtaSection() {
             />
           </Link>
           <Link
-            href="/templates"
+            href="/library?tab=templates"
             className="text-white/80 hover:text-white text-base font-medium underline underline-offset-4 transition-colors duration-300"
           >
             Browse Templates

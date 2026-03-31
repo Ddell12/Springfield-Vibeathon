@@ -369,7 +369,7 @@ export function MyToolsPage({ embedded = false }: MyToolsPageProps) {
               Start Building
             </Link>
             <Link
-              href="/templates"
+              href="/library?tab=templates"
               className="text-primary font-semibold px-6 py-3 rounded-lg hover:bg-surface-container-high transition-colors"
             >
               Browse Templates
