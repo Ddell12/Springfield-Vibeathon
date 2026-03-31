@@ -120,4 +120,10 @@ describe("SettingsPage", () => {
     expect(screen.getByTestId("billing-section")).toBeInTheDocument();
     expect(screen.queryByTestId("profile-section")).not.toBeInTheDocument();
   });
+
+  it("does not render a main element (layout provides the landmark)", () => {
+    render(<SettingsPage />);
+    const mains = document.querySelectorAll("main");
+    expect(mains).toHaveLength(0);
+  });
 });

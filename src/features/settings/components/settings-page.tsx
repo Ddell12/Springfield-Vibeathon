@@ -103,7 +103,7 @@ export function SettingsPage() {
 
       <SettingsSidebar activeSection={section} onSectionChange={setSection} />
 
-      <main className="flex-1 overflow-y-auto bg-surface-container-lowest min-h-screen">
+      <div className="flex-1 overflow-y-auto bg-surface-container-lowest min-h-screen">
         <div className="max-w-[640px] mx-auto py-16 px-6 md:px-8">
           {section === "profile" ? <ProfileSection /> : null}
           {section === "account" ? <AccountSection /> : null}
@@ -111,7 +111,7 @@ export function SettingsPage() {
           {section === "billing" ? <BillingSection /> : null}
           {section === "practice" ? <PracticeProfileForm /> : null}
         </div>
-      </main>
+      </div>
     </div>
   );
 }
