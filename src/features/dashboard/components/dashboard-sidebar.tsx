@@ -44,6 +44,9 @@ export function DashboardSidebar() {
     "/speech-coach",
     "/sessions",
     "/builder",
+    "/flashcards",
+    "/my-tools",
+    "/templates",
     "/library",
   ];
 
