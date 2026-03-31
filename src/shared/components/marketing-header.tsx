@@ -16,11 +16,11 @@ import {
 } from "@/shared/components/ui/sheet";
 
 const navLinks = [
-  { href: "/explore", label: "Explore" },
-  { href: "/builder", label: "Builder" },
-  { href: "/flashcards", label: "Flashcards" },
-  { href: "/library?tab=templates", label: "Templates" },
-  { href: "/library?tab=my-apps", label: "My Apps" },
+  { href: "/demo-tools", label: "Meet Bridges" },
+  { href: "/builder", label: "Platform" },
+  { href: "/library?tab=templates", label: "Solutions" },
+  { href: "/billing", label: "Pricing" },
+  { href: "/explore", label: "Learn" },
 ];
 
 export function MarketingHeader() {
@@ -38,25 +38,25 @@ export function MarketingHeader() {
   };
 
   return (
-    <header className="bg-surface/80 backdrop-blur-lg sticky top-0 z-50">
-      <nav className="flex justify-between items-center w-full px-8 py-4 max-w-7xl mx-auto">
+    <header className="z-50 bg-background">
+      <nav className="mx-auto flex w-full max-w-[1180px] items-center justify-between px-6 py-5 lg:px-10">
         <div className="flex items-center gap-12">
           <Link
             href="/"
-            className="text-primary font-medium text-2xl tracking-tighter font-headline"
+            className="font-headline text-[2rem] tracking-[-0.04em] text-on-surface"
           >
             Bridges
           </Link>
-          <div className="hidden md:flex items-center gap-8">
+          <div className="hidden md:flex items-center gap-1">
             {navLinks.map(({ href, label }) => (
               <Link
                 key={href}
                 href={href}
                 className={cn(
-                  "font-semibold text-lg tracking-tight transition-colors rounded-lg px-3 py-2 min-h-[44px] inline-flex items-center",
+                  "inline-flex min-h-[44px] items-center rounded-full px-3 py-2 text-sm font-medium transition-colors",
                   isActiveLink(href)
-                    ? "text-primary bg-primary/10"
-                    : "text-on-surface-variant hover:text-primary hover:bg-surface-container-low"
+                    ? "bg-surface text-on-surface"
+                    : "text-on-surface-variant hover:text-on-surface"
                 )}
               >
                 {label}
@@ -65,20 +65,20 @@ export function MarketingHeader() {
           </div>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           <Show when="signed-out">
             <Link
-              href="/sign-in"
-              className="hidden md:flex items-center font-bold text-sm text-on-surface-variant hover:text-primary transition-colors min-h-[44px] px-3"
+              href="mailto:hello@bridges.ai"
+              className="hidden min-h-[44px] items-center rounded-xl border border-border bg-surface px-4 text-sm font-medium text-on-surface transition-colors hover:bg-surface-container-low md:flex"
             >
-              Sign in
+              Contact sales
             </Link>
           </Show>
           <Link
-            href="/builder"
-            className="hidden md:flex items-center gap-2 bg-primary-gradient text-on-primary px-6 py-2.5 rounded-lg font-semibold text-sm shadow-lg shadow-primary/10 hover:shadow-primary/20 transition-all active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+            href="/sign-in?role=slp"
+            className="hidden min-h-[44px] items-center gap-2 rounded-xl bg-on-surface px-5 py-2.5 text-sm font-semibold text-background transition-opacity hover:opacity-92 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 md:flex"
           >
-            Start Building
+            Try Bridges
           </Link>
           <Show when="signed-in">
             <div className="hidden md:flex">
@@ -103,27 +103,27 @@ export function MarketingHeader() {
                       key={href}
                       href={href}
                       className={cn(
-                        "font-semibold text-lg px-3 py-2 rounded-lg transition-colors",
+                        "rounded-lg px-3 py-2 text-base font-medium transition-colors",
                         isActiveLink(href)
-                          ? "text-primary bg-primary/5"
-                          : "text-on-surface-variant hover:text-primary hover:bg-surface-container-low"
+                          ? "bg-surface-container-low text-on-surface"
+                          : "text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface"
                       )}
                     >
                       {label}
                     </Link>
                   ))}
                   <Link
-                    href="/builder"
-                    className="mt-4 bg-primary-gradient text-on-primary px-6 py-3 rounded-lg font-semibold text-sm text-center focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                    href="mailto:hello@bridges.ai"
+                    className="mt-4 rounded-lg border border-border px-6 py-3 text-center text-sm font-medium text-on-surface"
                   >
-                    Start Building
+                    Contact sales
                   </Link>
                   <Show when="signed-out">
                     <Link
-                      href="/sign-in"
-                      className="mt-2 font-bold text-sm text-center text-on-surface-variant hover:text-primary transition-colors px-3 py-2"
+                      href="/sign-in?role=slp"
+                      className="mt-2 rounded-lg bg-on-surface px-6 py-3 text-center text-sm font-semibold text-background"
                     >
-                      Sign in
+                      Try Bridges
                     </Link>
                   </Show>
                   <Show when="signed-in">

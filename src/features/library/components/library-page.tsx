@@ -9,13 +9,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/components/ui
 export function LibraryPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const tab = searchParams.get("tab") ?? "templates";
+  const tab = searchParams.get("tab") ?? "my-apps";
 
   return (
     <div className="flex flex-col gap-6 p-4 sm:p-6 lg:p-8">
       <div>
         <h1 className="font-headline text-2xl font-semibold text-on-surface">Library</h1>
-        <p className="text-sm text-on-surface-variant mt-1">Templates to start from and apps you&apos;ve built</p>
+        <p className="mt-1 text-sm text-on-surface-variant">Apps you&apos;ve built and templates to start from</p>
       </div>
 
       <Tabs
@@ -23,14 +23,14 @@ export function LibraryPage() {
         onValueChange={(v) => router.replace(`/library?tab=${v}`, { scroll: false })}
       >
         <TabsList>
-          <TabsTrigger value="templates">Templates</TabsTrigger>
           <TabsTrigger value="my-apps">My Apps</TabsTrigger>
+          <TabsTrigger value="templates">Templates</TabsTrigger>
         </TabsList>
-        <TabsContent value="templates">
-          <TemplatesPage embedded />
-        </TabsContent>
         <TabsContent value="my-apps">
           <MyToolsPage embedded />
+        </TabsContent>
+        <TabsContent value="templates">
+          <TemplatesPage embedded />
         </TabsContent>
       </Tabs>
     </div>

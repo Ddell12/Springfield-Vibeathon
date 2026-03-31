@@ -2,14 +2,6 @@ import { fireEvent, render, screen } from "@testing-library/react";
 
 import { SettingsSidebar } from "../settings-sidebar";
 
-vi.mock("next/link", () => ({
-  default: ({ href, children, ...props }: any) => (
-    <a href={href} {...props}>
-      {children}
-    </a>
-  ),
-}));
-
 vi.mock("@/shared/components/material-icon", () => ({
   MaterialIcon: ({ icon }: { icon: string }) => (
     <span data-testid="icon">{icon}</span>
@@ -27,20 +19,15 @@ describe("SettingsSidebar", () => {
     onSectionChange.mockClear();
   });
 
-  it("renders the Settings heading", () => {
-    render(
-      <SettingsSidebar activeSection="profile" onSectionChange={onSectionChange} />
-    );
-    expect(screen.getByText("Settings")).toBeInTheDocument();
-  });
-
-  it("renders 3 section buttons (Profile, Account, Appearance)", () => {
+  it("renders the main section buttons", () => {
     render(
       <SettingsSidebar activeSection="profile" onSectionChange={onSectionChange} />
     );
     expect(screen.getByRole("button", { name: /Profile/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Practice/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Account/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Appearance/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Billing/i })).toBeInTheDocument();
   });
 
   it("calls onSectionChange with 'profile' when Profile is clicked", () => {
@@ -74,15 +61,7 @@ describe("SettingsSidebar", () => {
     const profileBtn = screen.getByRole("button", { name: /Profile/i });
     const accountBtn = screen.getByRole("button", { name: /Account/i });
     // Active button should contain active class, inactive should not
-    expect(profileBtn.className).toContain("bg-primary-container");
-    expect(accountBtn.className).not.toContain("bg-primary-container");
-  });
-
-  it("renders the back link to /builder", () => {
-    render(
-      <SettingsSidebar activeSection="profile" onSectionChange={onSectionChange} />
-    );
-    const backLink = screen.getByRole("link", { name: /Back/i });
-    expect(backLink).toHaveAttribute("href", "/builder");
+    expect(profileBtn.className).toContain("bg-white");
+    expect(accountBtn.className).not.toContain("bg-white");
   });
 });

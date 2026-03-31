@@ -2,31 +2,6 @@ import { fireEvent, render, screen } from "@testing-library/react";
 
 import { SettingsPage } from "../settings-page";
 
-vi.mock("next/link", () => ({
-  default: ({ href, children, ...props }: any) => (
-    <a href={href} {...props}>
-      {children}
-    </a>
-  ),
-}));
-
-vi.mock("@/shared/components/material-icon", () => ({
-  MaterialIcon: ({ icon }: { icon: string }) => (
-    <span data-testid="icon">{icon}</span>
-  ),
-}));
-
-vi.mock("@/shared/components/ui/button", () => ({
-  Button: ({ children, onClick, disabled, asChild, ...props }: any) => {
-    if (asChild) return <>{children}</>;
-    return (
-      <button onClick={onClick} disabled={disabled} {...props}>
-        {children}
-      </button>
-    );
-  },
-}));
-
 vi.mock("../profile-section", () => ({
   ProfileSection: () => <div data-testid="profile-section" />,
 }));
@@ -43,16 +18,6 @@ vi.mock("../../../billing/components/billing-section", () => ({
   BillingSection: () => <div data-testid="billing-section" />,
 }));
 
-vi.mock("../settings-sidebar", () => ({
-  SettingsSidebar: ({ onSectionChange }: any) => (
-    <div data-testid="settings-sidebar">
-      <button onClick={() => onSectionChange("account")}>Account</button>
-      <button onClick={() => onSectionChange("appearance")}>Appearance</button>
-      <button onClick={() => onSectionChange("billing")}>Billing</button>
-    </div>
-  ),
-}));
-
 describe("SettingsPage", () => {
   it("defaults to profile section visible", () => {
     render(<SettingsPage />);
@@ -63,19 +28,20 @@ describe("SettingsPage", () => {
 
   it("renders the sidebar", () => {
     render(<SettingsPage />);
-    expect(screen.getByTestId("settings-sidebar")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Profile/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Practice/i })).toBeInTheDocument();
   });
 
-  it("renders back link to /", () => {
+  it("renders the page heading", () => {
     render(<SettingsPage />);
-    const backLink = screen.getByRole("link", { name: /back to dashboard/i });
-    expect(backLink).toHaveAttribute("href", "/");
+    expect(screen.getByRole("heading", { name: "Settings" })).toBeInTheDocument();
   });
 
-  it("mobile dropdown button shows current section label (Profile)", () => {
+  it("shows the active section label", () => {
     render(<SettingsPage />);
-    // The mobile dropdown button shows the section label
-    expect(screen.getByText("Profile")).toBeInTheDocument();
+    expect(
+      screen.getByText("Profile", { selector: "p.text-xs.font-semibold.uppercase" })
+    ).toBeInTheDocument();
   });
 
   it("clicking sidebar option switches to account section", () => {
@@ -90,28 +56,6 @@ describe("SettingsPage", () => {
     fireEvent.click(screen.getByRole("button", { name: "Appearance" }));
     expect(screen.getByTestId("appearance-section")).toBeInTheDocument();
     expect(screen.queryByTestId("profile-section")).not.toBeInTheDocument();
-  });
-
-  it("Escape key closes the mobile dropdown", () => {
-    render(<SettingsPage />);
-    // Open dropdown first by clicking the mobile menu button (shows "Profile")
-    const dropdownBtn = screen.getByRole("button", { name: /Profile/i });
-    fireEvent.click(dropdownBtn);
-    // dropdown options should now be visible (multiple Profile buttons)
-    // Press Escape to close
-    fireEvent.keyDown(document, { key: "Escape" });
-    // After close, the listbox should be gone
-    expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
-  });
-
-  it("clicking outside closes the mobile dropdown", () => {
-    render(<SettingsPage />);
-    const dropdownBtn = screen.getByRole("button", { name: /Profile/i });
-    fireEvent.click(dropdownBtn);
-    expect(screen.getByRole("listbox")).toBeInTheDocument();
-    // Click outside the dropdown
-    fireEvent.mouseDown(document.body);
-    expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
   });
 
   it("clicking sidebar option switches to billing section", () => {

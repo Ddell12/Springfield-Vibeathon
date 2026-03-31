@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery } from "convex/react";
 import dynamic from "next/dynamic";
+import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -47,7 +48,11 @@ const RenameDeckDialog = dynamic(
 
 export function FlashcardPage() {
   const isMobile = useIsMobile();
+  const searchParams = useSearchParams();
   const { status, sessionId, activityMessage, generate, reset } = useFlashcardStreaming();
+  const sessionIdFromUrl = searchParams.get("sessionId") as Id<"sessions"> | null;
+  const promptFromUrl = searchParams.get("prompt");
+  const activeSessionId = sessionId ?? sessionIdFromUrl;
   const [activeDeckId, setActiveDeckId] = useState<Id<"flashcardDecks"> | null>(null);
   const [mobilePanel, setMobilePanel] = useState<"chat" | "preview">("chat");
   const [isEditingName, setIsEditingName] = useState(false);
@@ -70,17 +75,17 @@ export function FlashcardPage() {
 
   const currentSession = useQuery(
     api.sessions.get,
-    sessionId ? { sessionId } : "skip",
+    activeSessionId ? { sessionId: activeSessionId } : "skip",
   );
 
   const sessionDecks = useQuery(
     api.flashcard_decks.listBySession,
-    sessionId ? { sessionId } : "skip",
+    activeSessionId ? { sessionId: activeSessionId } : "skip",
   );
 
   const appRecord = useQuery(
     api.apps.getBySession,
-    sessionId ? { sessionId } : "skip",
+    activeSessionId ? { sessionId: activeSessionId } : "skip",
   );
 
   const allDecks = useQuery(api.flashcard_decks.list, {});
@@ -91,24 +96,24 @@ export function FlashcardPage() {
   // Auto-save to My Apps when generation completes
   const autoSavedRef = useRef(false);
   useEffect(() => {
-    if (status === "live" && sessionId && !appRecord && !autoSavedRef.current) {
+    if (status === "live" && activeSessionId && !appRecord && !autoSavedRef.current) {
       autoSavedRef.current = true;
-      ensureApp({ sessionId, title: sessionName })
+      ensureApp({ sessionId: activeSessionId, title: sessionName })
         .then(() => toast.success("Saved to My Apps!"))
         .catch(() => {});
     }
     if (status === "generating") autoSavedRef.current = false;
-  }, [status, sessionId, appRecord, sessionName, ensureApp]);
+  }, [status, activeSessionId, appRecord, sessionName, ensureApp]);
 
   const handleSave = useCallback(async () => {
-    if (!sessionId) return;
+    if (!activeSessionId) return;
     try {
-      await ensureApp({ sessionId, title: sessionName });
+      await ensureApp({ sessionId: activeSessionId, title: sessionName });
       toast.success("Saved to My Apps!");
     } catch {
       toast.error("Could not save — please try again");
     }
-  }, [sessionId, sessionName, ensureApp]);
+  }, [activeSessionId, sessionName, ensureApp]);
 
   /* eslint-disable react-hooks/set-state-in-effect -- auto-select first deck on load */
   useEffect(() => {
@@ -120,9 +125,9 @@ export function FlashcardPage() {
 
   const handleSubmit = useCallback(
     (query: string) => {
-      generate(query, sessionId ?? undefined);
+      generate(query, activeSessionId ?? undefined);
     },
-    [generate, sessionId],
+    [generate, activeSessionId],
   );
 
   const handleGenerate = useCallback(
@@ -136,9 +141,9 @@ export function FlashcardPage() {
   const handleNameEditEnd = async (name: string) => {
     setIsEditingName(false);
     const trimmed = name.trim();
-    if (!trimmed || trimmed === sessionName || !sessionId) return;
+    if (!trimmed || trimmed === sessionName || !activeSessionId) return;
     try {
-      await updateTitle({ sessionId, title: trimmed });
+      await updateTitle({ sessionId: activeSessionId, title: trimmed });
     } catch {
       toast.error("Failed to rename");
     }
@@ -186,7 +191,13 @@ export function FlashcardPage() {
     setDeleteDeckId(null);
   };
 
-  const showPromptScreen = !sessionId && status === "idle";
+  const showPromptScreen = !activeSessionId && status === "idle";
+
+  useEffect(() => {
+    if (!promptFromUrl || activeSessionId || status !== "idle") return;
+    setPendingPrompt(promptFromUrl);
+    generate(promptFromUrl);
+  }, [activeSessionId, generate, promptFromUrl, status]);
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden">

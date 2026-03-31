@@ -53,7 +53,7 @@ describe("useFlashcardStreaming", () => {
     expect(result.current.status).toBe("failed");
   });
 
-  it("sends correct request to /api/generate", async () => {
+  it("sends correct request to /api/generate-flashcards", async () => {
     mockFetchWithEvents([]);
     const { result } = renderHook(() => useFlashcardStreaming());
 
@@ -61,9 +61,9 @@ describe("useFlashcardStreaming", () => {
       await result.current.generate("color cards");
     });
 
-    expect(fetch).toHaveBeenCalledWith("/api/generate", expect.objectContaining({
+    expect(fetch).toHaveBeenCalledWith("/api/generate-flashcards", expect.objectContaining({
       method: "POST",
-      body: expect.stringContaining('"mode":"flashcards"'),
+      body: expect.stringContaining('"query":"color cards"'),
     }));
   });
 

@@ -2,6 +2,7 @@
 
 import { useMutation } from "convex/react";
 import { ConvexError } from "convex/values";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -180,6 +181,13 @@ export function PatientIntakeForm() {
 
   return (
     <div className="mx-auto max-w-lg px-4 py-8">
+      <Link
+        href="/patients"
+        className="mb-4 inline-flex items-center gap-2 text-sm font-medium text-on-surface-variant transition-colors hover:text-on-surface"
+      >
+        <MaterialIcon icon="arrow_back" size="xs" />
+        Back to caseload
+      </Link>
       <h1 className="mb-6 text-2xl font-semibold text-foreground">Add Patient</h1>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-6">

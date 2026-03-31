@@ -17,6 +17,7 @@ vi.mock("next/link", () => ({
 
 vi.mock("next/navigation", () => ({
   usePathname: vi.fn(() => "/"),
+  useSearchParams: vi.fn(() => ({ get: () => null })),
 }));
 
 vi.mock("@/shared/components/material-icon", () => ({
@@ -54,18 +55,18 @@ describe("MarketingHeader", () => {
 
   it("renders all navigation links", () => {
     render(<MarketingHeader />);
-    expect(screen.getAllByText("Builder").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText("Templates").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText("My Apps").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("Platform").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("Solutions").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("Learn").length).toBeGreaterThanOrEqual(1);
   });
 
-  it("renders the Start Building CTA button", () => {
+  it("renders the Try Bridges CTA button", () => {
     render(<MarketingHeader />);
-    const ctaLinks = screen.getAllByText("Start Building");
+    const ctaLinks = screen.getAllByText("Try Bridges");
     expect(ctaLinks.length).toBeGreaterThanOrEqual(1);
-    // Desktop CTA links to /builder
+    // Desktop CTA links to the sign-in flow
     const desktopCta = ctaLinks.find(
-      (el) => el.closest("a")?.getAttribute("href") === "/builder"
+      (el) => el.closest("a")?.getAttribute("href") === "/sign-in?role=slp"
     );
     expect(desktopCta).toBeDefined();
   });
@@ -77,25 +78,22 @@ describe("MarketingHeader", () => {
   });
 
   it("highlights active nav link when pathname matches", async () => {
-    // Re-mock usePathname to return /templates
     const { usePathname } = await import("next/navigation");
-    vi.mocked(usePathname).mockReturnValue("/templates");
+    vi.mocked(usePathname).mockReturnValue("/builder");
 
     render(<MarketingHeader />);
 
-    // Find the Templates link - it should have the active class
-    const templatesLinks = screen.getAllByText("Templates");
-    const desktopLink = templatesLinks.find(
-      (el) => el.closest("a")?.getAttribute("href") === "/templates"
-    );
-    expect(desktopLink).toBeDefined();
-    expect(desktopLink?.className).toContain("text-primary");
-
-    // Builder should NOT have active class
-    const builderLinks = screen.getAllByText("Builder");
-    const builderLink = builderLinks.find(
+    const platformLinks = screen.getAllByText("Platform");
+    const desktopLink = platformLinks.find(
       (el) => el.closest("a")?.getAttribute("href") === "/builder"
     );
-    expect(builderLink?.className).toContain("text-on-surface-variant");
+    expect(desktopLink).toBeDefined();
+    expect(desktopLink?.className).toContain("bg-surface");
+
+    const learnLinks = screen.getAllByText("Learn");
+    const learnLink = learnLinks.find(
+      (el) => el.closest("a")?.getAttribute("href") === "/explore"
+    );
+    expect(learnLink?.className).toContain("text-on-surface-variant");
   });
 });

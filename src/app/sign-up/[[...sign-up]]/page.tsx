@@ -1,17 +1,13 @@
-import { SignUp } from "@clerk/nextjs";
+import { redirect } from "next/navigation";
 
-export default function SignUpPage() {
-  return (
-    <div className="flex min-h-screen items-center justify-center">
-      <SignUp
-        signInUrl="/sign-in"
-        appearance={{
-          elements: {
-            formButtonPrimary:
-              "bg-gradient-to-br from-[#00595c] to-[#0d7377] hover:opacity-90 transition-opacity text-white shadow-none",
-          },
-        }}
-      />
-    </div>
-  );
+type SearchParams = Promise<{ role?: string }>;
+
+export default async function SignUpPage({
+  searchParams,
+}: {
+  searchParams: SearchParams;
+}) {
+  const params = await searchParams;
+  const role = params.role === "caregiver" ? "caregiver" : "slp";
+  redirect(`/sign-in?role=${role}`);
 }

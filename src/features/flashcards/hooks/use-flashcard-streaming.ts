@@ -34,12 +34,11 @@ export function useFlashcardStreaming(): UseFlashcardStreamingReturn {
       setActivityMessage("Understanding your request...");
 
       try {
-        const response = await fetch("/api/generate", {
+        const response = await fetch("/api/generate-flashcards", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             query,
-            mode: "flashcards",
             sessionId: existingSessionId,
           }),
           signal: controller.signal,

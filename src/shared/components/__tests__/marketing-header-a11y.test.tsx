@@ -17,6 +17,7 @@ vi.mock("next/link", () => ({
 
 vi.mock("next/navigation", () => ({
   usePathname: vi.fn(() => "/"),
+  useSearchParams: vi.fn(() => ({ get: () => null })),
 }));
 
 vi.mock("@/shared/components/material-icon", () => ({
@@ -48,12 +49,11 @@ vi.mock("lucide-react", () => ({
 }));
 
 describe("MarketingHeader — accessibility", () => {
-  it("header element has backdrop-blur class", () => {
+  it("header element renders with the background shell class", () => {
     const { container } = render(<MarketingHeader />);
     const header = container.querySelector("header");
     expect(header).not.toBeNull();
-    // After Phase 5 polish, header should have backdrop-blur for glass effect
-    expect(header!.className).toMatch(/backdrop-blur/);
+    expect(header!.className).toMatch(/bg-background/);
   });
 
   it("hamburger button has aria-label 'Open menu'", () => {

@@ -1,17 +1,13 @@
-import { SignIn } from "@clerk/nextjs";
+import { SignInScreen } from "@/features/auth/components/sign-in-screen";
+import { getAuthRole } from "@/features/auth/lib/auth-content";
 
-export default function SignInPage() {
-  return (
-    <div className="flex min-h-screen items-center justify-center">
-      <SignIn
-        signUpUrl="/sign-up"
-        appearance={{
-          elements: {
-            formButtonPrimary:
-              "bg-gradient-to-br from-[#00595c] to-[#0d7377] hover:opacity-90 transition-opacity text-white shadow-none",
-          },
-        }}
-      />
-    </div>
-  );
+type SearchParams = Promise<{ role?: string }>;
+
+export default async function SignInPage({
+  searchParams,
+}: {
+  searchParams: SearchParams;
+}) {
+  const params = await searchParams;
+  return <SignInScreen role={getAuthRole(params.role)} />;
 }

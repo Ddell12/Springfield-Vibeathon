@@ -56,7 +56,6 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
   const [mobilePanel, setMobilePanel] = useState<"chat" | "preview">("chat");
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [continueDismissed, setContinueDismissed] = useState(false);
   const [previewVisible, setPreviewVisible] = useState(true);
   const updateTitle = useMutation(api.sessions.updateTitle);
   const ensureApp = useMutation(api.apps.ensureForSession);
@@ -142,16 +141,24 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
   }, [bundleHtml, mobilePanel]);
 
   const handleGenerate = useCallback((prompt: string, blueprint?: TherapyBlueprint) => {
+    if (mode === "flashcards") {
+      router.push(`/flashcards?prompt=${encodeURIComponent(prompt)}`);
+      return;
+    }
+
     setPendingPrompt(prompt);
     setGenerationStartTime(Date.now());
-    const finalPrompt = mode === "flashcards" ? `[FLASHCARD MODE] ${prompt}` : prompt;
-    lastPromptRef.current = finalPrompt;  // store the prefixed prompt so retries include mode
-    generate(finalPrompt, blueprint ?? undefined, patientId ?? undefined);
-  }, [generate, patientId, mode]);
+    lastPromptRef.current = prompt;
+    generate(prompt, blueprint ?? undefined, patientId ?? undefined);
+  }, [generate, patientId, mode, router]);
 
   const handleRetry = useCallback(() => {
     if (lastPromptRef.current) {
-      generate(lastPromptRef.current, undefined, patientId ?? undefined);
+      generate(
+        lastPromptRef.current,
+        undefined,
+        patientId ?? undefined,
+      );
     }
   }, [generate, patientId]);
 
@@ -160,13 +167,18 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
     activeSessionId,
     currentSession,
     appRecord,
-    mostRecent,
     handlePromptFromUrl,
   } = useSessionResume(initialSessionId, status, sessionId, resumeSession, handleGenerate);
 
   // Derive app name: prefer Convex session title (reactive) > blueprint > default
   const appName = currentSession?.title
     ?? (typeof blueprint?.title === "string" ? blueprint.title : "Untitled App");
+
+  useEffect(() => {
+    if (currentSession?.type === "flashcards" && activeSessionId) {
+      router.replace(`/flashcards?sessionId=${activeSessionId}`);
+    }
+  }, [activeSessionId, currentSession?.type, router]);
 
   // Auto-submit prompt from URL
   const promptFromUrl = searchParams.get("prompt");
@@ -296,8 +308,8 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
       {showPromptScreen ? (
         <HomeScreen
           onGenerate={handleGenerate}
-          mostRecent={!continueDismissed ? mostRecent ?? null : null}
-          onContinueDismiss={() => setContinueDismissed(true)}
+          mode={mode}
+          onModeChange={setMode}
         />
       ) : (
         <>

@@ -112,7 +112,7 @@ export function ChatColumn({
         </div>
 
         {/* Mobile panel toggle */}
-        {isMobile && onMobilePanelChange && (
+        {isMobile && onMobilePanelChange && mode !== "flashcards" && (
           <ToggleGroup
             type="single"
             value={mobilePanel}
@@ -180,7 +180,6 @@ export function ChatColumn({
               : "What would you like to build\u2026"
           }
           isGenerating={status === "generating"}
-          showGuidedPill
           mode={mode}
           onModeChange={onModeChange}
         />

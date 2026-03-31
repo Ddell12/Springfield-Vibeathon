@@ -10,7 +10,16 @@ vi.mock("@/shared/components/material-icon", () => ({
 }));
 
 vi.mock("../input-bar", () => ({
-  InputBar: ({ value, onChange, onSubmit, placeholder, showGuidedPill, onGuidedClick }: any) => (
+  InputBar: ({
+    value,
+    onChange,
+    onSubmit,
+    placeholder,
+    showGuidedPill,
+    onGuidedClick,
+    mode,
+    onModeChange,
+  }: any) => (
     <div>
       <textarea
         aria-label={placeholder}
@@ -21,13 +30,12 @@ vi.mock("../input-bar", () => ({
         }}
       />
       <button onClick={() => onSubmit(value)}>Send</button>
+      <button onClick={() => onModeChange?.("app")}>App</button>
+      <button onClick={() => onModeChange?.("flashcards")}>Flashcards</button>
+      <span>Mode: {mode}</span>
       {showGuidedPill && <button onClick={onGuidedClick}>Guided</button>}
     </div>
   ),
-}));
-
-vi.mock("../continue-card", () => ({
-  ContinueCard: ({ title }: { title: string }) => <div>Continue: {title}</div>,
 }));
 
 vi.mock("../interview/interview-controller", () => ({
@@ -43,6 +51,7 @@ import { HomeScreen } from "../home-screen";
 
 const baseProps = {
   onGenerate: vi.fn(),
+  onModeChange: vi.fn(),
 };
 
 describe("HomeScreen", () => {
@@ -63,6 +72,13 @@ describe("HomeScreen", () => {
     expect(screen.getByRole("button", { name: /Social Story/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Feelings Check-In/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Bridges' choice/i })).toBeInTheDocument();
+  });
+
+  it("renders flashcard chips in flashcards mode", () => {
+    render(<HomeScreen {...baseProps} mode="flashcards" />);
+    expect(screen.getByRole("button", { name: /First Words/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Speech Sounds/i })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Communication Board/i })).not.toBeInTheDocument();
   });
 
   it("clicking a category chip pre-fills the textarea", () => {
@@ -87,19 +103,8 @@ describe("HomeScreen", () => {
     expect(screen.getByText(/Good (morning|afternoon|evening), Sam/)).toBeInTheDocument();
   });
 
-  it("shows ContinueCard when mostRecent is provided", () => {
-    render(
-      <HomeScreen
-        {...baseProps}
-        mostRecent={{ _id: "sess_1", title: "My AAC App" } as any}
-        onContinueDismiss={vi.fn()}
-      />
-    );
-    expect(screen.getByText(/Continue: My AAC App/)).toBeInTheDocument();
-  });
-
-  it("does NOT show ContinueCard when mostRecent is null", () => {
-    render(<HomeScreen {...baseProps} mostRecent={null} onContinueDismiss={vi.fn()} />);
-    expect(screen.queryByText(/Continue:/)).not.toBeInTheDocument();
+  it("hides the guided flow while in flashcards mode", () => {
+    render(<HomeScreen {...baseProps} mode="flashcards" />);
+    expect(screen.queryByRole("button", { name: /Guided/i })).not.toBeInTheDocument();
   });
 });

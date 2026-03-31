@@ -2,6 +2,31 @@ import { render, screen } from "@testing-library/react";
 
 import { HeroSection } from "../hero-section";
 
+vi.mock("@clerk/nextjs", () => ({
+  useSignIn: () => ({
+    signIn: {
+      reset: vi.fn(),
+      create: vi.fn().mockResolvedValue({ error: null }),
+      finalize: vi.fn(),
+      emailCode: {
+        sendCode: vi.fn().mockResolvedValue({ error: null }),
+        verifyCode: vi.fn().mockResolvedValue({ error: null }),
+      },
+    },
+    errors: { fields: {} },
+    fetchStatus: "idle",
+  }),
+  useSignUp: () => ({
+    signUp: {
+      status: "complete",
+      missingFields: [],
+      create: vi.fn().mockResolvedValue({ error: null }),
+      finalize: vi.fn(),
+      update: vi.fn().mockResolvedValue({ error: null }),
+    },
+  }),
+}));
+
 vi.mock("next/link", () => ({
   default: ({
     href,
@@ -17,41 +42,43 @@ vi.mock("next/link", () => ({
   ),
 }));
 
-vi.mock("@/shared/components/material-icon", () => ({
-  MaterialIcon: ({ icon }: { icon: string }) => <span>{icon}</span>,
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: vi.fn() }),
 }));
 
 describe("HeroSection", () => {
   it("renders the headline text", () => {
     render(<HeroSection />);
-    expect(
-      screen.getByText(/Build therapy apps for your child/)
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(/just describe what you need/)
-    ).toBeInTheDocument();
+    expect(screen.getByText(/Overwhelmed\?/)).toBeInTheDocument();
+    expect(screen.getByText(/Organized\./)).toBeInTheDocument();
   });
 
   it("renders the description paragraph", () => {
     render(<HeroSection />);
     expect(
       screen.getByText(
-        /AI-powered therapy tools for speech therapists and families/
+        /The AI for therapy teams, caregivers, and the everyday work between sessions/
       )
     ).toBeInTheDocument();
   });
 
-  it("renders the primary CTA linking to /builder", () => {
+  it("renders the auth actions", () => {
     render(<HeroSection />);
-    const cta = screen.getByRole("link", {
-      name: /Start Building — It's Free/,
-    });
-    expect(cta).toHaveAttribute("href", "/builder");
+    expect(
+      screen.getByRole("button", { name: /Continue with Google/i })
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Continue with email/i })).toBeInTheDocument();
   });
 
-  it("renders the templates link pointing to /library?tab=templates", () => {
+  it("renders clear sign-in paths for therapists and caregivers", () => {
     render(<HeroSection />);
-    const link = screen.getByRole("link", { name: /View Templates/ });
-    expect(link).toHaveAttribute("href", "/library?tab=templates");
+    expect(screen.getByRole("link", { name: /Therapist/i })).toHaveAttribute(
+      "href",
+      "/sign-in?role=slp",
+    );
+    expect(screen.getByRole("link", { name: /Caregiver/i })).toHaveAttribute(
+      "href",
+      "/sign-in?role=caregiver",
+    );
   });
 });

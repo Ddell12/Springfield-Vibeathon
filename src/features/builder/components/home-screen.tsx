@@ -3,19 +3,26 @@
 import { useUser } from "@clerk/nextjs";
 import { useState } from "react";
 
-import type { Id } from "../../../../convex/_generated/dataModel";
 import type { TherapyBlueprint } from "../lib/schemas";
-import { ContinueCard } from "./continue-card";
 import { InputBar } from "./input-bar";
 import { InterviewController } from "./interview/interview-controller";
 
-const CATEGORY_CHIPS: { label: string; prompt: string }[] = [
+const APP_CATEGORY_CHIPS: { label: string; prompt: string }[] = [
   { label: "Communication Board", prompt: "I need a communication board for a child who " },
   { label: "Visual Schedule", prompt: "I need a visual schedule for " },
   { label: "Token Board", prompt: "I need a token board for a child working on " },
   { label: "Social Story", prompt: "I need a social story about " },
   { label: "Feelings Check-In", prompt: "I need a feelings check-in tool for " },
   { label: "Bridges' choice", prompt: "Build me something useful for a child with " },
+];
+
+const FLASHCARD_CATEGORY_CHIPS: { label: string; prompt: string }[] = [
+  { label: "First Words", prompt: "Create flashcards for first words like " },
+  { label: "Colors", prompt: "Create flashcards to teach colors including " },
+  { label: "Animals", prompt: "Create flashcards for animal vocabulary such as " },
+  { label: "Feelings", prompt: "Create flashcards for feelings like " },
+  { label: "Daily Routines", prompt: "Create flashcards for daily routines like " },
+  { label: "Speech Sounds", prompt: "Create articulation flashcards for the sound " },
 ];
 
 function getGreeting(firstName: string): string {
@@ -27,15 +34,20 @@ function getGreeting(firstName: string): string {
 
 interface HomeScreenProps {
   onGenerate: (prompt: string, blueprint?: TherapyBlueprint) => void;
-  mostRecent?: { _id: Id<"sessions">; title: string } | null;
-  onContinueDismiss?: () => void;
+  mode?: "app" | "flashcards";
+  onModeChange?: (mode: "app" | "flashcards") => void;
 }
 
-export function HomeScreen({ onGenerate, mostRecent, onContinueDismiss }: HomeScreenProps) {
+export function HomeScreen({
+  onGenerate,
+  mode = "app",
+  onModeChange,
+}: HomeScreenProps) {
   const { user } = useUser();
   const firstName = user?.firstName ?? "there";
   const [input, setInput] = useState("");
   const [showGuided, setShowGuided] = useState(false);
+  const categoryChips = mode === "flashcards" ? FLASHCARD_CATEGORY_CHIPS : APP_CATEGORY_CHIPS;
 
   const handleSubmit = (value: string) => {
     if (!value.trim()) return;
@@ -84,12 +96,14 @@ export function HomeScreen({ onGenerate, mostRecent, onContinueDismiss }: HomeSc
         placeholder="What would you like to build?"
         isGenerating={false}
         className="w-full max-w-2xl"
-        showGuidedPill
-        onGuidedClick={() => setShowGuided(true)}
+        showGuidedPill={mode === "app"}
+        onGuidedClick={mode === "app" ? () => setShowGuided(true) : undefined}
+        mode={mode}
+        onModeChange={onModeChange}
       />
 
       <div className="flex flex-wrap justify-center gap-2">
-        {CATEGORY_CHIPS.map((chip) => (
+        {categoryChips.map((chip) => (
           <button
             key={chip.label}
             type="button"
@@ -100,14 +114,6 @@ export function HomeScreen({ onGenerate, mostRecent, onContinueDismiss }: HomeSc
           </button>
         ))}
       </div>
-
-      {mostRecent && (
-        <ContinueCard
-          sessionId={mostRecent._id}
-          title={mostRecent.title}
-          onDismiss={() => onContinueDismiss?.()}
-        />
-      )}
     </div>
   );
 }

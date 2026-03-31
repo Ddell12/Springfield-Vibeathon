@@ -1,11 +1,6 @@
 "use client";
 
-import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
-
-import { cn } from "@/core/utils";
-import { MaterialIcon } from "@/shared/components/material-icon";
-import { Button } from "@/shared/components/ui/button";
+import { useState } from "react";
 
 import { PracticeProfileForm } from "@/features/intake/components/practice-profile-form";
 import { BillingSection } from "../../billing/components/billing-section";
@@ -26,85 +21,27 @@ const SECTION_LABELS: Record<SettingsSection, string> = {
 
 export function SettingsPage() {
   const [section, setSection] = useState<SettingsSection>("profile");
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-
-  // Close dropdown on Escape or click outside
-  useEffect(() => {
-    if (!mobileMenuOpen) return;
-    function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") setMobileMenuOpen(false);
-    }
-    function handleClickOutside(e: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setMobileMenuOpen(false);
-      }
-    }
-    document.addEventListener("keydown", handleKeyDown);
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [mobileMenuOpen]);
 
   return (
-    <div className="flex h-full flex-col bg-surface md:flex-row">
-      {/* Mobile header with back + section picker */}
-      <div className="flex items-center gap-2 bg-surface-container-low px-4 py-3 md:hidden">
-        <Link
-          href="/"
-          className="flex h-8 w-8 items-center justify-center rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors duration-300"
-          aria-label="Back to dashboard"
-        >
-          <MaterialIcon icon="arrow_back" size="xs" />
-        </Link>
-        <div className="relative" ref={dropdownRef}>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 gap-1 text-sm font-semibold"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            aria-expanded={mobileMenuOpen}
-            aria-haspopup="listbox"
-          >
-            {SECTION_LABELS[section]}
-            <MaterialIcon icon="expand_more" className="text-sm" />
-          </Button>
-          {mobileMenuOpen && (
-            <div className="absolute top-full left-0 z-50 mt-1 w-48 rounded-lg bg-surface-container-lowest p-1 shadow-lg" role="listbox">
-              {(Object.entries(SECTION_LABELS) as [SettingsSection, string][]).map(
-                ([id, label]) => (
-                  <Button
-                    key={id}
-                    variant="ghost"
-                    size="sm"
-                    role="option"
-                    aria-selected={section === id}
-                    onClick={() => {
-                      setSection(id);
-                      setMobileMenuOpen(false);
-                    }}
-                    className={cn(
-                      "w-full justify-start rounded-md px-3 py-2 text-left text-sm transition-colors duration-300",
-                      section === id
-                        ? "bg-primary/10 text-primary font-medium"
-                        : "text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface"
-                    )}
-                  >
-                    {label}
-                  </Button>
-                )
-              )}
-            </div>
-          )}
-        </div>
+    <div className="flex min-h-full flex-col gap-6 p-4 sm:p-6 lg:p-8">
+      <div>
+        <h1 className="font-headline text-2xl font-semibold text-on-surface">Settings</h1>
+        <p className="mt-1 text-sm text-on-surface-variant">
+          Manage your profile, practice details, account access, and billing.
+        </p>
       </div>
 
-      <SettingsSidebar activeSection={section} onSectionChange={setSection} />
+      <div className="grid gap-6 lg:grid-cols-[240px_minmax(0,1fr)] lg:items-start">
+        <div className="lg:sticky lg:top-20">
+          <SettingsSidebar activeSection={section} onSectionChange={setSection} />
+        </div>
 
-      <div className="flex-1 overflow-y-auto bg-surface-container-lowest min-h-screen">
-        <div className="max-w-[640px] mx-auto py-16 px-6 md:px-8">
+        <div className="min-w-0 rounded-3xl bg-surface-container-lowest p-5 sm:p-6">
+          <div className="mb-6">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-on-surface-variant">
+              {SECTION_LABELS[section]}
+            </p>
+          </div>
           {section === "profile" ? <ProfileSection /> : null}
           {section === "account" ? <AccountSection /> : null}
           {section === "appearance" ? <AppearanceSection /> : null}
