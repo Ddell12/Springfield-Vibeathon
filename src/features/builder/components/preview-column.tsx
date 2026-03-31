@@ -117,11 +117,11 @@ export function PreviewColumn({
         {/* Publish */}
         <Button
           size="sm"
-          aria-label="Publish"
+          aria-label="Share & Publish"
           onClick={onPublish}
           className="h-8 bg-gradient-to-br from-primary to-primary-container px-3 text-xs font-semibold text-white shadow-sm hover:opacity-90"
         >
-          Publish
+          Share &amp; Publish
         </Button>
 
         {/* Close */}

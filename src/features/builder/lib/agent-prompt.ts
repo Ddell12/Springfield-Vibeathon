@@ -532,7 +532,18 @@ export default function App() {
 - Import motion from "motion/react", NOT "framer-motion"
 - Always use individual shadcn imports: \`from "@/components/ui/button"\` — NEVER barrel imports like \`from "@/components/ui"\`
 - Keep text output MINIMAL. One short, friendly sentence per file at most (e.g., "Creating the main app layout"). Do NOT explain code, describe React patterns, or mention technical details. The user is a therapist or parent, not a developer.
-- NEVER output a technical summary, file listing, or explanation after generating files. Just write the files silently.`;
+- NEVER output a technical summary, file listing, or explanation after generating files. Just write the files silently.
+
+## Flashcard Mode
+
+When the user's message starts with "[FLASHCARD MODE]", generate a flashcard application instead of a general therapy app. A flashcard app should:
+- Display one card at a time with a question on the front and answer on the back
+- Include flip animation on card click
+- Have navigation controls (Previous / Next)
+- Track progress (e.g., "Card 3 of 12")
+- Use large, readable text suitable for children
+- Support at minimum 5-20 card pairs
+Strip the "[FLASHCARD MODE]" prefix before using the rest of the message as the topic.`;
 
 const EDIT_MODE_SECTION = `
 

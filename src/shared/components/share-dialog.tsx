@@ -60,7 +60,7 @@ export function ShareDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="rounded-2xl p-6 gap-6 sm:max-w-[420px]" showCloseButton={false}>
+      <DialogContent className="w-full sm:max-w-[420px] rounded-t-2xl sm:rounded-2xl p-6 gap-6 data-[state=open]:slide-in-from-bottom" showCloseButton={false}>
         {/* Header */}
         <DialogHeader className="flex flex-row items-center justify-between">
           <DialogTitle className="font-semibold text-lg text-on-surface">
@@ -125,7 +125,7 @@ export function ShareDialog({
           {"share" in navigator && typeof navigator.share === "function" && (
             <Button
               onClick={handleShare}
-              className="bg-gradient-to-br from-primary to-primary-container text-on-primary hover:opacity-90 shadow-sm"
+              className="bg-gradient-to-br from-primary to-primary-container text-white hover:opacity-90 shadow-sm"
             >
               <MaterialIcon icon="share" size="xs" />
               Share

@@ -37,6 +37,9 @@ interface ChatColumnProps {
   isMobile?: boolean;
   mobilePanel?: "chat" | "preview";
   onMobilePanelChange?: (panel: "chat" | "preview") => void;
+  onArtifactClick?: () => void;
+  mode?: "app" | "flashcards";
+  onModeChange?: (mode: "app" | "flashcards") => void;
 }
 
 export function ChatColumn({
@@ -59,6 +62,9 @@ export function ChatColumn({
   isMobile,
   mobilePanel,
   onMobilePanelChange,
+  onArtifactClick,
+  mode,
+  onModeChange,
 }: ChatColumnProps) {
   const [input, setInput] = useState("");
 
@@ -159,6 +165,7 @@ export function ChatColumn({
         onPendingPromptClear={onPendingPromptClear}
         narrationMessage={narrationMessage}
         appTitle={appName}
+        onArtifactClick={onArtifactClick}
       />
 
       {/* Sticky input */}
@@ -174,6 +181,8 @@ export function ChatColumn({
           }
           isGenerating={status === "generating"}
           showGuidedPill
+          mode={mode}
+          onModeChange={onModeChange}
         />
       </div>
     </div>

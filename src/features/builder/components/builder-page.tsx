@@ -38,6 +38,9 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
     : null) as Id<"patients"> | null;
 
   const isMobile = useIsMobile();
+  // Note: mode is not reset by reset() — if a same-mount "New app" flow is added
+  // that calls reset() without navigating away, mode will need to be explicitly reset.
+  const [mode, setMode] = useState<"app" | "flashcards">("app");
   const [viewMode, setViewMode] = useState<ViewMode>("preview");
   const [deviceSize, setDeviceSize] = useState<DeviceSize>("desktop");
 
@@ -54,6 +57,7 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [continueDismissed, setContinueDismissed] = useState(false);
+  const [previewVisible, setPreviewVisible] = useState(true);
   const updateTitle = useMutation(api.sessions.updateTitle);
   const ensureApp = useMutation(api.apps.ensureForSession);
   const assignMaterial = useMutation(api.patientMaterials.assign);
@@ -125,9 +129,12 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
   // Auto-switch to preview when bundle first arrives (perceived speed boost)
   // Only triggers on bundleHtml changes — not on viewMode changes, which would
   // prevent the user from switching to the code view via "View source".
+  // Also re-show preview panel when a new bundle arrives (in case it was hidden)
   useEffect(() => {
-    if (bundleHtml) startTransition(() => setViewMode("preview"));
-   
+    if (bundleHtml) {
+      startTransition(() => setViewMode("preview"));
+      setPreviewVisible(true);
+    }
   }, [bundleHtml]);
 
   useEffect(() => {
@@ -135,11 +142,12 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
   }, [bundleHtml, mobilePanel]);
 
   const handleGenerate = useCallback((prompt: string, blueprint?: TherapyBlueprint) => {
-    lastPromptRef.current = prompt;
     setPendingPrompt(prompt);
     setGenerationStartTime(Date.now());
-    generate(prompt, blueprint ?? undefined, patientId ?? undefined);
-  }, [generate, patientId]);
+    const finalPrompt = mode === "flashcards" ? `[FLASHCARD MODE] ${prompt}` : prompt;
+    lastPromptRef.current = finalPrompt;  // store the prefixed prompt so retries include mode
+    generate(finalPrompt, blueprint ?? undefined, patientId ?? undefined);
+  }, [generate, patientId, mode]);
 
   const handleRetry = useCallback(() => {
     if (lastPromptRef.current) {
@@ -185,9 +193,7 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
     return () => {
       if (status === "generating" && !hasShownNavToastRef.current) {
         hasShownNavToastRef.current = true;
-        toast.info("Your app is still building. Check My Apps when it's ready.", {
-          duration: 5000,
-        });
+        toast.info("Building continues in the background — find it in Recents when it's ready.", { duration: 6000 });
       }
     };
   }, [status]);
@@ -319,6 +325,8 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
                   isMobile={isMobile}
                   mobilePanel={mobilePanel}
                   onMobilePanelChange={setMobilePanel}
+                  mode={mode}
+                  onModeChange={setMode}
                 />
               ) : (
                 <div className="flex h-full flex-col">
@@ -353,9 +361,54 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
               )}
             </div>
           ) : (
-            /* Desktop: resizable side-by-side columns */
-            <ResizablePanelGroup orientation="horizontal" className="flex-1 min-h-0">
-              <ResizablePanel defaultSize={45} minSize={20}>
+            /* Desktop: resizable side-by-side columns, or chat-only when preview hidden */
+            previewVisible ? (
+              <ResizablePanelGroup orientation="horizontal" className="flex-1 min-h-0">
+                <ResizablePanel defaultSize={45} minSize={20}>
+                  <ChatColumn
+                    sessionId={sessionId}
+                    status={status}
+                    blueprint={blueprint}
+                    error={error}
+                    onGenerate={handleGenerate}
+                    onRetry={handleRetry}
+                    streamingText={streamingText}
+                    activities={activities}
+                    pendingPrompt={pendingPrompt}
+                    onPendingPromptClear={() => setPendingPrompt(null)}
+                    narrationMessage={narrationMessage}
+                    appName={appName}
+                    isEditingName={isEditingName}
+                    onNameEditStart={() => setIsEditingName(true)}
+                    onNameEditEnd={handleNameEditEnd}
+                    patientId={patientId}
+                    onArtifactClick={() => setPreviewVisible(true)}
+                    mode={mode}
+                    onModeChange={setMode}
+                  />
+                </ResizablePanel>
+
+                <ResizableHandle withHandle />
+
+                <ResizablePanel defaultSize={55} minSize={20}>
+                  <PreviewColumn
+                    bundleHtml={bundleHtml}
+                    status={status}
+                    error={error ?? undefined}
+                    deviceSize={deviceSize}
+                    buildFailed={buildFailed}
+                    activityMessage={narrationMessage ?? undefined}
+                    onRetry={handleRetry}
+                    viewMode={viewMode}
+                    onViewChange={setViewMode}
+                    files={files}
+                    onPublish={handleShare}
+                    onClose={() => setPreviewVisible(false)}
+                  />
+                </ResizablePanel>
+              </ResizablePanelGroup>
+            ) : (
+              <div className="flex flex-1 min-h-0 overflow-hidden">
                 <ChatColumn
                   sessionId={sessionId}
                   status={status}
@@ -373,31 +426,12 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
                   onNameEditStart={() => setIsEditingName(true)}
                   onNameEditEnd={handleNameEditEnd}
                   patientId={patientId}
+                  onArtifactClick={() => setPreviewVisible(true)}
+                  mode={mode}
+                  onModeChange={setMode}
                 />
-              </ResizablePanel>
-
-              <ResizableHandle withHandle />
-
-              <ResizablePanel defaultSize={55} minSize={20}>
-                <PreviewColumn
-                  bundleHtml={bundleHtml}
-                  status={status}
-                  error={error ?? undefined}
-                  deviceSize={deviceSize}
-                  buildFailed={buildFailed}
-                  activityMessage={narrationMessage ?? undefined}
-                  onRetry={handleRetry}
-                  viewMode={viewMode}
-                  onViewChange={setViewMode}
-                  files={files}
-                  onPublish={handleShare}
-                  onClose={() => {
-                    reset();
-                    router.push("/builder");
-                  }}
-                />
-              </ResizablePanel>
-            </ResizablePanelGroup>
+              </div>
+            )
           )}
         </>
       )}
