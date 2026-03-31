@@ -1,6 +1,7 @@
 "use client";
 
 import { useConvexAuth, useQuery } from "convex/react";
+import Link from "next/link";
 import { useState } from "react";
 
 import { Badge } from "@/shared/components/ui/badge";
@@ -101,6 +102,35 @@ export function HomeProgramsWidget({ patientId }: HomeProgramsWidgetProps) {
                     >
                       {program.status}
                     </Badge>
+                    <Button
+                      asChild
+                      variant="ghost"
+                      size="sm"
+                      className="shrink-0 h-7 w-7 p-0"
+                    >
+                      <Link
+                        href={`/patients/${patientId}/home-programs/${program._id}/print`}
+                        title="Print home program"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="14"
+                          height="14"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          aria-hidden="true"
+                        >
+                          <polyline points="6 9 6 2 18 2 18 9" />
+                          <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+                          <rect x="6" y="14" width="12" height="8" />
+                        </svg>
+                        <span className="sr-only">Print home program</span>
+                      </Link>
+                    </Button>
                   </div>
                 )
               )}
