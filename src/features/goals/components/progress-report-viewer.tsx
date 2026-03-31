@@ -61,9 +61,20 @@ export function ProgressReportViewer({ reportId }: ProgressReportViewerProps) {
     <div className="flex flex-col gap-6 print:gap-4">
       <div className="flex items-center justify-between print:hidden">
         <div>
-          <p className="text-sm font-medium capitalize">
-            {report.reportType.replace(/-/g, " ")}
-          </p>
+          <div className="flex items-center gap-2">
+            <p className="text-sm font-medium capitalize">
+              {report.reportType.replace(/-/g, " ")}
+            </p>
+            {report.audience && (
+              <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
+                {report.audience === "clinical"
+                  ? "Clinical"
+                  : report.audience === "parent"
+                    ? "Parent-Friendly"
+                    : "IEP Team"}
+              </span>
+            )}
+          </div>
           <p className="text-xs text-muted-foreground">
             {report.periodStart} to {report.periodEnd}
           </p>
