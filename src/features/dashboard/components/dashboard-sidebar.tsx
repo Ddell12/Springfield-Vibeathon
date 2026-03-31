@@ -50,16 +50,14 @@ export function DashboardSidebar() {
               key={item.label}
               href={item.href}
               className={cn(
-                "group relative rounded-xl p-3 transition-all duration-300 active:scale-90",
+                "flex flex-col items-center gap-0.5 rounded-xl px-2 py-2 transition-all duration-300 active:scale-90",
                 isActive
                   ? "bg-primary text-white shadow-lg shadow-primary/20"
                   : "text-on-surface-variant hover:bg-surface-container-high"
               )}
             >
               <MaterialIcon icon={item.icon} filled={isActive} size="md" />
-              <span className="pointer-events-none absolute left-16 rounded-lg bg-primary px-2 py-1 text-xs font-medium text-white opacity-0 transition-opacity group-hover:opacity-100">
-                {item.label}
-              </span>
+              <span className="text-[10px] leading-none">{item.label}</span>
             </Link>
           );
         })}
