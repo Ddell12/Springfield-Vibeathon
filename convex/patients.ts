@@ -193,6 +193,10 @@ export const update = slpMutation({
     sensoryNotes: v.optional(v.string()),
     behavioralNotes: v.optional(v.string()),
     notes: v.optional(v.string()),
+    insuranceCarrier: v.optional(v.string()),
+    insuranceMemberId: v.optional(v.string()),
+    insuranceGroupNumber: v.optional(v.string()),
+    insurancePhone: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const slpUserId = ctx.slpUserId;
@@ -218,6 +222,10 @@ export const update = slpMutation({
     if (args.sensoryNotes !== undefined) updates.sensoryNotes = args.sensoryNotes;
     if (args.behavioralNotes !== undefined) updates.behavioralNotes = args.behavioralNotes;
     if (args.notes !== undefined) updates.notes = args.notes;
+    if (args.insuranceCarrier !== undefined) updates.insuranceCarrier = args.insuranceCarrier;
+    if (args.insuranceMemberId !== undefined) updates.insuranceMemberId = args.insuranceMemberId;
+    if (args.insuranceGroupNumber !== undefined) updates.insuranceGroupNumber = args.insuranceGroupNumber;
+    if (args.insurancePhone !== undefined) updates.insurancePhone = args.insurancePhone;
 
     await ctx.db.patch(args.patientId, updates);
 
