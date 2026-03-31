@@ -3,6 +3,7 @@
 import { Show, UserButton } from "@clerk/nextjs";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 
 import { cn } from "@/core/utils";
 import { MaterialIcon } from "@/shared/components/material-icon";
@@ -23,7 +24,7 @@ const navLinks = [
   { href: "/explore", label: "Learn" },
 ];
 
-export function MarketingHeader() {
+function MarketingHeaderContent() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
@@ -138,5 +139,13 @@ export function MarketingHeader() {
         </div>
       </nav>
     </header>
+  );
+}
+
+export function MarketingHeader() {
+  return (
+    <Suspense fallback={<div className="h-[76px] bg-background" />}>
+      <MarketingHeaderContent />
+    </Suspense>
   );
 }
