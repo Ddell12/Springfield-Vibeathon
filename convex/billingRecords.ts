@@ -1,7 +1,7 @@
-import { v } from "convex/values";
+import { ConvexError, v } from "convex/values";
 
 import { internalMutation } from "./_generated/server";
-import { slpQuery } from "./lib/customFunctions";
+import { slpMutation, slpQuery } from "./lib/customFunctions";
 
 // ── Internal Mutations ─────────────────────────────────────────────────────
 
@@ -132,5 +132,83 @@ export const getUnbilledCount = slpQuery({
       .collect();
 
     return drafts.length + finalized.length;
+  },
+});
+
+// ── Public Mutations ───────────────────────────────────────────────────────
+
+export const update = slpMutation({
+  args: {
+    recordId: v.id("billingRecords"),
+    cptCode: v.optional(v.string()),
+    cptDescription: v.optional(v.string()),
+    modifiers: v.optional(v.array(v.string())),
+    diagnosisCodes: v.optional(v.array(v.object({
+      code: v.string(),
+      description: v.string(),
+    }))),
+    placeOfService: v.optional(v.string()),
+    units: v.optional(v.number()),
+    fee: v.optional(v.number()),
+    notes: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const record = await ctx.db.get(args.recordId);
+    if (!record) throw new ConvexError("Billing record not found");
+    if (record.slpUserId !== ctx.slpUserId) throw new ConvexError("Not authorized");
+    if (record.status !== "draft") {
+      throw new ConvexError("Only draft billing records can be edited");
+    }
+
+    const updates: Record<string, unknown> = {};
+    if (args.cptCode !== undefined) updates.cptCode = args.cptCode;
+    if (args.cptDescription !== undefined) updates.cptDescription = args.cptDescription;
+    if (args.modifiers !== undefined) updates.modifiers = args.modifiers;
+    if (args.diagnosisCodes !== undefined) updates.diagnosisCodes = args.diagnosisCodes;
+    if (args.placeOfService !== undefined) updates.placeOfService = args.placeOfService;
+    if (args.units !== undefined) updates.units = args.units;
+    if (args.fee !== undefined) updates.fee = args.fee;
+    if (args.notes !== undefined) updates.notes = args.notes;
+
+    await ctx.db.patch(args.recordId, updates);
+  },
+});
+
+export const finalize = slpMutation({
+  args: { recordId: v.id("billingRecords") },
+  handler: async (ctx, args) => {
+    const record = await ctx.db.get(args.recordId);
+    if (!record) throw new ConvexError("Billing record not found");
+    if (record.slpUserId !== ctx.slpUserId) throw new ConvexError("Not authorized");
+    if (record.status !== "draft") {
+      throw new ConvexError("Only draft billing records can be finalized");
+    }
+    await ctx.db.patch(args.recordId, { status: "finalized" });
+  },
+});
+
+export const markBilled = slpMutation({
+  args: { recordId: v.id("billingRecords") },
+  handler: async (ctx, args) => {
+    const record = await ctx.db.get(args.recordId);
+    if (!record) throw new ConvexError("Billing record not found");
+    if (record.slpUserId !== ctx.slpUserId) throw new ConvexError("Not authorized");
+    if (record.status !== "finalized") {
+      throw new ConvexError("Only finalized billing records can be marked as billed");
+    }
+    await ctx.db.patch(args.recordId, { status: "billed", billedAt: Date.now() });
+  },
+});
+
+export const remove = slpMutation({
+  args: { recordId: v.id("billingRecords") },
+  handler: async (ctx, args) => {
+    const record = await ctx.db.get(args.recordId);
+    if (!record) throw new ConvexError("Billing record not found");
+    if (record.slpUserId !== ctx.slpUserId) throw new ConvexError("Not authorized");
+    if (record.status === "billed") {
+      throw new ConvexError("Cannot delete a billed billing record");
+    }
+    await ctx.db.delete(args.recordId);
   },
 });

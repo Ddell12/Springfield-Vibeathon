@@ -275,3 +275,118 @@ describe("billingRecords.getUnbilledCount", () => {
     expect(count).toBe(1);
   });
 });
+
+async function createDraftRecord(t: ReturnType<ReturnType<typeof convexTest>["withIdentity"]>) {
+  const { patientId } = await t.mutation(api.patients.create, VALID_PATIENT);
+  const noteId = await t.mutation(api.sessionNotes.create, {
+    patientId,
+    ...VALID_SESSION_DATA,
+  });
+  const recordId = await t.mutation(internal.billingRecords.createFromSessionNote, {
+    sessionNoteId: noteId,
+    slpUserId: "slp-user-billing",
+    patientId,
+    sessionDate: today,
+    sessionType: "in-person",
+  });
+  return { patientId, noteId, recordId };
+}
+
+describe("billingRecords.update", () => {
+  it("updates CPT code and fee on draft record", async () => {
+    const t = convexTest(schema, modules).withIdentity(SLP_IDENTITY);
+    const { recordId } = await createDraftRecord(t);
+
+    await t.mutation(api.billingRecords.update, {
+      recordId,
+      cptCode: "92523",
+      cptDescription: "Evaluation — speech sound + language",
+      fee: 20000,
+    });
+
+    const record = await t.query(api.billingRecords.get, { recordId });
+    expect(record!.cptCode).toBe("92523");
+    expect(record!.fee).toBe(20000);
+  });
+
+  it("rejects update on finalized record", async () => {
+    const t = convexTest(schema, modules).withIdentity(SLP_IDENTITY);
+    const { recordId } = await createDraftRecord(t);
+
+    await t.mutation(api.billingRecords.finalize, { recordId });
+
+    await expect(
+      t.mutation(api.billingRecords.update, { recordId, fee: 25000 }),
+    ).rejects.toThrow("Only draft");
+  });
+});
+
+describe("billingRecords.finalize", () => {
+  it("transitions from draft to finalized", async () => {
+    const t = convexTest(schema, modules).withIdentity(SLP_IDENTITY);
+    const { recordId } = await createDraftRecord(t);
+
+    await t.mutation(api.billingRecords.finalize, { recordId });
+
+    const record = await t.query(api.billingRecords.get, { recordId });
+    expect(record!.status).toBe("finalized");
+  });
+
+  it("rejects finalizing non-draft record", async () => {
+    const t = convexTest(schema, modules).withIdentity(SLP_IDENTITY);
+    const { recordId } = await createDraftRecord(t);
+
+    await t.mutation(api.billingRecords.finalize, { recordId });
+    await expect(
+      t.mutation(api.billingRecords.finalize, { recordId }),
+    ).rejects.toThrow("Only draft");
+  });
+});
+
+describe("billingRecords.markBilled", () => {
+  it("transitions from finalized to billed with timestamp", async () => {
+    const t = convexTest(schema, modules).withIdentity(SLP_IDENTITY);
+    const { recordId } = await createDraftRecord(t);
+
+    await t.mutation(api.billingRecords.finalize, { recordId });
+    await t.mutation(api.billingRecords.markBilled, { recordId });
+
+    const record = await t.query(api.billingRecords.get, { recordId });
+    expect(record!.status).toBe("billed");
+    expect(record!.billedAt).toBeDefined();
+    expect(record!.billedAt).toBeGreaterThan(0);
+  });
+
+  it("rejects marking draft as billed", async () => {
+    const t = convexTest(schema, modules).withIdentity(SLP_IDENTITY);
+    const { recordId } = await createDraftRecord(t);
+
+    await expect(
+      t.mutation(api.billingRecords.markBilled, { recordId }),
+    ).rejects.toThrow("Only finalized");
+  });
+});
+
+describe("billingRecords.remove", () => {
+  it("deletes a draft record", async () => {
+    const t = convexTest(schema, modules).withIdentity(SLP_IDENTITY);
+    const { recordId, patientId } = await createDraftRecord(t);
+
+    await t.mutation(api.billingRecords.remove, { recordId });
+
+    const records = await t.query(api.billingRecords.listByPatient, { patientId });
+    expect(records).toHaveLength(0);
+  });
+
+  it("rejects deleting a billed record", async () => {
+    const t = convexTest(schema, modules).withIdentity(SLP_IDENTITY);
+    const { recordId } = await createDraftRecord(t);
+
+    await t.mutation(api.billingRecords.finalize, { recordId });
+    await t.mutation(api.billingRecords.markBilled, { recordId });
+
+    await expect(
+      t.mutation(api.billingRecords.remove, { recordId }),
+    ).rejects.toThrow("Cannot delete a billed");
+  });
+});
