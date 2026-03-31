@@ -64,7 +64,7 @@ export async function POST(request: Request): Promise<Response> {
 
   const dischargeId = parsedBody.data.dischargeId as Id<"dischargeSummaries">;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const discharge = await convex.query(anyApi.dischargeSummaries.get as any, { dischargeId });
+  const discharge = await convex.query(anyApi.dischargeSummaries.get, { dischargeId });
   if (!discharge) {
     return new Response(JSON.stringify({ error: "Discharge summary not found" }), {
       status: 404,
@@ -174,7 +174,7 @@ export async function POST(request: Request): Promise<Response> {
         const parsed = parseDischargeResponse(fullText);
         if (parsed) {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          await convex.mutation(anyApi.dischargeSummaries.saveFromAI as any, {
+          await convex.mutation(anyApi.dischargeSummaries.saveFromAI, {
             dischargeId,
             narrative: parsed.narrative,
             recommendations: parsed.recommendations,
