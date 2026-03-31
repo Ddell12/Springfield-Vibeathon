@@ -31,6 +31,7 @@ export function TargetSelector({ targets, activeTargetId, onSelect }: TargetSele
           <button
             key={target._id}
             type="button"
+            aria-pressed={isActive}
             onClick={() => onSelect(target._id)}
             className={cn(
               "shrink-0 rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-300",
