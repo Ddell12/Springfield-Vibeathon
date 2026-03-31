@@ -207,6 +207,7 @@ export default defineSchema({
     ),
     relationship: v.optional(v.string()),
     kidModePIN: v.optional(v.string()),
+    intakeCompletedAt: v.optional(v.number()),
   }).index("by_patientId", ["patientId"])
     .index("by_caregiverUserId", ["caregiverUserId"])
     .index("by_caregiverUserId_patientId", ["caregiverUserId", "patientId"])
@@ -244,7 +245,9 @@ export default defineSchema({
       v.literal("material-generated-for-patient"),
       v.literal("practice-logged"),
       v.literal("message-sent"),
-      v.literal("home-program-assigned")
+      v.literal("home-program-assigned"),
+      v.literal("intake-form-signed"),
+      v.literal("telehealth-consent-signed")
     ),
     details: v.optional(v.string()),
     timestamp: v.number(),
@@ -605,6 +608,41 @@ export default defineSchema({
   })
     .index("by_patientId", ["patientId"])
     .index("by_appId", ["appId"]),
+
+  intakeForms: defineTable({
+    patientId: v.id("patients"),
+    caregiverUserId: v.string(),
+    formType: v.union(
+      v.literal("hipaa-npp"),
+      v.literal("consent-treatment"),
+      v.literal("financial-agreement"),
+      v.literal("cancellation-policy"),
+      v.literal("release-authorization"),
+      v.literal("telehealth-consent")
+    ),
+    signedAt: v.number(),
+    signerName: v.string(),
+    signerIP: v.optional(v.string()),
+    formVersion: v.string(),
+    metadata: v.optional(v.object({
+      thirdPartyName: v.optional(v.string()),
+    })),
+  })
+    .index("by_patientId", ["patientId"])
+    .index("by_caregiverUserId", ["caregiverUserId"])
+    .index("by_patientId_formType", ["patientId", "formType"]),
+
+  practiceProfiles: defineTable({
+    userId: v.string(),
+    practiceName: v.optional(v.string()),
+    practiceAddress: v.optional(v.string()),
+    practicePhone: v.optional(v.string()),
+    npiNumber: v.optional(v.string()),
+    licenseNumber: v.optional(v.string()),
+    licenseState: v.optional(v.string()),
+    taxId: v.optional(v.string()),
+    credentials: v.optional(v.string()),
+  }).index("by_userId", ["userId"]),
 });
 
 /** Active session states used by current code. Legacy states are read-only. */
