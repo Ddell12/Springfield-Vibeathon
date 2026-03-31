@@ -78,7 +78,6 @@ interface ChatPanelProps {
   pendingPrompt?: string | null;
   onPendingPromptClear?: () => void;
   narrationMessage?: string | null;
-  startTime?: number;
   appTitle: string;
 }
 
