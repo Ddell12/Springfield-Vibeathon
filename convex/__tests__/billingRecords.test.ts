@@ -3,6 +3,9 @@ import { convexTest } from "convex-test";
 import { describe, expect, it } from "vitest";
 
 import schema from "../schema";
+import { suppressSchedulerErrors } from "./testHelpers";
+
+suppressSchedulerErrors();
 
 const modules = import.meta.glob("../**/*.*s");
 
@@ -388,5 +391,31 @@ describe("billingRecords.remove", () => {
     await expect(
       t.mutation(api.billingRecords.remove, { recordId }),
     ).rejects.toThrow("Cannot delete a billed");
+  });
+});
+
+describe("sessionNotes.sign billing integration", () => {
+  it("signing a note does not throw and sets status to signed", async () => {
+    const t = convexTest(schema, modules).withIdentity(SLP_IDENTITY);
+    const { patientId } = await t.mutation(api.patients.create, VALID_PATIENT);
+    const noteId = await t.mutation(api.sessionNotes.create, {
+      patientId,
+      ...VALID_SESSION_DATA,
+    });
+
+    await t.mutation(api.sessionNotes.updateStatus, { noteId, status: "complete" });
+    await t.mutation(api.sessionNotes.saveSoapFromAI, {
+      noteId,
+      soapNote: {
+        subjective: "Patient engaged.",
+        objective: "14/20 trials correct.",
+        assessment: "Steady progress.",
+        plan: "Continue target.",
+      },
+    });
+    await t.mutation(api.sessionNotes.sign, { noteId });
+
+    const note = await t.query(api.sessionNotes.get, { noteId });
+    expect(note!.status).toBe("signed");
   });
 });
