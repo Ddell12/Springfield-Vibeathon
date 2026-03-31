@@ -196,6 +196,10 @@ export default defineSchema({
       code: v.string(),
       description: v.string(),
     }))),
+    insuranceCarrier: v.optional(v.string()),
+    insuranceMemberId: v.optional(v.string()),
+    insuranceGroupNumber: v.optional(v.string()),
+    insurancePhone: v.optional(v.string()),
   }).index("by_slpUserId", ["slpUserId"])
     .index("by_slpUserId_status", ["slpUserId", "status"]),
 
@@ -651,16 +655,17 @@ export default defineSchema({
     .index("by_patientId_formType", ["patientId", "formType"]),
 
   practiceProfiles: defineTable({
-    userId: v.string(),
+    slpUserId: v.string(),
     practiceName: v.optional(v.string()),
-    practiceAddress: v.optional(v.string()),
-    practicePhone: v.optional(v.string()),
     npiNumber: v.optional(v.string()),
-    licenseNumber: v.optional(v.string()),
-    licenseState: v.optional(v.string()),
     taxId: v.optional(v.string()),
+    address: v.optional(v.string()),
+    phone: v.optional(v.string()),
     credentials: v.optional(v.string()),
-  }).index("by_userId", ["userId"]),
+    licenseNumber: v.optional(v.string()),
+    defaultSessionFee: v.optional(v.number()),
+  })
+    .index("by_slpUserId", ["slpUserId"]),
 
   evaluations: defineTable({
     patientId: v.id("patients"),
@@ -764,6 +769,35 @@ export default defineSchema({
   })
     .index("by_patientId", ["patientId"])
     .index("by_slpUserId", ["slpUserId"]),
+
+  billingRecords: defineTable({
+    patientId: v.id("patients"),
+    slpUserId: v.string(),
+    sessionNoteId: v.id("sessionNotes"),
+    dateOfService: v.string(),
+    cptCode: v.string(),
+    cptDescription: v.string(),
+    modifiers: v.array(v.string()),
+    diagnosisCodes: v.array(v.object({
+      code: v.string(),
+      description: v.string(),
+    })),
+    placeOfService: v.string(),
+    units: v.number(),
+    fee: v.optional(v.number()),
+    status: v.union(
+      v.literal("draft"),
+      v.literal("finalized"),
+      v.literal("billed")
+    ),
+    billedAt: v.optional(v.number()),
+    notes: v.optional(v.string()),
+  })
+    .index("by_patientId", ["patientId"])
+    .index("by_slpUserId", ["slpUserId"])
+    .index("by_slpUserId_status", ["slpUserId", "status"])
+    .index("by_sessionNoteId", ["sessionNoteId"])
+    .index("by_dateOfService", ["dateOfService"]),
 });
 
 /** Active session states used by current code. Legacy states are read-only. */

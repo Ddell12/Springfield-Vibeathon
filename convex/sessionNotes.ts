@@ -2,6 +2,7 @@ import { v } from "convex/values";
 import { ConvexError } from "convex/values";
 
 import { internalMutation } from "./_generated/server";
+import { internal } from "./_generated/api";
 import { slpMutation, slpQuery } from "./lib/customFunctions";
 import { insertProgressFromTargets } from "./lib/progress";
 
@@ -341,6 +342,15 @@ export const sign = slpMutation({
       note.patientId,
       note.sessionDate,
     );
+
+    // Auto-create billing record for the signed session note
+    await ctx.scheduler.runAfter(0, internal.billingRecords.createFromSessionNote, {
+      sessionNoteId: args.noteId,
+      slpUserId: ctx.slpUserId,
+      patientId: note.patientId,
+      sessionDate: note.sessionDate,
+      sessionType: note.sessionType,
+    });
   },
 });
 

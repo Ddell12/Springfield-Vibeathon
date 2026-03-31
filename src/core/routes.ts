@@ -18,6 +18,7 @@ export const ROUTES = {
   SPEECH_COACH: "/speech-coach",
   SESSIONS: "/sessions",
   SESSION_DETAIL: (id: string) => `/sessions/${id}` as const,
+  BILLING: "/billing",
   SESSION_CALL: (id: string) => `/sessions/${id}/call` as const,
   SESSION_NOTES: (id: string) => `/sessions/${id}/notes` as const,
   SESSION_BOOK: (slpId: string) => `/sessions/book/${slpId}` as const,
