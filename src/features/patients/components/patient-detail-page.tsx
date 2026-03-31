@@ -48,7 +48,15 @@ export function PatientDetailPage({ paramsPromise, clinicalWidgets }: PatientDet
             Back to Caseload
           </Link>
         </Button>
-        <CreateMaterialButton patientId={patient._id} />
+        <div className="flex items-center gap-2">
+          <Button asChild variant="default" size="sm">
+            <Link href={`/patients/${patient._id}/collect`}>
+              <MaterialIcon icon="play_circle" size="sm" />
+              Start Session
+            </Link>
+          </Button>
+          <CreateMaterialButton patientId={patient._id} />
+        </div>
       </div>
 
       <PatientProfileWidget patient={patient} />
