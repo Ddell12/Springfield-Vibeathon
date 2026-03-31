@@ -53,7 +53,6 @@ export function CallControls({ className }: CallControlsProps) {
 
       {/* End call */}
       <DisconnectButton
-        stopTracks={true}
         className={cn(
           "flex h-11 items-center gap-2 rounded-full bg-red-600 px-5",
           "text-sm font-medium text-white transition-colors duration-200",

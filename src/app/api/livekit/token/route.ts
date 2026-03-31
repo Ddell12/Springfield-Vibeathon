@@ -22,7 +22,8 @@ export async function POST(req: Request): Promise<Response> {
     appointment = await convex.query(api.appointments.get, {
       appointmentId: appointmentId as Id<"appointments">,
     });
-  } catch {
+  } catch (err) {
+    console.error("[livekit/token] Convex query failed — userId:", userId, "appointmentId:", appointmentId, "error:", err);
     return Response.json({ error: "Not authorized" }, { status: 403 });
   }
 

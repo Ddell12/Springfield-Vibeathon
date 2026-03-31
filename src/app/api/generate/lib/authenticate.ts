@@ -8,11 +8,10 @@ export interface AuthResult {
   userId: string | undefined;
 }
 
-// Module-scoped singleton — reused across requests, auth set per-request
-const sharedConvex = new ConvexHttpClient(CONVEX_URL);
-
+// A new client is created per request to avoid auth token race conditions
+// when concurrent requests share a mutable singleton.
 export async function authenticate(): Promise<AuthResult> {
-  sharedConvex.clearAuth();
+  const convex = new ConvexHttpClient(CONVEX_URL);
   let userId: string | undefined;
 
   try {
@@ -22,7 +21,7 @@ export async function authenticate(): Promise<AuthResult> {
     if (clerkUserId) {
       const token = await getToken({ template: "convex" });
       if (token) {
-        sharedConvex.setAuth(token);
+        convex.setAuth(token);
       }
     }
   } catch (err) {
@@ -35,5 +34,5 @@ export async function authenticate(): Promise<AuthResult> {
     }
   }
 
-  return { convex: sharedConvex, userId };
+  return { convex, userId };
 }
