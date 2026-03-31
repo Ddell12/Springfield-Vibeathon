@@ -25,6 +25,7 @@ import type * as clerkActions from "../clerkActions.js";
 import type * as demo_seed from "../demo_seed.js";
 import type * as dischargeSummaries from "../dischargeSummaries.js";
 import type * as e2e_seed from "../e2e_seed.js";
+import type * as email from "../email.js";
 import type * as emailActions from "../emailActions.js";
 import type * as entitlements from "../entitlements.js";
 import type * as evaluations from "../evaluations.js";
@@ -104,6 +105,7 @@ declare const fullApi: ApiFromModules<{
   demo_seed: typeof demo_seed;
   dischargeSummaries: typeof dischargeSummaries;
   e2e_seed: typeof e2e_seed;
+  email: typeof email;
   emailActions: typeof emailActions;
   entitlements: typeof entitlements;
   evaluations: typeof evaluations;
