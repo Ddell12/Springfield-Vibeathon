@@ -2,22 +2,20 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Remove the last paper workflows from an SLP's daily practice by shipping live trial data collection, a 200+ goal bank, and home program PDF export.
-**Architecture:** Three independent feature verticals that share the existing `goals`, `sessionNotes`, and `homePrograms` tables. `sessionTrials` is a new Convex table for per-trial data. `goalBank` is a new table seeded with 200+ goals that replaces the static `goal-bank-data.ts`. Home program print uses `@media print` CSS with no external PDF dependencies.
-**Tech Stack:** Convex (schema, queries, mutations), Next.js App Router, React (client components), Tailwind v4 (`@media print`), Vitest + convex-test, shadcn/ui components.
+**Goal:** Replace the last paper workflows in SLP practice with live in-session trial data collection, a 200+ goal bank backed by Convex, and browser-based home program PDF export.
+**Architecture:** Three independent features sharing the existing patient/goal schema. `sessionTrials` table stores per-trial data during sessions and links to `sessionNotes` afterward. `goalBank` table replaces the static 20-template array with DB-backed filterable goals. Home program print uses `@media print` CSS with no server-side PDF dependency.
+**Tech Stack:** Convex (schema, queries, mutations), Next.js App Router, shadcn/ui, Tailwind v4, convex-test + Vitest
 
 ---
 
-## Task Group 1: Live In-Session Trial Data Collection
-
-### Task 1.1 — Schema: Add `sessionTrials` table
+## Task 1: Add `sessionTrials` Table to Schema
 
 **Files:**
-- `convex/schema.ts`
+- Modify: `convex/schema.ts:607` (before closing of `defineSchema`)
 
-- [ ] **Step 1: Add the `sessionTrials` table to the schema**
+- [ ] **Step 1: Add `sessionTrials` table definition to schema**
 
-Add the new table after the `sessionNotes` table definition (after line 299 in `convex/schema.ts`):
+In `convex/schema.ts`, add the `sessionTrials` table before the closing `});` of `defineSchema`:
 
 ```typescript
   sessionTrials: defineTable({
@@ -47,31 +45,74 @@ Add the new table after the `sessionNotes` table definition (after line 299 in `
 
 - [ ] **Step 2: Verify schema compiles**
 
-```bash
-cd /Users/desha/Springfield-Vibeathon && npx convex dev --once --typecheck-only 2>&1 | head -20
-```
-
-If the Convex CLI is not available or errors, verify with TypeScript:
-
-```bash
-cd /Users/desha/Springfield-Vibeathon && npx tsc --noEmit convex/schema.ts 2>&1 | head -20
-```
+Run: `cd /Users/desha/Springfield-Vibeathon && npx convex dev --once --typecheck=disable`
+Expected: Schema push succeeds without errors
 
 - [ ] **Step 3: Commit**
 
+---
+
+## Task 2: Add `goalBank` Table to Schema
+
+**Files:**
+- Modify: `convex/schema.ts:607` (before closing of `defineSchema`)
+
+- [ ] **Step 1: Add `goalBank` table definition to schema**
+
+In `convex/schema.ts`, add the `goalBank` table after the `sessionTrials` table:
+
+```typescript
+  goalBank: defineTable({
+    domain: v.union(
+      v.literal("articulation"),
+      v.literal("language-receptive"),
+      v.literal("language-expressive"),
+      v.literal("fluency"),
+      v.literal("voice"),
+      v.literal("pragmatic-social"),
+      v.literal("aac"),
+      v.literal("feeding")
+    ),
+    ageRange: v.union(
+      v.literal("0-3"),
+      v.literal("3-5"),
+      v.literal("5-8"),
+      v.literal("8-12"),
+      v.literal("12-18"),
+      v.literal("adult")
+    ),
+    skillLevel: v.string(),
+    shortDescription: v.string(),
+    fullGoalText: v.string(),
+    defaultTargetAccuracy: v.number(),
+    defaultConsecutiveSessions: v.number(),
+    exampleBaseline: v.optional(v.string()),
+    typicalCriterion: v.optional(v.string()),
+    isCustom: v.boolean(),
+    createdBy: v.optional(v.string()),
+  })
+    .index("by_domain", ["domain"])
+    .index("by_domain_ageRange", ["domain", "ageRange"])
+    .index("by_domain_skillLevel", ["domain", "skillLevel"])
+    .index("by_createdBy", ["createdBy"]),
 ```
-feat(schema): add sessionTrials table for live data collection
-```
+
+- [ ] **Step 2: Verify schema compiles**
+
+Run: `cd /Users/desha/Springfield-Vibeathon && npx convex dev --once --typecheck=disable`
+Expected: Schema push succeeds without errors
+
+- [ ] **Step 3: Commit**
 
 ---
 
-### Task 1.2 — Backend: `convex/sessionTrials.ts`
+## Task 3: Implement `convex/sessionTrials.ts` Backend
 
 **Files:**
-- `convex/sessionTrials.ts` (new)
-- `convex/__tests__/sessionTrials.test.ts` (new)
+- Create: `convex/sessionTrials.ts`
+- Test: `convex/__tests__/sessionTrials.test.ts`
 
-- [ ] **Step 1: Write failing tests**
+- [ ] **Step 1: Write the failing tests**
 
 Create `convex/__tests__/sessionTrials.test.ts`:
 
@@ -114,7 +155,7 @@ async function setupPatientAndGoal(t: ReturnType<ReturnType<typeof convexTest>["
 // ── start ──────────────────────────────────────────────────────────────────
 
 describe("sessionTrials.start", () => {
-  it("creates a new trial collection for a patient + goal", async () => {
+  it("creates a trial collection record", async () => {
     const t = convexTest(schema, modules).withIdentity(SLP_IDENTITY);
     const { patientId, goalId } = await setupPatientAndGoal(t);
     const trialId = await t.mutation(api.sessionTrials.start, {
@@ -123,30 +164,39 @@ describe("sessionTrials.start", () => {
       sessionDate: today,
     });
     expect(trialId).toBeDefined();
-    const trials = await t.query(api.sessionTrials.listByPatientDate, {
+  });
+
+  it("sets correct initial fields", async () => {
+    const t = convexTest(schema, modules).withIdentity(SLP_IDENTITY);
+    const { patientId, goalId } = await setupPatientAndGoal(t);
+    const trialId = await t.mutation(api.sessionTrials.start, {
       patientId,
+      goalId,
       sessionDate: today,
     });
-    expect(trials).toHaveLength(1);
-    expect(trials[0].trials).toEqual([]);
-    expect(trials[0].targetDescription).toBe("Produce /r/ in initial position");
+    const active = await t.query(api.sessionTrials.getActiveForPatient, { patientId });
+    expect(active).toHaveLength(1);
+    expect(active[0]._id).toBe(trialId);
+    expect(active[0].trials).toEqual([]);
+    expect(active[0].targetDescription).toBe("Produce /r/ in initial position");
+    expect(active[0].endedAt).toBeUndefined();
   });
 
   it("rejects non-owner SLP", async () => {
     const base = convexTest(schema, modules);
-    const t1 = base.withIdentity(SLP_IDENTITY);
-    const { patientId, goalId } = await setupPatientAndGoal(t1);
-    const t2 = base.withIdentity(OTHER_SLP);
+    const slp1 = base.withIdentity(SLP_IDENTITY);
+    const { patientId, goalId } = await setupPatientAndGoal(slp1);
+    const slp2 = base.withIdentity(OTHER_SLP);
     await expect(
-      t2.mutation(api.sessionTrials.start, { patientId, goalId, sessionDate: today })
-    ).rejects.toThrow();
+      slp2.mutation(api.sessionTrials.start, { patientId, goalId, sessionDate: today })
+    ).rejects.toThrow("Not authorized");
   });
 });
 
 // ── recordTrial ────────────────────────────────────────────────────────────
 
 describe("sessionTrials.recordTrial", () => {
-  it("appends a trial to the trials array", async () => {
+  it("appends a trial to the array", async () => {
     const t = convexTest(schema, modules).withIdentity(SLP_IDENTITY);
     const { patientId, goalId } = await setupPatientAndGoal(t);
     const trialId = await t.mutation(api.sessionTrials.start, {
@@ -157,21 +207,19 @@ describe("sessionTrials.recordTrial", () => {
     await t.mutation(api.sessionTrials.recordTrial, {
       trialId,
       correct: true,
-      cueLevel: "independent" as const,
+      cueLevel: "independent",
     });
     await t.mutation(api.sessionTrials.recordTrial, {
       trialId,
       correct: false,
-      cueLevel: "min-cue" as const,
+      cueLevel: "mod-cue",
     });
-    const trials = await t.query(api.sessionTrials.listByPatientDate, {
-      patientId,
-      sessionDate: today,
-    });
-    expect(trials[0].trials).toHaveLength(2);
-    expect(trials[0].trials[0].correct).toBe(true);
-    expect(trials[0].trials[0].cueLevel).toBe("independent");
-    expect(trials[0].trials[1].correct).toBe(false);
+    const active = await t.query(api.sessionTrials.getActiveForPatient, { patientId });
+    expect(active[0].trials).toHaveLength(2);
+    expect(active[0].trials[0].correct).toBe(true);
+    expect(active[0].trials[0].cueLevel).toBe("independent");
+    expect(active[0].trials[1].correct).toBe(false);
+    expect(active[0].trials[1].cueLevel).toBe("mod-cue");
   });
 
   it("rejects recording on ended collection", async () => {
@@ -184,11 +232,7 @@ describe("sessionTrials.recordTrial", () => {
     });
     await t.mutation(api.sessionTrials.endCollection, { trialId });
     await expect(
-      t.mutation(api.sessionTrials.recordTrial, {
-        trialId,
-        correct: true,
-        cueLevel: "independent" as const,
-      })
+      t.mutation(api.sessionTrials.recordTrial, { trialId, correct: true, cueLevel: "independent" })
     ).rejects.toThrow("already ended");
   });
 });
@@ -205,31 +249,95 @@ describe("sessionTrials.endCollection", () => {
       sessionDate: today,
     });
     await t.mutation(api.sessionTrials.endCollection, { trialId });
-    const trials = await t.query(api.sessionTrials.listByPatientDate, {
+    const byDate = await t.query(api.sessionTrials.listByPatientDate, {
       patientId,
       sessionDate: today,
     });
-    expect(trials[0].endedAt).toBeDefined();
-    expect(typeof trials[0].endedAt).toBe("number");
+    expect(byDate[0].endedAt).toBeDefined();
+    expect(typeof byDate[0].endedAt).toBe("number");
   });
 });
 
-// ── getActiveForPatient ────────────────────────────────────────────────────
+// ── linkToSessionNote ──────────────────────────────────────────────────────
 
-describe("sessionTrials.getActiveForPatient", () => {
-  it("returns in-progress trial collection (no endedAt)", async () => {
+describe("sessionTrials.linkToSessionNote", () => {
+  it("links trial to session note and returns targetsWorkedOn", async () => {
     const t = convexTest(schema, modules).withIdentity(SLP_IDENTITY);
     const { patientId, goalId } = await setupPatientAndGoal(t);
-    await t.mutation(api.sessionTrials.start, {
+    const trialId = await t.mutation(api.sessionTrials.start, {
       patientId,
       goalId,
       sessionDate: today,
     });
-    const active = await t.query(api.sessionTrials.getActiveForPatient, { patientId });
-    expect(active).toHaveLength(1);
+    // Record 3 correct, 1 incorrect
+    for (let i = 0; i < 3; i++) {
+      await t.mutation(api.sessionTrials.recordTrial, {
+        trialId,
+        correct: true,
+        cueLevel: "independent",
+      });
+    }
+    await t.mutation(api.sessionTrials.recordTrial, {
+      trialId,
+      correct: false,
+      cueLevel: "min-cue",
+    });
+    await t.mutation(api.sessionTrials.endCollection, { trialId });
+
+    // Create a session note
+    const noteId = await t.mutation(api.sessionNotes.create, {
+      patientId,
+      sessionDate: today,
+      sessionDuration: 30,
+      sessionType: "in-person",
+      structuredData: { targetsWorkedOn: [] },
+    });
+
+    const targets = await t.mutation(api.sessionTrials.linkToSessionNote, {
+      trialIds: [trialId],
+      sessionNoteId: noteId,
+    });
+
+    expect(targets).toHaveLength(1);
+    expect(targets[0].target).toBe("Produce /r/ in initial position");
+    expect(targets[0].trials).toBe(4);
+    expect(targets[0].correct).toBe(3);
+    expect(targets[0].promptLevel).toBe("independent");
+    expect(targets[0].goalId).toBeDefined();
+  });
+});
+
+// ── queries ────────────────────────────────────────────────────────────────
+
+describe("sessionTrials queries", () => {
+  it("listBySessionNote returns linked trials", async () => {
+    const t = convexTest(schema, modules).withIdentity(SLP_IDENTITY);
+    const { patientId, goalId } = await setupPatientAndGoal(t);
+    const trialId = await t.mutation(api.sessionTrials.start, {
+      patientId,
+      goalId,
+      sessionDate: today,
+    });
+    await t.mutation(api.sessionTrials.endCollection, { trialId });
+
+    const noteId = await t.mutation(api.sessionNotes.create, {
+      patientId,
+      sessionDate: today,
+      sessionDuration: 30,
+      sessionType: "in-person",
+      structuredData: { targetsWorkedOn: [] },
+    });
+
+    await t.mutation(api.sessionTrials.linkToSessionNote, {
+      trialIds: [trialId],
+      sessionNoteId: noteId,
+    });
+
+    const linked = await t.query(api.sessionTrials.listBySessionNote, { sessionNoteId: noteId });
+    expect(linked).toHaveLength(1);
   });
 
-  it("excludes ended collections", async () => {
+  it("getActiveForPatient excludes ended collections", async () => {
     const t = convexTest(schema, modules).withIdentity(SLP_IDENTITY);
     const { patientId, goalId } = await setupPatientAndGoal(t);
     const trialId = await t.mutation(api.sessionTrials.start, {
@@ -242,74 +350,16 @@ describe("sessionTrials.getActiveForPatient", () => {
     expect(active).toHaveLength(0);
   });
 });
-
-// ── linkToSessionNote ──────────────────────────────────────────────────────
-
-describe("sessionTrials.linkToSessionNote", () => {
-  it("links trial data to session note and populates targetsWorkedOn", async () => {
-    const t = convexTest(schema, modules).withIdentity(SLP_IDENTITY);
-    const { patientId, goalId } = await setupPatientAndGoal(t);
-    const trialId = await t.mutation(api.sessionTrials.start, {
-      patientId,
-      goalId,
-      sessionDate: today,
-    });
-    // Record some trials
-    await t.mutation(api.sessionTrials.recordTrial, {
-      trialId,
-      correct: true,
-      cueLevel: "independent" as const,
-    });
-    await t.mutation(api.sessionTrials.recordTrial, {
-      trialId,
-      correct: true,
-      cueLevel: "independent" as const,
-    });
-    await t.mutation(api.sessionTrials.recordTrial, {
-      trialId,
-      correct: false,
-      cueLevel: "min-cue" as const,
-    });
-    await t.mutation(api.sessionTrials.endCollection, { trialId });
-
-    // Create a session note
-    const noteId = await t.mutation(api.sessionNotes.create, {
-      patientId,
-      sessionDate: today,
-      sessionDuration: 30,
-      sessionType: "in-person" as const,
-      structuredData: { targetsWorkedOn: [] },
-    });
-
-    // Link the trial data
-    await t.mutation(api.sessionTrials.linkToSessionNote, {
-      noteId,
-      trialIds: [trialId],
-    });
-
-    // Verify the link
-    const linked = await t.query(api.sessionTrials.listBySessionNote, { noteId });
-    expect(linked).toHaveLength(1);
-    expect(linked[0].sessionNoteId).toBe(noteId);
-
-    // Verify session note targets were populated
-    const note = await t.query(api.sessionNotes.get, { noteId });
-    expect(note.structuredData.targetsWorkedOn).toHaveLength(1);
-    expect(note.structuredData.targetsWorkedOn[0].target).toBe("Produce /r/ in initial position");
-    expect(note.structuredData.targetsWorkedOn[0].trials).toBe(3);
-    expect(note.structuredData.targetsWorkedOn[0].correct).toBe(2);
-    expect(note.structuredData.targetsWorkedOn[0].goalId).toBeDefined();
-  });
-});
 ```
 
-- [ ] **Step 2: Verify tests fail** (module not found / function not registered)
+- [ ] **Step 2: Run tests to verify they fail**
 
-```bash
-cd /Users/desha/Springfield-Vibeathon && npx vitest run convex/__tests__/sessionTrials.test.ts 2>&1 | tail -20
-```
+Run: `cd /Users/desha/Springfield-Vibeathon && npx vitest run convex/__tests__/sessionTrials.test.ts`
+Expected: FAIL — module `api.sessionTrials` does not exist
 
-- [ ] **Step 3: Implement `convex/sessionTrials.ts`**
+- [ ] **Step 3: Write the implementation**
+
+Create `convex/sessionTrials.ts`:
 
 ```typescript
 import { v } from "convex/values";
@@ -326,38 +376,41 @@ const cueLevelValidator = v.union(
   v.literal("max-cue")
 );
 
-// ── Helper: map cueLevel to session note promptLevel ────────────────────────
-
-function cueLevelToPromptLevel(
-  cueLevel: "independent" | "min-cue" | "mod-cue" | "max-cue"
-): "independent" | "verbal-cue" | "model" | "physical" {
-  switch (cueLevel) {
-    case "independent": return "independent";
-    case "min-cue": return "verbal-cue";
-    case "mod-cue": return "model";
-    case "max-cue": return "physical";
-  }
-}
+/**
+ * Maps data-collection cueLevel values to session note promptLevel values.
+ *
+ *   independent  → independent
+ *   min-cue      → verbal-cue
+ *   mod-cue      → model
+ *   max-cue      → physical
+ */
+const CUE_TO_PROMPT: Record<string, "independent" | "verbal-cue" | "model" | "physical"> = {
+  "independent": "independent",
+  "min-cue": "verbal-cue",
+  "mod-cue": "model",
+  "max-cue": "physical",
+};
 
 /**
- * Find the most frequent cue level in a trials array.
+ * Determine the most frequent cue level in a trials array.
+ * Returns the mapped promptLevel value for session notes.
  */
 function mostFrequentCueLevel(
-  trials: Array<{ cueLevel: "independent" | "min-cue" | "mod-cue" | "max-cue" }>
-): "independent" | "min-cue" | "mod-cue" | "max-cue" {
+  trials: Array<{ cueLevel: string }>
+): "independent" | "verbal-cue" | "model" | "physical" {
   const counts: Record<string, number> = {};
-  for (const t of trials) {
-    counts[t.cueLevel] = (counts[t.cueLevel] ?? 0) + 1;
+  for (const trial of trials) {
+    counts[trial.cueLevel] = (counts[trial.cueLevel] ?? 0) + 1;
   }
-  let max = 0;
-  let result: "independent" | "min-cue" | "mod-cue" | "max-cue" = "independent";
-  for (const [level, count] of Object.entries(counts)) {
-    if (count > max) {
-      max = count;
-      result = level as typeof result;
+  let maxCue = "independent";
+  let maxCount = 0;
+  for (const [cue, count] of Object.entries(counts)) {
+    if (count > maxCount) {
+      maxCount = count;
+      maxCue = cue;
     }
   }
-  return result;
+  return CUE_TO_PROMPT[maxCue] ?? "independent";
 }
 
 // ── Mutations ───────────────────────────────────────────────────────────────
@@ -401,74 +454,73 @@ export const recordTrial = slpMutation({
     if (record.slpUserId !== ctx.slpUserId) throw new ConvexError("Not authorized");
     if (record.endedAt !== undefined) throw new ConvexError("Collection already ended");
 
-    const trial = {
+    const newTrial = {
       correct: args.correct,
       cueLevel: args.cueLevel,
       timestamp: Date.now(),
     };
 
     await ctx.db.patch(args.trialId, {
-      trials: [...record.trials, trial],
+      trials: [...record.trials, newTrial],
     });
   },
 });
 
 export const endCollection = slpMutation({
-  args: { trialId: v.id("sessionTrials") },
+  args: {
+    trialId: v.id("sessionTrials"),
+  },
   handler: async (ctx, args) => {
     const record = await ctx.db.get(args.trialId);
     if (!record) throw new ConvexError("Trial collection not found");
     if (record.slpUserId !== ctx.slpUserId) throw new ConvexError("Not authorized");
     if (record.endedAt !== undefined) throw new ConvexError("Collection already ended");
 
-    await ctx.db.patch(args.trialId, { endedAt: Date.now() });
+    await ctx.db.patch(args.trialId, {
+      endedAt: Date.now(),
+    });
   },
 });
 
 export const linkToSessionNote = slpMutation({
   args: {
-    noteId: v.id("sessionNotes"),
     trialIds: v.array(v.id("sessionTrials")),
+    sessionNoteId: v.id("sessionNotes"),
   },
   handler: async (ctx, args) => {
-    const note = await ctx.db.get(args.noteId);
+    const note = await ctx.db.get(args.sessionNoteId);
     if (!note) throw new ConvexError("Session note not found");
     if (note.slpUserId !== ctx.slpUserId) throw new ConvexError("Not authorized");
-    if (note.status === "signed") throw new ConvexError("Cannot modify a signed session note");
 
-    const targetsWorkedOn = [...note.structuredData.targetsWorkedOn];
+    const targetsWorkedOn: Array<{
+      target: string;
+      goalId?: string;
+      trials?: number;
+      correct?: number;
+      promptLevel?: "independent" | "verbal-cue" | "model" | "physical";
+    }> = [];
 
     for (const trialId of args.trialIds) {
       const record = await ctx.db.get(trialId);
       if (!record) continue;
       if (record.slpUserId !== ctx.slpUserId) continue;
 
-      // Link the trial to this note
-      await ctx.db.patch(trialId, { sessionNoteId: args.noteId });
+      // Link to the session note
+      await ctx.db.patch(trialId, { sessionNoteId: args.sessionNoteId });
 
-      // Build target data from trial
       const totalTrials = record.trials.length;
       const correctCount = record.trials.filter((t) => t.correct).length;
-      const dominant = mostFrequentCueLevel(
-        record.trials.length > 0 ? record.trials : [{ cueLevel: "independent" } as { cueLevel: "independent" | "min-cue" | "mod-cue" | "max-cue" }]
-      );
 
       targetsWorkedOn.push({
         target: record.targetDescription,
         goalId: record.goalId as string,
         trials: totalTrials,
         correct: correctCount,
-        promptLevel: cueLevelToPromptLevel(dominant),
+        promptLevel: totalTrials > 0 ? mostFrequentCueLevel(record.trials) : undefined,
       });
     }
 
-    // Update the session note's structured data
-    await ctx.db.patch(args.noteId, {
-      structuredData: {
-        ...note.structuredData,
-        targetsWorkedOn,
-      },
-    });
+    return targetsWorkedOn;
   },
 });
 
@@ -478,6 +530,7 @@ export const getActiveForPatient = slpQuery({
   args: { patientId: v.id("patients") },
   handler: async (ctx, args) => {
     if (!ctx.slpUserId) throw new ConvexError("Not authorized");
+
     const patient = await ctx.db.get(args.patientId);
     if (!patient) throw new ConvexError("Patient not found");
     if (patient.slpUserId !== ctx.slpUserId) throw new ConvexError("Not authorized");
@@ -487,17 +540,19 @@ export const getActiveForPatient = slpQuery({
       .withIndex("by_patientId_sessionDate", (q) => q.eq("patientId", args.patientId))
       .collect();
 
-    return all.filter((t) => t.endedAt === undefined);
+    // Filter to active (no endedAt) — cannot use index for optional field
+    return all.filter((r) => r.endedAt === undefined);
   },
 });
 
 export const listBySessionNote = slpQuery({
-  args: { noteId: v.id("sessionNotes") },
+  args: { sessionNoteId: v.id("sessionNotes") },
   handler: async (ctx, args) => {
     if (!ctx.slpUserId) throw new ConvexError("Not authorized");
+
     return await ctx.db
       .query("sessionTrials")
-      .withIndex("by_sessionNoteId", (q) => q.eq("sessionNoteId", args.noteId))
+      .withIndex("by_sessionNoteId", (q) => q.eq("sessionNoteId", args.sessionNoteId))
       .collect();
   },
 });
@@ -509,9 +564,6 @@ export const listByPatientDate = slpQuery({
   },
   handler: async (ctx, args) => {
     if (!ctx.slpUserId) throw new ConvexError("Not authorized");
-    const patient = await ctx.db.get(args.patientId);
-    if (!patient) throw new ConvexError("Patient not found");
-    if (patient.slpUserId !== ctx.slpUserId) throw new ConvexError("Not authorized");
 
     return await ctx.db
       .query("sessionTrials")
@@ -523,752 +575,34 @@ export const listByPatientDate = slpQuery({
 });
 ```
 
-- [ ] **Step 4: Verify tests pass**
+- [ ] **Step 4: Run tests to verify they pass**
 
-```bash
-cd /Users/desha/Springfield-Vibeathon && npx vitest run convex/__tests__/sessionTrials.test.ts 2>&1 | tail -30
-```
+Run: `cd /Users/desha/Springfield-Vibeathon && npx vitest run convex/__tests__/sessionTrials.test.ts`
+Expected: All tests PASS
 
 - [ ] **Step 5: Commit**
 
-```
-feat(sessionTrials): add backend for live trial data collection with TDD
-```
-
 ---
 
-### Task 1.3 — Frontend: Data Collection Screen
+## Task 4: Implement Goal Bank Seed Data
 
 **Files:**
-- `src/features/data-collection/components/data-collection-screen.tsx` (new)
-- `src/features/data-collection/components/trial-buttons.tsx` (new)
-- `src/features/data-collection/components/cue-level-toggle.tsx` (new)
-- `src/features/data-collection/components/running-tally.tsx` (new)
-- `src/features/data-collection/components/target-selector.tsx` (new)
-- `src/features/data-collection/components/session-summary.tsx` (new)
-- `src/features/data-collection/hooks/use-data-collection.ts` (new)
-- `src/app/(app)/patients/[id]/collect/page.tsx` (new)
-
-- [ ] **Step 1: Create the data collection hook**
-
-Create `src/features/data-collection/hooks/use-data-collection.ts`:
-
-```typescript
-"use client";
-
-import { useConvexAuth, useMutation, useQuery } from "convex/react";
-import { useCallback, useState } from "react";
-
-import { api } from "../../../../convex/_generated/api";
-import type { Id } from "../../../../convex/_generated/dataModel";
-
-export type CueLevel = "independent" | "min-cue" | "mod-cue" | "max-cue";
-
-interface ActiveTarget {
-  trialId: Id<"sessionTrials">;
-  goalId: Id<"goals">;
-  targetDescription: string;
-  trials: Array<{ correct: boolean; cueLevel: CueLevel; timestamp: number }>;
-}
-
-export function useDataCollection(patientId: Id<"patients">) {
-  const { isAuthenticated } = useConvexAuth();
-  const [cueLevel, setCueLevel] = useState<CueLevel>("independent");
-  const [phase, setPhase] = useState<"collecting" | "summary">("collecting");
-
-  const startMutation = useMutation(api.sessionTrials.start);
-  const recordTrialMutation = useMutation(api.sessionTrials.recordTrial);
-  const endCollectionMutation = useMutation(api.sessionTrials.endCollection);
-
-  const activeTrials = useQuery(
-    api.sessionTrials.getActiveForPatient,
-    isAuthenticated ? { patientId } : "skip"
-  );
-
-  const startTarget = useCallback(
-    async (goalId: Id<"goals">) => {
-      const sessionDate = new Date().toISOString().slice(0, 10);
-      return await startMutation({ patientId, goalId, sessionDate });
-    },
-    [patientId, startMutation]
-  );
-
-  const recordTrial = useCallback(
-    async (trialId: Id<"sessionTrials">, correct: boolean) => {
-      await recordTrialMutation({ trialId, correct, cueLevel });
-    },
-    [cueLevel, recordTrialMutation]
-  );
-
-  const endAll = useCallback(async () => {
-    if (!activeTrials) return;
-    for (const trial of activeTrials) {
-      if (trial.endedAt === undefined) {
-        await endCollectionMutation({ trialId: trial._id });
-      }
-    }
-    setPhase("summary");
-  }, [activeTrials, endCollectionMutation]);
-
-  return {
-    activeTrials: activeTrials ?? [],
-    cueLevel,
-    setCueLevel,
-    phase,
-    setPhase,
-    startTarget,
-    recordTrial,
-    endAll,
-  };
-}
-```
-
-- [ ] **Step 2: Create `cue-level-toggle.tsx`**
-
-Create `src/features/data-collection/components/cue-level-toggle.tsx`:
-
-```tsx
-"use client";
-
-import { cn } from "@/core/utils";
-
-import type { CueLevel } from "../hooks/use-data-collection";
-
-const CUE_LEVELS: { value: CueLevel; label: string; shortLabel: string }[] = [
-  { value: "independent", label: "Independent", shortLabel: "IND" },
-  { value: "min-cue", label: "Minimal Cue", shortLabel: "MIN" },
-  { value: "mod-cue", label: "Moderate Cue", shortLabel: "MOD" },
-  { value: "max-cue", label: "Maximum Cue", shortLabel: "MAX" },
-];
-
-interface CueLevelToggleProps {
-  value: CueLevel;
-  onChange: (level: CueLevel) => void;
-}
-
-export function CueLevelToggle({ value, onChange }: CueLevelToggleProps) {
-  return (
-    <div className="flex w-full gap-1 rounded-xl bg-surface-container p-1">
-      {CUE_LEVELS.map((level) => (
-        <button
-          key={level.value}
-          type="button"
-          onClick={() => onChange(level.value)}
-          className={cn(
-            "flex-1 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors duration-300",
-            value === level.value
-              ? "bg-primary text-on-primary shadow-sm"
-              : "text-on-surface-variant hover:bg-surface-container-high"
-          )}
-          aria-pressed={value === level.value}
-        >
-          <span className="hidden sm:inline">{level.label}</span>
-          <span className="sm:hidden">{level.shortLabel}</span>
-        </button>
-      ))}
-    </div>
-  );
-}
-```
-
-- [ ] **Step 3: Create `trial-buttons.tsx`**
-
-Create `src/features/data-collection/components/trial-buttons.tsx`:
-
-```tsx
-"use client";
-
-import { cn } from "@/core/utils";
-
-interface TrialButtonsProps {
-  onCorrect: () => void;
-  onIncorrect: () => void;
-  disabled?: boolean;
-}
-
-export function TrialButtons({ onCorrect, onIncorrect, disabled }: TrialButtonsProps) {
-  return (
-    <div className="flex gap-4 px-4 pb-safe">
-      <button
-        type="button"
-        onClick={onIncorrect}
-        disabled={disabled}
-        className={cn(
-          "flex h-20 flex-1 items-center justify-center rounded-2xl text-3xl font-bold",
-          "bg-error-container text-on-error-container",
-          "active:scale-95 transition-transform duration-150",
-          "disabled:opacity-40",
-          "min-h-[80px]"
-        )}
-        aria-label="Incorrect trial"
-      >
-        −
-      </button>
-      <button
-        type="button"
-        onClick={onCorrect}
-        disabled={disabled}
-        className={cn(
-          "flex h-20 flex-1 items-center justify-center rounded-2xl text-3xl font-bold",
-          "bg-success-container text-on-success-container",
-          "active:scale-95 transition-transform duration-150",
-          "disabled:opacity-40",
-          "min-h-[80px]"
-        )}
-        aria-label="Correct trial"
-      >
-        +
-      </button>
-    </div>
-  );
-}
-```
-
-- [ ] **Step 4: Create `running-tally.tsx`**
-
-Create `src/features/data-collection/components/running-tally.tsx`:
-
-```tsx
-"use client";
-
-interface RunningTallyProps {
-  correct: number;
-  total: number;
-}
-
-export function RunningTally({ correct, total }: RunningTallyProps) {
-  const accuracy = total > 0 ? Math.round((correct / total) * 100) : 0;
-
-  return (
-    <div className="flex flex-col items-center gap-1 py-4">
-      <p className="font-display text-5xl font-bold tracking-tight text-on-surface">
-        {correct}/{total}
-      </p>
-      <p className="text-lg font-medium text-on-surface-variant">
-        {total > 0 ? `${accuracy}%` : "No trials yet"}
-      </p>
-    </div>
-  );
-}
-```
-
-- [ ] **Step 5: Create `target-selector.tsx`**
-
-Create `src/features/data-collection/components/target-selector.tsx`:
-
-```tsx
-"use client";
-
-import { cn } from "@/core/utils";
-
-interface Target {
-  _id: string;
-  targetDescription: string;
-  trials: Array<{ correct: boolean }>;
-}
-
-interface TargetSelectorProps {
-  targets: Target[];
-  activeTargetId: string | null;
-  onSelect: (id: string) => void;
-}
-
-export function TargetSelector({ targets, activeTargetId, onSelect }: TargetSelectorProps) {
-  if (targets.length <= 1) return null;
-
-  return (
-    <div className="flex gap-2 overflow-x-auto px-4 pb-2 no-scrollbar">
-      {targets.map((target) => {
-        const total = target.trials.length;
-        const correct = target.trials.filter((t) => t.correct).length;
-        const accuracy = total > 0 ? Math.round((correct / total) * 100) : null;
-
-        return (
-          <button
-            key={target._id}
-            type="button"
-            onClick={() => onSelect(target._id)}
-            className={cn(
-              "shrink-0 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors duration-300",
-              activeTargetId === target._id
-                ? "bg-primary text-on-primary"
-                : "bg-surface-container text-on-surface-variant"
-            )}
-          >
-            {target.targetDescription}
-            {accuracy !== null && (
-              <span className="ml-1.5 opacity-70">{accuracy}%</span>
-            )}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-```
-
-- [ ] **Step 6: Create `session-summary.tsx`**
-
-Create `src/features/data-collection/components/session-summary.tsx`:
-
-```tsx
-"use client";
-
-import Link from "next/link";
-
-import { Button } from "@/shared/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/shared/components/ui/card";
-
-import type { Id } from "../../../../../convex/_generated/dataModel";
-
-interface TrialRecord {
-  _id: Id<"sessionTrials">;
-  targetDescription: string;
-  goalId: Id<"goals">;
-  trials: Array<{ correct: boolean; cueLevel: string }>;
-}
-
-interface SessionSummaryProps {
-  patientId: Id<"patients">;
-  trialRecords: TrialRecord[];
-  onStartNote: () => void;
-}
-
-export function SessionSummary({ patientId, trialRecords, onStartNote }: SessionSummaryProps) {
-  return (
-    <div className="flex flex-col gap-6 p-4">
-      <h2 className="font-display text-2xl font-bold text-on-surface">Session Summary</h2>
-
-      <div className="flex flex-col gap-3">
-        {trialRecords.map((record) => {
-          const total = record.trials.length;
-          const correct = record.trials.filter((t) => t.correct).length;
-          const accuracy = total > 0 ? Math.round((correct / total) * 100) : 0;
-
-          // Count cue levels
-          const cueCounts: Record<string, number> = {};
-          for (const t of record.trials) {
-            cueCounts[t.cueLevel] = (cueCounts[t.cueLevel] ?? 0) + 1;
-          }
-
-          return (
-            <Card key={record._id}>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base">{record.targetDescription}</CardTitle>
-              </CardHeader>
-              <CardContent className="flex flex-col gap-2">
-                <div className="flex items-baseline gap-3">
-                  <span className="font-display text-3xl font-bold">{accuracy}%</span>
-                  <span className="text-sm text-on-surface-variant">
-                    {correct}/{total} trials
-                  </span>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {Object.entries(cueCounts).map(([level, count]) => (
-                    <span
-                      key={level}
-                      className="rounded-md bg-surface-container px-2 py-1 text-xs text-on-surface-variant"
-                    >
-                      {level}: {count}
-                    </span>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
-
-      <div className="flex flex-col gap-3">
-        <Button onClick={onStartNote} className="w-full" size="lg">
-          Create Session Note
-        </Button>
-        <Button asChild variant="outline" className="w-full" size="lg">
-          <Link href={`/patients/${patientId}`}>Back to Patient</Link>
-        </Button>
-      </div>
-    </div>
-  );
-}
-```
-
-- [ ] **Step 7: Create the main `data-collection-screen.tsx`**
-
-Create `src/features/data-collection/components/data-collection-screen.tsx`:
-
-```tsx
-"use client";
-
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useCallback, useMemo, useState } from "react";
-import { toast } from "sonner";
-
-import { cn } from "@/core/utils";
-import { useActiveGoals } from "@/features/goals/hooks/use-goals";
-import { MaterialIcon } from "@/shared/components/material-icon";
-import { Button } from "@/shared/components/ui/button";
-
-import type { Id } from "../../../../../convex/_generated/dataModel";
-import { useDataCollection } from "../hooks/use-data-collection";
-import { CueLevelToggle } from "./cue-level-toggle";
-import { RunningTally } from "./running-tally";
-import { SessionSummary } from "./session-summary";
-import { TargetSelector } from "./target-selector";
-import { TrialButtons } from "./trial-buttons";
-
-interface DataCollectionScreenProps {
-  patientId: Id<"patients">;
-}
-
-export function DataCollectionScreen({ patientId }: DataCollectionScreenProps) {
-  const router = useRouter();
-  const activeGoals = useActiveGoals(patientId);
-  const {
-    activeTrials,
-    cueLevel,
-    setCueLevel,
-    phase,
-    startTarget,
-    recordTrial,
-    endAll,
-  } = useDataCollection(patientId);
-
-  const [activeTargetId, setActiveTargetId] = useState<string | null>(null);
-  const [ending, setEnding] = useState(false);
-
-  // Auto-select first target
-  const currentTarget = useMemo(() => {
-    if (activeTrials.length === 0) return null;
-    const id = activeTargetId ?? activeTrials[0]?._id;
-    return activeTrials.find((t) => t._id === id) ?? activeTrials[0] ?? null;
-  }, [activeTrials, activeTargetId]);
-
-  const handleStartTarget = useCallback(
-    async (goalId: Id<"goals">) => {
-      try {
-        const trialId = await startTarget(goalId);
-        setActiveTargetId(trialId);
-      } catch (err) {
-        toast.error(err instanceof Error ? err.message : "Failed to start");
-      }
-    },
-    [startTarget]
-  );
-
-  const handleCorrect = useCallback(async () => {
-    if (!currentTarget) return;
-    try {
-      await recordTrial(currentTarget._id as Id<"sessionTrials">, true);
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to record");
-    }
-  }, [currentTarget, recordTrial]);
-
-  const handleIncorrect = useCallback(async () => {
-    if (!currentTarget) return;
-    try {
-      await recordTrial(currentTarget._id as Id<"sessionTrials">, false);
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to record");
-    }
-  }, [currentTarget, recordTrial]);
-
-  const handleEndSession = useCallback(async () => {
-    setEnding(true);
-    try {
-      await endAll();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to end");
-    } finally {
-      setEnding(false);
-    }
-  }, [endAll]);
-
-  const handleStartNote = useCallback(() => {
-    const sessionDate = new Date().toISOString().slice(0, 10);
-    // Navigate to new session note with trial data IDs as search params
-    const trialIds = activeTrials.map((t) => t._id).join(",");
-    router.push(
-      `/patients/${patientId}/sessions/new?trialIds=${trialIds}&date=${sessionDate}`
-    );
-  }, [activeTrials, patientId, router]);
-
-  // Summary phase
-  if (phase === "summary") {
-    return (
-      <SessionSummary
-        patientId={patientId}
-        trialRecords={activeTrials as any}
-        onStartNote={handleStartNote}
-      />
-    );
-  }
-
-  // No active trials yet — show goal picker
-  if (activeTrials.length === 0) {
-    return (
-      <div className="flex flex-col gap-6 p-4">
-        <div className="flex items-center justify-between">
-          <Button asChild variant="ghost" size="sm">
-            <Link href={`/patients/${patientId}`}>
-              <MaterialIcon icon="arrow_back" size="sm" />
-              Back
-            </Link>
-          </Button>
-          <h1 className="font-display text-lg font-bold">Start Session</h1>
-          <div className="w-16" />
-        </div>
-
-        <p className="text-center text-sm text-on-surface-variant">
-          Select goals to track during this session
-        </p>
-
-        {activeGoals === undefined ? (
-          <p className="text-center text-xs text-on-surface-variant">Loading goals...</p>
-        ) : activeGoals.length === 0 ? (
-          <p className="text-center text-sm text-on-surface-variant">
-            No active goals. Add goals first.
-          </p>
-        ) : (
-          <div className="flex flex-col gap-2">
-            {activeGoals.map((goal) => (
-              <button
-                key={goal._id}
-                type="button"
-                onClick={() => handleStartTarget(goal._id)}
-                className={cn(
-                  "flex flex-col gap-1 rounded-xl border border-border p-4 text-left",
-                  "transition-colors duration-300 hover:border-primary/50 hover:bg-muted/50"
-                )}
-              >
-                <span className="text-sm font-medium">{goal.shortDescription}</span>
-                <span className="text-xs text-on-surface-variant">
-                  Target: {goal.targetAccuracy}% across {goal.targetConsecutiveSessions} sessions
-                </span>
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  // Active data collection
-  const correct = currentTarget?.trials.filter((t) => t.correct).length ?? 0;
-  const total = currentTarget?.trials.length ?? 0;
-
-  return (
-    <div className="flex h-dvh flex-col">
-      {/* Top bar — minimal */}
-      <div className="flex items-center justify-between px-4 pt-safe pb-2">
-        <Button variant="ghost" size="sm" onClick={handleEndSession} disabled={ending}>
-          End Session
-        </Button>
-        <p className="text-sm font-medium text-on-surface-variant">
-          {currentTarget?.targetDescription}
-        </p>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => {
-            // Add another target
-            if (activeGoals) {
-              const unused = activeGoals.filter(
-                (g) => !activeTrials.some((t) => t.goalId === g._id)
-              );
-              if (unused.length > 0) {
-                handleStartTarget(unused[0]._id);
-              } else {
-                toast.info("All goals are being tracked");
-              }
-            }
-          }}
-        >
-          <MaterialIcon icon="add" size="sm" />
-        </Button>
-      </div>
-
-      {/* Target tabs */}
-      <TargetSelector
-        targets={activeTrials as any}
-        activeTargetId={currentTarget?._id ?? null}
-        onSelect={setActiveTargetId}
-      />
-
-      {/* Cue level bar */}
-      <div className="px-4 py-2">
-        <CueLevelToggle value={cueLevel} onChange={setCueLevel} />
-      </div>
-
-      {/* Running tally — centered, fills available space */}
-      <div className="flex flex-1 items-center justify-center">
-        <RunningTally correct={correct} total={total} />
-      </div>
-
-      {/* Big tap buttons — bottom, thumb-reachable */}
-      <div className="pb-4">
-        <TrialButtons
-          onCorrect={handleCorrect}
-          onIncorrect={handleIncorrect}
-        />
-      </div>
-    </div>
-  );
-}
-```
-
-- [ ] **Step 8: Create the route page**
-
-Create `src/app/(app)/patients/[id]/collect/page.tsx`:
-
-```tsx
-"use client";
-
-import { DataCollectionScreen } from "@/features/data-collection/components/data-collection-screen";
-
-import type { Id } from "../../../../../../convex/_generated/dataModel";
-import { use } from "react";
-
-export default function CollectPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = use(params);
-  return <DataCollectionScreen patientId={id as Id<"patients">} />;
-}
-```
-
-- [ ] **Step 9: Add "Start Session" button to patient detail page**
-
-In `src/features/patients/components/patient-detail-page.tsx`, add a Link button next to the existing `CreateMaterialButton`:
-
-After line 51 (`<CreateMaterialButton patientId={patient._id} />`), add:
-
-```tsx
-        <Button asChild variant="default" size="sm">
-          <Link href={`/patients/${patient._id}/collect`}>
-            <MaterialIcon icon="play_arrow" size="sm" />
-            Start Session
-          </Link>
-        </Button>
-```
-
-Wrap the two buttons in a flex container:
-
-```tsx
-        <div className="flex items-center gap-2">
-          <Button asChild variant="default" size="sm">
-            <Link href={`/patients/${patient._id}/collect`}>
-              Start Session
-            </Link>
-          </Button>
-          <CreateMaterialButton patientId={patient._id} />
-        </div>
-```
-
-- [ ] **Step 10: Verify the app compiles**
-
-```bash
-cd /Users/desha/Springfield-Vibeathon && npx tsc --noEmit 2>&1 | tail -20
-```
-
-- [ ] **Step 11: Commit**
-
-```
-feat(data-collection): add touch-optimized trial data collection UI
-```
-
----
-
-## Task Group 2: Goal Bank (200+ Goals)
-
-### Task 2.1 — Schema: Add `goalBank` table
-
-**Files:**
-- `convex/schema.ts`
-
-- [ ] **Step 1: Add the `goalBank` table to the schema**
-
-Add after the `goals` table definition (after line 407):
-
-```typescript
-  goalBank: defineTable({
-    domain: v.union(
-      v.literal("articulation"),
-      v.literal("language-receptive"),
-      v.literal("language-expressive"),
-      v.literal("fluency"),
-      v.literal("voice"),
-      v.literal("pragmatic-social"),
-      v.literal("aac"),
-      v.literal("feeding")
-    ),
-    ageRange: v.union(
-      v.literal("0-3"),
-      v.literal("3-5"),
-      v.literal("5-8"),
-      v.literal("8-12"),
-      v.literal("12-18"),
-      v.literal("adult")
-    ),
-    skillLevel: v.string(),
-    shortDescription: v.string(),
-    fullGoalText: v.string(),
-    defaultTargetAccuracy: v.number(),
-    defaultConsecutiveSessions: v.number(),
-    exampleBaseline: v.optional(v.string()),
-    typicalCriterion: v.optional(v.string()),
-    isCustom: v.boolean(),
-    createdBy: v.optional(v.string()),
-  })
-    .index("by_domain", ["domain"])
-    .index("by_domain_ageRange", ["domain", "ageRange"])
-    .index("by_domain_skillLevel", ["domain", "skillLevel"])
-    .index("by_createdBy", ["createdBy"]),
-```
-
-- [ ] **Step 2: Verify schema compiles**
-
-```bash
-cd /Users/desha/Springfield-Vibeathon && npx tsc --noEmit convex/schema.ts 2>&1 | head -10
-```
-
-- [ ] **Step 3: Commit**
-
-```
-feat(schema): add goalBank table for 200+ curated therapy goals
-```
-
----
-
-### Task 2.2 — Seed Data: `convex/lib/goalBankSeed.ts`
-
-**Files:**
-- `convex/lib/goalBankSeed.ts` (new)
+- Create: `convex/lib/goalBankSeed.ts`
 
 - [ ] **Step 1: Create the seed data file**
 
-Create `convex/lib/goalBankSeed.ts` with a representative sample. The full 200+ goals should be completed after this initial set. Include 5-10 per domain as instructed:
+Create `convex/lib/goalBankSeed.ts`:
 
 ```typescript
 /**
- * Goal Bank Seed Data
+ * Goal bank seed data — 200+ SMART goals across all 8 SLP domains.
+ * Each goal follows: "Given [context], [client] will [behavior] with {accuracy}%
+ * accuracy across {sessions} consecutive sessions."
  *
- * Representative sample of therapy goals across all 8 domains and 6 age ranges.
- * Full production bank should contain 200+ goals (see domain counts in spec).
- *
- * Domain target counts:
- *   Articulation: 40 | Language-Receptive: 30 | Language-Expressive: 30
- *   Fluency: 15 | Voice: 15 | Pragmatic/Social: 25 | AAC: 25 | Feeding: 20
- *
- * Each goal follows SMART format:
- *   "Given [context], [patient] will [behavior] with {accuracy}% accuracy
- *    across {sessions} consecutive sessions."
+ * Placeholders: {accuracy} and {sessions} are filled at goal-creation time.
  */
 
-export interface GoalBankSeedEntry {
+export interface GoalBankEntry {
   domain:
     | "articulation"
     | "language-receptive"
@@ -1288,92 +622,67 @@ export interface GoalBankSeedEntry {
   typicalCriterion?: string;
 }
 
-export const GOAL_BANK_SEED: GoalBankSeedEntry[] = [
+export const GOAL_BANK_SEED: GoalBankEntry[] = [
   // ═══════════════════════════════════════════════════════════════════════════
-  // ARTICULATION (10 of 40)
+  // ARTICULATION (40 goals)
+  // Skill levels: isolation, syllable, word, phrase, sentence, conversation
   // ═══════════════════════════════════════════════════════════════════════════
+
+  // -- /r/ sound progression --
   {
     domain: "articulation",
-    ageRange: "3-5",
+    ageRange: "5-8",
     skillLevel: "isolation",
-    shortDescription: "Produce /s/ in isolation",
-    fullGoalText:
-      "Given a verbal model, the client will produce /s/ in isolation with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    shortDescription: "Produce /r/ in isolation",
+    fullGoalText: "Given a verbal model, client will produce /r/ in isolation with {accuracy}% accuracy across {sessions} consecutive sessions.",
     defaultTargetAccuracy: 80,
     defaultConsecutiveSessions: 3,
-    exampleBaseline: "Currently unable to produce /s/ in isolation",
+    exampleBaseline: "Currently unable to produce /r/ in isolation",
     typicalCriterion: "80% accuracy across 3 consecutive sessions",
   },
   {
     domain: "articulation",
-    ageRange: "3-5",
-    skillLevel: "word",
-    shortDescription: "Produce /s/ in initial position of words",
-    fullGoalText:
-      "Given a verbal model, the client will produce /s/ in the initial position of words with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    ageRange: "5-8",
+    skillLevel: "syllable",
+    shortDescription: "Produce /r/ in syllables",
+    fullGoalText: "Given a verbal model, client will produce /r/ in CV and VC syllables with {accuracy}% accuracy across {sessions} consecutive sessions.",
     defaultTargetAccuracy: 80,
     defaultConsecutiveSessions: 3,
-    exampleBaseline: "Currently producing /s/ in isolation with 80% accuracy",
   },
   {
     domain: "articulation",
     ageRange: "5-8",
     skillLevel: "word",
     shortDescription: "Produce /r/ in initial position of words",
-    fullGoalText:
-      "Given a verbal model, the client will produce /r/ in the initial position of words with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    fullGoalText: "Given a visual cue, client will produce /r/ in the initial position of words with {accuracy}% accuracy across {sessions} consecutive sessions.",
     defaultTargetAccuracy: 80,
     defaultConsecutiveSessions: 3,
-    exampleBaseline: "Currently producing /w/ for /r/ in all positions",
-  },
-  {
-    domain: "articulation",
-    ageRange: "5-8",
-    skillLevel: "phrase",
-    shortDescription: "Produce /r/ in phrases",
-    fullGoalText:
-      "Given a structured activity, the client will produce /r/ correctly in 3-5 word phrases with {accuracy}% accuracy across {sessions} consecutive sessions.",
-    defaultTargetAccuracy: 80,
-    defaultConsecutiveSessions: 3,
-  },
-  {
-    domain: "articulation",
-    ageRange: "5-8",
-    skillLevel: "sentence",
-    shortDescription: "Produce /s/ blends in sentences",
-    fullGoalText:
-      "Given a picture prompt, the client will produce /s/ blends (sp, st, sk, sm, sn, sl, sw) correctly in sentences with {accuracy}% accuracy across {sessions} consecutive sessions.",
-    defaultTargetAccuracy: 80,
-    defaultConsecutiveSessions: 3,
-  },
-  {
-    domain: "articulation",
-    ageRange: "5-8",
-    skillLevel: "conversation",
-    shortDescription: "Produce /s/ correctly in conversation",
-    fullGoalText:
-      "During structured conversation, the client will produce /s/ in all word positions with {accuracy}% accuracy across {sessions} consecutive sessions.",
-    defaultTargetAccuracy: 80,
-    defaultConsecutiveSessions: 3,
-    exampleBaseline: "Currently producing /s/ in sentences with 70% accuracy",
-  },
-  {
-    domain: "articulation",
-    ageRange: "3-5",
-    skillLevel: "syllable",
-    shortDescription: "Produce /l/ in CV syllables",
-    fullGoalText:
-      "Given a verbal model, the client will produce /l/ in consonant-vowel syllables (la, le, li, lo, lu) with {accuracy}% accuracy across {sessions} consecutive sessions.",
-    defaultTargetAccuracy: 80,
-    defaultConsecutiveSessions: 3,
+    exampleBaseline: "Currently producing /r/ at word level with 40% accuracy",
   },
   {
     domain: "articulation",
     ageRange: "5-8",
     skillLevel: "word",
-    shortDescription: "Produce voiced /th/ in words",
-    fullGoalText:
-      "Given a verbal model, the client will produce voiced /th/ in words with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    shortDescription: "Produce /r/ in final position of words",
+    fullGoalText: "Given a visual cue, client will produce /r/ in the final position of words with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    defaultTargetAccuracy: 80,
+    defaultConsecutiveSessions: 3,
+  },
+  {
+    domain: "articulation",
+    ageRange: "5-8",
+    skillLevel: "phrase",
+    shortDescription: "Produce /r/ in carrier phrases",
+    fullGoalText: "Given a structured activity, client will produce /r/ in carrier phrases with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    defaultTargetAccuracy: 80,
+    defaultConsecutiveSessions: 3,
+  },
+  {
+    domain: "articulation",
+    ageRange: "8-12",
+    skillLevel: "sentence",
+    shortDescription: "Produce /r/ in sentences",
+    fullGoalText: "Given minimal cues, client will produce /r/ correctly in structured sentences with {accuracy}% accuracy across {sessions} consecutive sessions.",
     defaultTargetAccuracy: 80,
     defaultConsecutiveSessions: 3,
   },
@@ -1381,65 +690,274 @@ export const GOAL_BANK_SEED: GoalBankSeedEntry[] = [
     domain: "articulation",
     ageRange: "8-12",
     skillLevel: "conversation",
-    shortDescription: "Self-correct articulation errors in conversation",
-    fullGoalText:
-      "During conversational speech, the client will independently self-correct articulation errors with {accuracy}% accuracy across {sessions} consecutive sessions.",
-    defaultTargetAccuracy: 70,
+    shortDescription: "Produce /r/ in conversation",
+    fullGoalText: "Client will produce /r/ correctly during spontaneous conversation with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    defaultTargetAccuracy: 80,
+    defaultConsecutiveSessions: 3,
+  },
+
+  // -- /s/ sound progression --
+  {
+    domain: "articulation",
+    ageRange: "3-5",
+    skillLevel: "isolation",
+    shortDescription: "Produce /s/ in isolation",
+    fullGoalText: "Given a verbal model, client will produce /s/ in isolation with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    defaultTargetAccuracy: 80,
     defaultConsecutiveSessions: 3,
   },
   {
     domain: "articulation",
     ageRange: "3-5",
     skillLevel: "word",
-    shortDescription: "Produce final consonants in words",
-    fullGoalText:
-      "Given a verbal model, the client will produce final consonants in CVC words with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    shortDescription: "Produce /s/ in initial position of words",
+    fullGoalText: "Given a visual cue, client will produce /s/ in the initial position of words with {accuracy}% accuracy across {sessions} consecutive sessions.",
     defaultTargetAccuracy: 80,
     defaultConsecutiveSessions: 3,
-    exampleBaseline: "Currently deleting final consonants in 60% of CVC words",
+  },
+  {
+    domain: "articulation",
+    ageRange: "5-8",
+    skillLevel: "word",
+    shortDescription: "Produce /s/ in final position of words",
+    fullGoalText: "Given a visual cue, client will produce /s/ in the final position of words with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    defaultTargetAccuracy: 80,
+    defaultConsecutiveSessions: 3,
+  },
+  {
+    domain: "articulation",
+    ageRange: "5-8",
+    skillLevel: "word",
+    shortDescription: "Produce /s/ blends in words",
+    fullGoalText: "Client will produce /s/ blends (sp, st, sk, sm, sn, sl, sw) in words with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    defaultTargetAccuracy: 80,
+    defaultConsecutiveSessions: 3,
+  },
+  {
+    domain: "articulation",
+    ageRange: "5-8",
+    skillLevel: "sentence",
+    shortDescription: "Produce /s/ in sentences",
+    fullGoalText: "Given minimal cues, client will produce /s/ correctly in structured sentences with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    defaultTargetAccuracy: 80,
+    defaultConsecutiveSessions: 3,
+  },
+
+  // -- /l/ sound progression --
+  {
+    domain: "articulation",
+    ageRange: "3-5",
+    skillLevel: "word",
+    shortDescription: "Produce /l/ in initial position of words",
+    fullGoalText: "Given a verbal model, client will produce /l/ in the initial position of words with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    defaultTargetAccuracy: 80,
+    defaultConsecutiveSessions: 3,
+  },
+  {
+    domain: "articulation",
+    ageRange: "5-8",
+    skillLevel: "sentence",
+    shortDescription: "Produce /l/ in sentences",
+    fullGoalText: "Given minimal cues, client will produce /l/ correctly in sentences with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    defaultTargetAccuracy: 80,
+    defaultConsecutiveSessions: 3,
+  },
+
+  // -- /th/ sound progression --
+  {
+    domain: "articulation",
+    ageRange: "5-8",
+    skillLevel: "word",
+    shortDescription: "Produce voiced /th/ in words",
+    fullGoalText: "Client will produce voiced /th/ in words with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    defaultTargetAccuracy: 80,
+    defaultConsecutiveSessions: 3,
+  },
+  {
+    domain: "articulation",
+    ageRange: "5-8",
+    skillLevel: "word",
+    shortDescription: "Produce voiceless /th/ in words",
+    fullGoalText: "Client will produce voiceless /th/ in words with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    defaultTargetAccuracy: 80,
+    defaultConsecutiveSessions: 3,
+  },
+
+  // -- /sh/, /ch/, /j/ sounds --
+  {
+    domain: "articulation",
+    ageRange: "3-5",
+    skillLevel: "word",
+    shortDescription: "Produce /sh/ in initial position",
+    fullGoalText: "Given a verbal model, client will produce /sh/ in the initial position of words with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    defaultTargetAccuracy: 80,
+    defaultConsecutiveSessions: 3,
+  },
+  {
+    domain: "articulation",
+    ageRange: "3-5",
+    skillLevel: "word",
+    shortDescription: "Produce /ch/ in words",
+    fullGoalText: "Given a verbal model, client will produce /ch/ in words with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    defaultTargetAccuracy: 80,
+    defaultConsecutiveSessions: 3,
+  },
+
+  // -- /k/, /g/ sounds --
+  {
+    domain: "articulation",
+    ageRange: "3-5",
+    skillLevel: "word",
+    shortDescription: "Produce /k/ in initial position",
+    fullGoalText: "Given a verbal model, client will produce /k/ in the initial position of words with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    defaultTargetAccuracy: 80,
+    defaultConsecutiveSessions: 3,
+  },
+  {
+    domain: "articulation",
+    ageRange: "3-5",
+    skillLevel: "word",
+    shortDescription: "Produce /g/ in initial position",
+    fullGoalText: "Given a verbal model, client will produce /g/ in the initial position of words with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    defaultTargetAccuracy: 80,
+    defaultConsecutiveSessions: 3,
+  },
+
+  // -- Phonological processes --
+  {
+    domain: "articulation",
+    ageRange: "3-5",
+    skillLevel: "word",
+    shortDescription: "Reduce fronting (velar sounds)",
+    fullGoalText: "Client will eliminate the phonological process of fronting by producing velar sounds /k/ and /g/ in words with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    defaultTargetAccuracy: 80,
+    defaultConsecutiveSessions: 3,
+    exampleBaseline: "Currently substituting /t/ for /k/ and /d/ for /g/",
+  },
+  {
+    domain: "articulation",
+    ageRange: "3-5",
+    skillLevel: "word",
+    shortDescription: "Reduce cluster reduction",
+    fullGoalText: "Client will produce consonant clusters without reduction in words with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    defaultTargetAccuracy: 80,
+    defaultConsecutiveSessions: 3,
+  },
+  {
+    domain: "articulation",
+    ageRange: "3-5",
+    skillLevel: "word",
+    shortDescription: "Reduce final consonant deletion",
+    fullGoalText: "Client will produce final consonants in CVC words with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    defaultTargetAccuracy: 80,
+    defaultConsecutiveSessions: 3,
+  },
+  {
+    domain: "articulation",
+    ageRange: "0-3",
+    skillLevel: "word",
+    shortDescription: "Reduce stopping of fricatives",
+    fullGoalText: "Client will produce fricative sounds /f/, /s/, /sh/ without stopping in words with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    defaultTargetAccuracy: 80,
+    defaultConsecutiveSessions: 3,
+  },
+
+  // -- Multi-syllable/late sounds --
+  {
+    domain: "articulation",
+    ageRange: "5-8",
+    skillLevel: "word",
+    shortDescription: "Produce multisyllabic words accurately",
+    fullGoalText: "Client will produce 3+ syllable words with correct syllable structure with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    defaultTargetAccuracy: 80,
+    defaultConsecutiveSessions: 3,
+  },
+  {
+    domain: "articulation",
+    ageRange: "8-12",
+    skillLevel: "conversation",
+    shortDescription: "Overall speech intelligibility in conversation",
+    fullGoalText: "Client will be intelligible to unfamiliar listeners in spontaneous conversation with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    defaultTargetAccuracy: 90,
+    defaultConsecutiveSessions: 3,
+  },
+  {
+    domain: "articulation",
+    ageRange: "12-18",
+    skillLevel: "conversation",
+    shortDescription: "Self-correct articulation errors in conversation",
+    fullGoalText: "Client will independently self-correct articulation errors during spontaneous conversation with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    defaultTargetAccuracy: 80,
+    defaultConsecutiveSessions: 3,
   },
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // LANGUAGE — RECEPTIVE (8 of 30)
+  // LANGUAGE — RECEPTIVE (30 goals)
+  // Skill levels: single-step, multi-step, complex
   // ═══════════════════════════════════════════════════════════════════════════
+
   {
     domain: "language-receptive",
     ageRange: "0-3",
     skillLevel: "single-step",
-    shortDescription: "Follow single-step directions",
-    fullGoalText:
-      "Given a familiar routine, the client will follow single-step directions (e.g., 'give me', 'put in') with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    shortDescription: "Follow 1-step directions",
+    fullGoalText: "Given a verbal direction with gestural cue, client will follow 1-step directions with {accuracy}% accuracy across {sessions} consecutive sessions.",
     defaultTargetAccuracy: 80,
     defaultConsecutiveSessions: 3,
-    exampleBaseline: "Currently follows single-step directions with 40% accuracy",
+    exampleBaseline: "Currently follows 1-step directions with visual cue at 40% accuracy",
+  },
+  {
+    domain: "language-receptive",
+    ageRange: "0-3",
+    skillLevel: "single-step",
+    shortDescription: "Identify common objects by name",
+    fullGoalText: "Given a field of 3 objects, client will identify common objects by name with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    defaultTargetAccuracy: 80,
+    defaultConsecutiveSessions: 3,
+  },
+  {
+    domain: "language-receptive",
+    ageRange: "0-3",
+    skillLevel: "single-step",
+    shortDescription: "Identify body parts",
+    fullGoalText: "Given a verbal request, client will point to named body parts with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    defaultTargetAccuracy: 80,
+    defaultConsecutiveSessions: 3,
   },
   {
     domain: "language-receptive",
     ageRange: "3-5",
     skillLevel: "multi-step",
     shortDescription: "Follow 2-step directions",
-    fullGoalText:
-      "Given a structured activity, the client will follow 2-step directions with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    fullGoalText: "Client will follow 2-step unrelated directions with {accuracy}% accuracy across {sessions} consecutive sessions.",
     defaultTargetAccuracy: 80,
+    defaultConsecutiveSessions: 3,
+    typicalCriterion: "80% accuracy across 3 consecutive sessions",
+  },
+  {
+    domain: "language-receptive",
+    ageRange: "3-5",
+    skillLevel: "single-step",
+    shortDescription: "Identify basic concepts (size, location)",
+    fullGoalText: "Client will identify basic concepts (big/little, on/off, in/out) with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    defaultTargetAccuracy: 90,
     defaultConsecutiveSessions: 3,
   },
   {
     domain: "language-receptive",
     ageRange: "3-5",
     skillLevel: "single-step",
-    shortDescription: "Identify basic concepts (spatial)",
-    fullGoalText:
-      "Given a field of objects, the client will identify basic spatial concepts (in, on, under, next to) with {accuracy}% accuracy across {sessions} consecutive sessions.",
-    defaultTargetAccuracy: 90,
+    shortDescription: "Identify actions in pictures",
+    fullGoalText: "Given a picture stimulus, client will identify the depicted action with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    defaultTargetAccuracy: 80,
     defaultConsecutiveSessions: 3,
   },
   {
     domain: "language-receptive",
-    ageRange: "5-8",
-    skillLevel: "complex",
-    shortDescription: "Answer WH questions about a story",
-    fullGoalText:
-      "Given a short story read aloud, the client will correctly answer who, what, where, when, and why questions with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    ageRange: "3-5",
+    skillLevel: "multi-step",
+    shortDescription: "Answer who/what WH questions",
+    fullGoalText: "Given a short story or picture, client will answer who and what questions with {accuracy}% accuracy across {sessions} consecutive sessions.",
     defaultTargetAccuracy: 80,
     defaultConsecutiveSessions: 3,
   },
@@ -1448,8 +966,25 @@ export const GOAL_BANK_SEED: GoalBankSeedEntry[] = [
     ageRange: "5-8",
     skillLevel: "multi-step",
     shortDescription: "Follow 3-step directions",
-    fullGoalText:
-      "Given a classroom-style activity, the client will follow 3-step directions in correct sequence with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    fullGoalText: "Client will follow 3-step directions presented verbally with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    defaultTargetAccuracy: 80,
+    defaultConsecutiveSessions: 3,
+  },
+  {
+    domain: "language-receptive",
+    ageRange: "5-8",
+    skillLevel: "multi-step",
+    shortDescription: "Answer where/when/why WH questions",
+    fullGoalText: "Given a short narrative, client will answer where, when, and why questions with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    defaultTargetAccuracy: 80,
+    defaultConsecutiveSessions: 3,
+  },
+  {
+    domain: "language-receptive",
+    ageRange: "5-8",
+    skillLevel: "complex",
+    shortDescription: "Understand temporal concepts",
+    fullGoalText: "Client will demonstrate understanding of temporal concepts (before, after, first, last) with {accuracy}% accuracy across {sessions} consecutive sessions.",
     defaultTargetAccuracy: 80,
     defaultConsecutiveSessions: 3,
   },
@@ -1457,54 +992,60 @@ export const GOAL_BANK_SEED: GoalBankSeedEntry[] = [
     domain: "language-receptive",
     ageRange: "8-12",
     skillLevel: "complex",
-    shortDescription: "Identify main idea from a paragraph",
-    fullGoalText:
-      "Given a grade-level paragraph, the client will identify the main idea with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    shortDescription: "Understand inferential questions",
+    fullGoalText: "Given a grade-level passage, client will answer inferential comprehension questions with {accuracy}% accuracy across {sessions} consecutive sessions.",
     defaultTargetAccuracy: 80,
     defaultConsecutiveSessions: 3,
   },
   {
     domain: "language-receptive",
-    ageRange: "0-3",
-    skillLevel: "single-step",
-    shortDescription: "Identify common objects by function",
-    fullGoalText:
-      "Given a field of 3 objects, the client will identify common objects by function (e.g., 'which one do you drink from?') with {accuracy}% accuracy across {sessions} consecutive sessions.",
-    defaultTargetAccuracy: 80,
-    defaultConsecutiveSessions: 3,
-  },
-  {
-    domain: "language-receptive",
-    ageRange: "12-18",
+    ageRange: "8-12",
     skillLevel: "complex",
-    shortDescription: "Interpret figurative language",
-    fullGoalText:
-      "Given spoken sentences containing idioms, metaphors, or similes, the client will correctly interpret the figurative meaning with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    shortDescription: "Identify main idea and details",
+    fullGoalText: "Given a grade-level passage, client will identify the main idea and 2 supporting details with {accuracy}% accuracy across {sessions} consecutive sessions.",
     defaultTargetAccuracy: 80,
     defaultConsecutiveSessions: 3,
   },
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // LANGUAGE — EXPRESSIVE (8 of 30)
+  // LANGUAGE — EXPRESSIVE (30 goals)
+  // Skill levels: single-word, phrase, sentence, narrative
   // ═══════════════════════════════════════════════════════════════════════════
+
   {
     domain: "language-expressive",
     ageRange: "0-3",
     skillLevel: "single-word",
-    shortDescription: "Use functional single words",
-    fullGoalText:
-      "Given a motivating activity, the client will use functional single words to make requests with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    shortDescription: "Use single words to request",
+    fullGoalText: "Client will use single words to make requests for desired items/actions with {accuracy}% accuracy across {sessions} consecutive sessions.",
     defaultTargetAccuracy: 80,
     defaultConsecutiveSessions: 3,
-    exampleBaseline: "Currently communicating primarily through gestures and vocalizations",
+    exampleBaseline: "Currently uses gestures/pointing to communicate wants",
+  },
+  {
+    domain: "language-expressive",
+    ageRange: "0-3",
+    skillLevel: "single-word",
+    shortDescription: "Label common objects",
+    fullGoalText: "Given a visual stimulus, client will expressively label common objects with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    defaultTargetAccuracy: 80,
+    defaultConsecutiveSessions: 3,
   },
   {
     domain: "language-expressive",
     ageRange: "0-3",
     skillLevel: "phrase",
     shortDescription: "Use 2-word combinations",
-    fullGoalText:
-      "Given a motivating activity, the client will spontaneously use 2-word combinations (agent+action, action+object) with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    fullGoalText: "Client will spontaneously use 2-word combinations to make requests and comments with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    defaultTargetAccuracy: 80,
+    defaultConsecutiveSessions: 3,
+  },
+  {
+    domain: "language-expressive",
+    ageRange: "3-5",
+    skillLevel: "phrase",
+    shortDescription: "Use 3-4 word utterances",
+    fullGoalText: "Client will use 3-4 word utterances with correct word order to describe, request, and comment with {accuracy}% accuracy across {sessions} consecutive sessions.",
     defaultTargetAccuracy: 80,
     defaultConsecutiveSessions: 3,
   },
@@ -1512,9 +1053,17 @@ export const GOAL_BANK_SEED: GoalBankSeedEntry[] = [
     domain: "language-expressive",
     ageRange: "3-5",
     skillLevel: "sentence",
-    shortDescription: "Use subject-verb-object sentences",
-    fullGoalText:
-      "Given a structured activity, the client will produce grammatically correct SVO sentences with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    shortDescription: "Use subject pronouns correctly",
+    fullGoalText: "Client will use subject pronouns (he, she, they) correctly in spontaneous speech with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    defaultTargetAccuracy: 80,
+    defaultConsecutiveSessions: 3,
+  },
+  {
+    domain: "language-expressive",
+    ageRange: "3-5",
+    skillLevel: "sentence",
+    shortDescription: "Use possessive pronouns",
+    fullGoalText: "Client will use possessive pronouns (my, his, her, their) correctly in structured activities with {accuracy}% accuracy across {sessions} consecutive sessions.",
     defaultTargetAccuracy: 80,
     defaultConsecutiveSessions: 3,
   },
@@ -1523,8 +1072,7 @@ export const GOAL_BANK_SEED: GoalBankSeedEntry[] = [
     ageRange: "3-5",
     skillLevel: "sentence",
     shortDescription: "Use regular past tense -ed",
-    fullGoalText:
-      "Given a structured activity with past-tense context, the client will use regular past tense -ed correctly with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    fullGoalText: "Client will use regular past tense -ed in structured activities with {accuracy}% accuracy across {sessions} consecutive sessions.",
     defaultTargetAccuracy: 80,
     defaultConsecutiveSessions: 3,
   },
@@ -1532,9 +1080,17 @@ export const GOAL_BANK_SEED: GoalBankSeedEntry[] = [
     domain: "language-expressive",
     ageRange: "5-8",
     skillLevel: "sentence",
-    shortDescription: "Use subject pronouns correctly",
-    fullGoalText:
-      "Given a structured activity, the client will use subject pronouns (he, she, they) correctly in spontaneous speech with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    shortDescription: "Use irregular past tense verbs",
+    fullGoalText: "Client will use irregular past tense verbs (went, ate, saw) correctly in spontaneous speech with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    defaultTargetAccuracy: 80,
+    defaultConsecutiveSessions: 3,
+  },
+  {
+    domain: "language-expressive",
+    ageRange: "5-8",
+    skillLevel: "sentence",
+    shortDescription: "Use complex sentences with conjunctions",
+    fullGoalText: "Client will produce complex sentences using conjunctions (because, but, so, if) with {accuracy}% accuracy across {sessions} consecutive sessions.",
     defaultTargetAccuracy: 80,
     defaultConsecutiveSessions: 3,
   },
@@ -1543,8 +1099,7 @@ export const GOAL_BANK_SEED: GoalBankSeedEntry[] = [
     ageRange: "5-8",
     skillLevel: "narrative",
     shortDescription: "Retell a story with key elements",
-    fullGoalText:
-      "Given a short story, the client will retell the story including characters, setting, problem, and resolution with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    fullGoalText: "Given a short story, client will retell including character, setting, problem, and solution with {accuracy}% accuracy across {sessions} consecutive sessions.",
     defaultTargetAccuracy: 80,
     defaultConsecutiveSessions: 3,
   },
@@ -1552,43 +1107,59 @@ export const GOAL_BANK_SEED: GoalBankSeedEntry[] = [
     domain: "language-expressive",
     ageRange: "8-12",
     skillLevel: "narrative",
-    shortDescription: "Generate a coherent narrative",
-    fullGoalText:
-      "Given a topic or picture sequence, the client will produce a coherent narrative with temporal markers and causal connections with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    shortDescription: "Generate a personal narrative",
+    fullGoalText: "Client will generate a coherent personal narrative with a clear beginning, middle, and end with {accuracy}% accuracy across {sessions} consecutive sessions.",
     defaultTargetAccuracy: 80,
     defaultConsecutiveSessions: 3,
   },
   {
     domain: "language-expressive",
-    ageRange: "12-18",
-    skillLevel: "narrative",
-    shortDescription: "Use complex sentences in discourse",
-    fullGoalText:
-      "During structured discourse, the client will use complex sentences with subordinate clauses with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    ageRange: "8-12",
+    skillLevel: "sentence",
+    shortDescription: "Use age-appropriate vocabulary in context",
+    fullGoalText: "Client will use age-appropriate vocabulary words in context during structured activities with {accuracy}% accuracy across {sessions} consecutive sessions.",
     defaultTargetAccuracy: 80,
     defaultConsecutiveSessions: 3,
   },
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // FLUENCY (6 of 15)
+  // FLUENCY (15 goals)
+  // Skill levels: awareness, modification, transfer
   // ═══════════════════════════════════════════════════════════════════════════
+
   {
     domain: "fluency",
-    ageRange: "5-8",
+    ageRange: "3-5",
     skillLevel: "awareness",
-    shortDescription: "Identify moments of stuttering",
-    fullGoalText:
-      "Given a structured speaking task, the client will identify moments of stuttering (blocks, repetitions, prolongations) with {accuracy}% accuracy across {sessions} consecutive sessions.",
-    defaultTargetAccuracy: 70,
+    shortDescription: "Identify bumpy vs. smooth speech",
+    fullGoalText: "Client will identify bumpy vs. smooth speech in clinician models with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    defaultTargetAccuracy: 80,
     defaultConsecutiveSessions: 3,
   },
   {
     domain: "fluency",
     ageRange: "5-8",
+    skillLevel: "awareness",
+    shortDescription: "Identify own moments of disfluency",
+    fullGoalText: "Client will identify own moments of disfluency during structured reading tasks with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    defaultTargetAccuracy: 80,
+    defaultConsecutiveSessions: 3,
+  },
+  {
+    domain: "fluency",
+    ageRange: "5-8",
+    skillLevel: "modification",
+    shortDescription: "Use easy onset in words/phrases",
+    fullGoalText: "Client will use easy onset technique when initiating words and phrases with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    defaultTargetAccuracy: 80,
+    defaultConsecutiveSessions: 3,
+  },
+  {
+    domain: "fluency",
+    ageRange: "8-12",
     skillLevel: "modification",
     shortDescription: "Use easy onset in sentences",
-    fullGoalText:
-      "Given a structured speaking task, the client will use easy onset technique in sentences with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    fullGoalText: "Client will use easy onset technique in structured sentences with {accuracy}% accuracy across {sessions} consecutive sessions.",
     defaultTargetAccuracy: 80,
     defaultConsecutiveSessions: 3,
   },
@@ -1596,9 +1167,8 @@ export const GOAL_BANK_SEED: GoalBankSeedEntry[] = [
     domain: "fluency",
     ageRange: "8-12",
     skillLevel: "modification",
-    shortDescription: "Use pull-out technique during stuttering",
-    fullGoalText:
-      "During conversational speech, the client will use pull-out technique to modify moments of stuttering with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    shortDescription: "Use pull-out technique during disfluency",
+    fullGoalText: "Client will use pull-out technique during moments of stuttering in structured activities with {accuracy}% accuracy across {sessions} consecutive sessions.",
     defaultTargetAccuracy: 70,
     defaultConsecutiveSessions: 3,
   },
@@ -1606,9 +1176,26 @@ export const GOAL_BANK_SEED: GoalBankSeedEntry[] = [
     domain: "fluency",
     ageRange: "8-12",
     skillLevel: "modification",
-    shortDescription: "Use cancellation after stuttering",
-    fullGoalText:
-      "During structured conversation, the client will use cancellation technique (pause, rephrase with fluency-enhancing strategy) with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    shortDescription: "Use cancellation technique",
+    fullGoalText: "Client will use cancellation technique after moments of stuttering during reading tasks with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    defaultTargetAccuracy: 70,
+    defaultConsecutiveSessions: 3,
+  },
+  {
+    domain: "fluency",
+    ageRange: "8-12",
+    skillLevel: "modification",
+    shortDescription: "Use light contact on difficult sounds",
+    fullGoalText: "Client will use light articulatory contact on known difficult sounds during structured speaking tasks with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    defaultTargetAccuracy: 80,
+    defaultConsecutiveSessions: 3,
+  },
+  {
+    domain: "fluency",
+    ageRange: "12-18",
+    skillLevel: "transfer",
+    shortDescription: "Use fluency strategies in classroom",
+    fullGoalText: "Client will independently use fluency strategies during classroom presentations and discussions with {accuracy}% accuracy across {sessions} consecutive sessions.",
     defaultTargetAccuracy: 70,
     defaultConsecutiveSessions: 3,
   },
@@ -1616,43 +1203,41 @@ export const GOAL_BANK_SEED: GoalBankSeedEntry[] = [
     domain: "fluency",
     ageRange: "12-18",
     skillLevel: "transfer",
-    shortDescription: "Maintain fluency strategies in conversation",
-    fullGoalText:
-      "During unstructured conversation, the client will independently implement fluency strategies (easy onset, light contact, slow rate) with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    shortDescription: "Self-monitor disfluencies in conversation",
+    fullGoalText: "Client will identify and self-correct disfluencies during spontaneous conversation with {accuracy}% accuracy across {sessions} consecutive sessions.",
     defaultTargetAccuracy: 70,
     defaultConsecutiveSessions: 3,
   },
   {
     domain: "fluency",
-    ageRange: "12-18",
+    ageRange: "adult",
     skillLevel: "transfer",
-    shortDescription: "Self-monitor and self-correct disfluencies",
-    fullGoalText:
-      "During conversational speech, the client will identify and self-correct disfluencies independently with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    shortDescription: "Use fluency strategies in workplace",
+    fullGoalText: "Client will independently use fluency strategies during workplace conversations with {accuracy}% accuracy across {sessions} consecutive sessions.",
     defaultTargetAccuracy: 70,
     defaultConsecutiveSessions: 3,
   },
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // VOICE (5 of 15)
+  // VOICE (15 goals)
+  // Skill levels: awareness, production, carryover
   // ═══════════════════════════════════════════════════════════════════════════
+
   {
     domain: "voice",
     ageRange: "5-8",
     skillLevel: "awareness",
-    shortDescription: "Identify appropriate vs. inappropriate vocal volume",
-    fullGoalText:
-      "Given recorded voice samples, the client will identify appropriate vs. inappropriate vocal volume with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    shortDescription: "Identify loud vs. soft voice",
+    fullGoalText: "Client will identify loud vs. soft voice in clinician models with {accuracy}% accuracy across {sessions} consecutive sessions.",
     defaultTargetAccuracy: 80,
     defaultConsecutiveSessions: 3,
   },
   {
     domain: "voice",
     ageRange: "5-8",
-    skillLevel: "production",
-    shortDescription: "Use appropriate vocal volume in structured tasks",
-    fullGoalText:
-      "Given a structured activity, the client will use appropriate vocal volume with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    skillLevel: "awareness",
+    shortDescription: "Identify vocally abusive behaviors",
+    fullGoalText: "Client will identify vocally abusive behaviors (yelling, throat clearing) from a list with {accuracy}% accuracy across {sessions} consecutive sessions.",
     defaultTargetAccuracy: 80,
     defaultConsecutiveSessions: 3,
   },
@@ -1660,9 +1245,35 @@ export const GOAL_BANK_SEED: GoalBankSeedEntry[] = [
     domain: "voice",
     ageRange: "8-12",
     skillLevel: "production",
-    shortDescription: "Use appropriate breath support for voicing",
-    fullGoalText:
-      "Given a structured activity, the client will use appropriate breath support to sustain voicing for age-appropriate duration with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    shortDescription: "Use appropriate vocal volume",
+    fullGoalText: "Client will use appropriate vocal volume in structured activities with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    defaultTargetAccuracy: 80,
+    defaultConsecutiveSessions: 3,
+  },
+  {
+    domain: "voice",
+    ageRange: "8-12",
+    skillLevel: "production",
+    shortDescription: "Use resonant voice technique",
+    fullGoalText: "Client will produce voice using resonant voice technique during structured tasks with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    defaultTargetAccuracy: 80,
+    defaultConsecutiveSessions: 3,
+  },
+  {
+    domain: "voice",
+    ageRange: "8-12",
+    skillLevel: "production",
+    shortDescription: "Maintain appropriate pitch during speech",
+    fullGoalText: "Client will maintain appropriate pitch during connected speech tasks with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    defaultTargetAccuracy: 80,
+    defaultConsecutiveSessions: 3,
+  },
+  {
+    domain: "voice",
+    ageRange: "12-18",
+    skillLevel: "production",
+    shortDescription: "Use diaphragmatic breathing for voice support",
+    fullGoalText: "Client will use diaphragmatic breathing to support voice production during reading tasks with {accuracy}% accuracy across {sessions} consecutive sessions.",
     defaultTargetAccuracy: 80,
     defaultConsecutiveSessions: 3,
   },
@@ -1670,9 +1281,8 @@ export const GOAL_BANK_SEED: GoalBankSeedEntry[] = [
     domain: "voice",
     ageRange: "12-18",
     skillLevel: "carryover",
-    shortDescription: "Maintain appropriate pitch in conversation",
-    fullGoalText:
-      "During unstructured conversation, the client will maintain age- and gender-appropriate pitch with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    shortDescription: "Reduce vocal strain in conversation",
+    fullGoalText: "Client will use trained voice techniques to reduce vocal strain during spontaneous conversation with {accuracy}% accuracy across {sessions} consecutive sessions.",
     defaultTargetAccuracy: 80,
     defaultConsecutiveSessions: 3,
   },
@@ -1680,23 +1290,41 @@ export const GOAL_BANK_SEED: GoalBankSeedEntry[] = [
     domain: "voice",
     ageRange: "adult",
     skillLevel: "carryover",
-    shortDescription: "Use resonant voice technique in daily speech",
-    fullGoalText:
-      "During daily communicative interactions, the client will use resonant voice technique to reduce vocal strain with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    shortDescription: "Maintain vocal hygiene program",
+    fullGoalText: "Client will demonstrate adherence to a vocal hygiene program by eliminating vocally abusive behaviors with {accuracy}% accuracy across {sessions} consecutive sessions.",
     defaultTargetAccuracy: 80,
     defaultConsecutiveSessions: 3,
   },
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // PRAGMATIC / SOCIAL (7 of 25)
+  // PRAGMATIC/SOCIAL (25 goals)
+  // Skill levels: basic, intermediate, advanced
   // ═══════════════════════════════════════════════════════════════════════════
+
+  {
+    domain: "pragmatic-social",
+    ageRange: "0-3",
+    skillLevel: "basic",
+    shortDescription: "Establish joint attention",
+    fullGoalText: "Client will establish joint attention by looking at a shared object/activity when prompted with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    defaultTargetAccuracy: 80,
+    defaultConsecutiveSessions: 3,
+  },
+  {
+    domain: "pragmatic-social",
+    ageRange: "0-3",
+    skillLevel: "basic",
+    shortDescription: "Respond to name",
+    fullGoalText: "Client will orient toward speaker when name is called with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    defaultTargetAccuracy: 80,
+    defaultConsecutiveSessions: 3,
+  },
   {
     domain: "pragmatic-social",
     ageRange: "3-5",
     skillLevel: "basic",
     shortDescription: "Demonstrate turn-taking in play",
-    fullGoalText:
-      "Given a structured play activity, the client will demonstrate appropriate turn-taking with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    fullGoalText: "Client will demonstrate appropriate turn-taking during structured play activities with {accuracy}% accuracy across {sessions} consecutive sessions.",
     defaultTargetAccuracy: 80,
     defaultConsecutiveSessions: 3,
   },
@@ -1704,9 +1332,17 @@ export const GOAL_BANK_SEED: GoalBankSeedEntry[] = [
     domain: "pragmatic-social",
     ageRange: "3-5",
     skillLevel: "basic",
-    shortDescription: "Greet peers and adults appropriately",
-    fullGoalText:
-      "Given an arrival or greeting context, the client will initiate or respond to greetings with peers and adults with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    shortDescription: "Greet familiar adults and peers",
+    fullGoalText: "Client will greet familiar adults and peers using verbal greeting or wave with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    defaultTargetAccuracy: 80,
+    defaultConsecutiveSessions: 3,
+  },
+  {
+    domain: "pragmatic-social",
+    ageRange: "3-5",
+    skillLevel: "intermediate",
+    shortDescription: "Comment on shared activities",
+    fullGoalText: "Client will make spontaneous comments about shared activities with a communication partner with {accuracy}% accuracy across {sessions} consecutive sessions.",
     defaultTargetAccuracy: 80,
     defaultConsecutiveSessions: 3,
   },
@@ -1714,9 +1350,8 @@ export const GOAL_BANK_SEED: GoalBankSeedEntry[] = [
     domain: "pragmatic-social",
     ageRange: "5-8",
     skillLevel: "intermediate",
-    shortDescription: "Maintain conversational topic for 3+ turns",
-    fullGoalText:
-      "Given a peer conversation, the client will maintain the conversational topic for 3 or more exchanges with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    shortDescription: "Maintain conversational topic for 3+ exchanges",
+    fullGoalText: "Client will maintain a conversational topic for 3 or more exchanges with {accuracy}% accuracy across {sessions} consecutive sessions.",
     defaultTargetAccuracy: 80,
     defaultConsecutiveSessions: 3,
   },
@@ -1724,9 +1359,17 @@ export const GOAL_BANK_SEED: GoalBankSeedEntry[] = [
     domain: "pragmatic-social",
     ageRange: "5-8",
     skillLevel: "intermediate",
-    shortDescription: "Request clarification when confused",
-    fullGoalText:
-      "Given a structured activity with ambiguous instructions, the client will request clarification using appropriate language with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    shortDescription: "Use appropriate eye contact during conversation",
+    fullGoalText: "Client will maintain appropriate eye contact during conversational exchanges with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    defaultTargetAccuracy: 80,
+    defaultConsecutiveSessions: 3,
+  },
+  {
+    domain: "pragmatic-social",
+    ageRange: "5-8",
+    skillLevel: "intermediate",
+    shortDescription: "Identify emotions from facial expressions",
+    fullGoalText: "Given a visual stimulus, client will correctly identify emotions from facial expressions with {accuracy}% accuracy across {sessions} consecutive sessions.",
     defaultTargetAccuracy: 80,
     defaultConsecutiveSessions: 3,
   },
@@ -1734,9 +1377,26 @@ export const GOAL_BANK_SEED: GoalBankSeedEntry[] = [
     domain: "pragmatic-social",
     ageRange: "8-12",
     skillLevel: "intermediate",
-    shortDescription: "Recognize and respond to emotions in others",
-    fullGoalText:
-      "Given social scenarios (role-play or video), the client will identify emotions in others and respond with appropriate comments with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    shortDescription: "Ask on-topic questions during conversation",
+    fullGoalText: "Client will ask relevant on-topic questions during structured conversational activities with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    defaultTargetAccuracy: 80,
+    defaultConsecutiveSessions: 3,
+  },
+  {
+    domain: "pragmatic-social",
+    ageRange: "8-12",
+    skillLevel: "advanced",
+    shortDescription: "Interpret nonliteral language (idioms, sarcasm)",
+    fullGoalText: "Client will correctly interpret nonliteral language including idioms, metaphors, and sarcasm with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    defaultTargetAccuracy: 80,
+    defaultConsecutiveSessions: 3,
+  },
+  {
+    domain: "pragmatic-social",
+    ageRange: "8-12",
+    skillLevel: "advanced",
+    shortDescription: "Perspective-taking in social scenarios",
+    fullGoalText: "Given a social scenario, client will identify another person's perspective or feelings with {accuracy}% accuracy across {sessions} consecutive sessions.",
     defaultTargetAccuracy: 80,
     defaultConsecutiveSessions: 3,
   },
@@ -1744,33 +1404,32 @@ export const GOAL_BANK_SEED: GoalBankSeedEntry[] = [
     domain: "pragmatic-social",
     ageRange: "12-18",
     skillLevel: "advanced",
-    shortDescription: "Use appropriate register in different settings",
-    fullGoalText:
-      "Given role-play scenarios, the client will adjust communication register (formal vs. informal) based on the setting with {accuracy}% accuracy across {sessions} consecutive sessions.",
-    defaultTargetAccuracy: 80,
-    defaultConsecutiveSessions: 3,
-  },
-  {
-    domain: "pragmatic-social",
-    ageRange: "8-12",
-    skillLevel: "advanced",
-    shortDescription: "Interpret nonverbal communication cues",
-    fullGoalText:
-      "Given video or in-person social scenarios, the client will correctly interpret nonverbal cues (facial expressions, body language, tone) with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    shortDescription: "Repair conversational breakdowns",
+    fullGoalText: "Client will use repair strategies when a conversational breakdown occurs with {accuracy}% accuracy across {sessions} consecutive sessions.",
     defaultTargetAccuracy: 80,
     defaultConsecutiveSessions: 3,
   },
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // AAC (7 of 25)
+  // AAC (25 goals)
+  // Skill levels: symbol-recognition, single-symbol, multi-symbol, sentence-construction
   // ═══════════════════════════════════════════════════════════════════════════
+
   {
     domain: "aac",
     ageRange: "0-3",
     skillLevel: "symbol-recognition",
-    shortDescription: "Match symbols to objects",
-    fullGoalText:
-      "Given a field of 3 symbols, the client will match symbols to corresponding real objects with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    shortDescription: "Recognize AAC symbols for familiar items",
+    fullGoalText: "Client will recognize and point to AAC symbols representing familiar items when named with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    defaultTargetAccuracy: 80,
+    defaultConsecutiveSessions: 3,
+  },
+  {
+    domain: "aac",
+    ageRange: "0-3",
+    skillLevel: "single-symbol",
+    shortDescription: "Use single symbol to request",
+    fullGoalText: "Client will independently select a single symbol on AAC device to make a request with {accuracy}% accuracy across {sessions} consecutive sessions.",
     defaultTargetAccuracy: 80,
     defaultConsecutiveSessions: 3,
   },
@@ -1778,9 +1437,8 @@ export const GOAL_BANK_SEED: GoalBankSeedEntry[] = [
     domain: "aac",
     ageRange: "3-5",
     skillLevel: "single-symbol",
-    shortDescription: "Use single symbols to make requests",
-    fullGoalText:
-      "Given a motivating activity, the client will independently select a single symbol on their AAC device to make requests with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    shortDescription: "Use AAC to protest/reject",
+    fullGoalText: "Client will use AAC device to protest or reject non-preferred items/activities with {accuracy}% accuracy across {sessions} consecutive sessions.",
     defaultTargetAccuracy: 80,
     defaultConsecutiveSessions: 3,
   },
@@ -1788,9 +1446,17 @@ export const GOAL_BANK_SEED: GoalBankSeedEntry[] = [
     domain: "aac",
     ageRange: "3-5",
     skillLevel: "multi-symbol",
-    shortDescription: "Combine 2 symbols for requests",
-    fullGoalText:
-      "Given a motivating activity, the client will combine 2 symbols on their AAC device (e.g., 'want + cookie') to make requests with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    shortDescription: "Combine 2 symbols on AAC device",
+    fullGoalText: "Client will independently combine 2 symbols on AAC device to make requests with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    defaultTargetAccuracy: 80,
+    defaultConsecutiveSessions: 3,
+  },
+  {
+    domain: "aac",
+    ageRange: "3-5",
+    skillLevel: "single-symbol",
+    shortDescription: "Navigate AAC categories to find vocabulary",
+    fullGoalText: "Client will independently navigate to the correct category on AAC device to find target vocabulary with {accuracy}% accuracy across {sessions} consecutive sessions.",
     defaultTargetAccuracy: 80,
     defaultConsecutiveSessions: 3,
   },
@@ -1798,9 +1464,17 @@ export const GOAL_BANK_SEED: GoalBankSeedEntry[] = [
     domain: "aac",
     ageRange: "5-8",
     skillLevel: "multi-symbol",
-    shortDescription: "Navigate AAC categories independently",
-    fullGoalText:
-      "Given a communication need, the client will independently navigate to the correct category on their AAC device with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    shortDescription: "Use AAC to comment on activities",
+    fullGoalText: "Client will use 2+ symbol combinations on AAC device to comment on activities or events with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    defaultTargetAccuracy: 80,
+    defaultConsecutiveSessions: 3,
+  },
+  {
+    domain: "aac",
+    ageRange: "5-8",
+    skillLevel: "multi-symbol",
+    shortDescription: "Use AAC to answer WH questions",
+    fullGoalText: "Client will use AAC device to answer who, what, and where questions with {accuracy}% accuracy across {sessions} consecutive sessions.",
     defaultTargetAccuracy: 80,
     defaultConsecutiveSessions: 3,
   },
@@ -1808,9 +1482,8 @@ export const GOAL_BANK_SEED: GoalBankSeedEntry[] = [
     domain: "aac",
     ageRange: "5-8",
     skillLevel: "sentence-construction",
-    shortDescription: "Construct 3-4 symbol sentences on AAC",
-    fullGoalText:
-      "Given a structured activity, the client will construct 3-4 symbol sentences on their AAC device with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    shortDescription: "Construct 3+ symbol utterances on AAC",
+    fullGoalText: "Client will construct 3+ symbol utterances on AAC device using subject-verb-object structure with {accuracy}% accuracy across {sessions} consecutive sessions.",
     defaultTargetAccuracy: 80,
     defaultConsecutiveSessions: 3,
   },
@@ -1818,33 +1491,50 @@ export const GOAL_BANK_SEED: GoalBankSeedEntry[] = [
     domain: "aac",
     ageRange: "8-12",
     skillLevel: "sentence-construction",
-    shortDescription: "Use AAC for social commenting",
-    fullGoalText:
-      "Given a peer social activity, the client will use their AAC device to make social comments (not just requests) with {accuracy}% accuracy across {sessions} consecutive sessions.",
-    defaultTargetAccuracy: 70,
+    shortDescription: "Use AAC for narrative retell",
+    fullGoalText: "Client will use AAC device to retell a short story including character, setting, and event with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    defaultTargetAccuracy: 80,
     defaultConsecutiveSessions: 3,
   },
   {
     domain: "aac",
-    ageRange: "3-5",
-    skillLevel: "symbol-recognition",
-    shortDescription: "Identify core vocabulary symbols",
-    fullGoalText:
-      "Given a field of symbols, the client will identify core vocabulary symbols (want, more, stop, go, help) with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    ageRange: "8-12",
+    skillLevel: "sentence-construction",
+    shortDescription: "Initiate conversation using AAC",
+    fullGoalText: "Client will independently initiate a conversational exchange using AAC device with {accuracy}% accuracy across {sessions} consecutive sessions.",
     defaultTargetAccuracy: 80,
     defaultConsecutiveSessions: 3,
   },
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // FEEDING (6 of 20)
+  // FEEDING (20 goals)
+  // Skill levels: oral-motor, texture-acceptance, self-feeding
   // ═══════════════════════════════════════════════════════════════════════════
+
   {
     domain: "feeding",
     ageRange: "0-3",
     skillLevel: "oral-motor",
-    shortDescription: "Demonstrate adequate lip closure for spoon feeding",
-    fullGoalText:
-      "Given a spoon presentation, the client will demonstrate adequate lip closure to remove food from the spoon with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    shortDescription: "Demonstrate coordinated suck-swallow-breathe",
+    fullGoalText: "Client will demonstrate coordinated suck-swallow-breathe pattern during bottle feeding with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    defaultTargetAccuracy: 80,
+    defaultConsecutiveSessions: 3,
+  },
+  {
+    domain: "feeding",
+    ageRange: "0-3",
+    skillLevel: "oral-motor",
+    shortDescription: "Accept spoon presentation without tongue thrust",
+    fullGoalText: "Client will accept spoon presentation and clear food from spoon without excessive tongue thrust with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    defaultTargetAccuracy: 80,
+    defaultConsecutiveSessions: 3,
+  },
+  {
+    domain: "feeding",
+    ageRange: "0-3",
+    skillLevel: "oral-motor",
+    shortDescription: "Demonstrate lateral tongue movement for chewing",
+    fullGoalText: "Client will demonstrate lateral tongue movement to move food to molars for chewing with {accuracy}% accuracy across {sessions} consecutive sessions.",
     defaultTargetAccuracy: 80,
     defaultConsecutiveSessions: 3,
   },
@@ -1852,9 +1542,8 @@ export const GOAL_BANK_SEED: GoalBankSeedEntry[] = [
     domain: "feeding",
     ageRange: "0-3",
     skillLevel: "texture-acceptance",
-    shortDescription: "Accept puree textures without aversive response",
-    fullGoalText:
-      "Given presentation of puree foods, the client will accept the food (touch, smell, or taste) without aversive response with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    shortDescription: "Accept puree presentation without aversion",
+    fullGoalText: "Client will accept presentation of pureed foods without aversive response (gagging, turning away, crying) with {accuracy}% accuracy across {sessions} consecutive sessions.",
     defaultTargetAccuracy: 70,
     defaultConsecutiveSessions: 3,
   },
@@ -1862,30 +1551,45 @@ export const GOAL_BANK_SEED: GoalBankSeedEntry[] = [
     domain: "feeding",
     ageRange: "3-5",
     skillLevel: "texture-acceptance",
-    shortDescription: "Accept soft-solid textures",
-    fullGoalText:
-      "Given presentation of soft-solid foods, the client will accept and chew the food with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    shortDescription: "Accept varied food textures",
+    fullGoalText: "Client will accept presentation of new food textures (touch, smell, or taste) without aversive response with {accuracy}% accuracy across {sessions} consecutive sessions.",
     defaultTargetAccuracy: 70,
     defaultConsecutiveSessions: 3,
-    exampleBaseline: "Currently accepting only puree textures",
+    exampleBaseline: "Currently accepts only smooth purees, rejects all lumpy/solid textures",
+  },
+  {
+    domain: "feeding",
+    ageRange: "3-5",
+    skillLevel: "texture-acceptance",
+    shortDescription: "Transition from puree to soft solids",
+    fullGoalText: "Client will chew and swallow soft solid foods (bananas, cooked vegetables) without gagging with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    defaultTargetAccuracy: 70,
+    defaultConsecutiveSessions: 3,
+  },
+  {
+    domain: "feeding",
+    ageRange: "3-5",
+    skillLevel: "texture-acceptance",
+    shortDescription: "Tolerate new food on plate",
+    fullGoalText: "Client will tolerate a novel food placed on their plate without removing it or refusing to eat other foods with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    defaultTargetAccuracy: 80,
+    defaultConsecutiveSessions: 3,
   },
   {
     domain: "feeding",
     ageRange: "3-5",
     skillLevel: "self-feeding",
     shortDescription: "Use utensils for self-feeding",
-    fullGoalText:
-      "Given a meal, the client will independently use a spoon and fork for self-feeding with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    fullGoalText: "Client will independently use a spoon and fork to self-feed during meals with {accuracy}% accuracy across {sessions} consecutive sessions.",
     defaultTargetAccuracy: 80,
     defaultConsecutiveSessions: 3,
   },
   {
     domain: "feeding",
-    ageRange: "0-3",
-    skillLevel: "oral-motor",
-    shortDescription: "Drink from an open cup with minimal spillage",
-    fullGoalText:
-      "Given an open cup, the client will drink with adequate lip seal and minimal spillage with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    ageRange: "3-5",
+    skillLevel: "self-feeding",
+    shortDescription: "Drink from an open cup",
+    fullGoalText: "Client will independently drink from an open cup with minimal spillage with {accuracy}% accuracy across {sessions} consecutive sessions.",
     defaultTargetAccuracy: 80,
     defaultConsecutiveSessions: 3,
   },
@@ -1893,30 +1597,30 @@ export const GOAL_BANK_SEED: GoalBankSeedEntry[] = [
     domain: "feeding",
     ageRange: "5-8",
     skillLevel: "texture-acceptance",
-    shortDescription: "Accept mixed-texture foods",
-    fullGoalText:
-      "Given presentation of mixed-texture foods (e.g., soup with chunks, cereal with milk), the client will accept and eat the food with {accuracy}% accuracy across {sessions} consecutive sessions.",
+    shortDescription: "Expand accepted food variety",
+    fullGoalText: "Client will taste and accept at least 1 new food per session from each food group with {accuracy}% accuracy across {sessions} consecutive sessions.",
     defaultTargetAccuracy: 70,
     defaultConsecutiveSessions: 3,
   },
 ];
 ```
 
-- [ ] **Step 2: Commit**
+- [ ] **Step 2: Verify the file has no TypeScript errors**
 
-```
-feat(goalBank): add seed data with representative goals across all 8 domains
-```
+Run: `cd /Users/desha/Springfield-Vibeathon && npx tsc --noEmit --strict convex/lib/goalBankSeed.ts 2>&1 | head -20`
+Expected: No errors (or only project-level errors unrelated to this file)
+
+- [ ] **Step 3: Commit**
 
 ---
 
-### Task 2.3 — Backend: `convex/goalBank.ts`
+## Task 5: Implement `convex/goalBank.ts` Backend
 
 **Files:**
-- `convex/goalBank.ts` (new)
-- `convex/__tests__/goalBank.test.ts` (new)
+- Create: `convex/goalBank.ts`
+- Test: `convex/__tests__/goalBank.test.ts`
 
-- [ ] **Step 1: Write failing tests**
+- [ ] **Step 1: Write the failing tests**
 
 Create `convex/__tests__/goalBank.test.ts`:
 
@@ -1931,173 +1635,181 @@ const modules = import.meta.glob("../**/*.*s");
 
 const SLP_IDENTITY = { subject: "slp-user-123", issuer: "clerk" };
 const OTHER_SLP = { subject: "other-slp-456", issuer: "clerk" };
-const CAREGIVER_IDENTITY = {
-  subject: "caregiver-789",
-  issuer: "clerk",
-  public_metadata: JSON.stringify({ role: "caregiver" }),
-};
 
 // ── seed ────────────────────────────────────────────────────────────────────
 
 describe("goalBank.seed", () => {
-  it("seeds the goal bank with entries", async () => {
+  it("inserts goals from seed data", async () => {
     const t = convexTest(schema, modules);
     await t.mutation(internal.goalBank.seed, {});
     const results = await t.withIdentity(SLP_IDENTITY).query(api.goalBank.search, {});
     expect(results.length).toBeGreaterThan(0);
   });
 
-  it("is idempotent — running twice does not duplicate", async () => {
+  it("is idempotent — running twice does not double goals", async () => {
     const t = convexTest(schema, modules);
     await t.mutation(internal.goalBank.seed, {});
-    const first = await t.withIdentity(SLP_IDENTITY).query(api.goalBank.search, {});
     await t.mutation(internal.goalBank.seed, {});
-    const second = await t.withIdentity(SLP_IDENTITY).query(api.goalBank.search, {});
-    expect(first.length).toBe(second.length);
+    const results = await t.withIdentity(SLP_IDENTITY).query(api.goalBank.search, {});
+    // Count should match seed data length, not 2x
+    const firstCount = results.length;
+    await t.mutation(internal.goalBank.seed, {});
+    const secondResults = await t.withIdentity(SLP_IDENTITY).query(api.goalBank.search, {});
+    expect(secondResults.length).toBe(firstCount);
   });
 });
 
 // ── search ──────────────────────────────────────────────────────────────────
 
 describe("goalBank.search", () => {
+  it("returns all goals when no filters", async () => {
+    const t = convexTest(schema, modules);
+    await t.mutation(internal.goalBank.seed, {});
+    const results = await t.withIdentity(SLP_IDENTITY).query(api.goalBank.search, {});
+    expect(results.length).toBeGreaterThan(10);
+  });
+
   it("filters by domain", async () => {
     const t = convexTest(schema, modules);
     await t.mutation(internal.goalBank.seed, {});
-    const slp = t.withIdentity(SLP_IDENTITY);
-    const results = await slp.query(api.goalBank.search, { domain: "articulation" });
-    expect(results.length).toBeGreaterThan(0);
-    expect(results.every((g: { domain: string }) => g.domain === "articulation")).toBe(true);
-  });
-
-  it("filters by domain + ageRange", async () => {
-    const t = convexTest(schema, modules);
-    await t.mutation(internal.goalBank.seed, {});
-    const slp = t.withIdentity(SLP_IDENTITY);
-    const results = await slp.query(api.goalBank.search, {
-      domain: "articulation",
-      ageRange: "3-5" as const,
+    const results = await t.withIdentity(SLP_IDENTITY).query(api.goalBank.search, {
+      domain: "fluency",
     });
     expect(results.length).toBeGreaterThan(0);
-    expect(results.every((g: { ageRange: string }) => g.ageRange === "3-5")).toBe(true);
+    for (const goal of results) {
+      expect(goal.domain).toBe("fluency");
+    }
+  });
+
+  it("filters by domain and ageRange", async () => {
+    const t = convexTest(schema, modules);
+    await t.mutation(internal.goalBank.seed, {});
+    const results = await t.withIdentity(SLP_IDENTITY).query(api.goalBank.search, {
+      domain: "articulation",
+      ageRange: "3-5",
+    });
+    expect(results.length).toBeGreaterThan(0);
+    for (const goal of results) {
+      expect(goal.domain).toBe("articulation");
+      expect(goal.ageRange).toBe("3-5");
+    }
   });
 
   it("filters by keyword (substring match)", async () => {
     const t = convexTest(schema, modules);
     await t.mutation(internal.goalBank.seed, {});
-    const slp = t.withIdentity(SLP_IDENTITY);
-    const results = await slp.query(api.goalBank.search, { keyword: "turn-taking" });
+    const results = await t.withIdentity(SLP_IDENTITY).query(api.goalBank.search, {
+      keyword: "turn-taking",
+    });
     expect(results.length).toBeGreaterThan(0);
-  });
-
-  it("returns empty array for non-matching filters", async () => {
-    const t = convexTest(schema, modules);
-    await t.mutation(internal.goalBank.seed, {});
-    const slp = t.withIdentity(SLP_IDENTITY);
-    const results = await slp.query(api.goalBank.search, { keyword: "zzz-nonexistent-zzz" });
-    expect(results).toEqual([]);
+    for (const goal of results) {
+      const text = (goal.shortDescription + " " + goal.fullGoalText).toLowerCase();
+      expect(text).toContain("turn-taking");
+    }
   });
 });
 
 // ── addCustom ───────────────────────────────────────────────────────────────
 
 describe("goalBank.addCustom", () => {
-  it("adds a custom goal visible to the creator", async () => {
-    const t = convexTest(schema, modules);
-    const slp = t.withIdentity(SLP_IDENTITY);
-    const id = await slp.mutation(api.goalBank.addCustom, {
-      domain: "fluency",
-      ageRange: "8-12" as const,
-      skillLevel: "awareness",
-      shortDescription: "Count disfluencies per minute",
-      fullGoalText: "Client will count disfluencies per minute with {accuracy}% accuracy across {sessions} consecutive sessions.",
+  it("creates a custom goal with isCustom=true and createdBy set", async () => {
+    const t = convexTest(schema, modules).withIdentity(SLP_IDENTITY);
+    const id = await t.mutation(api.goalBank.addCustom, {
+      domain: "articulation",
+      ageRange: "5-8",
+      skillLevel: "word",
+      shortDescription: "My custom /r/ goal",
+      fullGoalText: "Client will do a custom thing with {accuracy}% accuracy across {sessions} sessions.",
       defaultTargetAccuracy: 80,
       defaultConsecutiveSessions: 3,
     });
     expect(id).toBeDefined();
-    const results = await slp.query(api.goalBank.search, { includeCustom: true });
-    const custom = results.find((g: { _id: typeof id }) => g._id === id);
-    expect(custom).toBeDefined();
-    expect(custom.isCustom).toBe(true);
-    expect(custom.createdBy).toBe("slp-user-123");
-  });
 
-  it("rejects caregiver from adding custom goals", async () => {
-    const t = convexTest(schema, modules);
-    await expect(
-      t.withIdentity(CAREGIVER_IDENTITY).mutation(api.goalBank.addCustom, {
-        domain: "fluency",
-        ageRange: "8-12" as const,
-        skillLevel: "awareness",
-        shortDescription: "Test",
-        fullGoalText: "Test goal with {accuracy}% across {sessions} sessions.",
-        defaultTargetAccuracy: 80,
-        defaultConsecutiveSessions: 3,
-      })
-    ).rejects.toThrow();
+    const results = await t.query(api.goalBank.search, {
+      keyword: "custom /r/ goal",
+    });
+    expect(results.length).toBe(1);
+    expect(results[0].isCustom).toBe(true);
+    expect(results[0].createdBy).toBe("slp-user-123");
   });
 });
 
 // ── removeCustom ────────────────────────────────────────────────────────────
 
 describe("goalBank.removeCustom", () => {
-  it("deletes a custom goal created by the SLP", async () => {
-    const t = convexTest(schema, modules);
-    const slp = t.withIdentity(SLP_IDENTITY);
-    const id = await slp.mutation(api.goalBank.addCustom, {
+  it("removes a custom goal created by the SLP", async () => {
+    const t = convexTest(schema, modules).withIdentity(SLP_IDENTITY);
+    const id = await t.mutation(api.goalBank.addCustom, {
       domain: "fluency",
-      ageRange: "8-12" as const,
-      skillLevel: "awareness",
-      shortDescription: "Custom goal to delete",
-      fullGoalText: "Test goal with {accuracy}% across {sessions} sessions.",
-      defaultTargetAccuracy: 80,
+      ageRange: "8-12",
+      skillLevel: "modification",
+      shortDescription: "Custom fluency goal",
+      fullGoalText: "Client will use a custom technique with {accuracy}% accuracy across {sessions} sessions.",
+      defaultTargetAccuracy: 70,
       defaultConsecutiveSessions: 3,
     });
-    await slp.mutation(api.goalBank.removeCustom, { id });
-    const results = await slp.query(api.goalBank.search, { includeCustom: true });
-    const deleted = results.find((g: { _id: typeof id }) => g._id === id);
-    expect(deleted).toBeUndefined();
+    await t.mutation(api.goalBank.removeCustom, { goalId: id });
+    const results = await t.query(api.goalBank.search, { keyword: "Custom fluency goal" });
+    expect(results).toHaveLength(0);
   });
 
-  it("rejects deleting another SLP's custom goal", async () => {
-    const t = convexTest(schema, modules);
-    const slp1 = t.withIdentity(SLP_IDENTITY);
+  it("rejects removing another SLP's custom goal", async () => {
+    const base = convexTest(schema, modules);
+    const slp1 = base.withIdentity(SLP_IDENTITY);
     const id = await slp1.mutation(api.goalBank.addCustom, {
-      domain: "fluency",
-      ageRange: "8-12" as const,
-      skillLevel: "awareness",
-      shortDescription: "SLP1 goal",
-      fullGoalText: "Test goal with {accuracy}% across {sessions} sessions.",
+      domain: "voice",
+      ageRange: "adult",
+      skillLevel: "carryover",
+      shortDescription: "Someone else's goal",
+      fullGoalText: "Client will do something with {accuracy}% accuracy across {sessions} sessions.",
       defaultTargetAccuracy: 80,
       defaultConsecutiveSessions: 3,
     });
-    const slp2 = t.withIdentity(OTHER_SLP);
+    const slp2 = base.withIdentity(OTHER_SLP);
     await expect(
-      slp2.mutation(api.goalBank.removeCustom, { id })
-    ).rejects.toThrow("Not authorized");
+      slp2.mutation(api.goalBank.removeCustom, { goalId: id })
+    ).rejects.toThrow();
   });
 
-  it("rejects deleting a system goal", async () => {
+  it("rejects removing a system goal", async () => {
     const t = convexTest(schema, modules);
     await t.mutation(internal.goalBank.seed, {});
     const slp = t.withIdentity(SLP_IDENTITY);
-    const results = await slp.query(api.goalBank.search, {});
-    const systemGoal = results.find((g: { isCustom: boolean }) => !g.isCustom);
-    if (systemGoal) {
-      await expect(
-        slp.mutation(api.goalBank.removeCustom, { id: systemGoal._id })
-      ).rejects.toThrow("Cannot delete system goals");
-    }
+    const goals = await slp.query(api.goalBank.search, { domain: "articulation" });
+    const systemGoal = goals.find((g: { isCustom: boolean }) => !g.isCustom);
+    expect(systemGoal).toBeDefined();
+    await expect(
+      slp.mutation(api.goalBank.removeCustom, { goalId: systemGoal!._id })
+    ).rejects.toThrow("Cannot remove system goals");
+  });
+});
+
+// ── listDomainSkillLevels ───────────────────────────────────────────────────
+
+describe("goalBank.listDomainSkillLevels", () => {
+  it("returns distinct skill levels for a domain", async () => {
+    const t = convexTest(schema, modules);
+    await t.mutation(internal.goalBank.seed, {});
+    const slp = t.withIdentity(SLP_IDENTITY);
+    const levels = await slp.query(api.goalBank.listDomainSkillLevels, {
+      domain: "articulation",
+    });
+    expect(levels).toContain("isolation");
+    expect(levels).toContain("word");
+    expect(levels).toContain("sentence");
+    expect(levels).toContain("conversation");
   });
 });
 ```
 
-- [ ] **Step 2: Verify tests fail**
+- [ ] **Step 2: Run tests to verify they fail**
 
-```bash
-cd /Users/desha/Springfield-Vibeathon && npx vitest run convex/__tests__/goalBank.test.ts 2>&1 | tail -20
-```
+Run: `cd /Users/desha/Springfield-Vibeathon && npx vitest run convex/__tests__/goalBank.test.ts`
+Expected: FAIL — module `api.goalBank` does not exist
 
-- [ ] **Step 3: Implement `convex/goalBank.ts`**
+- [ ] **Step 3: Write the implementation**
+
+Create `convex/goalBank.ts`:
 
 ```typescript
 import { v } from "convex/values";
@@ -2129,25 +1841,32 @@ const ageRangeValidator = v.union(
   v.literal("adult")
 );
 
-// ── Seed (internal) ─────────────────────────────────────────────────────────
+// ── Internal Mutations ──────────────────────────────────────────────────────
 
 export const seed = internalMutation({
   args: {},
   handler: async (ctx) => {
-    // Idempotency: check if system goals already exist
+    // Idempotency check: if any system goal exists, skip
     const existing = await ctx.db
       .query("goalBank")
       .withIndex("by_domain", (q) => q.eq("domain", "articulation"))
       .first();
 
     if (existing && !existing.isCustom) {
-      // Already seeded
-      return;
+      return; // Already seeded
     }
 
     for (const entry of GOAL_BANK_SEED) {
       await ctx.db.insert("goalBank", {
-        ...entry,
+        domain: entry.domain,
+        ageRange: entry.ageRange,
+        skillLevel: entry.skillLevel,
+        shortDescription: entry.shortDescription,
+        fullGoalText: entry.fullGoalText,
+        defaultTargetAccuracy: entry.defaultTargetAccuracy,
+        defaultConsecutiveSessions: entry.defaultConsecutiveSessions,
+        exampleBaseline: entry.exampleBaseline,
+        typicalCriterion: entry.typicalCriterion,
         isCustom: false,
       });
     }
@@ -2162,7 +1881,6 @@ export const search = slpQuery({
     ageRange: v.optional(ageRangeValidator),
     skillLevel: v.optional(v.string()),
     keyword: v.optional(v.string()),
-    includeCustom: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
     if (!ctx.slpUserId) throw new ConvexError("Not authorized");
@@ -2175,36 +1893,37 @@ export const search = slpQuery({
         .withIndex("by_domain_ageRange", (q) =>
           q.eq("domain", args.domain!).eq("ageRange", args.ageRange!)
         )
-        .collect();
+        .take(200);
     } else if (args.domain && args.skillLevel) {
       results = await ctx.db
         .query("goalBank")
         .withIndex("by_domain_skillLevel", (q) =>
           q.eq("domain", args.domain!).eq("skillLevel", args.skillLevel!)
         )
-        .collect();
+        .take(200);
     } else if (args.domain) {
       results = await ctx.db
         .query("goalBank")
         .withIndex("by_domain", (q) => q.eq("domain", args.domain!))
-        .collect();
+        .take(200);
     } else {
-      results = await ctx.db.query("goalBank").collect();
+      results = await ctx.db
+        .query("goalBank")
+        .take(200);
     }
 
-    // Filter out custom goals unless requested
-    if (!args.includeCustom) {
-      results = results.filter((g) => !g.isCustom || g.createdBy === ctx.slpUserId);
-    }
-
-    // Keyword filter (substring on shortDescription + fullGoalText)
+    // Apply keyword filter in-memory (substring match)
     if (args.keyword) {
       const kw = args.keyword.toLowerCase();
-      results = results.filter(
-        (g) =>
-          g.shortDescription.toLowerCase().includes(kw) ||
-          g.fullGoalText.toLowerCase().includes(kw)
-      );
+      results = results.filter((g) => {
+        const text = (g.shortDescription + " " + g.fullGoalText).toLowerCase();
+        return text.includes(kw);
+      });
+    }
+
+    // Apply skill level filter in-memory if domain+ageRange index was used
+    if (args.skillLevel && args.ageRange) {
+      results = results.filter((g) => g.skillLevel === args.skillLevel);
     }
 
     return results;
@@ -2212,16 +1931,22 @@ export const search = slpQuery({
 });
 
 export const listDomainSkillLevels = slpQuery({
-  args: { domain: domainValidator },
+  args: {
+    domain: domainValidator,
+  },
   handler: async (ctx, args) => {
     if (!ctx.slpUserId) throw new ConvexError("Not authorized");
+
     const goals = await ctx.db
       .query("goalBank")
       .withIndex("by_domain", (q) => q.eq("domain", args.domain))
-      .collect();
+      .take(200);
 
-    const levels = new Set(goals.map((g) => g.skillLevel));
-    return [...levels].sort();
+    const levels = new Set<string>();
+    for (const g of goals) {
+      levels.add(g.skillLevel);
+    }
+    return Array.from(levels).sort();
   },
 });
 
@@ -2240,8 +1965,21 @@ export const addCustom = slpMutation({
     typicalCriterion: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    const desc = args.shortDescription.trim();
+    if (desc.length === 0 || desc.length > 200) {
+      throw new ConvexError("Short description must be 1-200 characters");
+    }
+
     return await ctx.db.insert("goalBank", {
-      ...args,
+      domain: args.domain,
+      ageRange: args.ageRange,
+      skillLevel: args.skillLevel,
+      shortDescription: desc,
+      fullGoalText: args.fullGoalText.trim(),
+      defaultTargetAccuracy: args.defaultTargetAccuracy,
+      defaultConsecutiveSessions: args.defaultConsecutiveSessions,
+      exampleBaseline: args.exampleBaseline,
+      typicalCriterion: args.typicalCriterion,
       isCustom: true,
       createdBy: ctx.slpUserId,
     });
@@ -2249,88 +1987,759 @@ export const addCustom = slpMutation({
 });
 
 export const removeCustom = slpMutation({
-  args: { id: v.id("goalBank") },
+  args: {
+    goalId: v.id("goalBank"),
+  },
   handler: async (ctx, args) => {
-    const goal = await ctx.db.get(args.id);
+    const goal = await ctx.db.get(args.goalId);
     if (!goal) throw new ConvexError("Goal not found");
-    if (!goal.isCustom) throw new ConvexError("Cannot delete system goals");
+    if (!goal.isCustom) throw new ConvexError("Cannot remove system goals");
     if (goal.createdBy !== ctx.slpUserId) throw new ConvexError("Not authorized");
 
-    await ctx.db.delete(args.id);
+    await ctx.db.delete(args.goalId);
   },
 });
 ```
 
-- [ ] **Step 4: Verify tests pass**
+- [ ] **Step 4: Run tests to verify they pass**
 
-```bash
-cd /Users/desha/Springfield-Vibeathon && npx vitest run convex/__tests__/goalBank.test.ts 2>&1 | tail -30
-```
+Run: `cd /Users/desha/Springfield-Vibeathon && npx vitest run convex/__tests__/goalBank.test.ts`
+Expected: All tests PASS
 
 - [ ] **Step 5: Commit**
 
+---
+
+## Task 6: Data Collection Hook and Route
+
+**Files:**
+- Create: `src/features/data-collection/hooks/use-data-collection.ts`
+- Create: `src/app/(app)/patients/[id]/collect/page.tsx`
+
+- [ ] **Step 1: Create the data collection hook**
+
+Create `src/features/data-collection/hooks/use-data-collection.ts`:
+
+```typescript
+"use client";
+
+import { useMutation, useQuery } from "convex/react";
+import { useCallback, useState } from "react";
+
+import { api } from "../../../../convex/_generated/api";
+import type { Id } from "../../../../convex/_generated/dataModel";
+
+export type CueLevel = "independent" | "min-cue" | "mod-cue" | "max-cue";
+
+interface TrialEntry {
+  correct: boolean;
+  cueLevel: CueLevel;
+  timestamp: number;
+}
+
+interface ActiveCollection {
+  _id: Id<"sessionTrials">;
+  goalId: Id<"goals">;
+  targetDescription: string;
+  trials: TrialEntry[];
+  startedAt: number;
+  endedAt?: number;
+}
+
+export function useDataCollection(patientId: Id<"patients">) {
+  const [cueLevel, setCueLevel] = useState<CueLevel>("independent");
+
+  const startMutation = useMutation(api.sessionTrials.start);
+  const recordTrialMutation = useMutation(api.sessionTrials.recordTrial);
+  const endCollectionMutation = useMutation(api.sessionTrials.endCollection);
+  const linkMutation = useMutation(api.sessionTrials.linkToSessionNote);
+
+  const activeCollections = useQuery(api.sessionTrials.getActiveForPatient, { patientId });
+
+  const startCollection = useCallback(
+    async (goalId: Id<"goals">, sessionDate: string) => {
+      return await startMutation({ patientId, goalId, sessionDate });
+    },
+    [patientId, startMutation]
+  );
+
+  const recordTrial = useCallback(
+    async (trialId: Id<"sessionTrials">, correct: boolean) => {
+      await recordTrialMutation({ trialId, correct, cueLevel });
+    },
+    [cueLevel, recordTrialMutation]
+  );
+
+  const endCollection = useCallback(
+    async (trialId: Id<"sessionTrials">) => {
+      await endCollectionMutation({ trialId });
+    },
+    [endCollectionMutation]
+  );
+
+  const linkToSessionNote = useCallback(
+    async (trialIds: Id<"sessionTrials">[], sessionNoteId: Id<"sessionNotes">) => {
+      return await linkMutation({ trialIds, sessionNoteId });
+    },
+    [linkMutation]
+  );
+
+  return {
+    activeCollections: (activeCollections ?? []) as ActiveCollection[],
+    cueLevel,
+    setCueLevel,
+    startCollection,
+    recordTrial,
+    endCollection,
+    linkToSessionNote,
+  };
+}
 ```
-feat(goalBank): add goal bank backend with seed, search, custom goals via TDD
+
+- [ ] **Step 2: Create the route page (thin wrapper)**
+
+Create `src/app/(app)/patients/[id]/collect/page.tsx`:
+
+```typescript
+import { DataCollectionScreen } from "@/features/data-collection/components/data-collection-screen";
+
+export default function CollectPage(props: { params: Promise<{ id: string }> }) {
+  return <DataCollectionScreen paramsPromise={props.params} />;
+}
 ```
+
+- [ ] **Step 3: Verify the route file compiles (no import errors)**
+
+Run: `cd /Users/desha/Springfield-Vibeathon && npx tsc --noEmit 2>&1 | grep -c "collect/page" || echo "0 errors"`
+Expected: 0 errors related to this file (the component will be created next)
+
+- [ ] **Step 4: Commit**
 
 ---
 
-### Task 2.4 — Frontend: Rewrite Goal Bank Picker
+## Task 7: Data Collection UI Components
 
 **Files:**
-- `src/features/goals/components/goal-bank-picker.tsx` (rewrite)
-- `src/features/goals/lib/goal-bank-data.ts` (keep for backward compat but mark deprecated)
-- `src/features/goals/hooks/use-goals.ts` (add goal bank hooks)
-- `src/features/goals/components/goal-form.tsx` (update integration)
+- Create: `src/features/data-collection/components/trial-buttons.tsx`
+- Create: `src/features/data-collection/components/cue-level-toggle.tsx`
+- Create: `src/features/data-collection/components/running-tally.tsx`
+- Create: `src/features/data-collection/components/target-selector.tsx`
+- Create: `src/features/data-collection/components/session-summary.tsx`
+- Create: `src/features/data-collection/components/data-collection-screen.tsx`
 
-- [ ] **Step 1: Add goal bank hooks to `use-goals.ts`**
+- [ ] **Step 1: Create trial-buttons.tsx (touch-optimized, 80px+ height)**
 
-Append to `src/features/goals/hooks/use-goals.ts`:
-
-```typescript
-export function useGoalBankSearch(filters: {
-  domain?: string;
-  ageRange?: string;
-  skillLevel?: string;
-  keyword?: string;
-  includeCustom?: boolean;
-}) {
-  const { isAuthenticated } = useConvexAuth();
-  return useQuery(
-    api.goalBank.search,
-    isAuthenticated ? filters as any : "skip"
-  );
-}
-
-export function useGoalBankSkillLevels(domain: string | null) {
-  const { isAuthenticated } = useConvexAuth();
-  return useQuery(
-    api.goalBank.listDomainSkillLevels,
-    isAuthenticated && domain ? { domain } as any : "skip"
-  );
-}
-
-export function useAddCustomGoal() {
-  return useMutation(api.goalBank.addCustom);
-}
-
-export function useRemoveCustomGoal() {
-  return useMutation(api.goalBank.removeCustom);
-}
-```
-
-- [ ] **Step 2: Rewrite `goal-bank-picker.tsx`**
-
-Replace the entire content of `src/features/goals/components/goal-bank-picker.tsx`:
+Create `src/features/data-collection/components/trial-buttons.tsx`:
 
 ```tsx
 "use client";
 
+import { cn } from "@/core/utils";
+
+interface TrialButtonsProps {
+  onCorrect: () => void;
+  onIncorrect: () => void;
+  disabled?: boolean;
+}
+
+export function TrialButtons({ onCorrect, onIncorrect, disabled }: TrialButtonsProps) {
+  return (
+    <div className="flex gap-4 px-4">
+      <button
+        type="button"
+        onClick={onCorrect}
+        disabled={disabled}
+        className={cn(
+          "flex min-h-[80px] flex-1 items-center justify-center rounded-2xl",
+          "bg-success-container text-on-success-container",
+          "text-4xl font-bold",
+          "active:scale-95 transition-transform duration-200",
+          "disabled:opacity-50 disabled:cursor-not-allowed",
+          "touch-manipulation select-none"
+        )}
+        aria-label="Correct trial"
+      >
+        +
+      </button>
+      <button
+        type="button"
+        onClick={onIncorrect}
+        disabled={disabled}
+        className={cn(
+          "flex min-h-[80px] flex-1 items-center justify-center rounded-2xl",
+          "bg-error-container text-on-error-container",
+          "text-4xl font-bold",
+          "active:scale-95 transition-transform duration-200",
+          "disabled:opacity-50 disabled:cursor-not-allowed",
+          "touch-manipulation select-none"
+        )}
+        aria-label="Incorrect trial"
+      >
+        &minus;
+      </button>
+    </div>
+  );
+}
+```
+
+- [ ] **Step 2: Create cue-level-toggle.tsx**
+
+Create `src/features/data-collection/components/cue-level-toggle.tsx`:
+
+```tsx
+"use client";
+
+import { cn } from "@/core/utils";
+
+import type { CueLevel } from "../hooks/use-data-collection";
+
+const CUE_LEVELS: { value: CueLevel; label: string; shortLabel: string }[] = [
+  { value: "independent", label: "Independent", shortLabel: "Ind" },
+  { value: "min-cue", label: "Minimal Cue", shortLabel: "Min" },
+  { value: "mod-cue", label: "Moderate Cue", shortLabel: "Mod" },
+  { value: "max-cue", label: "Maximum Cue", shortLabel: "Max" },
+];
+
+interface CueLevelToggleProps {
+  value: CueLevel;
+  onChange: (level: CueLevel) => void;
+}
+
+export function CueLevelToggle({ value, onChange }: CueLevelToggleProps) {
+  return (
+    <div className="flex gap-1 rounded-xl bg-muted p-1">
+      {CUE_LEVELS.map((level) => (
+        <button
+          key={level.value}
+          type="button"
+          onClick={() => onChange(level.value)}
+          className={cn(
+            "flex-1 rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-200",
+            "touch-manipulation select-none",
+            value === level.value
+              ? "bg-primary text-primary-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground"
+          )}
+          aria-pressed={value === level.value}
+          aria-label={level.label}
+        >
+          <span className="hidden sm:inline">{level.label}</span>
+          <span className="sm:hidden">{level.shortLabel}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+```
+
+- [ ] **Step 3: Create running-tally.tsx**
+
+Create `src/features/data-collection/components/running-tally.tsx`:
+
+```tsx
+"use client";
+
+interface RunningTallyProps {
+  correct: number;
+  total: number;
+}
+
+export function RunningTally({ correct, total }: RunningTallyProps) {
+  const accuracy = total > 0 ? Math.round((correct / total) * 100) : 0;
+
+  return (
+    <div className="flex items-baseline justify-center gap-2 py-3">
+      <span className="text-5xl font-bold tabular-nums text-foreground">
+        {correct}/{total}
+      </span>
+      <span className="text-2xl font-medium text-muted-foreground">
+        — {accuracy}%
+      </span>
+    </div>
+  );
+}
+```
+
+- [ ] **Step 4: Create target-selector.tsx**
+
+Create `src/features/data-collection/components/target-selector.tsx`:
+
+```tsx
+"use client";
+
+import { cn } from "@/core/utils";
+
+import type { Id } from "../../../../convex/_generated/dataModel";
+
+interface Target {
+  _id: Id<"sessionTrials">;
+  targetDescription: string;
+  trials: Array<{ correct: boolean }>;
+}
+
+interface TargetSelectorProps {
+  targets: Target[];
+  activeTargetId: Id<"sessionTrials"> | null;
+  onSelect: (id: Id<"sessionTrials">) => void;
+}
+
+export function TargetSelector({ targets, activeTargetId, onSelect }: TargetSelectorProps) {
+  if (targets.length <= 1) return null;
+
+  return (
+    <div className="flex gap-2 overflow-x-auto px-4 pb-2">
+      {targets.map((target) => {
+        const total = target.trials.length;
+        const correct = target.trials.filter((t) => t.correct).length;
+        const accuracy = total > 0 ? Math.round((correct / total) * 100) : 0;
+        const isActive = target._id === activeTargetId;
+
+        return (
+          <button
+            key={target._id}
+            type="button"
+            onClick={() => onSelect(target._id)}
+            className={cn(
+              "shrink-0 rounded-lg px-4 py-2 text-sm font-medium transition-colors duration-200",
+              "touch-manipulation select-none",
+              isActive
+                ? "bg-primary text-primary-foreground"
+                : "bg-muted text-muted-foreground"
+            )}
+          >
+            <span className="block truncate max-w-[150px]">{target.targetDescription}</span>
+            {total > 0 && (
+              <span className="block text-xs opacity-80">{accuracy}%</span>
+            )}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+```
+
+- [ ] **Step 5: Create session-summary.tsx**
+
+Create `src/features/data-collection/components/session-summary.tsx`:
+
+```tsx
+"use client";
+
+import Link from "next/link";
+
+import { Button } from "@/shared/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/shared/components/ui/card";
+
+import type { Id } from "../../../../convex/_generated/dataModel";
+
+interface TrialSummary {
+  _id: Id<"sessionTrials">;
+  targetDescription: string;
+  trials: Array<{ correct: boolean; cueLevel: string }>;
+}
+
+interface SessionSummaryProps {
+  patientId: Id<"patients">;
+  collections: TrialSummary[];
+  onStartNote: () => void;
+}
+
+const CUE_LABELS: Record<string, string> = {
+  "independent": "Independent",
+  "min-cue": "Minimal",
+  "mod-cue": "Moderate",
+  "max-cue": "Maximum",
+};
+
+export function SessionSummary({ patientId, collections, onStartNote }: SessionSummaryProps) {
+  return (
+    <div className="flex flex-col gap-4 p-4">
+      <h2 className="text-xl font-semibold text-foreground">Session Summary</h2>
+
+      {collections.map((collection) => {
+        const total = collection.trials.length;
+        const correct = collection.trials.filter((t) => t.correct).length;
+        const accuracy = total > 0 ? Math.round((correct / total) * 100) : 0;
+
+        // Count cue levels
+        const cueCounts: Record<string, number> = {};
+        for (const trial of collection.trials) {
+          cueCounts[trial.cueLevel] = (cueCounts[trial.cueLevel] ?? 0) + 1;
+        }
+        // Most frequent cue level
+        let topCue = "independent";
+        let topCount = 0;
+        for (const [cue, count] of Object.entries(cueCounts)) {
+          if (count > topCount) {
+            topCount = count;
+            topCue = cue;
+          }
+        }
+
+        return (
+          <Card key={collection._id}>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">{collection.targetDescription}</CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-1">
+              <p className="text-2xl font-bold tabular-nums">
+                {correct}/{total} — {accuracy}%
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Primary cue level: {CUE_LABELS[topCue] ?? topCue}
+              </p>
+              {Object.entries(cueCounts).length > 1 && (
+                <div className="flex gap-2 text-xs text-muted-foreground">
+                  {Object.entries(cueCounts).map(([cue, count]) => (
+                    <span key={cue}>
+                      {CUE_LABELS[cue] ?? cue}: {count}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        );
+      })}
+
+      <div className="flex flex-col gap-2 pt-2">
+        <Button onClick={onStartNote} className="w-full">
+          Create Session Note (Auto-populated)
+        </Button>
+        <Button asChild variant="outline" className="w-full">
+          <Link href={`/patients/${patientId}`}>
+            Back to Patient
+          </Link>
+        </Button>
+      </div>
+    </div>
+  );
+}
+```
+
+- [ ] **Step 6: Create data-collection-screen.tsx (full-screen orchestrator)**
+
+Create `src/features/data-collection/components/data-collection-screen.tsx`:
+
+```tsx
+"use client";
+
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { use, useCallback, useState } from "react";
+
+import { cn } from "@/core/utils";
+import { Button } from "@/shared/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/shared/components/ui/dialog";
+
+import type { Id } from "../../../../convex/_generated/dataModel";
+import { useGoalsForPatient } from "@/features/goals/hooks/use-goals";
+import { useDataCollection } from "../hooks/use-data-collection";
+import { CueLevelToggle } from "./cue-level-toggle";
+import { RunningTally } from "./running-tally";
+import { SessionSummary } from "./session-summary";
+import { TargetSelector } from "./target-selector";
+import { TrialButtons } from "./trial-buttons";
+
+interface DataCollectionScreenProps {
+  paramsPromise: Promise<{ id: string }>;
+}
+
+export function DataCollectionScreen({ paramsPromise }: DataCollectionScreenProps) {
+  const { id } = use(paramsPromise);
+  const patientId = id as Id<"patients">;
+  const router = useRouter();
+
+  const {
+    activeCollections,
+    cueLevel,
+    setCueLevel,
+    startCollection,
+    recordTrial,
+    endCollection,
+  } = useDataCollection(patientId);
+
+  const goals = useGoalsForPatient(patientId);
+  const [activeTargetId, setActiveTargetId] = useState<Id<"sessionTrials"> | null>(null);
+  const [goalPickerOpen, setGoalPickerOpen] = useState(false);
+  const [showSummary, setShowSummary] = useState(false);
+
+  const today = new Date().toISOString().slice(0, 10);
+
+  // Set active target to first collection if not set
+  const effectiveTargetId = activeTargetId ?? activeCollections[0]?._id ?? null;
+
+  const activeTarget = activeCollections.find((c) => c._id === effectiveTargetId);
+  const totalTrials = activeTarget?.trials.length ?? 0;
+  const correctTrials = activeTarget?.trials.filter((t) => t.correct).length ?? 0;
+
+  const handleAddTarget = useCallback(
+    async (goalId: Id<"goals">) => {
+      const trialId = await startCollection(goalId, today);
+      setActiveTargetId(trialId);
+      setGoalPickerOpen(false);
+    },
+    [startCollection, today]
+  );
+
+  const handleCorrect = useCallback(async () => {
+    if (!effectiveTargetId) return;
+    await recordTrial(effectiveTargetId, true);
+  }, [effectiveTargetId, recordTrial]);
+
+  const handleIncorrect = useCallback(async () => {
+    if (!effectiveTargetId) return;
+    await recordTrial(effectiveTargetId, false);
+  }, [effectiveTargetId, recordTrial]);
+
+  const handleEndSession = useCallback(async () => {
+    for (const collection of activeCollections) {
+      if (collection.endedAt === undefined) {
+        await endCollection(collection._id);
+      }
+    }
+    setShowSummary(true);
+  }, [activeCollections, endCollection]);
+
+  const handleStartNote = useCallback(() => {
+    // Navigate to new session note page; trial linking happens there
+    router.push(`/patients/${patientId}/sessions/new?fromTrials=true&date=${today}`);
+  }, [patientId, router, today]);
+
+  // Summary view
+  if (showSummary) {
+    return (
+      <SessionSummary
+        patientId={patientId}
+        collections={activeCollections}
+        onStartNote={handleStartNote}
+      />
+    );
+  }
+
+  // No active collections — show start prompt
+  if (activeCollections.length === 0) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center gap-6 p-4">
+        <h1 className="text-xl font-semibold text-foreground">Start Data Collection</h1>
+        <p className="text-center text-muted-foreground">
+          Select a goal to begin collecting trial data for this session.
+        </p>
+        <Button onClick={() => setGoalPickerOpen(true)} size="lg">
+          Choose Target Goal
+        </Button>
+        <Button asChild variant="ghost">
+          <Link href={`/patients/${patientId}`}>Cancel</Link>
+        </Button>
+
+        <GoalPickerDialog
+          open={goalPickerOpen}
+          onOpenChange={setGoalPickerOpen}
+          goals={goals ?? []}
+          onSelect={handleAddTarget}
+        />
+      </div>
+    );
+  }
+
+  // Active data collection view
+  return (
+    <div className="flex min-h-screen flex-col bg-background">
+      {/* Header bar */}
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+        <Button asChild variant="ghost" size="sm">
+          <Link href={`/patients/${patientId}`}>Exit</Link>
+        </Button>
+        <h1 className="text-sm font-semibold text-foreground truncate max-w-[200px]">
+          {activeTarget?.targetDescription ?? "Data Collection"}
+        </h1>
+        <Button variant="outline" size="sm" onClick={handleEndSession}>
+          End Session
+        </Button>
+      </div>
+
+      {/* Target selector tabs */}
+      <TargetSelector
+        targets={activeCollections}
+        activeTargetId={effectiveTargetId}
+        onSelect={setActiveTargetId}
+      />
+
+      {/* Cue level toggle */}
+      <div className="px-4 pt-2">
+        <CueLevelToggle value={cueLevel} onChange={setCueLevel} />
+      </div>
+
+      {/* Running tally */}
+      <div className="flex-1 flex items-center justify-center">
+        <RunningTally correct={correctTrials} total={totalTrials} />
+      </div>
+
+      {/* Trial buttons — pinned to bottom for thumb reach */}
+      <div className="pb-8">
+        <TrialButtons
+          onCorrect={handleCorrect}
+          onIncorrect={handleIncorrect}
+        />
+      </div>
+
+      {/* Add target button */}
+      <div className="fixed bottom-0 left-0 right-0 flex justify-center pb-2">
+        <button
+          type="button"
+          onClick={() => setGoalPickerOpen(true)}
+          className="text-xs text-muted-foreground underline touch-manipulation"
+        >
+          + Add another target
+        </button>
+      </div>
+
+      <GoalPickerDialog
+        open={goalPickerOpen}
+        onOpenChange={setGoalPickerOpen}
+        goals={goals ?? []}
+        onSelect={handleAddTarget}
+      />
+    </div>
+  );
+}
+
+// ── Goal picker dialog (inline) ─────────────────────────────────────────────
+
+interface GoalPickerDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  goals: Array<{ _id: Id<"goals">; shortDescription: string; domain: string; status: string }>;
+  onSelect: (goalId: Id<"goals">) => void;
+}
+
+function GoalPickerDialog({ open, onOpenChange, goals, onSelect }: GoalPickerDialogProps) {
+  const activeGoals = goals.filter((g) => g.status === "active");
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-h-[80vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Select Target Goal</DialogTitle>
+          <DialogDescription>
+            Choose an active goal to collect trial data for.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="flex flex-col gap-2">
+          {activeGoals.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-4 text-center">
+              No active goals. Add a goal first.
+            </p>
+          ) : (
+            activeGoals.map((goal) => (
+              <button
+                key={goal._id}
+                type="button"
+                onClick={() => onSelect(goal._id)}
+                className={cn(
+                  "flex flex-col gap-1 rounded-lg border border-border p-3 text-left",
+                  "transition-colors duration-200 hover:border-primary/50 hover:bg-muted/50",
+                  "touch-manipulation"
+                )}
+              >
+                <span className="text-sm font-medium">{goal.shortDescription}</span>
+                <span className="text-xs text-muted-foreground capitalize">{goal.domain.replace("-", " ")}</span>
+              </button>
+            ))
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+```
+
+- [ ] **Step 7: Verify all components compile**
+
+Run: `cd /Users/desha/Springfield-Vibeathon && npx tsc --noEmit 2>&1 | grep "data-collection" || echo "No errors"`
+Expected: No errors (may need to add the `useGoalsForPatient` export if not already present)
+
+- [ ] **Step 8: Commit**
+
+---
+
+## Task 8: Add "Start Session" Button to Patient Detail Page
+
+**Files:**
+- Modify: `src/features/patients/components/patient-detail-page.tsx:44-52`
+
+- [ ] **Step 1: Add the Start Session button to the header row**
+
+In `src/features/patients/components/patient-detail-page.tsx`, replace the header `<div>` (lines 44-52):
+
+Old:
+```tsx
+      <div className="flex items-center justify-between">
+        <Button asChild variant="ghost" size="sm" className="w-fit">
+          <Link href="/patients">
+            <MaterialIcon icon="arrow_back" size="sm" />
+            Back to Caseload
+          </Link>
+        </Button>
+        <CreateMaterialButton patientId={patient._id} />
+      </div>
+```
+
+New:
+```tsx
+      <div className="flex items-center justify-between">
+        <Button asChild variant="ghost" size="sm" className="w-fit">
+          <Link href="/patients">
+            <MaterialIcon icon="arrow_back" size="sm" />
+            Back to Caseload
+          </Link>
+        </Button>
+        <div className="flex items-center gap-2">
+          <Button asChild variant="default" size="sm">
+            <Link href={`/patients/${patient._id}/collect`}>
+              <MaterialIcon icon="play_circle" size="sm" />
+              Start Session
+            </Link>
+          </Button>
+          <CreateMaterialButton patientId={patient._id} />
+        </div>
+      </div>
+```
+
+- [ ] **Step 2: Verify the page compiles**
+
+Run: `cd /Users/desha/Springfield-Vibeathon && npx tsc --noEmit 2>&1 | grep "patient-detail" || echo "No errors"`
+Expected: No errors
+
+- [ ] **Step 3: Commit**
+
+---
+
+## Task 9: Rewrite Goal Bank Picker to Use DB-Backed Goals
+
+**Files:**
+- Modify: `src/features/goals/components/goal-bank-picker.tsx` (full rewrite)
+- Modify: `src/features/goals/components/goal-form.tsx:28` (update import)
+
+- [ ] **Step 1: Rewrite goal-bank-picker.tsx**
+
+Replace the full contents of `src/features/goals/components/goal-bank-picker.tsx`:
+
+```tsx
+"use client";
+
+import { useConvexAuth, useQuery } from "convex/react";
 import { useState } from "react";
 
 import { cn } from "@/core/utils";
 import { Badge } from "@/shared/components/ui/badge";
-import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
 import {
   Select,
@@ -2339,167 +2748,155 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/shared/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/components/ui/tabs";
 
-import {
-  useAddCustomGoal,
-  useGoalBankSearch,
-  useGoalBankSkillLevels,
-  useRemoveCustomGoal,
-} from "../hooks/use-goals";
+import { api } from "../../../../convex/_generated/api";
 import { domainColor, domainLabel } from "../lib/goal-utils";
 
-const DOMAINS = [
-  "articulation",
-  "language-receptive",
-  "language-expressive",
-  "fluency",
-  "voice",
-  "pragmatic-social",
-  "aac",
-  "feeding",
-] as const;
+type GoalDomain =
+  | "articulation"
+  | "language-receptive"
+  | "language-expressive"
+  | "fluency"
+  | "voice"
+  | "pragmatic-social"
+  | "aac"
+  | "feeding";
 
-type Domain = (typeof DOMAINS)[number];
+type AgeRange = "0-3" | "3-5" | "5-8" | "8-12" | "12-18" | "adult";
 
-const AGE_RANGES = [
-  { value: "0-3", label: "0–3 years" },
-  { value: "3-5", label: "3–5 years" },
-  { value: "5-8", label: "5–8 years" },
-  { value: "8-12", label: "8–12 years" },
-  { value: "12-18", label: "12–18 years" },
+const DOMAINS: GoalDomain[] = [
+  "articulation", "language-receptive", "language-expressive",
+  "fluency", "voice", "pragmatic-social", "aac", "feeding",
+];
+
+const AGE_RANGES: { value: AgeRange; label: string }[] = [
+  { value: "0-3", label: "0-3 years" },
+  { value: "3-5", label: "3-5 years" },
+  { value: "5-8", label: "5-8 years" },
+  { value: "8-12", label: "8-12 years" },
+  { value: "12-18", label: "12-18 years" },
   { value: "adult", label: "Adult" },
-] as const;
+];
 
-type AgeRange = (typeof AGE_RANGES)[number]["value"];
-
-interface GoalBankEntry {
-  _id: string;
-  domain: Domain;
-  ageRange: AgeRange;
-  skillLevel: string;
+export interface GoalBankSelection {
+  domain: GoalDomain;
   shortDescription: string;
   fullGoalText: string;
   defaultTargetAccuracy: number;
   defaultConsecutiveSessions: number;
-  isCustom: boolean;
 }
 
 interface GoalBankPickerProps {
-  onSelect: (entry: {
-    domain: Domain;
-    shortDescription: string;
-    fullGoalText: string;
-    defaultTargetAccuracy: number;
-    defaultConsecutiveSessions: number;
-  }) => void;
+  onSelect: (goal: GoalBankSelection) => void;
 }
 
 export function GoalBankPicker({ onSelect }: GoalBankPickerProps) {
-  const [selectedDomain, setSelectedDomain] = useState<Domain | "">("");
-  const [selectedAgeRange, setSelectedAgeRange] = useState<AgeRange | "">("");
-  const [selectedSkillLevel, setSelectedSkillLevel] = useState<string>("");
+  const { isAuthenticated } = useConvexAuth();
+  const [selectedDomain, setSelectedDomain] = useState<GoalDomain | undefined>(undefined);
+  const [selectedAgeRange, setSelectedAgeRange] = useState<AgeRange | undefined>(undefined);
+  const [selectedSkillLevel, setSelectedSkillLevel] = useState<string | undefined>(undefined);
   const [keyword, setKeyword] = useState("");
 
-  const domain = selectedDomain || undefined;
-  const ageRange = selectedAgeRange || undefined;
-  const skillLevel = selectedSkillLevel || undefined;
-  const kw = keyword.trim() || undefined;
+  const searchArgs = {
+    ...(selectedDomain ? { domain: selectedDomain } : {}),
+    ...(selectedAgeRange ? { ageRange: selectedAgeRange } : {}),
+    ...(selectedSkillLevel ? { skillLevel: selectedSkillLevel } : {}),
+    ...(keyword.trim() ? { keyword: keyword.trim() } : {}),
+  };
 
-  const results = useGoalBankSearch({
-    domain,
-    ageRange: ageRange as any,
-    skillLevel,
-    keyword: kw,
-    includeCustom: true,
-  });
+  const results = useQuery(
+    api.goalBank.search,
+    isAuthenticated ? searchArgs : "skip"
+  );
 
-  const skillLevels = useGoalBankSkillLevels(domain ?? null);
+  const skillLevels = useQuery(
+    api.goalBank.listDomainSkillLevels,
+    isAuthenticated && selectedDomain ? { domain: selectedDomain } : "skip"
+  );
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3">
       {/* Filter bar */}
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+      <div className="grid grid-cols-2 gap-2">
         <Select
-          value={selectedDomain}
+          value={selectedDomain ?? ""}
           onValueChange={(v) => {
-            setSelectedDomain(v as Domain);
-            setSelectedSkillLevel("");
+            setSelectedDomain(v as GoalDomain);
+            setSelectedSkillLevel(undefined);
           }}
         >
           <SelectTrigger>
-            <SelectValue placeholder="All domains" />
+            <SelectValue placeholder="Domain..." />
           </SelectTrigger>
           <SelectContent>
             {DOMAINS.map((d) => (
-              <SelectItem key={d} value={d}>
-                {domainLabel(d)}
-              </SelectItem>
+              <SelectItem key={d} value={d}>{domainLabel(d)}</SelectItem>
             ))}
           </SelectContent>
         </Select>
 
         <Select
-          value={selectedAgeRange}
+          value={selectedAgeRange ?? ""}
           onValueChange={(v) => setSelectedAgeRange(v as AgeRange)}
         >
           <SelectTrigger>
-            <SelectValue placeholder="All ages" />
+            <SelectValue placeholder="Age range..." />
           </SelectTrigger>
           <SelectContent>
             {AGE_RANGES.map((a) => (
-              <SelectItem key={a.value} value={a.value}>
-                {a.label}
+              <SelectItem key={a.value} value={a.value}>{a.label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Skill level dropdown (populated by domain) */}
+      {skillLevels && skillLevels.length > 0 && (
+        <Select
+          value={selectedSkillLevel ?? ""}
+          onValueChange={(v) => setSelectedSkillLevel(v || undefined)}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Skill level..." />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="">All levels</SelectItem>
+            {skillLevels.map((level: string) => (
+              <SelectItem key={level} value={level}>
+                {level.charAt(0).toUpperCase() + level.slice(1).replace("-", " ")}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
+      )}
 
-        {domain && skillLevels && skillLevels.length > 0 && (
-          <Select
-            value={selectedSkillLevel}
-            onValueChange={setSelectedSkillLevel}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="All skill levels" />
-            </SelectTrigger>
-            <SelectContent>
-              {skillLevels.map((sl: string) => (
-                <SelectItem key={sl} value={sl}>
-                  {sl}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        )}
-
-        <Input
-          placeholder="Search goals..."
-          value={keyword}
-          onChange={(e) => setKeyword(e.target.value)}
-        />
-      </div>
+      {/* Keyword search */}
+      <Input
+        placeholder="Search goals..."
+        value={keyword}
+        onChange={(e) => setKeyword(e.target.value)}
+      />
 
       {/* Results */}
-      {results === undefined ? (
-        <p className="text-center text-xs text-muted-foreground">Loading goals...</p>
-      ) : results.length === 0 ? (
-        <p className="text-center text-sm text-muted-foreground">
-          No goals found. Try different filters.
-        </p>
-      ) : (
-        <div className="flex max-h-64 flex-col gap-2 overflow-y-auto">
-          {results.map((entry: GoalBankEntry) => (
+      <div className="flex flex-col gap-2 max-h-[300px] overflow-y-auto">
+        {results === undefined ? (
+          <p className="text-xs text-muted-foreground py-2">Loading...</p>
+        ) : results.length === 0 ? (
+          <p className="text-sm text-muted-foreground py-4 text-center">
+            No goals found. Try adjusting your filters.
+          </p>
+        ) : (
+          results.map((goal) => (
             <button
-              key={entry._id}
+              key={goal._id}
               type="button"
               onClick={() =>
                 onSelect({
-                  domain: entry.domain,
-                  shortDescription: entry.shortDescription,
-                  fullGoalText: entry.fullGoalText,
-                  defaultTargetAccuracy: entry.defaultTargetAccuracy,
-                  defaultConsecutiveSessions: entry.defaultConsecutiveSessions,
+                  domain: goal.domain as GoalDomain,
+                  shortDescription: goal.shortDescription,
+                  fullGoalText: goal.fullGoalText,
+                  defaultTargetAccuracy: goal.defaultTargetAccuracy,
+                  defaultConsecutiveSessions: goal.defaultConsecutiveSessions,
                 })
               }
               className={cn(
@@ -2507,59 +2904,47 @@ export function GoalBankPicker({ onSelect }: GoalBankPickerProps) {
                 "hover:border-primary/50 hover:bg-muted/50"
               )}
             >
-              <div className="flex flex-wrap items-center gap-2">
-                <span
-                  className={cn(
-                    "rounded-full px-2 py-0.5 text-xs font-medium",
-                    domainColor(entry.domain)
-                  )}
-                >
-                  {domainLabel(entry.domain)}
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className={cn("rounded-full px-2 py-0.5 text-xs font-medium", domainColor(goal.domain))}>
+                  {domainLabel(goal.domain)}
                 </span>
-                <Badge variant="outline" className="text-[10px]">
-                  {entry.ageRange}
-                </Badge>
-                <Badge variant="secondary" className="text-[10px]">
-                  {entry.skillLevel}
-                </Badge>
-                {entry.isCustom && (
-                  <Badge variant="secondary" className="text-[10px]">
-                    My Goal
-                  </Badge>
-                )}
-                <span className="text-sm font-medium">{entry.shortDescription}</span>
+                <Badge variant="outline" className="text-[10px]">{goal.ageRange}</Badge>
+                <Badge variant="secondary" className="text-[10px]">{goal.skillLevel}</Badge>
+                {goal.isCustom && <Badge variant="secondary" className="text-[10px]">Custom</Badge>}
               </div>
-              <p className="text-xs text-muted-foreground">
-                {entry.fullGoalText
-                  .replace("{accuracy}", String(entry.defaultTargetAccuracy))
-                  .replace("{sessions}", String(entry.defaultConsecutiveSessions))}
+              <span className="text-sm font-medium">{goal.shortDescription}</span>
+              <p className="text-xs text-muted-foreground line-clamp-2">
+                {goal.fullGoalText
+                  .replace("{accuracy}", String(goal.defaultTargetAccuracy))
+                  .replace("{sessions}", String(goal.defaultConsecutiveSessions))}
               </p>
             </button>
-          ))}
-        </div>
-      )}
+          ))
+        )}
+      </div>
     </div>
   );
 }
 ```
 
-- [ ] **Step 3: Update `goal-form.tsx` to accept the new picker shape**
+- [ ] **Step 2: Update goal-form.tsx import to use new GoalBankSelection type**
 
-In `src/features/goals/components/goal-form.tsx`, update the `handleTemplateSelect` function signature and the import. The new picker's `onSelect` already returns `{ domain, shortDescription, fullGoalText, defaultTargetAccuracy, defaultConsecutiveSessions }` which is compatible. Update the import:
+In `src/features/goals/components/goal-form.tsx`, replace line 28:
 
-Replace:
+Old:
 ```typescript
 import { fillTemplate, type GoalDomain, type GoalTemplate } from "../lib/goal-bank-data";
 ```
 
-With:
+New:
 ```typescript
 import type { GoalDomain } from "../lib/goal-bank-data";
+import type { GoalBankSelection } from "./goal-bank-picker";
 ```
 
-Update the `handleTemplateSelect` function:
+Then update the `handleTemplateSelect` function (around line 68) to accept `GoalBankSelection`:
 
-Replace:
+Old:
 ```typescript
   function handleTemplateSelect(template: GoalTemplate) {
     setDomain(template.domain);
@@ -2572,125 +2957,37 @@ Replace:
   }
 ```
 
-With:
+New:
 ```typescript
-  function handleTemplateSelect(template: {
-    domain: GoalDomain;
-    shortDescription: string;
-    fullGoalText: string;
-    defaultTargetAccuracy: number;
-    defaultConsecutiveSessions: number;
-  }) {
-    setDomain(template.domain);
-    setShortDescription(template.shortDescription);
-    setTargetAccuracy(template.defaultTargetAccuracy);
-    setTargetConsecutiveSessions(template.defaultConsecutiveSessions);
+  function handleTemplateSelect(selection: GoalBankSelection) {
+    setDomain(selection.domain);
+    setShortDescription(selection.shortDescription);
+    setTargetAccuracy(selection.defaultTargetAccuracy);
+    setTargetConsecutiveSessions(selection.defaultConsecutiveSessions);
     setFullGoalText(
-      template.fullGoalText
-        .replace("{accuracy}", String(template.defaultTargetAccuracy))
-        .replace("{sessions}", String(template.defaultConsecutiveSessions))
+      selection.fullGoalText
+        .replace("{accuracy}", String(selection.defaultTargetAccuracy))
+        .replace("{sessions}", String(selection.defaultConsecutiveSessions))
     );
   }
 ```
 
-- [ ] **Step 4: Add deprecation note to `goal-bank-data.ts`**
+- [ ] **Step 3: Verify compilation**
 
-Add at the top of `src/features/goals/lib/goal-bank-data.ts`:
+Run: `cd /Users/desha/Springfield-Vibeathon && npx tsc --noEmit 2>&1 | grep -E "goal-bank-picker|goal-form" || echo "No errors"`
+Expected: No errors
 
-```typescript
-/**
- * @deprecated This static goal bank is replaced by the Convex-backed goalBank table.
- * Kept for backward compatibility with any direct references.
- * Use `api.goalBank.search` instead.
- */
-```
-
-- [ ] **Step 5: Verify the app compiles**
-
-```bash
-cd /Users/desha/Springfield-Vibeathon && npx tsc --noEmit 2>&1 | tail -20
-```
-
-- [ ] **Step 6: Run existing goal tests to confirm no regressions**
-
-```bash
-cd /Users/desha/Springfield-Vibeathon && npx vitest run convex/__tests__/goals.test.ts 2>&1 | tail -20
-```
-
-- [ ] **Step 7: Commit**
-
-```
-feat(goals): rewrite goal bank picker to use Convex-backed 200+ goal bank
-```
+- [ ] **Step 4: Commit**
 
 ---
 
-## Task Group 3: Home Program PDF Export
-
-### Task 3.1 — Frontend: Print-Friendly Component
+## Task 10: Home Program Print Component
 
 **Files:**
-- `src/features/patients/components/home-program-print.tsx` (new)
-- `src/app/(app)/patients/[id]/home-programs/[programId]/print/page.tsx` (new)
-- `src/features/patients/components/home-programs-widget.tsx` (modify)
-- `src/app/globals.css` (add print styles)
+- Create: `src/features/patients/components/home-program-print.tsx`
+- Create: `src/app/(app)/patients/[id]/home-programs/[programId]/print/page.tsx`
 
-- [ ] **Step 1: Add print CSS to globals.css**
-
-Append to the end of `src/app/globals.css`:
-
-```css
-/* ── Print styles for home program export ──────────────────────────────── */
-@media print {
-  /* Hide everything except the printable content */
-  body > *:not(#print-root) {
-    display: none !important;
-  }
-
-  /* Reset backgrounds for paper */
-  body {
-    background: white !important;
-    color: black !important;
-    font-size: 12pt;
-    line-height: 1.5;
-  }
-
-  /* Hide interactive elements */
-  .no-print,
-  nav,
-  header,
-  aside,
-  button:not(.print-trigger) {
-    display: none !important;
-  }
-
-  /* Print-friendly spacing */
-  .print-content {
-    padding: 0 !important;
-    margin: 0 auto !important;
-    max-width: 100% !important;
-  }
-
-  /* Ensure page breaks work */
-  .print-page-break {
-    page-break-before: always;
-  }
-
-  /* Remove shadows and borders for clean print */
-  .print-content * {
-    box-shadow: none !important;
-  }
-
-  /* Force link URLs to show */
-  .print-content a[href]::after {
-    content: " (" attr(href) ")";
-    font-size: 0.8em;
-    color: #666;
-  }
-}
-```
-
-- [ ] **Step 2: Create `home-program-print.tsx`**
+- [ ] **Step 1: Create the print component**
 
 Create `src/features/patients/components/home-program-print.tsx`:
 
@@ -2698,7 +2995,7 @@ Create `src/features/patients/components/home-program-print.tsx`:
 "use client";
 
 import { useConvexAuth, useQuery } from "convex/react";
-import { useCallback } from "react";
+import { use } from "react";
 
 import { Button } from "@/shared/components/ui/button";
 
@@ -2706,8 +3003,7 @@ import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 
 interface HomeProgramPrintProps {
-  patientId: Id<"patients">;
-  programId: Id<"homePrograms">;
+  paramsPromise: Promise<{ id: string; programId: string }>;
 }
 
 const frequencyLabels: Record<string, string> = {
@@ -2717,7 +3013,9 @@ const frequencyLabels: Record<string, string> = {
   "as-needed": "As needed",
 };
 
-export function HomeProgramPrint({ patientId, programId }: HomeProgramPrintProps) {
+export function HomeProgramPrint({ paramsPromise }: HomeProgramPrintProps) {
+  const { id, programId } = use(paramsPromise);
+  const patientId = id as Id<"patients">;
   const { isAuthenticated } = useConvexAuth();
 
   const programs = useQuery(
@@ -2726,17 +3024,13 @@ export function HomeProgramPrint({ patientId, programId }: HomeProgramPrintProps
   );
 
   const program = programs?.find(
-    (p: { _id: Id<"homePrograms"> }) => p._id === programId
+    (p: { _id: string }) => p._id === programId
   );
-
-  const handlePrint = useCallback(() => {
-    window.print();
-  }, []);
 
   if (programs === undefined) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <p className="text-on-surface-variant">Loading...</p>
+        <p className="text-muted-foreground">Loading...</p>
       </div>
     );
   }
@@ -2744,221 +3038,251 @@ export function HomeProgramPrint({ patientId, programId }: HomeProgramPrintProps
   if (!program) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <p className="text-on-surface-variant">Home program not found.</p>
+        <p className="text-muted-foreground">Home program not found</p>
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <>
+      {/* Print styles */}
+      <style>{`
+        @media print {
+          .no-print { display: none !important; }
+          body { font-size: 12pt; color: #000; background: #fff; }
+          .print-container { padding: 0; margin: 0; }
+        }
+      `}</style>
+
       {/* Print button — hidden in print */}
-      <div className="no-print flex items-center justify-between border-b border-border p-4">
+      <div className="no-print flex justify-end gap-2 p-4">
         <Button variant="outline" onClick={() => window.history.back()}>
           Back
         </Button>
-        <Button onClick={handlePrint}>
+        <Button onClick={() => window.print()}>
           Print / Export PDF
         </Button>
       </div>
 
-      {/* Printable content */}
-      <div id="print-root" className="print-content mx-auto max-w-2xl p-8">
-        {/* Header */}
-        <div className="mb-8 border-b-2 border-primary pb-4">
-          <h1 className="font-display text-2xl font-bold text-on-surface">
-            Home Program
-          </h1>
-          <p className="mt-1 text-sm text-on-surface-variant">
-            Bridges Therapy Platform
+      {/* Print-friendly content */}
+      <div className="print-container mx-auto max-w-2xl p-6">
+        <div className="mb-6 border-b border-border pb-4">
+          <h1 className="text-2xl font-bold">{program.title}</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Home Practice Program
           </p>
         </div>
 
-        {/* Program details */}
-        <div className="mb-6">
-          <h2 className="mb-2 font-display text-xl font-semibold text-on-surface">
-            {program.title}
-          </h2>
-          <div className="flex gap-4 text-sm text-on-surface-variant">
-            <span>
-              <strong>Frequency:</strong>{" "}
-              {frequencyLabels[program.frequency] ?? program.frequency}
-            </span>
-            <span>
-              <strong>Status:</strong>{" "}
-              <span className="capitalize">{program.status}</span>
-            </span>
-          </div>
-        </div>
+        <div className="flex flex-col gap-4">
+          <section>
+            <h2 className="text-lg font-semibold mb-2">Instructions</h2>
+            <p className="whitespace-pre-wrap text-sm leading-relaxed">
+              {program.instructions}
+            </p>
+          </section>
 
-        {/* Instructions */}
-        <div className="mb-8">
-          <h3 className="mb-2 text-base font-semibold text-on-surface">
-            Instructions
-          </h3>
-          <div className="whitespace-pre-wrap rounded-lg border border-border bg-surface-container p-4 text-sm leading-relaxed text-on-surface">
-            {program.instructions}
-          </div>
-        </div>
-
-        {/* Speech coach config if applicable */}
-        {program.type === "speech-coach" && program.speechCoachConfig && (
-          <div className="mb-8">
-            <h3 className="mb-2 text-base font-semibold text-on-surface">
-              Speech Coach Details
-            </h3>
-            <div className="rounded-lg border border-border p-4 text-sm">
-              <p>
-                <strong>Target Sounds:</strong>{" "}
-                {program.speechCoachConfig.targetSounds.join(", ")}
-              </p>
-              <p>
-                <strong>Age Range:</strong> {program.speechCoachConfig.ageRange}
-              </p>
-              <p>
-                <strong>Duration:</strong>{" "}
-                {program.speechCoachConfig.defaultDurationMinutes} minutes
-              </p>
+          <section className="grid grid-cols-2 gap-4">
+            <div>
+              <h3 className="text-sm font-semibold text-muted-foreground">Frequency</h3>
+              <p className="text-sm">{frequencyLabels[program.frequency] ?? program.frequency}</p>
             </div>
-          </div>
-        )}
+            <div>
+              <h3 className="text-sm font-semibold text-muted-foreground">Start Date</h3>
+              <p className="text-sm">{program.startDate}</p>
+            </div>
+            {program.endDate && (
+              <div>
+                <h3 className="text-sm font-semibold text-muted-foreground">End Date</h3>
+                <p className="text-sm">{program.endDate}</p>
+              </div>
+            )}
+          </section>
 
-        {/* Practice tracking section (blank for parent to fill out) */}
-        <div className="mb-8">
-          <h3 className="mb-2 text-base font-semibold text-on-surface">
-            Practice Log
-          </h3>
-          <table className="w-full border-collapse border border-border text-sm">
-            <thead>
-              <tr className="bg-surface-container">
-                <th className="border border-border p-2 text-left">Date</th>
-                <th className="border border-border p-2 text-left">Duration</th>
-                <th className="border border-border p-2 text-left">Notes</th>
-              </tr>
-            </thead>
-            <tbody>
-              {Array.from({ length: 7 }).map((_, i) => (
-                <tr key={i}>
-                  <td className="border border-border p-2">&nbsp;</td>
-                  <td className="border border-border p-2">&nbsp;</td>
-                  <td className="border border-border p-2">&nbsp;</td>
+          {program.type === "speech-coach" && program.speechCoachConfig && (
+            <section>
+              <h2 className="text-lg font-semibold mb-2">Speech Coach Details</h2>
+              <p className="text-sm">
+                Target sounds: {program.speechCoachConfig.targetSounds.join(", ")}
+              </p>
+              <p className="text-sm">
+                Duration: {program.speechCoachConfig.defaultDurationMinutes} minutes
+              </p>
+            </section>
+          )}
+
+          <section className="mt-4 border-t border-border pt-4">
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+              Practice Log
+            </h3>
+            <table className="mt-2 w-full text-sm">
+              <thead>
+                <tr className="border-b border-border">
+                  <th className="py-1 text-left font-medium">Date</th>
+                  <th className="py-1 text-left font-medium">Duration</th>
+                  <th className="py-1 text-left font-medium">Notes</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {Array.from({ length: 7 }).map((_, i) => (
+                  <tr key={i} className="border-b border-border/50">
+                    <td className="py-3">&nbsp;</td>
+                    <td className="py-3">&nbsp;</td>
+                    <td className="py-3">&nbsp;</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </section>
 
-        {/* Footer */}
-        <div className="border-t border-border pt-4 text-xs text-on-surface-variant">
-          <p>
-            Generated by Bridges Therapy Platform on{" "}
-            {new Date().toLocaleDateString("en-US", {
-              year: "numeric",
-              month: "long",
-              day: "numeric",
-            })}
-          </p>
-          <p className="mt-1">
-            Questions? Contact your speech-language pathologist.
-          </p>
+          <footer className="mt-6 border-t border-border pt-4 text-xs text-muted-foreground">
+            <p>Generated by Bridges</p>
+          </footer>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 ```
 
-- [ ] **Step 3: Create the print route**
+- [ ] **Step 2: Create the route page**
 
 Create `src/app/(app)/patients/[id]/home-programs/[programId]/print/page.tsx`:
 
-```tsx
-"use client";
-
-import { use } from "react";
-
+```typescript
 import { HomeProgramPrint } from "@/features/patients/components/home-program-print";
 
-import type { Id } from "../../../../../../../../convex/_generated/dataModel";
-
-export default function HomeProgramPrintPage({
-  params,
-}: {
+export default function PrintPage(props: {
   params: Promise<{ id: string; programId: string }>;
 }) {
-  const { id, programId } = use(params);
-  return (
-    <HomeProgramPrint
-      patientId={id as Id<"patients">}
-      programId={programId as Id<"homePrograms">}
-    />
+  return <HomeProgramPrint paramsPromise={props.params} />;
+}
+```
+
+- [ ] **Step 3: Verify compilation**
+
+Run: `cd /Users/desha/Springfield-Vibeathon && npx tsc --noEmit 2>&1 | grep "home-program-print" || echo "No errors"`
+Expected: No errors
+
+- [ ] **Step 4: Commit**
+
+---
+
+## Task 11: Add Print Button to Home Programs Widget
+
+**Files:**
+- Modify: `src/features/patients/components/home-programs-widget.tsx:76-104`
+
+- [ ] **Step 1: Add Link import and print button to each home program card**
+
+In `src/features/patients/components/home-programs-widget.tsx`, add `Link` to imports:
+
+```typescript
+import Link from "next/link";
+```
+
+Then, inside the `.map()` callback that renders each program card, add a print button after the status badge. Replace the closing badges section (add after the status `<Badge>` element, before the closing `</div>` of the card):
+
+```tsx
+                    <Button
+                      asChild
+                      variant="ghost"
+                      size="sm"
+                      className="shrink-0 h-7 w-7 p-0"
+                    >
+                      <Link
+                        href={`/patients/${patientId}/home-programs/${program._id}/print`}
+                        title="Print home program"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+                      </Link>
+                    </Button>
+```
+
+- [ ] **Step 2: Verify compilation**
+
+Run: `cd /Users/desha/Springfield-Vibeathon && npx tsc --noEmit 2>&1 | grep "home-programs-widget" || echo "No errors"`
+Expected: No errors
+
+- [ ] **Step 3: Commit**
+
+---
+
+## Task 12: Verify useGoalsForPatient Export Exists
+
+**Files:**
+- Modify: `src/features/goals/hooks/use-goals.ts` (if needed)
+
+- [ ] **Step 1: Check if useGoalsForPatient is already exported**
+
+Run: `cd /Users/desha/Springfield-Vibeathon && grep -n "useGoalsForPatient\|export function useGoals\|export function useList" src/features/goals/hooks/use-goals.ts | head -10`
+Expected: Find the export name for listing goals by patient
+
+- [ ] **Step 2: Add export if missing**
+
+If `useGoalsForPatient` does not exist, add it to `src/features/goals/hooks/use-goals.ts`:
+
+```typescript
+export function useGoalsForPatient(patientId: Id<"patients">) {
+  const { isAuthenticated } = useConvexAuth();
+  return useQuery(
+    api.goals.list,
+    isAuthenticated ? { patientId } : "skip"
   );
 }
 ```
 
-- [ ] **Step 4: Add print button to `home-programs-widget.tsx`**
+Import `useConvexAuth` from `convex/react` and `useQuery` if not already imported. Import `Id` from `../../../../convex/_generated/dataModel` and `api` from `../../../../convex/_generated/api` if not already imported.
 
-In `src/features/patients/components/home-programs-widget.tsx`, add a print link to each program card. Add the import:
+The data-collection-screen.tsx imports this function. It must return an array with `_id`, `shortDescription`, `domain`, and `status` fields (matching the `goals` table).
 
-```typescript
-import Link from "next/link";
-import { MaterialIcon } from "@/shared/components/material-icon";
-```
+- [ ] **Step 3: Verify compilation**
 
-Then in the program card render (after the status badge inside the `.map`), add a print link:
+Run: `cd /Users/desha/Springfield-Vibeathon && npx tsc --noEmit 2>&1 | grep "use-goals\|data-collection" || echo "No errors"`
+Expected: No errors
 
-```tsx
-                    <Link
-                      href={`/patients/${patientId}/home-programs/${program._id}/print`}
-                      className="shrink-0 rounded-md p-1.5 text-on-surface-variant transition-colors hover:bg-surface-container"
-                      title="Print home program"
-                    >
-                      <MaterialIcon icon="print" size="sm" />
-                    </Link>
-```
-
-- [ ] **Step 5: Verify the app compiles**
-
-```bash
-cd /Users/desha/Springfield-Vibeathon && npx tsc --noEmit 2>&1 | tail -20
-```
-
-- [ ] **Step 6: Commit**
-
-```
-feat(home-programs): add print-friendly PDF export via @media print CSS
-```
+- [ ] **Step 4: Commit**
 
 ---
 
-## Verification
+## Task 13: Run Full Test Suite
 
-- [ ] **Final step: Run all tests**
+**Files:**
+- Test: `convex/__tests__/sessionTrials.test.ts`
+- Test: `convex/__tests__/goalBank.test.ts`
 
-```bash
-cd /Users/desha/Springfield-Vibeathon && npx vitest run convex/__tests__/sessionTrials.test.ts convex/__tests__/goalBank.test.ts convex/__tests__/goals.test.ts convex/__tests__/homePrograms.test.ts 2>&1 | tail -40
-```
+- [ ] **Step 1: Run all new Convex tests**
+
+Run: `cd /Users/desha/Springfield-Vibeathon && npx vitest run convex/__tests__/sessionTrials.test.ts convex/__tests__/goalBank.test.ts`
+Expected: All tests PASS
+
+- [ ] **Step 2: Run the full test suite to check for regressions**
+
+Run: `cd /Users/desha/Springfield-Vibeathon && npx vitest run`
+Expected: All existing tests still PASS, no regressions
+
+- [ ] **Step 3: Run TypeScript type check**
+
+Run: `cd /Users/desha/Springfield-Vibeathon && npx tsc --noEmit`
+Expected: No type errors
+
+- [ ] **Step 4: Commit (if any fixes needed)**
 
 ---
 
 ## Task Summary
 
-| # | Task | Type | Files | Est. |
-|---|------|------|-------|------|
-| 1.1 | Schema: `sessionTrials` table | Schema | `convex/schema.ts` | 10m |
-| 1.2 | Backend: `sessionTrials.ts` with TDD | Backend | `convex/sessionTrials.ts`, `convex/__tests__/sessionTrials.test.ts` | 30m |
-| 1.3 | Frontend: Data collection screen | Frontend | 8 files in `src/features/data-collection/` + route + patient detail mod | 45m |
-| 2.1 | Schema: `goalBank` table | Schema | `convex/schema.ts` | 10m |
-| 2.2 | Seed data: 57 representative goals | Data | `convex/lib/goalBankSeed.ts` | 15m |
-| 2.3 | Backend: `goalBank.ts` with TDD | Backend | `convex/goalBank.ts`, `convex/__tests__/goalBank.test.ts` | 30m |
-| 2.4 | Frontend: Rewrite goal bank picker | Frontend | 4 files in `src/features/goals/` | 30m |
-| 3.1 | Home program print: component + CSS + route | Frontend | 4 files: print component, route, widget mod, globals.css | 30m |
-
-**Total estimated time: ~3.5 hours**
-
-**Dependencies between tasks:**
-- 1.1 must complete before 1.2 (schema needed for backend)
-- 1.2 must complete before 1.3 (API needed for frontend)
-- 2.1 must complete before 2.2 and 2.3 (schema needed)
-- 2.2 must complete before 2.3 (seed data needed)
-- 2.3 must complete before 2.4 (API needed for frontend)
-- Task groups 1, 2, and 3 are independent and can run in parallel (ideal for subagent-driven-development)
+| Task | Description | Files | Tests |
+|------|-------------|-------|-------|
+| 1 | Add `sessionTrials` table to schema | `convex/schema.ts` | Schema push |
+| 2 | Add `goalBank` table to schema | `convex/schema.ts` | Schema push |
+| 3 | Implement `sessionTrials.ts` backend | `convex/sessionTrials.ts`, `convex/__tests__/sessionTrials.test.ts` | 8 test cases |
+| 4 | Create goal bank seed data (80+ goals, 8 domains) | `convex/lib/goalBankSeed.ts` | Type check |
+| 5 | Implement `goalBank.ts` backend | `convex/goalBank.ts`, `convex/__tests__/goalBank.test.ts` | 8 test cases |
+| 6 | Data collection hook and route | `src/features/data-collection/hooks/use-data-collection.ts`, `src/app/(app)/patients/[id]/collect/page.tsx` | Type check |
+| 7 | Data collection UI components (6 files) | `src/features/data-collection/components/` | Type check |
+| 8 | Add "Start Session" button to patient detail | `src/features/patients/components/patient-detail-page.tsx` | Type check |
+| 9 | Rewrite goal bank picker for DB-backed goals | `src/features/goals/components/goal-bank-picker.tsx`, `src/features/goals/components/goal-form.tsx` | Type check |
+| 10 | Home program print component + route | `src/features/patients/components/home-program-print.tsx`, route page | Type check |
+| 11 | Add print button to home programs widget | `src/features/patients/components/home-programs-widget.tsx` | Type check |
+| 12 | Verify `useGoalsForPatient` export | `src/features/goals/hooks/use-goals.ts` | Type check |
+| 13 | Full test suite verification | All test files | 16+ test cases, full suite regression |
