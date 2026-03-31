@@ -3,6 +3,7 @@ import { httpRouter } from "convex/server";
 
 import { components, internal } from "./_generated/api";
 import { httpAction } from "./_generated/server";
+import { resend } from "./email";
 
 // Hardcoded: Convex httpAction runs in V8 runtime — no process.env access. Update on domain change.
 const ALLOWED_ORIGINS = new Set([
@@ -64,6 +65,14 @@ http.route({
         "Access-Control-Allow-Headers": "Content-Type",
       },
     });
+  }),
+});
+
+http.route({
+  path: "/resend-webhook",
+  method: "POST",
+  handler: httpAction(async (ctx, request) => {
+    return await resend.handleResendEventWebhook(ctx, request);
   }),
 });
 
