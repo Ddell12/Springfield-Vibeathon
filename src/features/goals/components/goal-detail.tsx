@@ -11,6 +11,7 @@ import { Button } from "@/shared/components/ui/button";
 import type { Id } from "../../../../convex/_generated/dataModel";
 import { useGoalWithProgress } from "../hooks/use-goals";
 import { checkGoalMetClient,domainColor, domainLabel, statusBadgeColor } from "../lib/goal-utils";
+import { GoalAmendmentHistory } from "./goal-amendment-history";
 import { GoalForm } from "./goal-form";
 import { GoalMetBanner } from "./goal-met-banner";
 import { ProgressChart } from "./progress-chart";
@@ -84,6 +85,9 @@ export function GoalDetail({ patientId, goalId }: GoalDetailProps) {
           </Button>
         </div>
       </div>
+
+      {/* Amendment history */}
+      <GoalAmendmentHistory amendmentLog={goal.amendmentLog} />
 
       {/* Goal met banner */}
       {isGoalMet && (

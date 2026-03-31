@@ -64,6 +64,7 @@ export function GoalForm({ patientId, open, onOpenChange, editGoal }: GoalFormPr
   const [startDate, setStartDate] = useState(editGoal?.startDate ?? new Date().toISOString().slice(0, 10));
   const [targetDate, setTargetDate] = useState(editGoal?.targetDate ?? "");
   const [notes, setNotes] = useState(editGoal?.notes ?? "");
+  const [amendmentReason, setAmendmentReason] = useState("");
 
   function handleTemplateSelect(selection: GoalBankSelection) {
     setDomain(selection.domain);
@@ -88,6 +89,7 @@ export function GoalForm({ patientId, open, onOpenChange, editGoal }: GoalFormPr
           startDate,
           targetDate: targetDate || undefined,
           notes: notes || undefined,
+          amendmentReason: amendmentReason.trim() || undefined,
         });
       } else {
         await createGoal({
@@ -234,6 +236,23 @@ export function GoalForm({ patientId, open, onOpenChange, editGoal }: GoalFormPr
               rows={2}
             />
           </div>
+
+          {editGoal && (
+            <div className="flex flex-col gap-1">
+              <Label htmlFor="amendmentReason">Reason for Change (optional)</Label>
+              <Textarea
+                id="amendmentReason"
+                placeholder="Describe why this goal is being modified..."
+                value={amendmentReason}
+                onChange={(e) => setAmendmentReason(e.target.value)}
+                rows={2}
+                className="resize-none"
+              />
+              <p className="text-xs text-muted-foreground">
+                Saved to the goal&apos;s audit trail for compliance documentation.
+              </p>
+            </div>
+          )}
 
           <Button type="submit" disabled={saving} className="w-full">
             {saving ? "Saving..." : editGoal ? "Update Goal" : "Add Goal"}
