@@ -130,7 +130,7 @@ export function MyToolsPage({ embedded = false }: MyToolsPageProps) {
 
   if (filteredSessions === undefined) {
     return (
-      <div className="max-w-7xl mx-auto px-8 pt-12 pb-24">
+      <div className={!embedded ? "max-w-7xl mx-auto px-8 pt-12 pb-24" : "py-4"}>
         <div data-testid="loading-skeleton" className="animate-pulse space-y-6">
           <div className="h-10 bg-surface-container-low rounded-xl w-48" />
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -145,12 +145,17 @@ export function MyToolsPage({ embedded = false }: MyToolsPageProps) {
 
   if (sessions && sessions.length === 0) {
     return (
-      <div className="max-w-7xl mx-auto px-8 pt-12 pb-24 flex flex-col items-center justify-center gap-6 min-h-[60vh]">
+      <div className={cn(
+        "flex flex-col items-center justify-center gap-6",
+        !embedded ? "max-w-7xl mx-auto px-8 pt-12 pb-24 min-h-[60vh]" : "py-8",
+      )}>
         <div className="text-center">
           <MaterialIcon icon="dashboard_customize" className="text-6xl text-primary/40 mb-4" />
-          <h1 className="font-headline font-normal text-3xl text-on-surface mb-3">
-            No apps yet
-          </h1>
+          {!embedded && (
+            <h1 className="font-headline font-normal text-3xl text-on-surface mb-3">
+              No apps yet
+            </h1>
+          )}
           <p className="text-on-surface-variant text-lg mb-8">
             Describe a therapy activity and Bridges will build a visual app for you.
           </p>

@@ -20,7 +20,7 @@ export function LibraryPage() {
 
       <Tabs
         value={tab}
-        onValueChange={(v) => router.replace(`/library?tab=${v}`)}
+        onValueChange={(v) => router.replace(`/library?tab=${v}`, { scroll: false })}
       >
         <TabsList>
           <TabsTrigger value="templates">Templates</TabsTrigger>
