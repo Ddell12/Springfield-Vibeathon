@@ -689,7 +689,8 @@ export default defineSchema({
     previousVersionId: v.optional(v.id("plansOfCare")),
   })
     .index("by_patientId", ["patientId"])
-    .index("by_patientId_status", ["patientId", "status"]),
+    .index("by_patientId_status", ["patientId", "status"])
+    .index("by_slpUserId", ["slpUserId"]),
 
   dischargeSummaries: defineTable({
     patientId: v.id("patients"),
@@ -723,7 +724,8 @@ export default defineSchema({
     status: v.union(v.literal("draft"), v.literal("signed")),
     signedAt: v.optional(v.number()),
   })
-    .index("by_patientId", ["patientId"]),
+    .index("by_patientId", ["patientId"])
+    .index("by_slpUserId", ["slpUserId"]),
 });
 
 /** Active session states used by current code. Legacy states are read-only. */
