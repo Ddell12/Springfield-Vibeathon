@@ -31,13 +31,19 @@ export function accuracyLabel(accuracy: number | null): string {
  * Returns true if a session note was signed more than 24 hours after
  * the end of its session date. Medicare and most payers expect same-day
  * signatures; late signatures can be flagged in audits.
+ *
+ * Assumes all timestamps are UTC epoch milliseconds and sessionDate is
+ * a YYYY-MM-DD string representing a UTC calendar day — which is true
+ * throughout the Bridges data model (Convex stores timestamps as Date.now()).
  */
 export function isLateSignature(
   signedAt: number | undefined,
   sessionDate: string,
 ): boolean {
   if (!signedAt || !sessionDate) return false;
-  const sessionEnd = new Date(sessionDate + "T23:59:59Z").getTime();
+  // End of session day = start of next UTC day (more precise than T23:59:59Z)
+  const sessionDayStart = new Date(sessionDate + "T00:00:00Z");
+  const sessionEnd = sessionDayStart.getTime() + 24 * 60 * 60 * 1000;
   const twentyFourHoursMs = 24 * 60 * 60 * 1000;
   return signedAt - sessionEnd > twentyFourHoursMs;
 }

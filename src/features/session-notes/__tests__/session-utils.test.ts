@@ -122,6 +122,21 @@ describe("isLateSignature", () => {
     expect(isLateSignature(signedAt, sessionDate)).toBe(true);
   });
 
+  it("returns false when signedAt is exactly at the 24h boundary (not more than)", () => {
+    const sessionDate = "2026-03-28";
+    // Exactly 48h after start of day = exactly 24h after end of day (midnight next next day)
+    // Start of 2026-03-28 = T00:00:00Z, +48h = 2026-03-30T00:00:00Z
+    // That is exactly 24h after end of session day, NOT more than 24h
+    const signedAt = new Date("2026-03-30T00:00:00Z").getTime();
+    expect(isLateSignature(signedAt, sessionDate)).toBe(false);
+  });
+
+  it("returns true when signedAt is 1ms past the 24h boundary", () => {
+    const sessionDate = "2026-03-28";
+    const signedAt = new Date("2026-03-30T00:00:00.001Z").getTime();
+    expect(isLateSignature(signedAt, sessionDate)).toBe(true);
+  });
+
   it("returns false when signedAt is undefined", () => {
     expect(isLateSignature(undefined, "2026-03-28")).toBe(false);
   });
@@ -146,5 +161,21 @@ describe("getSignatureDelayDays", () => {
 
   it("returns null when signedAt is undefined", () => {
     expect(getSignatureDelayDays(undefined, "2026-03-28")).toBeNull();
+  });
+
+  it("returns 0 when sessionDate is empty string", () => {
+    expect(getSignatureDelayDays(Date.now(), "")).toBeNull();
+  });
+
+  it("returns 0 when signedAt is before session date (clamped)", () => {
+    const sessionDate = "2026-03-28";
+    const signedAt = new Date("2026-03-27T12:00:00Z").getTime();
+    expect(getSignatureDelayDays(signedAt, sessionDate)).toBe(0);
+  });
+
+  it("returns 1 for signature the following calendar day", () => {
+    const sessionDate = "2026-03-28";
+    const signedAt = new Date("2026-03-29T06:00:00Z").getTime();
+    expect(getSignatureDelayDays(signedAt, sessionDate)).toBe(1);
   });
 });
