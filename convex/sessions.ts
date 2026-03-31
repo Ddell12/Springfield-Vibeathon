@@ -291,6 +291,19 @@ export const recoverStuckSessions = authedMutation({
   },
 });
 
+export const listRecent = query({
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) return [];
+    return ctx.db
+      .query("sessions")
+      .withIndex("by_user", (q) => q.eq("userId", identity.subject))
+      .order("desc")
+      .take(8);
+  },
+});
+
 /** Internal-only: fail a specific stuck session by ID. For CLI/admin use. */
 export const failStuckSession = internalMutation({
   args: { sessionId: v.id("sessions"), error: v.optional(v.string()) },
