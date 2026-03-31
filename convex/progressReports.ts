@@ -33,6 +33,12 @@ const reportTypeValidator = v.union(
   v.literal("iep-progress-report")
 );
 
+const audienceValidator = v.optional(v.union(
+  v.literal("clinical"),
+  v.literal("parent"),
+  v.literal("iep-team")
+));
+
 const goalSummaryValidator = v.object({
   goalId: v.string(),
   shortDescription: v.string(),
@@ -81,6 +87,7 @@ export const create = slpMutation({
     periodEnd: v.string(),
     goalSummaries: v.array(goalSummaryValidator),
     overallNarrative: v.string(),
+    audience: audienceValidator,
   },
   handler: async (ctx, args) => {
     const patient = await ctx.db.get(args.patientId);
@@ -96,6 +103,7 @@ export const create = slpMutation({
       goalSummaries: args.goalSummaries,
       overallNarrative: args.overallNarrative,
       status: "draft",
+      audience: args.audience,
     });
   },
 });
