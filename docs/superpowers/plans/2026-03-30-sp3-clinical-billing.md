@@ -16,6 +16,8 @@
 - Create: `src/features/billing/lib/cpt-codes.ts`
 - Create: `src/features/billing/lib/__tests__/cpt-codes.test.ts`
 
+> **Note:** `src/features/billing/lib/` and `src/features/billing/hooks/` do not exist yet — only `src/features/billing/components/` exists. The file creation steps below will create these directories automatically via their parent paths. No explicit `mkdir` needed.
+
 - [ ] **Step 1: Write the failing test**
 
 Create `src/features/billing/lib/__tests__/cpt-codes.test.ts`:
@@ -1291,9 +1293,10 @@ Expected: PASS (this is a baseline to confirm sign still works).
 
 - [ ] **Step 3: Add scheduler call to sign mutation**
 
-In `convex/sessionNotes.ts`, add this import at the top (after existing imports):
+In `convex/sessionNotes.ts`, add this as a NEW import line after the existing imports. **Do NOT replace** the existing `import { internalMutation } from "./_generated/server"` — both are needed:
 
 ```typescript
+// Add this NEW line — keep the existing internalMutation server import intact
 import { internal } from "./_generated/api";
 ```
 
@@ -1652,7 +1655,7 @@ export function InsuranceFields({ patientId, initialValues }: InsuranceFieldsPro
         onClick={handleSave}
         disabled={saving}
         size="sm"
-        className="bg-gradient-135 text-white"
+        className="bg-primary-gradient text-white"
       >
         {saving ? "Saving..." : "Save Insurance Info"}
       </Button>
@@ -1914,7 +1917,7 @@ export function BillingRecordEditor({ recordId, open, onOpenChange }: BillingRec
                   {saving ? "Saving..." : "Save Draft"}
                 </Button>
                 <Button
-                  className="bg-gradient-135 text-white"
+                  className="bg-primary-gradient text-white"
                   onClick={handleFinalize}
                   disabled={saving}
                 >
@@ -2563,7 +2566,7 @@ export function SuperbillViewer({ recordId, open, onOpenChange }: SuperbillViewe
             <div className="flex justify-end print:hidden">
               <Button
                 onClick={handlePrint}
-                className="bg-gradient-135 text-white"
+                className="bg-primary-gradient text-white"
               >
                 <MaterialIcon icon="print" size="sm" />
                 Print / Save as PDF
