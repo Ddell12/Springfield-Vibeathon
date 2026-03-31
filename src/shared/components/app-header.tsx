@@ -8,7 +8,7 @@ import { useState } from "react";
 import { cn } from "@/core/utils";
 import { NotificationBell } from "@/features/sessions/components/notification-bell";
 import { MaterialIcon } from "@/shared/components/material-icon";
-import { Sheet, SheetContent, SheetTrigger } from "@/shared/components/ui/sheet";
+import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/shared/components/ui/sheet";
 import { CAREGIVER_NAV_ITEMS, isNavActive, NAV_ITEMS } from "@/shared/lib/navigation";
 
 interface AppHeaderProps {
@@ -40,13 +40,15 @@ export function AppHeader({ title, className }: AppHeaderProps) {
             </button>
           </SheetTrigger>
           <SheetContent side="left" className="w-64 p-0">
+            <SheetTitle className="sr-only">Navigation</SheetTitle>
             <nav className="flex flex-col gap-1 p-3 pt-14">
               {navItems.map((item) => {
                 const active = isNavActive(item.href, pathname, tab);
                 return (
-                  <a
+                  <Link
                     key={item.label}
                     href={item.href}
+                    aria-current={active ? "page" : undefined}
                     onClick={() => setMobileOpen(false)}
                     className={cn(
                       "flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-all duration-300",
@@ -57,7 +59,7 @@ export function AppHeader({ title, className }: AppHeaderProps) {
                   >
                     <MaterialIcon icon={item.icon} filled={active} size="sm" />
                     {item.label}
-                  </a>
+                  </Link>
                 );
               })}
             </nav>

@@ -105,6 +105,8 @@ export function DashboardSidebar() {
             <Link
               key={item.label}
               href={item.href}
+              aria-current={isActive ? "page" : undefined}
+              title={collapsed ? item.label : undefined}
               className={cn(
                 "flex items-center gap-3 rounded-xl px-2 py-2 transition-all duration-300 active:scale-95",
                 collapsed ? "justify-center" : "",
