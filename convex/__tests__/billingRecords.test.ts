@@ -163,3 +163,115 @@ describe("billingRecords.createFromSessionNote", () => {
     expect(records[0].fee).toBe(15000);
   });
 });
+
+describe("billingRecords.listBySlp", () => {
+  it("returns all records for the SLP", async () => {
+    const t = convexTest(schema, modules).withIdentity(SLP_IDENTITY);
+    const { patientId } = await t.mutation(api.patients.create, VALID_PATIENT);
+    const noteId = await t.mutation(api.sessionNotes.create, {
+      patientId,
+      ...VALID_SESSION_DATA,
+    });
+
+    await t.mutation(internal.billingRecords.createFromSessionNote, {
+      sessionNoteId: noteId,
+      slpUserId: "slp-user-billing",
+      patientId,
+      sessionDate: today,
+      sessionType: "in-person",
+    });
+
+    const records = await t.query(api.billingRecords.listBySlp, {});
+    expect(records).toHaveLength(1);
+  });
+
+  it("filters by status when provided", async () => {
+    const t = convexTest(schema, modules).withIdentity(SLP_IDENTITY);
+    const { patientId } = await t.mutation(api.patients.create, VALID_PATIENT);
+    const noteId = await t.mutation(api.sessionNotes.create, {
+      patientId,
+      ...VALID_SESSION_DATA,
+    });
+
+    await t.mutation(internal.billingRecords.createFromSessionNote, {
+      sessionNoteId: noteId,
+      slpUserId: "slp-user-billing",
+      patientId,
+      sessionDate: today,
+      sessionType: "in-person",
+    });
+
+    const drafts = await t.query(api.billingRecords.listBySlp, { status: "draft" });
+    expect(drafts).toHaveLength(1);
+
+    const billed = await t.query(api.billingRecords.listBySlp, { status: "billed" });
+    expect(billed).toHaveLength(0);
+  });
+});
+
+describe("billingRecords.get", () => {
+  it("returns a single record by ID", async () => {
+    const t = convexTest(schema, modules).withIdentity(SLP_IDENTITY);
+    const { patientId } = await t.mutation(api.patients.create, VALID_PATIENT);
+    const noteId = await t.mutation(api.sessionNotes.create, {
+      patientId,
+      ...VALID_SESSION_DATA,
+    });
+
+    const recordId = await t.mutation(internal.billingRecords.createFromSessionNote, {
+      sessionNoteId: noteId,
+      slpUserId: "slp-user-billing",
+      patientId,
+      sessionDate: today,
+      sessionType: "in-person",
+    });
+
+    const record = await t.query(api.billingRecords.get, { recordId });
+    expect(record).toBeDefined();
+    expect(record!.cptCode).toBe("92507");
+  });
+
+  it("rejects access by different SLP", async () => {
+    const t = convexTest(schema, modules);
+    const slp1 = t.withIdentity(SLP_IDENTITY);
+    const slp2 = t.withIdentity({ subject: "other-slp-456", issuer: "clerk" });
+
+    const { patientId } = await slp1.mutation(api.patients.create, VALID_PATIENT);
+    const noteId = await slp1.mutation(api.sessionNotes.create, {
+      patientId,
+      ...VALID_SESSION_DATA,
+    });
+    const recordId = await slp1.mutation(internal.billingRecords.createFromSessionNote, {
+      sessionNoteId: noteId,
+      slpUserId: "slp-user-billing",
+      patientId,
+      sessionDate: today,
+      sessionType: "in-person",
+    });
+
+    const result = await slp2.query(api.billingRecords.get, { recordId });
+    expect(result).toBeNull();
+  });
+});
+
+describe("billingRecords.getUnbilledCount", () => {
+  it("returns count of draft + finalized records", async () => {
+    const t = convexTest(schema, modules).withIdentity(SLP_IDENTITY);
+    const { patientId } = await t.mutation(api.patients.create, VALID_PATIENT);
+    const noteId = await t.mutation(api.sessionNotes.create, {
+      patientId,
+      ...VALID_SESSION_DATA,
+    });
+
+    await t.mutation(internal.billingRecords.createFromSessionNote, {
+      sessionNoteId: noteId,
+      slpUserId: "slp-user-billing",
+      patientId,
+      sessionDate: today,
+      sessionType: "in-person",
+    });
+
+    const count = await t.query(api.billingRecords.getUnbilledCount, {});
+    expect(count).toBe(1);
+  });
+});

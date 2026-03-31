@@ -72,3 +72,65 @@ export const listByPatient = slpQuery({
       .collect();
   },
 });
+
+export const listBySlp = slpQuery({
+  args: {
+    status: v.optional(v.union(
+      v.literal("draft"),
+      v.literal("finalized"),
+      v.literal("billed")
+    )),
+  },
+  handler: async (ctx, args) => {
+    if (!ctx.slpUserId) return [];
+
+    if (args.status) {
+      return await ctx.db
+        .query("billingRecords")
+        .withIndex("by_slpUserId_status", (q) =>
+          q.eq("slpUserId", ctx.slpUserId!).eq("status", args.status!)
+        )
+        .order("desc")
+        .collect();
+    }
+
+    return await ctx.db
+      .query("billingRecords")
+      .withIndex("by_slpUserId", (q) => q.eq("slpUserId", ctx.slpUserId!))
+      .order("desc")
+      .collect();
+  },
+});
+
+export const get = slpQuery({
+  args: { recordId: v.id("billingRecords") },
+  handler: async (ctx, args) => {
+    if (!ctx.slpUserId) return null;
+    const record = await ctx.db.get(args.recordId);
+    if (!record || record.slpUserId !== ctx.slpUserId) return null;
+    return record;
+  },
+});
+
+export const getUnbilledCount = slpQuery({
+  args: {},
+  handler: async (ctx) => {
+    if (!ctx.slpUserId) return 0;
+
+    const drafts = await ctx.db
+      .query("billingRecords")
+      .withIndex("by_slpUserId_status", (q) =>
+        q.eq("slpUserId", ctx.slpUserId!).eq("status", "draft")
+      )
+      .collect();
+
+    const finalized = await ctx.db
+      .query("billingRecords")
+      .withIndex("by_slpUserId_status", (q) =>
+        q.eq("slpUserId", ctx.slpUserId!).eq("status", "finalized")
+      )
+      .collect();
+
+    return drafts.length + finalized.length;
+  },
+});
