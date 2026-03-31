@@ -43,3 +43,29 @@ describe("patients insurance fields", () => {
     expect(patient!.insurancePhone).toBe("1-800-555-0100");
   });
 });
+
+describe("practiceProfiles", () => {
+  it("table exists in schema", () => {
+    expect(schema.tables.practiceProfiles).toBeDefined();
+  });
+
+  it("can create and read a practice profile", async () => {
+    const t = convexTest(schema, modules).withIdentity(SLP_IDENTITY);
+
+    await t.mutation(api.practiceProfiles.upsert, {
+      practiceName: "Springfield Speech Clinic",
+      npiNumber: "1234567890",
+      taxId: "12-3456789",
+      address: "123 Main St, Springfield, IL 62701",
+      phone: "217-555-0100",
+      credentials: "CCC-SLP",
+      licenseNumber: "SLP-12345",
+      defaultSessionFee: 15000,
+    });
+
+    const profile = await t.query(api.practiceProfiles.get, {});
+    expect(profile).toBeDefined();
+    expect(profile!.practiceName).toBe("Springfield Speech Clinic");
+    expect(profile!.defaultSessionFee).toBe(15000);
+  });
+});

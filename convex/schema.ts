@@ -610,6 +610,19 @@ export default defineSchema({
     .index("by_patientId", ["patientId"])
     .index("by_appId", ["appId"]),
 
+  practiceProfiles: defineTable({
+    slpUserId: v.string(),
+    practiceName: v.optional(v.string()),
+    npiNumber: v.optional(v.string()),
+    taxId: v.optional(v.string()),
+    address: v.optional(v.string()),
+    phone: v.optional(v.string()),
+    credentials: v.optional(v.string()),
+    licenseNumber: v.optional(v.string()),
+    defaultSessionFee: v.optional(v.number()),
+  })
+    .index("by_slpUserId", ["slpUserId"]),
+
   billingRecords: defineTable({
     patientId: v.id("patients"),
     slpUserId: v.string(),
