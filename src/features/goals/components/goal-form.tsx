@@ -25,9 +25,9 @@ import { Textarea } from "@/shared/components/ui/textarea";
 
 import type { Id } from "../../../../convex/_generated/dataModel";
 import { useCreateGoal, useUpdateGoal } from "../hooks/use-goals";
-import { fillTemplate, type GoalDomain, type GoalTemplate } from "../lib/goal-bank-data";
+import { type GoalDomain } from "../lib/goal-bank-data";
 import { domainLabel } from "../lib/goal-utils";
-import { GoalBankPicker } from "./goal-bank-picker";
+import { GoalBankPicker, type GoalBankSelection } from "./goal-bank-picker";
 
 const DOMAINS: GoalDomain[] = [
   "articulation", "language-receptive", "language-expressive",
@@ -65,14 +65,12 @@ export function GoalForm({ patientId, open, onOpenChange, editGoal }: GoalFormPr
   const [targetDate, setTargetDate] = useState(editGoal?.targetDate ?? "");
   const [notes, setNotes] = useState(editGoal?.notes ?? "");
 
-  function handleTemplateSelect(template: GoalTemplate) {
-    setDomain(template.domain);
-    setShortDescription(template.shortDescription);
-    setTargetAccuracy(template.defaultTargetAccuracy);
-    setTargetConsecutiveSessions(template.defaultConsecutiveSessions);
-    setFullGoalText(
-      fillTemplate(template, template.defaultTargetAccuracy, template.defaultConsecutiveSessions)
-    );
+  function handleTemplateSelect(selection: GoalBankSelection) {
+    setDomain(selection.domain);
+    setShortDescription(selection.shortDescription);
+    setTargetAccuracy(selection.defaultTargetAccuracy);
+    setTargetConsecutiveSessions(selection.defaultConsecutiveSessions);
+    setFullGoalText(selection.fullGoalText);
   }
 
   async function handleSubmit(e: React.FormEvent) {
