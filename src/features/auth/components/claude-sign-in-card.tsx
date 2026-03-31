@@ -1,5 +1,6 @@
 "use client";
 
+import { isClerkAPIResponseError } from "@clerk/nextjs/errors";
 import { useSignIn, useSignUp } from "@clerk/nextjs";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -168,17 +169,19 @@ export function ClaudeSignInCard({
 
     const { error } = await signIn.emailCode.verifyCode({ code });
     if (error) {
-      const firstCode = error.errors?.[0]?.code;
-      if (firstCode === "sign_up_if_missing_transfer" && role === "slp") {
-        await handleTransfer();
-        return;
-      }
+      if (isClerkAPIResponseError(error)) {
+        const firstCode = error.errors[0]?.code;
+        if (firstCode === "sign_up_if_missing_transfer" && role === "slp") {
+          await handleTransfer();
+          return;
+        }
 
-      if (role === "caregiver" && firstCode === "form_identifier_not_found") {
-        setFormError(
-          "No caregiver access was found for that email. Use the invited email or ask your therapist to resend the invite."
-        );
-        return;
+        if (role === "caregiver" && firstCode === "form_identifier_not_found") {
+          setFormError(
+            "No caregiver access was found for that email. Use the invited email or ask your therapist to resend the invite."
+          );
+          return;
+        }
       }
 
       setFormError(getClerkErrorMessage(error, "That verification code didn't work."));
@@ -202,15 +205,11 @@ export function ClaudeSignInCard({
     const payload: {
       firstName?: string;
       lastName?: string;
-      name?: string;
       legalAccepted?: boolean;
     } = {};
 
     if (missingFields.includes("first_name")) payload.firstName = firstName.trim();
     if (missingFields.includes("last_name")) payload.lastName = lastName.trim();
-    if (missingFields.includes("name")) {
-      payload.name = `${firstName} ${lastName}`.trim();
-    }
     if (missingFields.includes("legal_accepted")) payload.legalAccepted = legalAccepted;
 
     const { error } = await signUp.update(payload);
@@ -253,14 +252,14 @@ export function ClaudeSignInCard({
         </p>
 
         <form className="mt-5 space-y-3" onSubmit={handleRequirements}>
-          {missingFields.some((field) => field === "first_name" || field === "name") && (
+          {missingFields.some((field) => field === "first_name") && (
             <Input
               value={firstName}
               onChange={(event) => setFirstName(event.target.value)}
               placeholder="First name"
             />
           )}
-          {missingFields.some((field) => field === "last_name" || field === "name") && (
+          {missingFields.some((field) => field === "last_name") && (
             <Input
               value={lastName}
               onChange={(event) => setLastName(event.target.value)}

@@ -19,7 +19,7 @@ const navLinks = [
   { href: "/demo-tools", label: "Meet Bridges" },
   { href: "/builder", label: "Platform" },
   { href: "/library?tab=templates", label: "Solutions" },
-  { href: "/billing", label: "Pricing" },
+  { href: "/pricing", label: "Pricing" },
   { href: "/explore", label: "Learn" },
 ];
 
