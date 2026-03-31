@@ -76,7 +76,7 @@ export function ChatColumn({
         <MaterialIcon
           icon="menu"
           size="sm"
-          className="shrink-0 text-on-surface-variant/40"
+          className="shrink-0 text-on-surface-variant/50"
         />
 
         <div className="min-w-0 flex-1">
