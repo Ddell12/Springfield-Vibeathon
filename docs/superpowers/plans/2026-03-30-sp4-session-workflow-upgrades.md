@@ -1484,12 +1484,28 @@ With:
         }
 ```
 
-- [ ] **Step 3: Verify TypeScript compiles**
+- [ ] **Step 3: Update the `doSave` useCallback dependency array**
+
+The `doSave` callback now closes over `isGroupMode`, `groupPatientIds`, and `createGroupNote`. Find the `doSave` declaration in `src/features/session-notes/components/session-note-editor.tsx` (around line 120) and update its dependency array:
+
+Replace:
+```typescript
+  }, [createNote, updateNote, typedPatientId, patientId, router]);
+```
+
+With:
+```typescript
+  }, [createNote, createGroupNote, updateNote, typedPatientId, patientId, router, isGroupMode, groupPatientIds]);
+```
+
+If the existing dep array differs, find the `useCallback` that wraps `doSave` and add `createGroupNote`, `isGroupMode`, and `groupPatientIds` to its array. A stale closure here silently uses stale group state after re-renders.
+
+- [ ] **Step 4: Verify TypeScript compiles**
 
 Run: `npx tsc --noEmit`
 Expected: No errors
 
-- [ ] **Step 4: Commit**
+- [ ] **Step 5: Commit**
 
 ---
 
@@ -1499,6 +1515,8 @@ Expected: No errors
 - Modify: `src/features/session-notes/components/session-note-card.tsx:60-68`
 
 - [ ] **Step 1: Add group badge to session note card**
+
+> **Dependency:** Task 2 must be complete first — this task's replace targets assume the `isLate`/`isLateSignature` additions from Task 2 are already in the file. The replace targets here match the Task-2-modified state of the file, not the original.
 
 In `src/features/session-notes/components/session-note-card.tsx`, add a group badge indicator. After the `accuracy` calculation (around line 66) and before the `return`, add:
 
@@ -1624,7 +1642,7 @@ interface PhysicianSigInfo {
   physicianName?: string;
   signatureDate?: string;
 }
-function usePhysicianSignature(_patientId: Id<"patients">): PhysicianSigInfo | undefined {
+function usePhysicianSignature(_patientId: Id<"patients"> | undefined): PhysicianSigInfo | undefined {
   // SP2 dependency: plansOfCare table may not exist yet.
   // When SP2 is implemented, replace this with:
   //   const poc = useQuery(api.plansOfCare.getActive, { patientId });
@@ -1652,7 +1670,9 @@ Replace:
 With:
 ```typescript
   const [saving, setSaving] = useState(false);
-  const physicianSig = report ? usePhysicianSignature(report.patientId) : undefined;
+  // IMPORTANT: Call hook unconditionally before any early return — React Rules of Hooks
+  // usePhysicianSignature returns undefined when patientId is undefined (stub handles this)
+  const physicianSig = usePhysicianSignature(report?.patientId);
 
   if (!report) {
 ```
