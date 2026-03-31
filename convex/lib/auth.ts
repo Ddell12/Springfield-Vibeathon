@@ -52,10 +52,20 @@ export async function getAuthRole(
 ): Promise<UserRole | null> {
   const identity = await ctx.auth.getUserIdentity();
   if (!identity) return null;
-  // Role comes from Clerk publicMetadata, included in JWT via template customization
-  const metadata = (identity as Record<string, unknown>).public_metadata as
-    | { role?: string }
-    | undefined;
+  // Role comes from Clerk publicMetadata, included in JWT via template customization.
+  // convex-test surfaces public_metadata as a JSON string; production Clerk JWTs
+  // surface it as an already-parsed object. Handle both forms.
+  const raw = (identity as Record<string, unknown>).public_metadata;
+  let metadata: { role?: string } | undefined;
+  if (typeof raw === "string") {
+    try {
+      metadata = JSON.parse(raw) as { role?: string };
+    } catch {
+      metadata = undefined;
+    }
+  } else {
+    metadata = raw as { role?: string } | undefined;
+  }
   return (metadata?.role as UserRole) ?? null;
 }
 
