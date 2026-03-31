@@ -8,5 +8,6 @@ export const init = internalAction({
   handler: async (ctx): Promise<void> => {
     await ctx.runAction(internal.knowledge.seed.seedKnowledge, {});
     await ctx.runMutation(internal.templates.seed.seedTemplates, {});
+    await ctx.runMutation(internal.goalBank.seed, {});
   },
 });
