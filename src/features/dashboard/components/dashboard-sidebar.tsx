@@ -61,6 +61,7 @@ export function DashboardSidebar() {
 
   return (
     <aside
+      aria-label="Main navigation"
       className={cn(
         "fixed left-0 top-0 z-50 hidden h-screen flex-col bg-surface-container transition-all duration-300 md:flex overflow-hidden",
         collapsed ? "w-14" : "w-56",
@@ -97,7 +98,7 @@ export function DashboardSidebar() {
       </div>
 
       {/* Nav items */}
-      <nav className="flex flex-col gap-1 px-2">
+      <nav aria-label="Primary" className="flex flex-col gap-1 px-2">
         {navItems.map((item) => {
           const isActive = isNavActive(item.href, pathname, tab);
           return (
