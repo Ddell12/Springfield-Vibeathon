@@ -2,13 +2,14 @@
 
 import { use, useCallback, useEffect } from "react";
 import { useUser } from "@clerk/nextjs";
-import { useMutation } from "convex/react";
+import { useConvexAuth, useMutation, useQuery } from "convex/react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import dynamic from "next/dynamic";
 
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
+import { TelehealthConsentGate } from "@/features/intake/components/telehealth-consent-gate";
 
 // ssr: false — LiveKit injects <style> nodes client-side that cause hydration mismatch.
 // Client Components can use dynamic() without the Server Component restrictions.
@@ -37,6 +38,13 @@ export function CallPage({ paramsPromise }: CallPageProps) {
 
   const role = user?.publicMetadata?.role as string | undefined;
   const isSLP = role !== "caregiver";
+  const isCaregiver = role === "caregiver";
+
+  const { isAuthenticated } = useConvexAuth();
+  const appointment = useQuery(
+    api.appointments.get,
+    isAuthenticated && isCaregiver ? { appointmentId: id as Id<"appointments"> } : "skip",
+  );
 
   const completeSession = useMutation(api.appointments.completeSession);
 
@@ -59,6 +67,18 @@ export function CallPage({ paramsPromise }: CallPageProps) {
     },
     [id, isSLP, completeSession, router],
   );
+
+  if (isCaregiver && appointment?.patientId) {
+    return (
+      <TelehealthConsentGate patientId={appointment.patientId}>
+        <CallRoom
+          appointmentId={id}
+          isSLP={isSLP}
+          onCallEnd={handleCallEnd}
+        />
+      </TelehealthConsentGate>
+    );
+  }
 
   return (
     <CallRoom
