@@ -2,9 +2,9 @@ import { describe, expect, it } from "vitest";
 
 import {
   CPT_CODES,
+  type CptCode,
   getCptByCode,
   getDefaultCptCode,
-  type CptCode,
 } from "../cpt-codes";
 
 describe("CPT_CODES", () => {

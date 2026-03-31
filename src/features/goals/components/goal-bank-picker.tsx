@@ -1,9 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import { useConvexAuth, useQuery } from "convex/react";
-
-import { api } from "../../../../convex/_generated/api";
+import { useState } from "react";
 
 import { cn } from "@/core/utils";
 import { Badge } from "@/shared/components/ui/badge";
@@ -18,6 +16,7 @@ import {
 } from "@/shared/components/ui/select";
 import { Skeleton } from "@/shared/components/ui/skeleton";
 
+import { api } from "../../../../convex/_generated/api";
 import { type GoalDomain } from "../lib/goal-bank-data";
 import { domainColor, domainLabel } from "../lib/goal-utils";
 

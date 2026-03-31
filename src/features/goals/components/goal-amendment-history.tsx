@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/shared/components/ui/button";
+
 import { MaterialIcon } from "@/shared/components/material-icon";
+import { Button } from "@/shared/components/ui/button";
 
 interface AmendmentEntry {
   previousGoalText: string;

@@ -6,24 +6,24 @@ import dynamic from "next/dynamic";
 import { useState } from "react";
 import { toast } from "sonner";
 
-import { api } from "../../../../convex/_generated/api";
-import type { Id } from "../../../../convex/_generated/dataModel";
 import { usePatients } from "@/features/patients/hooks/use-patients";
 import { MaterialIcon } from "@/shared/components/material-icon";
 import { Button } from "@/shared/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/shared/components/ui/toggle-group";
 
+import { api } from "../../../../convex/_generated/api";
+import type { Id } from "../../../../convex/_generated/dataModel";
 import { AvailabilityEditor } from "./availability-editor";
 import { InviteEmailModal } from "./invite-email-modal";
 const BookingModal = dynamic(
   () => import("./booking-modal").then((m) => ({ default: m.BookingModal })),
   { ssr: false }
 );
-import { CalendarView } from "./calendar-view";
 import { useAppointmentActions, useAppointments } from "../hooks/use-appointments";
 import { useAvailability } from "../hooks/use-availability";
 import { useCalendar } from "../hooks/use-calendar";
 import type { AppointmentListItem } from "./appointment-card";
+import { CalendarView } from "./calendar-view";
 
 export function SessionsPage() {
   const { user, isLoaded } = useUser();

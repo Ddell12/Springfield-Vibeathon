@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import { useConvexAuth, useQuery } from "convex/react";
+import { useState } from "react";
 
 import { cn } from "@/core/utils";
 import { MaterialIcon } from "@/shared/components/material-icon";
@@ -13,10 +13,10 @@ import type { Id } from "../../../../convex/_generated/dataModel";
 import { useIntakeForms } from "../hooks/use-intake-forms";
 import {
   FORM_LABELS,
-  REQUIRED_INTAKE_FORMS,
   getFormTemplate,
   type IntakeFormType,
   type PracticeInfo,
+  REQUIRED_INTAKE_FORMS,
 } from "../lib/form-content";
 import { IntakeFormRenderer } from "./intake-form-renderer";
 

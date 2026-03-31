@@ -1,9 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Button } from "@/shared/components/ui/button";
-import { MaterialIcon } from "@/shared/components/material-icon";
+
 import { cn } from "@/core/utils";
+import { MaterialIcon } from "@/shared/components/material-icon";
+import { Button } from "@/shared/components/ui/button";
+
 import { useInteractiveSync } from "../hooks/use-interactive-sync";
 import type { ContentControl, ContentUpdate } from "../types";
 import { ContentPicker } from "./content-picker";

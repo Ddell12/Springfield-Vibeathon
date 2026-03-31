@@ -54,8 +54,8 @@ export function TelehealthConsentGate({
   const practice: PracticeInfo = practiceProfile
     ? {
         practiceName: practiceProfile.practiceName ?? DEFAULT_PRACTICE.practiceName,
-        practiceAddress: practiceProfile.practiceAddress ?? DEFAULT_PRACTICE.practiceAddress,
-        practicePhone: practiceProfile.practicePhone ?? DEFAULT_PRACTICE.practicePhone,
+        practiceAddress: practiceProfile.address ?? DEFAULT_PRACTICE.practiceAddress,
+        practicePhone: practiceProfile.phone ?? DEFAULT_PRACTICE.practicePhone,
         slpName: DEFAULT_PRACTICE.slpName,
         credentials: practiceProfile.credentials ?? DEFAULT_PRACTICE.credentials,
       }

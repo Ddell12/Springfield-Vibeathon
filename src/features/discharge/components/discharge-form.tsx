@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { startTransition, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { MaterialIcon } from "@/shared/components/material-icon";
@@ -54,8 +54,10 @@ export function DischargeForm({ patientId, onComplete }: DischargeFormProps) {
 
   useEffect(() => {
     if (aiGen.result) {
-      setNarrative(aiGen.result.narrative);
-      setRecommendations(aiGen.result.recommendations);
+      startTransition(() => {
+        setNarrative(aiGen.result!.narrative);
+        setRecommendations(aiGen.result!.recommendations);
+      });
     }
   }, [aiGen.result]);
 

@@ -1,18 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
 
 import { extractErrorMessage } from "@/core/utils";
 import { MaterialIcon } from "@/shared/components/material-icon";
 import { Button } from "@/shared/components/ui/button";
-import { Label } from "@/shared/components/ui/label";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/shared/components/ui/sheet";
 import { Checkbox } from "@/shared/components/ui/checkbox";
+import { Label } from "@/shared/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -20,10 +15,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/shared/components/ui/select";
-import { toast } from "sonner";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/shared/components/ui/sheet";
 
-import { DAY_NAMES, TIME_OPTIONS } from "../lib/time-slots";
 import type { Id } from "../../../../convex/_generated/dataModel";
+import { DAY_NAMES, TIME_OPTIONS } from "../lib/time-slots";
 
 export function AvailabilityEditor({
   open,

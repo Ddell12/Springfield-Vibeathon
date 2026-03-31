@@ -1,9 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useQuery } from "convex/react";
+import { startTransition, useEffect, useState } from "react";
+
 import { api } from "@/../convex/_generated/api";
 import type { Id } from "@/../convex/_generated/dataModel";
+import { cn } from "@/core/utils";
+import { MaterialIcon } from "@/shared/components/material-icon";
 import {
   Sheet,
   SheetContent,
@@ -16,8 +19,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/shared/components/ui/tabs";
-import { MaterialIcon } from "@/shared/components/material-icon";
-import { cn } from "@/core/utils";
+
 import type { ContentUpdate } from "../types";
 
 type ContentPickerProps = {
@@ -63,7 +65,7 @@ export function ContentPicker({
         revealed: false,
       },
     });
-    setPendingDeckId(null);
+    startTransition(() => setPendingDeckId(null));
     onOpenChange(false);
   }, [pendingDeckId, pendingCards, decks, onSelectContent, onOpenChange]);
 

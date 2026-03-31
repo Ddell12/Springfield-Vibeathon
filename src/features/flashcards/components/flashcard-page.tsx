@@ -3,7 +3,7 @@
 import { useMutation, useQuery } from "convex/react";
 import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { startTransition, useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { useIsMobile } from "@/core/hooks/use-mobile";
@@ -195,7 +195,7 @@ export function FlashcardPage() {
 
   useEffect(() => {
     if (!promptFromUrl || activeSessionId || status !== "idle") return;
-    setPendingPrompt(promptFromUrl);
+    startTransition(() => setPendingPrompt(promptFromUrl));
     generate(promptFromUrl);
   }, [activeSessionId, generate, promptFromUrl, status]);
 

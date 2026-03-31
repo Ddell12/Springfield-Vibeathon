@@ -1,6 +1,7 @@
 import { AccessToken } from "livekit-server-sdk";
 
 import { authenticate } from "@/app/api/generate/lib/authenticate";
+
 import { api } from "../../../../../convex/_generated/api";
 import type { Id } from "../../../../../convex/_generated/dataModel";
 

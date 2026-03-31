@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { startTransition, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { usePatient } from "@/shared/clinical";
@@ -21,8 +21,8 @@ import {
   useUpdateEvaluation,
   useUpdateEvaluationStatus,
 } from "../hooks/use-evaluations";
-import { AssessmentToolsForm, type AssessmentTool } from "./assessment-tools-form";
-import { DomainFindingsForm, type DomainFindings } from "./domain-findings-form";
+import { type AssessmentTool,AssessmentToolsForm } from "./assessment-tools-form";
+import { type DomainFindings,DomainFindingsForm } from "./domain-findings-form";
 import { ICD10Picker } from "./icd10-picker";
 
 interface EvaluationEditorProps {
@@ -66,30 +66,34 @@ export function EvaluationEditor({ patientId, evalId }: EvaluationEditorProps) {
   useEffect(() => {
     if (hasInitialized.current || !existingEval) return;
     hasInitialized.current = true;
-    setEvaluationDate(existingEval.evaluationDate);
-    setReferralSource(existingEval.referralSource ?? "");
-    setBackgroundHistory(existingEval.backgroundHistory);
-    setBehavioralObservations(existingEval.behavioralObservations);
-    setClinicalInterpretation(existingEval.clinicalInterpretation);
-    setRecommendations(existingEval.recommendations);
-    setDiagnosisCodes(existingEval.diagnosisCodes);
-    setPrognosis(existingEval.prognosis);
-    setAssessmentTools(
-      (existingEval.assessmentTools ?? []).map((t) => ({
-        name: t.name,
-        scoresRaw: t.scoresRaw,
-        scoresStandard: t.scoresStandard,
-        percentile: t.percentile,
-        notes: t.notes,
-      }))
-    );
-    setDomainFindings(existingEval.domainFindings ?? {});
+    startTransition(() => {
+      setEvaluationDate(existingEval.evaluationDate);
+      setReferralSource(existingEval.referralSource ?? "");
+      setBackgroundHistory(existingEval.backgroundHistory);
+      setBehavioralObservations(existingEval.behavioralObservations);
+      setClinicalInterpretation(existingEval.clinicalInterpretation);
+      setRecommendations(existingEval.recommendations);
+      setDiagnosisCodes(existingEval.diagnosisCodes);
+      setPrognosis(existingEval.prognosis);
+      setAssessmentTools(
+        (existingEval.assessmentTools ?? []).map((t: AssessmentTool) => ({
+          name: t.name,
+          scoresRaw: t.scoresRaw,
+          scoresStandard: t.scoresStandard,
+          percentile: t.percentile,
+          notes: t.notes,
+        }))
+      );
+      setDomainFindings(existingEval.domainFindings ?? {});
+    });
   }, [existingEval]);
 
   useEffect(() => {
     if (aiGen.result) {
-      setClinicalInterpretation(aiGen.result.clinicalInterpretation);
-      setRecommendations(aiGen.result.recommendations);
+      startTransition(() => {
+        setClinicalInterpretation(aiGen.result!.clinicalInterpretation);
+        setRecommendations(aiGen.result!.recommendations);
+      });
     }
   }, [aiGen.result]);
 

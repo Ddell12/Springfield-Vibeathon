@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useMutation, useQuery } from "convex/react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/shared/components/ui/button";
@@ -44,8 +44,8 @@ export function PracticeProfileForm() {
     if (profile && !initialized) {
       setFields({
         practiceName: profile.practiceName ?? "",
-        practiceAddress: profile.practiceAddress ?? "",
-        practicePhone: profile.practicePhone ?? "",
+        practiceAddress: profile.address ?? "",
+        practicePhone: profile.phone ?? "",
         npiNumber: profile.npiNumber ?? "",
         licenseNumber: profile.licenseNumber ?? "",
         licenseState: profile.licenseState ?? "",

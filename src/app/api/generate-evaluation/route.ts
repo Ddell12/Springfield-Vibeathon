@@ -1,14 +1,13 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { auth } from "@clerk/nextjs/server";
 import { ConvexHttpClient } from "convex/browser";
+import { anyApi } from "convex/server";
 import { z } from "zod";
 
 import {
   buildEvaluationPrompt,
   parseEvaluationResponse,
 } from "@/features/evaluations/lib/evaluation-prompt";
-
-import { anyApi } from "convex/server";
 
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";

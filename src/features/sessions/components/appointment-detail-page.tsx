@@ -1,17 +1,18 @@
 "use client";
 
-import { use } from "react";
-import { useQuery, useMutation } from "convex/react";
-import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
-import { toast } from "sonner";
+import { useMutation,useQuery } from "convex/react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { use } from "react";
+import { toast } from "sonner";
 
-import { api } from "../../../../convex/_generated/api";
-import type { Id } from "../../../../convex/_generated/dataModel";
 import { cn } from "@/core/utils";
 import { MaterialIcon } from "@/shared/components/material-icon";
 import { Button } from "@/shared/components/ui/button";
+
+import { api } from "../../../../convex/_generated/api";
+import type { Id } from "../../../../convex/_generated/dataModel";
 
 interface AppointmentDetailPageProps {
   paramsPromise: Promise<{ id: string }>;

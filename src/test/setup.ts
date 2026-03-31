@@ -1,4 +1,5 @@
 import "@testing-library/jest-dom";
+
 import React from "react";
 
 import { server } from "./mocks/server";
@@ -16,10 +17,10 @@ const ALL_INITIALIZERS = vi.hoisted(() => [] as Promise<void>[]);
 
 vi.mock("next/dynamic", () => ({
   default: (
-    loader: () => Promise<{ default: React.ComponentType<any> }>,
+    loader: () => Promise<{ default: React.ComponentType<Record<string, unknown>> }>,
     _options?: { ssr?: boolean; loading?: React.ComponentType },
-  ): React.ComponentType<any> => {
-    let Component: React.ComponentType<any> | null = null;
+  ): React.ComponentType<Record<string, unknown>> => {
+    let Component: React.ComponentType<Record<string, unknown>> | null = null;
 
     ALL_INITIALIZERS.push(
       loader().then((mod) => {
@@ -29,7 +30,7 @@ vi.mock("next/dynamic", () => ({
 
     return function DynamicShim(props: Record<string, unknown>) {
       if (!Component) return null;
-      return React.createElement(Component, props as any);
+      return React.createElement(Component, props);
     };
   },
 }));

@@ -3,8 +3,8 @@
 import { cn } from "@/core/utils";
 import { Button } from "@/shared/components/ui/button";
 
-import { AppointmentCard, type AppointmentListItem } from "./appointment-card";
 import { DAY_NAMES, formatTime, getWeekDays } from "../lib/time-slots";
+import { AppointmentCard, type AppointmentListItem } from "./appointment-card";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 

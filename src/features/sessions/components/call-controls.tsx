@@ -3,9 +3,9 @@
 import { DisconnectButton, TrackToggle } from "@livekit/components-react";
 import { Track } from "livekit-client";
 
-import { Button } from "@/shared/components/ui/button";
-import { MaterialIcon } from "@/shared/components/material-icon";
 import { cn } from "@/core/utils";
+import { MaterialIcon } from "@/shared/components/material-icon";
+import { Button } from "@/shared/components/ui/button";
 
 type CallControlsProps = {
   className?: string;

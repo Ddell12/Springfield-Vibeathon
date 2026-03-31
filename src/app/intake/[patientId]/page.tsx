@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { IntakeFlow } from "@/features/intake/components/intake-flow";
+
 import type { Id } from "../../../../convex/_generated/dataModel";
 
 export const metadata: Metadata = {

@@ -35,6 +35,10 @@ import {
   useUpdateSoap,
 } from "../hooks/use-session-notes";
 import { useSoapGeneration } from "../hooks/use-soap-generation";
+import {
+  getSignatureDelayDays,
+  isLateSignature,
+} from "../lib/session-utils";
 import { DurationPresetInput } from "./duration-preset-input";
 import { GroupPatientPicker } from "./group-patient-picker";
 import { type SoapNote,SoapPreview } from "./soap-preview";
@@ -44,10 +48,6 @@ import {
   type StructuredData,
   StructuredDataForm,
 } from "./structured-data-form";
-import {
-  getSignatureDelayDays,
-  isLateSignature,
-} from "../lib/session-utils";
 
 interface SessionNoteEditorProps {
   patientId: string;

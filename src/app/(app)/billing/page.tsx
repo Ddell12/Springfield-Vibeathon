@@ -1,5 +1,6 @@
-import { redirect } from "next/navigation";
 import { currentUser } from "@clerk/nextjs/server";
+import { redirect } from "next/navigation";
+
 import { ClinicalBillingDashboard } from "@/features/billing/components/clinical-billing-dashboard";
 
 export const metadata = { title: "Clinical Billing — Bridges" };

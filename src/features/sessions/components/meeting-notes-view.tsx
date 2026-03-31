@@ -1,15 +1,15 @@
 "use client";
 
-import Link from "next/link";
-
 import { useQuery } from "convex/react";
+import Link from "next/link";
 import { toast } from "sonner";
 
-import { api } from "../../../../convex/_generated/api";
-import type { Id } from "../../../../convex/_generated/dataModel";
 import { cn } from "@/core/utils";
 import { MaterialIcon } from "@/shared/components/material-icon";
 import { Button } from "@/shared/components/ui/button";
+
+import { api } from "../../../../convex/_generated/api";
+import type { Id } from "../../../../convex/_generated/dataModel";
 
 interface MeetingNotesViewProps {
   appointmentId: Id<"appointments">;

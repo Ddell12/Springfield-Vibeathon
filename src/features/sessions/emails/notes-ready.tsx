@@ -1,13 +1,13 @@
 import {
-  Html,
-  Head,
   Body,
-  Container,
-  Heading,
-  Text,
   Button,
+  Container,
+  Head,
+  Heading,
   Hr,
+  Html,
   Preview,
+  Text,
 } from "@react-email/components";
 
 interface NotesReadyProps {

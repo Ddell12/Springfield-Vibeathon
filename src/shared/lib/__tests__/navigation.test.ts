@@ -1,5 +1,6 @@
-import { describe, it, expect } from "vitest";
-import { NAV_ITEMS, CAREGIVER_NAV_ITEMS, isNavActive } from "../navigation";
+import { describe, expect,it } from "vitest";
+
+import { CAREGIVER_NAV_ITEMS, isNavActive,NAV_ITEMS } from "../navigation";
 
 describe("NAV_ITEMS", () => {
   it("contains Builder as first item", () => {

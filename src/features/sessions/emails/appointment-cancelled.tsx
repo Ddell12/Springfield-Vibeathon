@@ -1,13 +1,13 @@
 import {
-  Html,
-  Head,
   Body,
   Container,
+  Head,
   Heading,
-  Text,
   Hr,
+  Html,
   Preview,
   Section,
+  Text,
 } from "@react-email/components";
 
 interface AppointmentCancelledProps {

@@ -1,14 +1,14 @@
 import {
-  Html,
-  Head,
   Body,
-  Container,
-  Heading,
-  Text,
   Button,
+  Container,
+  Head,
+  Heading,
   Hr,
+  Html,
   Preview,
   Section,
+  Text,
 } from "@react-email/components";
 
 interface AppointmentBookedProps {

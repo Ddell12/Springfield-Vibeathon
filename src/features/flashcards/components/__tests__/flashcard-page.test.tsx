@@ -7,6 +7,10 @@ const mockReset = vi.fn();
 const mockUseFlashcardStreaming = vi.fn();
 const mockUseQuery = vi.fn();
 
+vi.mock("next/navigation", () => ({
+  usePathname: () => "/flashcards",
+  useSearchParams: () => new URLSearchParams(),
+}));
 vi.mock("convex/react", () => ({
   useMutation: () => vi.fn().mockResolvedValue(undefined),
   useQuery: (...args: unknown[]) => mockUseQuery(...args),

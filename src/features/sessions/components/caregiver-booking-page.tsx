@@ -1,9 +1,10 @@
 "use client";
 
-import { use } from "react";
 import Link from "next/link";
+import { use } from "react";
 
 import { MaterialIcon } from "@/shared/components/material-icon";
+
 import { CaregiverBooking } from "./caregiver-booking";
 
 interface CaregiverBookingPageProps {

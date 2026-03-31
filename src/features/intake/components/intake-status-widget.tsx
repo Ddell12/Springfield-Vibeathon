@@ -8,7 +8,7 @@ import { Button } from "@/shared/components/ui/button";
 
 import type { Id } from "../../../../convex/_generated/dataModel";
 import { useIntakeStatus } from "../hooks/use-intake-forms";
-import { FORM_LABELS, REQUIRED_INTAKE_FORMS, type IntakeFormType } from "../lib/form-content";
+import { FORM_LABELS, type IntakeFormType,REQUIRED_INTAKE_FORMS } from "../lib/form-content";
 
 interface IntakeStatusWidgetProps {
   patientId: Id<"patients">;

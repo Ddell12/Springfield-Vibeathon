@@ -1,15 +1,16 @@
 "use client";
 
-import { use, useCallback, useEffect } from "react";
 import { useUser } from "@clerk/nextjs";
 import { useConvexAuth, useMutation, useQuery } from "convex/react";
-import { useRouter } from "next/navigation";
-import { toast } from "sonner";
 import dynamic from "next/dynamic";
+import { useRouter } from "next/navigation";
+import { use, useCallback, useEffect } from "react";
+import { toast } from "sonner";
+
+import { TelehealthConsentGate } from "@/features/intake/components/telehealth-consent-gate";
 
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
-import { TelehealthConsentGate } from "@/features/intake/components/telehealth-consent-gate";
 
 // ssr: false — LiveKit injects <style> nodes client-side that cause hydration mismatch.
 // Client Components can use dynamic() without the Server Component restrictions.

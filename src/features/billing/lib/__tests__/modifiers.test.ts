@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  MODIFIERS,
   getAutoModifiers,
   type Modifier,
+  MODIFIERS,
 } from "../modifiers";
 
 describe("MODIFIERS", () => {

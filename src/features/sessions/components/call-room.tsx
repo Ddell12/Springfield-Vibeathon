@@ -1,16 +1,16 @@
 "use client";
 
 // Styles loaded via useEffect in call-page.tsx — JS import triggers Tailwind v4 CSS resolution error
-import { LiveKitRoom, RoomAudioRenderer } from "@livekit/components-react";
 import type { LocalUserChoices } from "@livekit/components-react";
+import { LiveKitRoom, RoomAudioRenderer } from "@livekit/components-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useCallRoom } from "../hooks/use-call-room";
 import { useInteractiveSync } from "../hooks/use-interactive-sync";
-import { Lobby } from "./lobby";
-import { ParticipantPanel } from "./participant-panel";
 import { CallControls } from "./call-controls";
 import { InteractivePanel } from "./interactive-panel";
+import { Lobby } from "./lobby";
+import { ParticipantPanel } from "./participant-panel";
 
 type CallRoomProps = {
   appointmentId: string;

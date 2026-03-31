@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Image from "next/image";
-import { Button } from "@/shared/components/ui/button";
-import { MaterialIcon } from "@/shared/components/material-icon";
+import { startTransition, useEffect, useState } from "react";
+
 import { cn } from "@/core/utils";
+import { MaterialIcon } from "@/shared/components/material-icon";
+import { Button } from "@/shared/components/ui/button";
+
 import type { ContentControl, ContentUpdate, Interaction } from "../types";
 
 type ContentRendererProps = {
@@ -26,7 +28,7 @@ export function ContentRenderer({
 
   // Sync revealed state when a new content-update arrives from the data channel
   useEffect(() => {
-    setCardRevealed(Boolean(content?.payload?.revealed));
+    startTransition(() => setCardRevealed(Boolean(content?.payload?.revealed)));
   }, [content?.payload?.revealed]);
 
   // Reset reveal state when content changes

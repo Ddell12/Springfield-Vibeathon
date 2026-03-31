@@ -4,7 +4,7 @@ import { useMutation, useQuery } from "convex/react";
 
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
-import { REQUIRED_INTAKE_FORMS, type IntakeFormType } from "../lib/form-content";
+import { type IntakeFormType,REQUIRED_INTAKE_FORMS } from "../lib/form-content";
 
 export function useIntakeForms(patientId: Id<"patients">) {
   const caregiverForms = useQuery(api.intakeForms.getByCaregiver, { patientId });
@@ -35,18 +35,16 @@ export function useIntakeForms(patientId: Id<"patients">) {
   ) {
     await signFormMutation({
       patientId,
-      formType,
+      formType: formType as Exclude<IntakeFormType, "telehealth-consent">,
       signerName,
-      signerIP,
       metadata,
     });
   }
 
-  async function signTelehealthConsent(signerName: string, signerIP?: string) {
+  async function signTelehealthConsent(signerName: string, _signerIP?: string) {
     await signTelehealthMutation({
       patientId,
       signerName,
-      signerIP,
     });
   }
 
@@ -77,8 +75,8 @@ export function useTelehealthConsent(patientId: Id<"patients">) {
   return {
     hasConsent: hasConsent ?? false,
     isLoading: hasConsent === undefined,
-    signConsent: async (signerName: string, signerIP?: string) => {
-      await signMutation({ patientId, signerName, signerIP });
+    signConsent: async (signerName: string, _signerIP?: string) => {
+      await signMutation({ patientId, signerName });
     },
   };
 }

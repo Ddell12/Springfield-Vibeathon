@@ -30,7 +30,7 @@ export function useProgressNarration(
   useEffect(() => {
     if (isGenerating) {
       setStageIndex(0); // eslint-disable-line react-hooks/set-state-in-effect -- reset on generate start
-      setActiveOverride(null); // eslint-disable-line react-hooks/set-state-in-effect -- reset on generate start
+      setActiveOverride(null);  
       prevOverrideRef.current = undefined;
     }
   }, [isGenerating]);

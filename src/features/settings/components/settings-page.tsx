@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import { PracticeProfileForm } from "@/features/intake/components/practice-profile-form";
+
 import { BillingSection } from "../../billing/components/billing-section";
 import { AccountSection } from "./account-section";
 import { AppearanceSection } from "./appearance-section";

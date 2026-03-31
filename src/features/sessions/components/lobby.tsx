@@ -1,7 +1,7 @@
 "use client";
 
-import { PreJoin } from "@livekit/components-react";
 import type { LocalUserChoices } from "@livekit/components-react";
+import { PreJoin } from "@livekit/components-react";
 
 import { cn } from "@/core/utils";
 

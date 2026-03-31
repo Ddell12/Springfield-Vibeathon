@@ -1,12 +1,11 @@
 "use client";
 
+import { useConvexAuth } from "convex/react";
 import Link from "next/link";
 import { use, useState } from "react";
 
-import { useConvexAuth } from "convex/react";
-
-import { Button } from "@/shared/components/ui/button";
 import { useActiveGoals } from "@/features/goals/hooks/use-goals";
+import { Button } from "@/shared/components/ui/button";
 
 import type { Id } from "../../../../convex/_generated/dataModel";
 import { useDataCollection } from "../hooks/use-data-collection";

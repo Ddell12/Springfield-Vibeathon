@@ -1,12 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
-
 import { useMutation, useQuery } from "convex/react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
-import { api } from "../../../../convex/_generated/api";
-import type { Id } from "../../../../convex/_generated/dataModel";
 import { cn } from "@/core/utils";
 import { MaterialIcon } from "@/shared/components/material-icon";
 import {
@@ -21,9 +18,11 @@ import {
 } from "@/shared/components/ui/alert-dialog";
 import { Button } from "@/shared/components/ui/button";
 
-import { useCalendar } from "../hooks/use-calendar";
+import { api } from "../../../../convex/_generated/api";
+import type { Id } from "../../../../convex/_generated/dataModel";
 import { useAvailableSlots } from "../hooks/use-appointments";
-import { formatDateTime, getWeekDays, formatTime } from "../lib/time-slots";
+import { useCalendar } from "../hooks/use-calendar";
+import { formatDateTime, formatTime,getWeekDays } from "../lib/time-slots";
 
 interface CaregiverBookingProps {
   slpId: string;

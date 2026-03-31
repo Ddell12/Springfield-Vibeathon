@@ -1,10 +1,11 @@
 "use client";
 
-import { use } from "react";
 import Link from "next/link";
+import { use } from "react";
+
+import { MaterialIcon } from "@/shared/components/material-icon";
 
 import type { Id } from "../../../../convex/_generated/dataModel";
-import { MaterialIcon } from "@/shared/components/material-icon";
 import { MeetingNotesView } from "./meeting-notes-view";
 
 interface NotesPageProps {

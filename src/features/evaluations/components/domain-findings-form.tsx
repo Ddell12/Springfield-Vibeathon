@@ -1,8 +1,8 @@
 // src/features/evaluations/components/domain-findings-form.tsx
 "use client";
 
-import { Textarea } from "@/shared/components/ui/textarea";
 import { Label } from "@/shared/components/ui/label";
+import { Textarea } from "@/shared/components/ui/textarea";
 
 const DOMAINS = [
   { key: "articulation", label: "Articulation / Phonology" },

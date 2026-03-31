@@ -77,6 +77,7 @@ interface ChatPanelProps {
   activities: Activity[];
   pendingPrompt?: string | null;
   onPendingPromptClear?: () => void;
+  narrationMessage?: string | null;
   appTitle: string;
   onArtifactClick?: () => void;
 }
@@ -91,6 +92,7 @@ export function ChatPanel({
   activities,
   pendingPrompt,
   onPendingPromptClear,
+  narrationMessage: _narrationMessage,
   appTitle,
   onArtifactClick,
 }: ChatPanelProps) {

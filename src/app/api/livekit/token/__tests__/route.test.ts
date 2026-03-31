@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { beforeEach,describe, expect, it, vi } from "vitest";
 
 // Mock the authenticate helper (used by the route instead of calling Clerk directly)
 const mockQuery = vi.fn();

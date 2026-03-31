@@ -39,7 +39,7 @@ export function EvaluationList({ patientId }: EvaluationListProps) {
         <p className="text-sm text-on-surface-variant">No evaluations yet</p>
       ) : (
         <div className="flex flex-col gap-2">
-          {evaluations.map((evalDoc) => (
+          {evaluations.map((evalDoc: { _id: Id<"evaluations">; evaluationDate: string; diagnosisCodes: Array<{ code: string }>; status: string }) => (
             <Link
               key={evalDoc._id}
               href={`/patients/${patientId}/evaluations/${evalDoc._id}`}
@@ -50,7 +50,7 @@ export function EvaluationList({ patientId }: EvaluationListProps) {
                   Evaluation — {evalDoc.evaluationDate}
                 </span>
                 <span className="text-xs text-on-surface-variant">
-                  {evalDoc.diagnosisCodes.map((d) => d.code).join(", ") || "No diagnosis codes"}
+                  {evalDoc.diagnosisCodes.map((d: { code: string }) => d.code).join(", ") || "No diagnosis codes"}
                 </span>
               </div>
               <div className="flex items-center gap-2">

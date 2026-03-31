@@ -1,7 +1,8 @@
 "use client";
 
+import type { Id } from "@convex/_generated/dataModel";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { startTransition, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { ICD10Picker } from "@/features/evaluations/components/icd10-picker";
@@ -14,7 +15,6 @@ import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
 import { Textarea } from "@/shared/components/ui/textarea";
 
-import type { Id } from "@convex/_generated/dataModel";
 import {
   useActivePlanOfCare,
   useAmendPlanOfCare,
@@ -52,19 +52,21 @@ export function POCEditor({ patientId }: POCEditorProps) {
   useEffect(() => {
     if (hasInitialized.current || !activePoc) return;
     hasInitialized.current = true;
-    setFrequency(activePoc.frequency);
-    setSessionDuration(activePoc.sessionDuration);
-    setPlanDuration(activePoc.planDuration);
-    setDischargeCriteria(activePoc.dischargeCriteria);
-    setPhysicianName(activePoc.physicianName ?? "");
-    setPhysicianNPI(activePoc.physicianNPI ?? "");
-    setPhysicianSigOnFile(activePoc.physicianSignatureOnFile);
-    setCurrentPocId(activePoc._id);
-    setSelectedGoalIds([
-      ...(activePoc.longTermGoals ?? []),
-      ...(activePoc.shortTermGoals ?? []),
-    ]);
-    setDiagnosisCodes(activePoc.diagnosisCodes ?? []);
+    startTransition(() => {
+      setFrequency(activePoc.frequency);
+      setSessionDuration(activePoc.sessionDuration);
+      setPlanDuration(activePoc.planDuration);
+      setDischargeCriteria(activePoc.dischargeCriteria);
+      setPhysicianName(activePoc.physicianName ?? "");
+      setPhysicianNPI(activePoc.physicianNPI ?? "");
+      setPhysicianSigOnFile(activePoc.physicianSignatureOnFile);
+      setCurrentPocId(activePoc._id);
+      setSelectedGoalIds([
+        ...(activePoc.longTermGoals ?? []),
+        ...(activePoc.shortTermGoals ?? []),
+      ]);
+      setDiagnosisCodes(activePoc.diagnosisCodes ?? []);
+    });
   }, [activePoc]);
 
   const isActive = activePoc?.status === "active";

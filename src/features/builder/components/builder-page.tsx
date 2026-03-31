@@ -22,7 +22,7 @@ import { useStreaming } from "../hooks/use-streaming";
 import type { TherapyBlueprint } from "../lib/schemas";
 import { ChatColumn } from "./chat-column";
 import { HomeScreen } from "./home-screen";
-import { PreviewColumn, type DeviceSize, type ViewMode } from "./preview-column";
+import { type DeviceSize, PreviewColumn, type ViewMode } from "./preview-column";
 
 interface BuilderPageProps {
   initialSessionId: string | null;
@@ -50,7 +50,7 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
     const savedView = localStorage.getItem("bridges-viewMode") as ViewMode | null;
     const savedDevice = localStorage.getItem("bridges-deviceSize") as DeviceSize | null;
     if (savedView) setViewMode(savedView); // eslint-disable-line react-hooks/set-state-in-effect -- localStorage hydration
-    if (savedDevice) setDeviceSize(savedDevice); // eslint-disable-line react-hooks/set-state-in-effect -- localStorage hydration
+    if (savedDevice) setDeviceSize(savedDevice);  
     hasMounted.current = true;
   }, []);
   const [mobilePanel, setMobilePanel] = useState<"chat" | "preview">("chat");
@@ -131,8 +131,10 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
   // Also re-show preview panel when a new bundle arrives (in case it was hidden)
   useEffect(() => {
     if (bundleHtml) {
-      startTransition(() => setViewMode("preview"));
-      setPreviewVisible(true);
+      startTransition(() => {
+        setViewMode("preview");
+        setPreviewVisible(true);
+      });
     }
   }, [bundleHtml]);
 

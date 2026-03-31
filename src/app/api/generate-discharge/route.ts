@@ -1,14 +1,13 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { auth } from "@clerk/nextjs/server";
 import { ConvexHttpClient } from "convex/browser";
+import { anyApi } from "convex/server";
 import { z } from "zod";
 
 import {
   buildDischargePrompt,
   parseDischargeResponse,
 } from "@/features/discharge/lib/discharge-prompt";
-
-import { anyApi } from "convex/server";
 
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
@@ -63,7 +62,7 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   const dischargeId = parsedBody.data.dischargeId as Id<"dischargeSummaries">;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   const discharge = await convex.query(anyApi.dischargeSummaries.get, { dischargeId });
   if (!discharge) {
     return new Response(JSON.stringify({ error: "Discharge summary not found" }), {
@@ -173,7 +172,7 @@ export async function POST(request: Request): Promise<Response> {
 
         const parsed = parseDischargeResponse(fullText);
         if (parsed) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+           
           await convex.mutation(anyApi.dischargeSummaries.saveFromAI, {
             dischargeId,
             narrative: parsed.narrative,
