@@ -27,6 +27,7 @@ export function InputBar({
 }: InputBarProps) {
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     onChange(e.target.value);
+    // scrollHeight is a runtime DOM value — no Tailwind equivalent for dynamic height measurement
     e.target.style.height = "auto";
     e.target.style.height = `${Math.min(e.target.scrollHeight, 200)}px`;
   };
