@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery } from "convex/react";
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
@@ -18,7 +18,7 @@ export function useDataCollection(patientId: Id<"patients">) {
   const recordTrialMutation = useMutation(api.sessionTrials.recordTrial);
   const endCollectionMutation = useMutation(api.sessionTrials.endCollection);
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
 
   const startCollection = useCallback(
     async (goalId: Id<"goals">) => {

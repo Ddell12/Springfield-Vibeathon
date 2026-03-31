@@ -29,7 +29,6 @@ import type * as explore_seed from "../explore_seed.js";
 import type * as flashcard_cards from "../flashcard_cards.js";
 import type * as flashcard_decks from "../flashcard_decks.js";
 import type * as generated_files from "../generated_files.js";
-import type * as goalBank from "../goalBank.js";
 import type * as goals from "../goals.js";
 import type * as homePrograms from "../homePrograms.js";
 import type * as http from "../http.js";
@@ -59,7 +58,6 @@ import type * as seeds_backfill_legacy_sessions from "../seeds/backfill_legacy_s
 import type * as seeds_image_seeds from "../seeds/image_seeds.js";
 import type * as sessionActions from "../sessionActions.js";
 import type * as sessionNotes from "../sessionNotes.js";
-import type * as sessionTrials from "../sessionTrials.js";
 import type * as sessions from "../sessions.js";
 import type * as speechCoach from "../speechCoach.js";
 import type * as speechCoachActions from "../speechCoachActions.js";
@@ -99,7 +97,6 @@ declare const fullApi: ApiFromModules<{
   flashcard_cards: typeof flashcard_cards;
   flashcard_decks: typeof flashcard_decks;
   generated_files: typeof generated_files;
-  goalBank: typeof goalBank;
   goals: typeof goals;
   homePrograms: typeof homePrograms;
   http: typeof http;
@@ -129,7 +126,6 @@ declare const fullApi: ApiFromModules<{
   "seeds/image_seeds": typeof seeds_image_seeds;
   sessionActions: typeof sessionActions;
   sessionNotes: typeof sessionNotes;
-  sessionTrials: typeof sessionTrials;
   sessions: typeof sessions;
   speechCoach: typeof speechCoach;
   speechCoachActions: typeof speechCoachActions;
