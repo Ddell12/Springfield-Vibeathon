@@ -35,6 +35,11 @@ export function HomeProgramPrint({ paramsPromise }: HomeProgramPrintProps) {
     isAuthenticated ? { patientId } : "skip"
   );
 
+  const profile = useQuery(
+    api.practiceProfiles.get,
+    isAuthenticated ? {} : "skip"
+  );
+
   const program = programs?.find((p) => p._id === programId);
 
   if (programs === undefined) {
@@ -183,6 +188,22 @@ export function HomeProgramPrint({ paramsPromise }: HomeProgramPrintProps) {
             </div>
           </div>
         )}
+
+        {/* SLP Contact Info */}
+        <div className="mt-6 border-t border-gray-300 pt-4">
+          <p className="text-sm font-semibold">
+            {profile?.practiceName ?? "Your Therapy Practice"}
+          </p>
+          {profile?.address && (
+            <p className="text-sm text-gray-600">{profile.address}</p>
+          )}
+          {profile?.phone && (
+            <p className="text-sm text-gray-600">{profile.phone}</p>
+          )}
+          <p className="mt-1 text-xs text-gray-500">
+            Questions? Contact your therapist through the Bridges app or by phone.
+          </p>
+        </div>
 
         {/* Footer */}
         <div className="mt-8 border-t pt-4">
