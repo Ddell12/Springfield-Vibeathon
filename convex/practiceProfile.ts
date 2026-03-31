@@ -15,17 +15,17 @@ export const update = slpMutation({
     credentials: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const userId = ctx.slpUserId;
+    const slpUserId = ctx.slpUserId;
     const existing = await ctx.db
       .query("practiceProfiles")
-      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .withIndex("by_slpUserId", (q) => q.eq("slpUserId", slpUserId))
       .first();
 
     if (existing) {
       await ctx.db.patch(existing._id, args);
     } else {
       await ctx.db.insert("practiceProfiles", {
-        userId,
+        slpUserId,
         ...args,
       });
     }
@@ -35,11 +35,11 @@ export const update = slpMutation({
 export const get = slpQuery({
   args: {},
   handler: async (ctx) => {
-    const userId = ctx.slpUserId;
-    if (!userId) return null;
+    const slpUserId = ctx.slpUserId;
+    if (!slpUserId) return null;
     return await ctx.db
       .query("practiceProfiles")
-      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .withIndex("by_slpUserId", (q) => q.eq("slpUserId", slpUserId))
       .first();
   },
 });
@@ -49,7 +49,7 @@ export const getBySlpId = query({
   handler: async (ctx, args) => {
     return await ctx.db
       .query("practiceProfiles")
-      .withIndex("by_userId", (q) => q.eq("userId", args.slpUserId))
+      .withIndex("by_slpUserId", (q) => q.eq("slpUserId", args.slpUserId))
       .first();
   },
 });

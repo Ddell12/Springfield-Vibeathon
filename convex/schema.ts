@@ -663,6 +663,7 @@ export default defineSchema({
     phone: v.optional(v.string()),
     credentials: v.optional(v.string()),
     licenseNumber: v.optional(v.string()),
+    licenseState: v.optional(v.string()),
     defaultSessionFee: v.optional(v.number()),
   })
     .index("by_slpUserId", ["slpUserId"]),
