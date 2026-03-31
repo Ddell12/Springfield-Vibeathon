@@ -9,6 +9,7 @@ import { MaterialIcon } from "@/shared/components/material-icon";
 import { Button } from "@/shared/components/ui/button";
 
 import type { Id } from "../../../../convex/_generated/dataModel";
+import { IntakeStatusWidget } from "@/features/intake/components/intake-status-widget";
 import { usePatient } from "../hooks/use-patients";
 import { ActivityTimeline } from "./activity-timeline";
 import { AssignedMaterials } from "./assigned-materials";
@@ -52,6 +53,8 @@ export function PatientDetailPage({ paramsPromise, clinicalWidgets }: PatientDet
       </div>
 
       <PatientProfileWidget patient={patient} />
+
+      <IntakeStatusWidget patientId={patient._id} />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <div className="flex flex-col gap-6">
