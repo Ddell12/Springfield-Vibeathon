@@ -210,6 +210,7 @@ export const update = slpMutation({
     targetDate: v.optional(v.string()),
     notes: v.optional(v.string()),
     status: v.optional(statusValidator),
+    amendmentReason: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const slpUserId = ctx.slpUserId;
@@ -236,7 +237,31 @@ export const update = slpMutation({
     };
     validateGoalFields(merged);
 
+    // Snapshot current state to amendment log before applying changes
+    const hasFieldChanges =
+      args.domain !== undefined ||
+      args.shortDescription !== undefined ||
+      args.fullGoalText !== undefined ||
+      args.targetAccuracy !== undefined ||
+      args.targetConsecutiveSessions !== undefined ||
+      args.status !== undefined;
+
     const updates: Record<string, unknown> = {};
+
+    if (hasFieldChanges) {
+      const snapshot = {
+        previousGoalText: goal.fullGoalText,
+        previousTargetAccuracy: goal.targetAccuracy,
+        previousTargetConsecutiveSessions: goal.targetConsecutiveSessions,
+        previousStatus: goal.status,
+        changedAt: Date.now(),
+        changedBy: slpUserId,
+        reason: args.amendmentReason,
+      };
+      const existingLog = goal.amendmentLog ?? [];
+      updates.amendmentLog = [...existingLog, snapshot];
+    }
+
     if (args.domain !== undefined) updates.domain = args.domain;
     if (args.shortDescription !== undefined) updates.shortDescription = args.shortDescription.trim();
     if (args.fullGoalText !== undefined) updates.fullGoalText = args.fullGoalText.trim();
