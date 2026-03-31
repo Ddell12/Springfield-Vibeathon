@@ -11,12 +11,12 @@ export function AuthHeroContent({
     <>
       <RoleSwitch role={role} className="mb-10" />
       <h1 className="max-w-[8ch] font-headline text-6xl leading-[0.96] tracking-[-0.04em] text-on-surface sm:text-7xl">
-        Overwhelmed?
+        Describe it.
         <br />
-        Organized.
+        It&apos;s built.
       </h1>
       <p className="mt-5 max-w-md text-xl leading-8 text-on-surface-variant">
-        The AI for therapy teams, caregivers, and the everyday work between sessions.
+        Custom therapy tools for SLPs and families — just tell Bridges what your child needs. Ready in under a minute.
       </p>
       <div className="mt-10 w-full">
         <ClaudeSignInCard role={role} />

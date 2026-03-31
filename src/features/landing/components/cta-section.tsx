@@ -11,10 +11,10 @@ export function CtaSection() {
             <MaterialIcon icon="auto_awesome" className="text-white text-3xl" />
           </div>
           <h2 className="font-headline text-3xl md:text-[2rem] font-normal text-white leading-tight">
-            Ready to bridge the gap?
+            Your child&apos;s tools are waiting.
           </h2>
           <p className="text-white/80 text-lg max-w-lg leading-relaxed">
-            Whether you&apos;re a speech therapist building for your caseload or a family supporting your child at home — Bridges is free to start.
+            Whether you&apos;re an SLP building for your caseload or a family supporting your child at home — Bridges is free to start. Describe what you need and have it running in under a minute.
           </p>
           <Link
             href="/builder"

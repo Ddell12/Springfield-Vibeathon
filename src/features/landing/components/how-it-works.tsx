@@ -7,7 +7,7 @@ export function HowItWorks() {
     <section className="py-20 bg-surface-container-lowest">
       <div className="max-w-6xl mx-auto px-6">
         <h2 className="font-headline text-3xl md:text-[2rem] text-center text-on-surface mb-12">
-          Built for the people who matter most
+          From a description to a working therapy app — in under a minute.
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {/* SLP Column */}
