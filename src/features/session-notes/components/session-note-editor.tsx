@@ -27,6 +27,10 @@ import {
   type StructuredData,
   StructuredDataForm,
 } from "./structured-data-form";
+import {
+  getSignatureDelayDays,
+  isLateSignature,
+} from "../lib/session-utils";
 
 interface SessionNoteEditorProps {
   patientId: string;
@@ -341,6 +345,22 @@ export function SessionNoteEditor({
             </div>
           )}
         </div>
+
+        {/* Late-signature warning banner */}
+        {isSigned &&
+          existingNote &&
+          isLateSignature(existingNote.signedAt, existingNote.sessionDate) && (
+            <div className="flex items-center gap-2 rounded-lg bg-caution-container/50 px-4 py-2.5 text-sm text-on-caution-container">
+              <MaterialIcon icon="warning" size="sm" />
+              <span>
+                This note was signed{" "}
+                <span className="font-semibold">
+                  {getSignatureDelayDays(existingNote.signedAt, existingNote.sessionDate)} days
+                </span>{" "}
+                after the session date. Medicare and most payers expect same-day signatures.
+              </span>
+            </div>
+          )}
       </div>
 
       {/* Two-column layout */}
