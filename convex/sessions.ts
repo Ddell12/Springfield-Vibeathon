@@ -296,11 +296,13 @@ export const listRecent = query({
   handler: async (ctx) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) return [];
-    return ctx.db
+    const sessions = await ctx.db
       .query("sessions")
       .withIndex("by_user", (q) => q.eq("userId", identity.subject))
       .order("desc")
-      .take(8);
+      .take(20);
+    // Post-filter: archived field may be undefined on legacy docs (undefined !== true passes)
+    return sessions.filter((s) => s.archived !== true).slice(0, 8);
   },
 });
 
