@@ -27,6 +27,8 @@ interface GoalWithData {
   averageAccuracy: number;
 }
 
+export type ReportAudience = "clinical" | "parent" | "iep-team";
+
 export function buildReportPrompt(
   patient: PatientContext,
   goals: GoalWithData[],
@@ -34,6 +36,7 @@ export function buildReportPrompt(
   periodStart: string,
   periodEnd: string,
   previousNarrative?: string,
+  audience?: ReportAudience,
 ): string {
   const reportTypeInstructions: Record<string, string> = {
     "weekly-summary":
@@ -42,6 +45,15 @@ export function buildReportPrompt(
       "Write a moderately detailed monthly summary. Include per-goal progress analysis, overall trends, and recommendations for the coming month.",
     "iep-progress-report":
       "Write a formal IEP progress report using educational language. Reference measurable criteria from goal statements. Use phrases appropriate for school district documentation. Note progress toward benchmarks with specific data.",
+  };
+
+  const audienceInstructions: Record<ReportAudience, string> = {
+    clinical:
+      "Write for a clinical audience: use formal medical/SLP terminology, include standard scores where relevant, justify medical necessity, and reference clinician credentials. This is for insurance documentation and clinical records.",
+    parent:
+      "Write for a parent/caregiver audience: use plain, everyday language with no medical jargon. Celebrate progress warmly, explain goals in accessible terms, describe next steps clearly, and suggest home practice activities. Be encouraging but honest.",
+    "iep-team":
+      "Write for an IEP/educational team audience: use IDEA-aligned educational language, frame progress in terms of educational access and classroom participation, reference academic impact, and tie goals to curriculum standards where applicable.",
   };
 
   let prompt = `You are a clinical documentation specialist for speech-language pathology, familiar with ASHA documentation standards and IEP compliance requirements.
@@ -66,6 +78,7 @@ Generate a progress report for the following patient and goals.
 ## Report Type: ${reportType}
 
 ${reportTypeInstructions[reportType]}
+${audience ? `\n## Audience\n${audienceInstructions[audience]}` : ""}
 
 ## Goals\n`;
 
