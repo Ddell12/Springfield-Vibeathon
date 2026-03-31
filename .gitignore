@@ -27,6 +27,30 @@
 # claude code
 .claude/command-audit.log
 .claude/worktrees/
+.claude/skills/
+
+# AI editor tool configs
+.agents/
+.commandcode/
+.continue/
+.crush/
+.cursor/
+.factory/
+.goose/
+.gstack-reports/
+.kilocode/
+.kiro/
+.mcpjam/
+.neovate/
+.openhands/
+.pi/
+.qoder/
+.qwen/
+.roo/
+.trae/
+.windsurf/
+.zencoder/
+skills/
 
 # git worktrees
 .worktrees/
