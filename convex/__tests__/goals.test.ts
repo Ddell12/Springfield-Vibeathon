@@ -170,6 +170,27 @@ describe("goals.update", () => {
     const metLog = logs.find((l: { action: string }) => l.action === "goal-met");
     expect(metLog).toBeDefined();
   });
+
+  it("snapshots current state to amendmentLog before update", async () => {
+    const t = convexTest(schema, modules).withIdentity(SLP_IDENTITY);
+    const { goalId } = await createPatientAndGoal(t);
+
+    // First update — changes accuracy
+    await t.mutation(api.goals.update, {
+      goalId,
+      targetAccuracy: 90,
+      amendmentReason: "Adjusted based on progress",
+    });
+
+    const goal = await t.query(api.goals.get, { goalId });
+    expect(goal.amendmentLog).toBeDefined();
+    expect(goal.amendmentLog).toHaveLength(1);
+    expect(goal.amendmentLog![0].previousTargetAccuracy).toBe(80);
+    expect(goal.amendmentLog![0].previousGoalText).toBe(VALID_GOAL.fullGoalText);
+    expect(goal.amendmentLog![0].reason).toBe("Adjusted based on progress");
+    expect(goal.amendmentLog![0].changedBy).toBe("slp-user-123");
+    expect(goal.amendmentLog![0].changedAt).toBeGreaterThan(0);
+  });
 });
 
 // ── remove (soft delete) ────────────────────────────────────────────────────
