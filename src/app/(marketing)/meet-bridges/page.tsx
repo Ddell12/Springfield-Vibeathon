@@ -108,9 +108,9 @@ export default function MeetBridgesPage() {
 
       {/* CTA strip */}
       <div className="mt-20 rounded-3xl bg-surface px-8 py-12 text-center">
-        <p className="font-headline text-2xl text-on-surface">
+        <h2 className="font-headline text-2xl text-on-surface">
           Ready to build your first app?
-        </p>
+        </h2>
         <Button asChild variant="gradient" className="mt-6 rounded-xl px-8 font-semibold">
           <Link href="/sign-up">Get started free</Link>
         </Button>
