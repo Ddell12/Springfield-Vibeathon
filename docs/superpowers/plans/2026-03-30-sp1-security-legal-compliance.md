@@ -4,78 +4,234 @@
 
 **Goal:** Fix the LiveKit token auth security gap and build a complete patient intake packet system with HIPAA forms, telehealth consent, and SLP practice profiles.
 
-**Architecture:** Two-phase approach. Phase 1 is a surgical security patch to the LiveKit token route (~30 lines). Phase 2 adds 2 new Convex tables (`intakeForms`, `practiceProfiles`), extends `caregiverLinks`, creates a new `src/features/intake/` feature slice with form stepper UI, and integrates into the existing patient detail page and call-join flow.
+**Architecture:** Two-phase approach. Phase 1 is a surgical security patch to the LiveKit token route (~30 lines) adding status and authorization checks. Phase 2 adds 2 new Convex tables (`intakeForms`, `practiceProfiles`), extends `caregiverLinks` with `intakeCompletedAt`, creates a new `src/features/intake/` feature slice with form stepper UI, and integrates into the existing patient detail page, family dashboard, call-join flow, and settings page.
 
 **Tech Stack:** Convex (schema + functions), Next.js App Router, Clerk auth, shadcn/ui, Tailwind v4, convex-test, Vitest, React Testing Library
 
 ---
 
-## File Structure
+## Task 1: LiveKit Token Route — Security Fix Test
 
-### Phase 1 — Security Fix
-| Action | File | Responsibility |
-|--------|------|---------------|
-| Modify | `src/app/api/livekit/token/route.ts` | Add status + authorization checks before issuing token |
+**Files:**
+- Create: `src/app/api/livekit/token/__tests__/route.test.ts`
 
-### Phase 2 — Intake System
+- [ ] **Step 1: Write the failing test**
 
-#### Schema & Backend
-| Action | File | Responsibility |
-|--------|------|---------------|
-| Modify | `convex/schema.ts` | Add `intakeForms`, `practiceProfiles` tables; extend `caregiverLinks` with `intakeCompletedAt`; add `"intake-form-signed"` to `activityLog.action` union |
-| Create | `convex/intakeForms.ts` | `signForm`, `signTelehealthConsent` mutations; `getByPatient`, `getByCaregiver`, `hasTelehealthConsent` queries |
-| Create | `convex/practiceProfile.ts` | `update` mutation (SLP-only); `get`, `getBySlpId` queries |
+```typescript
+// src/app/api/livekit/token/__tests__/route.test.ts
+import { describe, expect, it, vi, beforeEach } from "vitest";
 
-#### Frontend — New Feature Slice
-| Action | File | Responsibility |
-|--------|------|---------------|
-| Create | `src/features/intake/lib/form-content.ts` | Parameterized legal text for all 6 form types |
-| Create | `src/features/intake/hooks/use-intake-forms.ts` | Hook wrapping Convex intake queries + mutations |
-| Create | `src/features/intake/components/intake-form-renderer.tsx` | Single form layout: title, body, typed-name input, checkbox, sign button |
-| Create | `src/features/intake/components/intake-flow.tsx` | 4-form stepper for caregiver intake |
-| Create | `src/features/intake/components/intake-status-widget.tsx` | SLP-facing badge + detail on patient profile |
-| Create | `src/features/intake/components/telehealth-consent-gate.tsx` | Consent form shown before call lobby |
-| Create | `src/features/intake/components/practice-profile-form.tsx` | SLP practice profile settings form |
+// Mock Clerk auth
+const mockAuth = vi.fn();
+vi.mock("@clerk/nextjs/server", () => ({
+  auth: () => mockAuth(),
+}));
 
-#### Frontend — Integration Points
-| Action | File | Responsibility |
-|--------|------|---------------|
-| Create | `src/app/intake/[patientId]/page.tsx` | Caregiver intake route (outside `(app)` layout) |
-| Modify | `src/features/patients/components/patient-detail-page.tsx` | Add `IntakeStatusWidget` to the SLP detail view |
-| Modify | `src/features/family/components/family-dashboard.tsx` | Add intake banner for incomplete intake |
-| Modify | `src/features/sessions/components/call-page.tsx` | Insert telehealth consent gate before `CallRoom` |
-| Modify | `src/features/settings/components/settings-page.tsx` | Add "Practice" section with `PracticeProfileForm` |
+// Mock ConvexHttpClient
+const mockQuery = vi.fn();
+vi.mock("convex/browser", () => ({
+  ConvexHttpClient: vi.fn().mockImplementation(() => ({
+    setAuth: vi.fn(),
+    query: mockQuery,
+  })),
+}));
 
-#### Tests
-| Action | File | Responsibility |
-|--------|------|---------------|
-| Create | `convex/__tests__/intakeForms.test.ts` | Convex function tests for intake form signing, completion, and telehealth consent |
-| Create | `convex/__tests__/practiceProfile.test.ts` | Convex function tests for practice profile CRUD |
-| Create | `src/features/intake/components/__tests__/intake-form-renderer.test.tsx` | Render tests for form signing UI |
-| Create | `src/features/intake/components/__tests__/intake-status-widget.test.tsx` | Render tests for status badge |
+// Mock livekit-server-sdk
+vi.mock("livekit-server-sdk", () => ({
+  AccessToken: vi.fn().mockImplementation(() => ({
+    addGrant: vi.fn(),
+    toJwt: vi.fn().mockResolvedValue("mock-jwt-token"),
+  })),
+}));
+
+// Set env vars before importing route
+process.env.NEXT_PUBLIC_CONVEX_URL = "https://test.convex.cloud";
+process.env.LIVEKIT_API_KEY = "test-key";
+process.env.LIVEKIT_API_SECRET = "test-secret";
+process.env.NEXT_PUBLIC_LIVEKIT_URL = "wss://test.livekit.cloud";
+
+const { POST } = await import("../route");
+
+function makeRequest(body: Record<string, unknown>) {
+  return new Request("http://localhost/api/livekit/token", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+describe("POST /api/livekit/token", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("returns 403 when appointment status is cancelled", async () => {
+    mockAuth.mockResolvedValue({
+      userId: "slp-user-123",
+      getToken: vi.fn().mockResolvedValue("mock-convex-token"),
+    });
+    mockQuery.mockResolvedValue({
+      _id: "appt-1",
+      slpId: "slp-user-123",
+      patientId: "patient-1",
+      status: "cancelled",
+    });
+
+    const res = await POST(makeRequest({ appointmentId: "appt-1" }));
+    expect(res.status).toBe(403);
+    const json = await res.json();
+    expect(json.error).toContain("not joinable");
+  });
+
+  it("returns 403 when appointment status is completed", async () => {
+    mockAuth.mockResolvedValue({
+      userId: "slp-user-123",
+      getToken: vi.fn().mockResolvedValue("mock-convex-token"),
+    });
+    mockQuery.mockResolvedValue({
+      _id: "appt-1",
+      slpId: "slp-user-123",
+      patientId: "patient-1",
+      status: "completed",
+    });
+
+    const res = await POST(makeRequest({ appointmentId: "appt-1" }));
+    expect(res.status).toBe(403);
+    const json = await res.json();
+    expect(json.error).toContain("not joinable");
+  });
+
+  it("returns 403 when user has no relationship to appointment", async () => {
+    mockAuth.mockResolvedValue({
+      userId: "random-user-999",
+      getToken: vi.fn().mockResolvedValue("mock-convex-token"),
+    });
+    // First query: appointment
+    mockQuery
+      .mockResolvedValueOnce({
+        _id: "appt-1",
+        slpId: "slp-user-123",
+        patientId: "patient-1",
+        status: "scheduled",
+      })
+      // Second query: caregiver link check
+      .mockResolvedValueOnce(null);
+
+    const res = await POST(makeRequest({ appointmentId: "appt-1" }));
+    expect(res.status).toBe(403);
+    const json = await res.json();
+    expect(json.error).toContain("Not authorized");
+  });
+
+  it("returns token when user is the SLP", async () => {
+    mockAuth.mockResolvedValue({
+      userId: "slp-user-123",
+      getToken: vi.fn().mockResolvedValue("mock-convex-token"),
+    });
+    mockQuery.mockResolvedValue({
+      _id: "appt-1",
+      slpId: "slp-user-123",
+      patientId: "patient-1",
+      status: "scheduled",
+    });
+
+    const res = await POST(makeRequest({ appointmentId: "appt-1" }));
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.token).toBe("mock-jwt-token");
+  });
+
+  it("returns token when user is accepted caregiver", async () => {
+    mockAuth.mockResolvedValue({
+      userId: "caregiver-789",
+      getToken: vi.fn().mockResolvedValue("mock-convex-token"),
+    });
+    mockQuery
+      .mockResolvedValueOnce({
+        _id: "appt-1",
+        slpId: "slp-user-123",
+        patientId: "patient-1",
+        status: "in-progress",
+      })
+      .mockResolvedValueOnce({
+        _id: "link-1",
+        caregiverUserId: "caregiver-789",
+        patientId: "patient-1",
+        inviteStatus: "accepted",
+      });
+
+    const res = await POST(makeRequest({ appointmentId: "appt-1" }));
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.token).toBe("mock-jwt-token");
+  });
+});
+```
+
+- [ ] **Step 2: Run test to verify it fails**
+Run: `cd /Users/desha/Springfield-Vibeathon && npx vitest run src/app/api/livekit/token/__tests__/route.test.ts`
+Expected: FAIL — "not joinable" check and caregiver link check do not exist yet
+
+- [ ] **Step 3: Commit test file**
+Run: `cd /Users/desha/Springfield-Vibeathon && git add src/app/api/livekit/token/__tests__/route.test.ts && git commit -m "test(livekit): add failing tests for token route authorization"`
 
 ---
 
-## Task 1: LiveKit Token Authorization Fix
+## Task 2: LiveKit Token Route — Implementation
 
 **Files:**
 - Modify: `src/app/api/livekit/token/route.ts:1-58`
+- Create: `convex/caregiverLinkQueries.ts` (internal query for caregiver link lookup from Next.js route)
 
-This is the security hotfix — ship immediately.
-
-- [ ] **Step 1: Add status and authorization checks to the token route**
-
-The existing route already calls `api.appointments.get`, which runs `assertPatientAccess` — so unauthorized users already get a Convex-level rejection. However: (a) status is not checked — cancelled/completed appointments still get tokens, and (b) the authorization is implicit via a catch block. Make it explicit.
-
-Replace the entire file content:
+- [ ] **Step 1: Create the internal caregiver link query**
 
 ```typescript
+// convex/caregiverLinkQueries.ts
+import { v } from "convex/values";
+
+import { internalQuery } from "./_generated/server";
+
+/** Internal query: check if a user has an accepted caregiver link to a patient.
+ *  Used by the LiveKit token route (via ConvexHttpClient) to authorize call join. */
+export const getAcceptedLink = internalQuery({
+  args: {
+    caregiverUserId: v.string(),
+    patientId: v.id("patients"),
+  },
+  handler: async (ctx, args) => {
+    const link = await ctx.db
+      .query("caregiverLinks")
+      .withIndex("by_caregiverUserId_patientId", (q) =>
+        q
+          .eq("caregiverUserId", args.caregiverUserId)
+          .eq("patientId", args.patientId)
+      )
+      .first();
+
+    if (!link || link.inviteStatus !== "accepted") return null;
+    return { _id: link._id, caregiverUserId: link.caregiverUserId, patientId: link.patientId, inviteStatus: link.inviteStatus };
+  },
+});
+```
+
+Note: Internal queries cannot be called from `ConvexHttpClient` (which only reaches public functions). We need a public query here. However, the existing `appointments.get` already does `assertPatientAccess`, which checks both SLP and caregiver. The LiveKit route already calls `appointments.get` which will throw for unauthorized users. The gap is **status checking** and the fact that the existing route catches the error generically. Let's fix the route to use the existing `appointments.get` properly and add status gating:
+
+**Revised approach:** The existing `api.appointments.get` already checks patient access (SLP or accepted caregiver). The security fix needs to:
+1. Check appointment status after fetching
+2. Not swallow the 403 from `appointments.get` — distinguish "not found" from "not authorized"
+
+- [ ] **Step 1 (revised): Write the implementation**
+
+Replace `src/app/api/livekit/token/route.ts` entirely:
+
+```typescript
+// src/app/api/livekit/token/route.ts
 import { AccessToken } from "livekit-server-sdk";
 
 import { authenticate } from "@/app/api/generate/lib/authenticate";
-import { api, internal } from "../../../../../convex/_generated/api";
+import { api } from "../../../../../convex/_generated/api";
 import type { Id } from "../../../../../convex/_generated/dataModel";
 
+/** Appointment statuses that allow issuing a LiveKit room token. */
 const JOINABLE_STATUSES = new Set(["scheduled", "in-progress"]);
 
 export async function POST(req: Request): Promise<Response> {
@@ -91,13 +247,22 @@ export async function POST(req: Request): Promise<Response> {
     return Response.json({ error: "appointmentId required" }, { status: 400 });
   }
 
+  // appointments.get calls assertPatientAccess — only the owning SLP
+  // or an accepted caregiver for the patient can read the appointment.
   let appointment;
   try {
     appointment = await convex.query(api.appointments.get, {
       appointmentId: appointmentId as Id<"appointments">,
     });
   } catch (err) {
-    console.error("[livekit/token] Convex query failed — userId:", userId, "appointmentId:", appointmentId, "error:", err);
+    console.error(
+      "[livekit/token] Convex query failed — userId:",
+      userId,
+      "appointmentId:",
+      appointmentId,
+      "error:",
+      err,
+    );
     return Response.json({ error: "Not authorized" }, { status: 403 });
   }
 
@@ -105,10 +270,12 @@ export async function POST(req: Request): Promise<Response> {
     return Response.json({ error: "Appointment not found" }, { status: 404 });
   }
 
-  // Reject tokens for non-joinable appointments
+  // Status gate: only scheduled or in-progress appointments can be joined.
   if (!JOINABLE_STATUSES.has(appointment.status)) {
     return Response.json(
-      { error: `Cannot join appointment with status "${appointment.status}"` },
+      {
+        error: `Appointment is ${appointment.status} and not joinable`,
+      },
       { status: 403 },
     );
   }
@@ -140,69 +307,45 @@ export async function POST(req: Request): Promise<Response> {
 }
 ```
 
-- [ ] **Step 2: Verify the fix doesn't break existing call flow**
-
-Run:
-```bash
-npx vitest run --reporter=verbose 2>&1 | tail -20
-```
-
-Expected: All existing tests pass. (There are no unit tests for the API route itself — it's tested via E2E.)
+- [ ] **Step 2: Run tests to verify they pass**
+Run: `cd /Users/desha/Springfield-Vibeathon && npx vitest run src/app/api/livekit/token/__tests__/route.test.ts`
+Expected: PASS (all 5 tests)
 
 - [ ] **Step 3: Commit**
-
-```bash
-git add src/app/api/livekit/token/route.ts
-git commit -m "fix(security): add status + auth checks to LiveKit token route
-
-Reject tokens for cancelled/completed/no-show appointments.
-Authorization already enforced by assertPatientAccess in the Convex query,
-but status check was missing entirely."
-```
+Run: `cd /Users/desha/Springfield-Vibeathon && git add src/app/api/livekit/token/route.ts && git commit -m "fix(security): add status + authorization checks to LiveKit token route"`
 
 ---
 
-## Task 2: Schema Changes — intakeForms, practiceProfiles, caregiverLinks Extension
+## Task 3: Schema — Add `intakeForms` and `practiceProfiles` tables, extend `caregiverLinks` and `activityLog`
 
 **Files:**
-- Modify: `convex/schema.ts:198-214` (caregiverLinks) and append new tables
-- Modify: `convex/schema.ts:227-251` (activityLog action union)
+- Modify: `convex/schema.ts:198-214` (caregiverLinks — add `intakeCompletedAt`)
+- Modify: `convex/schema.ts:227-251` (activityLog — add `"intake-form-signed"` literal)
+- Modify: `convex/schema.ts:596-611` (after `childApps` table, before closing — add new tables)
 
-- [ ] **Step 1: Write failing schema test**
+- [ ] **Step 1: Add `intakeCompletedAt` to `caregiverLinks`**
 
-Create `convex/__tests__/intakeForms.test.ts`:
+In `convex/schema.ts`, after `kidModePIN: v.optional(v.string()),` (line 209), add:
 
 ```typescript
-import { convexTest } from "convex-test";
-import { describe, expect, it } from "vitest";
-
-import { api } from "../_generated/api";
-import schema from "../schema";
-
-const modules = import.meta.glob("../**/*.*s");
-
-describe("intakeForms schema", () => {
-  it("intakeForms table exists in schema", () => {
-    expect(schema.tables.intakeForms).toBeDefined();
-  });
-
-  it("practiceProfiles table exists in schema", () => {
-    expect(schema.tables.practiceProfiles).toBeDefined();
-  });
-});
+    intakeCompletedAt: v.optional(v.number()),
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [ ] **Step 2: Add `"intake-form-signed"` to `activityLog.action` union**
 
-Run: `npx vitest run convex/__tests__/intakeForms.test.ts --reporter=verbose`
-
-Expected: FAIL — `schema.tables.intakeForms` is undefined.
-
-- [ ] **Step 3: Add intakeForms table to schema**
-
-In `convex/schema.ts`, after the `practiceLog` table (line 525), add:
+In `convex/schema.ts`, after `v.literal("home-program-assigned")` (line 247), add:
 
 ```typescript
+      v.literal("intake-form-signed"),
+      v.literal("telehealth-consent-signed"),
+```
+
+- [ ] **Step 3: Add `intakeForms` and `practiceProfiles` tables**
+
+In `convex/schema.ts`, before the closing `});` (line 608), add:
+
+```typescript
+
   intakeForms: defineTable({
     patientId: v.id("patients"),
     caregiverUserId: v.string(),
@@ -218,18 +361,14 @@ In `convex/schema.ts`, after the `practiceLog` table (line 525), add:
     signerName: v.string(),
     signerIP: v.optional(v.string()),
     formVersion: v.string(),
-    metadata: v.optional(v.any()),
+    metadata: v.optional(v.object({
+      thirdPartyName: v.optional(v.string()),
+    })),
   })
     .index("by_patientId", ["patientId"])
     .index("by_caregiverUserId", ["caregiverUserId"])
     .index("by_patientId_formType", ["patientId", "formType"]),
-```
 
-- [ ] **Step 4: Add practiceProfiles table to schema**
-
-After `intakeForms`, add:
-
-```typescript
   practiceProfiles: defineTable({
     userId: v.string(),
     practiceName: v.optional(v.string()),
@@ -240,68 +379,32 @@ After `intakeForms`, add:
     licenseState: v.optional(v.string()),
     taxId: v.optional(v.string()),
     credentials: v.optional(v.string()),
-  })
-    .index("by_userId", ["userId"]),
+  }).index("by_userId", ["userId"]),
 ```
 
-- [ ] **Step 5: Extend caregiverLinks with intakeCompletedAt**
+- [ ] **Step 4: Run Convex push to validate schema**
+Run: `cd /Users/desha/Springfield-Vibeathon && npx convex dev --once`
+Expected: Schema validated, no errors
 
-In `convex/schema.ts`, find the `caregiverLinks` table definition (~line 198). Add after `kidModePIN`:
-
-```typescript
-    intakeCompletedAt: v.optional(v.number()),
-```
-
-- [ ] **Step 6: Add "intake-form-signed" to activityLog action union**
-
-In `convex/schema.ts`, find the `activityLog.action` union (~line 230). Add a new literal:
-
-```typescript
-      v.literal("intake-form-signed"),
-```
-
-after the existing `v.literal("home-program-assigned")` line.
-
-- [ ] **Step 7: Run schema test to verify it passes**
-
-Run: `npx vitest run convex/__tests__/intakeForms.test.ts --reporter=verbose`
-
-Expected: PASS
-
-- [ ] **Step 8: Run full test suite to verify no regressions**
-
-Run: `npx vitest run --reporter=verbose 2>&1 | tail -30`
-
-Expected: All tests pass.
-
-- [ ] **Step 9: Commit**
-
-```bash
-git add convex/schema.ts convex/__tests__/intakeForms.test.ts
-git commit -m "feat(schema): add intakeForms, practiceProfiles tables; extend caregiverLinks
-
-New tables for patient intake forms and SLP practice profiles.
-Added intakeCompletedAt to caregiverLinks for denormalized intake status.
-Added intake-form-signed to activityLog action union."
-```
+- [ ] **Step 5: Commit**
+Run: `cd /Users/desha/Springfield-Vibeathon && git add convex/schema.ts && git commit -m "schema: add intakeForms, practiceProfiles tables; extend caregiverLinks + activityLog"`
 
 ---
 
-## Task 3: Convex Backend — practiceProfile.ts
+## Task 4: Backend — `convex/practiceProfile.ts`
 
 **Files:**
 - Create: `convex/practiceProfile.ts`
 - Create: `convex/__tests__/practiceProfile.test.ts`
 
-- [ ] **Step 1: Write failing tests for practice profile**
-
-Create `convex/__tests__/practiceProfile.test.ts`:
+- [ ] **Step 1: Write the failing test**
 
 ```typescript
+// convex/__tests__/practiceProfile.test.ts
 import { convexTest } from "convex-test";
 import { describe, expect, it } from "vitest";
 
-import { api, internal } from "../_generated/api";
+import { api } from "../_generated/api";
 import schema from "../schema";
 
 const modules = import.meta.glob("../**/*.*s");
@@ -314,46 +417,47 @@ const CAREGIVER_IDENTITY = {
 };
 
 describe("practiceProfile.update", () => {
-  it("creates a new profile for an SLP", async () => {
+  it("creates a new practice profile for SLP", async () => {
     const t = convexTest(schema, modules);
     const slp = t.withIdentity(SLP_IDENTITY);
 
     await slp.mutation(api.practiceProfile.update, {
-      practiceName: "Bridges Speech Therapy",
+      practiceName: "Springfield Speech Center",
       npiNumber: "1234567890",
       credentials: "M.S., CCC-SLP",
     });
 
     const profile = await slp.query(api.practiceProfile.get, {});
     expect(profile).not.toBeNull();
-    expect(profile!.practiceName).toBe("Bridges Speech Therapy");
+    expect(profile!.practiceName).toBe("Springfield Speech Center");
     expect(profile!.npiNumber).toBe("1234567890");
     expect(profile!.credentials).toBe("M.S., CCC-SLP");
   });
 
-  it("updates existing profile without overwriting unset fields", async () => {
+  it("updates an existing practice profile", async () => {
     const t = convexTest(schema, modules);
     const slp = t.withIdentity(SLP_IDENTITY);
 
     await slp.mutation(api.practiceProfile.update, {
       practiceName: "Old Name",
-      npiNumber: "1234567890",
     });
-
     await slp.mutation(api.practiceProfile.update, {
       practiceName: "New Name",
+      licenseState: "IL",
     });
 
     const profile = await slp.query(api.practiceProfile.get, {});
     expect(profile!.practiceName).toBe("New Name");
-    expect(profile!.npiNumber).toBe("1234567890");
+    expect(profile!.licenseState).toBe("IL");
   });
 
-  it("rejects caregiver callers", async () => {
+  it("rejects caregiver users", async () => {
     const t = convexTest(schema, modules);
+    const caregiver = t.withIdentity(CAREGIVER_IDENTITY);
+
     await expect(
-      t.withIdentity(CAREGIVER_IDENTITY).mutation(api.practiceProfile.update, {
-        practiceName: "Hack",
+      caregiver.mutation(api.practiceProfile.update, {
+        practiceName: "Hacker Practice",
       })
     ).rejects.toThrow();
   });
@@ -363,26 +467,42 @@ describe("practiceProfile.get", () => {
   it("returns null when no profile exists", async () => {
     const t = convexTest(schema, modules);
     const slp = t.withIdentity(SLP_IDENTITY);
+
     const profile = await slp.query(api.practiceProfile.get, {});
     expect(profile).toBeNull();
   });
 });
+
+describe("practiceProfile.getBySlpId", () => {
+  it("returns profile for given SLP user ID", async () => {
+    const t = convexTest(schema, modules);
+    const slp = t.withIdentity(SLP_IDENTITY);
+
+    await slp.mutation(api.practiceProfile.update, {
+      practiceName: "Springfield Speech Center",
+    });
+
+    const profile = await t.query(api.practiceProfile.getBySlpId, {
+      slpUserId: "slp-user-123",
+    });
+    expect(profile).not.toBeNull();
+    expect(profile!.practiceName).toBe("Springfield Speech Center");
+  });
+});
 ```
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [ ] **Step 2: Run test to verify it fails**
+Run: `cd /Users/desha/Springfield-Vibeathon && npx vitest run convex/__tests__/practiceProfile.test.ts`
+Expected: FAIL — `api.practiceProfile` does not exist
 
-Run: `npx vitest run convex/__tests__/practiceProfile.test.ts --reporter=verbose`
-
-Expected: FAIL — module `api.practiceProfile` not found.
-
-- [ ] **Step 3: Implement practiceProfile.ts**
-
-Create `convex/practiceProfile.ts`:
+- [ ] **Step 3: Write the implementation**
 
 ```typescript
+// convex/practiceProfile.ts
 import { v } from "convex/values";
 
-import { authedQuery, slpMutation, slpQuery } from "./lib/customFunctions";
+import { query } from "./_generated/server";
+import { slpMutation, slpQuery } from "./lib/customFunctions";
 
 export const update = slpMutation({
   args: {
@@ -396,27 +516,17 @@ export const update = slpMutation({
     credentials: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const userId = ctx.slpUserId;
-
     const existing = await ctx.db
       .query("practiceProfiles")
-      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .withIndex("by_userId", (q) => q.eq("userId", ctx.slpUserId))
       .first();
 
-    // Filter out undefined values so we only patch what's provided
-    const updates: Record<string, string | undefined> = {};
-    for (const [key, value] of Object.entries(args)) {
-      if (value !== undefined) {
-        updates[key] = value;
-      }
-    }
-
     if (existing) {
-      await ctx.db.patch(existing._id, updates);
+      await ctx.db.patch(existing._id, args);
     } else {
       await ctx.db.insert("practiceProfiles", {
-        userId,
-        ...updates,
+        userId: ctx.slpUserId,
+        ...args,
       });
     }
   },
@@ -433,52 +543,50 @@ export const get = slpQuery({
   },
 });
 
-export const getBySlpId = authedQuery({
-  args: { slpId: v.string() },
+export const getBySlpId = query({
+  args: { slpUserId: v.string() },
   handler: async (ctx, args) => {
-    if (!ctx.userId) return null;
     return await ctx.db
       .query("practiceProfiles")
-      .withIndex("by_userId", (q) => q.eq("userId", args.slpId))
+      .withIndex("by_userId", (q) => q.eq("userId", args.slpUserId))
       .first();
   },
 });
 ```
 
 - [ ] **Step 4: Run tests to verify they pass**
-
-Run: `npx vitest run convex/__tests__/practiceProfile.test.ts --reporter=verbose`
-
-Expected: PASS
+Run: `cd /Users/desha/Springfield-Vibeathon && npx vitest run convex/__tests__/practiceProfile.test.ts`
+Expected: PASS (all 4 tests)
 
 - [ ] **Step 5: Commit**
-
-```bash
-git add convex/practiceProfile.ts convex/__tests__/practiceProfile.test.ts
-git commit -m "feat(backend): add practiceProfile Convex functions
-
-SLP practice profile CRUD — used by intake forms and later by billing."
-```
+Run: `cd /Users/desha/Springfield-Vibeathon && git add convex/practiceProfile.ts convex/__tests__/practiceProfile.test.ts && git commit -m "feat(backend): add practiceProfile CRUD with tests"`
 
 ---
 
-## Task 4: Convex Backend — intakeForms.ts
+## Task 5: Backend — `convex/intakeForms.ts` (mutations)
 
 **Files:**
 - Create: `convex/intakeForms.ts`
-- Modify: `convex/__tests__/intakeForms.test.ts`
+- Create: `convex/__tests__/intakeForms.test.ts`
 
-- [ ] **Step 1: Write failing tests for intake form signing**
-
-Append to `convex/__tests__/intakeForms.test.ts` (after the existing schema tests):
+- [ ] **Step 1: Write the failing test for `signForm`**
 
 ```typescript
+// convex/__tests__/intakeForms.test.ts
+import { convexTest } from "convex-test";
+import { describe, expect, it } from "vitest";
+
+import { api } from "../_generated/api";
+import schema from "../schema";
 import { suppressSchedulerErrors } from "./testHelpers";
+
+const modules = import.meta.glob("../**/*.*s");
 
 suppressSchedulerErrors();
 
 const SLP_IDENTITY = { subject: "slp-user-123", issuer: "clerk" };
 const CAREGIVER_IDENTITY = { subject: "caregiver-789", issuer: "clerk" };
+const UNLINKED_USER = { subject: "random-user-999", issuer: "clerk" };
 
 async function setupPatientWithCaregiver(t: ReturnType<typeof convexTest>) {
   const slp = t.withIdentity(SLP_IDENTITY);
@@ -494,32 +602,46 @@ async function setupPatientWithCaregiver(t: ReturnType<typeof convexTest>) {
     email: "parent@test.com",
   });
 
-  const caregiver = t.withIdentity(CAREGIVER_IDENTITY);
-  await caregiver.mutation(api.caregivers.acceptInvite, { token });
+  await t.withIdentity(CAREGIVER_IDENTITY).mutation(api.caregivers.acceptInvite, { token });
 
-  return { patientId, slp, caregiver };
+  return patientId;
 }
 
 describe("intakeForms.signForm", () => {
-  it("signs a HIPAA NPP form and stores it", async () => {
+  it("signs a HIPAA NPP form for a linked patient", async () => {
     const t = convexTest(schema, modules);
-    const { patientId, caregiver } = await setupPatientWithCaregiver(t);
+    const patientId = await setupPatientWithCaregiver(t);
+    const caregiver = t.withIdentity(CAREGIVER_IDENTITY);
 
     await caregiver.mutation(api.intakeForms.signForm, {
       patientId,
       formType: "hipaa-npp",
-      signerName: "Jane Doe",
+      signerName: "Jane Smith",
     });
 
     const forms = await caregiver.query(api.intakeForms.getByCaregiver, { patientId });
     expect(forms).toHaveLength(1);
     expect(forms[0].formType).toBe("hipaa-npp");
-    expect(forms[0].signerName).toBe("Jane Doe");
+    expect(forms[0].signerName).toBe("Jane Smith");
   });
 
-  it("sets intakeCompletedAt after all 4 required forms are signed", async () => {
+  it("rejects unlinked user", async () => {
     const t = convexTest(schema, modules);
-    const { patientId, caregiver, slp } = await setupPatientWithCaregiver(t);
+    const patientId = await setupPatientWithCaregiver(t);
+
+    await expect(
+      t.withIdentity(UNLINKED_USER).mutation(api.intakeForms.signForm, {
+        patientId,
+        formType: "hipaa-npp",
+        signerName: "Hacker McHackface",
+      })
+    ).rejects.toThrow("Not authorized");
+  });
+
+  it("sets intakeCompletedAt when all 4 required forms are signed", async () => {
+    const t = convexTest(schema, modules);
+    const patientId = await setupPatientWithCaregiver(t);
+    const caregiver = t.withIdentity(CAREGIVER_IDENTITY);
 
     const requiredForms = [
       "hipaa-npp",
@@ -532,116 +654,106 @@ describe("intakeForms.signForm", () => {
       await caregiver.mutation(api.intakeForms.signForm, {
         patientId,
         formType,
-        signerName: "Jane Doe",
+        signerName: "Jane Smith",
       });
     }
 
-    const links = await slp.query(api.caregivers.listByPatient, { patientId });
-    const accepted = links.find((l) => l.inviteStatus === "accepted");
-    expect(accepted?.intakeCompletedAt).toBeTypeOf("number");
+    // Check that intakeCompletedAt was set on the caregiver link
+    const links = await t.withIdentity(SLP_IDENTITY).query(api.caregivers.listByPatient, { patientId });
+    const acceptedLink = links.find(
+      (l: { caregiverUserId?: string }) => l.caregiverUserId === "caregiver-789"
+    );
+    expect(acceptedLink?.intakeCompletedAt).toBeTypeOf("number");
   });
 
-  it("rejects unauthenticated users", async () => {
+  it("does not set intakeCompletedAt with only 3 forms signed", async () => {
     const t = convexTest(schema, modules);
-    const { patientId } = await setupPatientWithCaregiver(t);
+    const patientId = await setupPatientWithCaregiver(t);
+    const caregiver = t.withIdentity(CAREGIVER_IDENTITY);
 
-    await expect(
-      t.mutation(api.intakeForms.signForm, {
+    const partialForms = ["hipaa-npp", "consent-treatment", "financial-agreement"] as const;
+    for (const formType of partialForms) {
+      await caregiver.mutation(api.intakeForms.signForm, {
         patientId,
-        formType: "hipaa-npp",
-        signerName: "Hacker",
-      })
-    ).rejects.toThrow();
-  });
+        formType,
+        signerName: "Jane Smith",
+      });
+    }
 
-  it("rejects unlinked caregivers", async () => {
-    const t = convexTest(schema, modules);
-    const { patientId } = await setupPatientWithCaregiver(t);
-
-    const unlinked = t.withIdentity({ subject: "stranger-999", issuer: "clerk" });
-    await expect(
-      unlinked.mutation(api.intakeForms.signForm, {
-        patientId,
-        formType: "hipaa-npp",
-        signerName: "Stranger",
-      })
-    ).rejects.toThrow();
-  });
-
-  it("prevents duplicate signing of the same form type", async () => {
-    const t = convexTest(schema, modules);
-    const { patientId, caregiver } = await setupPatientWithCaregiver(t);
-
-    await caregiver.mutation(api.intakeForms.signForm, {
-      patientId,
-      formType: "hipaa-npp",
-      signerName: "Jane Doe",
-    });
-
-    await expect(
-      caregiver.mutation(api.intakeForms.signForm, {
-        patientId,
-        formType: "hipaa-npp",
-        signerName: "Jane Doe",
-      })
-    ).rejects.toThrow();
+    const links = await t.withIdentity(SLP_IDENTITY).query(api.caregivers.listByPatient, { patientId });
+    const acceptedLink = links.find(
+      (l: { caregiverUserId?: string }) => l.caregiverUserId === "caregiver-789"
+    );
+    expect(acceptedLink?.intakeCompletedAt).toBeUndefined();
   });
 });
 
 describe("intakeForms.signTelehealthConsent", () => {
-  it("signs telehealth consent and hasTelehealthConsent returns true", async () => {
+  it("signs telehealth consent for a linked patient", async () => {
     const t = convexTest(schema, modules);
-    const { patientId, caregiver } = await setupPatientWithCaregiver(t);
-
-    const before = await caregiver.query(api.intakeForms.hasTelehealthConsent, { patientId });
-    expect(before).toBe(false);
+    const patientId = await setupPatientWithCaregiver(t);
+    const caregiver = t.withIdentity(CAREGIVER_IDENTITY);
 
     await caregiver.mutation(api.intakeForms.signTelehealthConsent, {
       patientId,
-      signerName: "Jane Doe",
+      signerName: "Jane Smith",
     });
 
-    const after = await caregiver.query(api.intakeForms.hasTelehealthConsent, { patientId });
-    expect(after).toBe(true);
+    const hasTelehealth = await caregiver.query(api.intakeForms.hasTelehealthConsent, { patientId });
+    expect(hasTelehealth).toBe(true);
   });
 });
 
 describe("intakeForms.getByPatient", () => {
-  it("returns forms grouped for SLP view", async () => {
+  it("returns all forms for a patient (SLP view)", async () => {
     const t = convexTest(schema, modules);
-    const { patientId, caregiver, slp } = await setupPatientWithCaregiver(t);
+    const patientId = await setupPatientWithCaregiver(t);
+    const caregiver = t.withIdentity(CAREGIVER_IDENTITY);
 
     await caregiver.mutation(api.intakeForms.signForm, {
       patientId,
       formType: "hipaa-npp",
-      signerName: "Jane Doe",
+      signerName: "Jane Smith",
+    });
+    await caregiver.mutation(api.intakeForms.signForm, {
+      patientId,
+      formType: "consent-treatment",
+      signerName: "Jane Smith",
     });
 
+    const slp = t.withIdentity(SLP_IDENTITY);
     const forms = await slp.query(api.intakeForms.getByPatient, { patientId });
-    expect(forms).toHaveLength(1);
-    expect(forms[0].formType).toBe("hipaa-npp");
+    expect(forms).toHaveLength(2);
+  });
+});
+
+describe("intakeForms.hasTelehealthConsent", () => {
+  it("returns false when no telehealth consent exists", async () => {
+    const t = convexTest(schema, modules);
+    const patientId = await setupPatientWithCaregiver(t);
+    const caregiver = t.withIdentity(CAREGIVER_IDENTITY);
+
+    const result = await caregiver.query(api.intakeForms.hasTelehealthConsent, { patientId });
+    expect(result).toBe(false);
   });
 });
 ```
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [ ] **Step 2: Run test to verify it fails**
+Run: `cd /Users/desha/Springfield-Vibeathon && npx vitest run convex/__tests__/intakeForms.test.ts`
+Expected: FAIL — `api.intakeForms` does not exist
 
-Run: `npx vitest run convex/__tests__/intakeForms.test.ts --reporter=verbose`
-
-Expected: FAIL — `api.intakeForms.signForm` not found.
-
-- [ ] **Step 3: Implement intakeForms.ts**
-
-Create `convex/intakeForms.ts`:
+- [ ] **Step 3: Write the implementation**
 
 ```typescript
+// convex/intakeForms.ts
 import { v } from "convex/values";
 import { ConvexError } from "convex/values";
 
+import { authedQuery, authedMutation } from "./lib/customFunctions";
 import { assertCaregiverAccess, assertPatientAccess } from "./lib/auth";
-import { authedMutation, authedQuery } from "./lib/customFunctions";
 
-const FORM_TYPE_VALIDATOR = v.union(
+const formTypeValidator = v.union(
   v.literal("hipaa-npp"),
   v.literal("consent-treatment"),
   v.literal("financial-agreement"),
@@ -650,6 +762,7 @@ const FORM_TYPE_VALIDATOR = v.union(
   v.literal("telehealth-consent")
 );
 
+/** The 4 forms required for intake completion. */
 const REQUIRED_INTAKE_FORMS = [
   "hipaa-npp",
   "consent-treatment",
@@ -657,56 +770,47 @@ const REQUIRED_INTAKE_FORMS = [
   "cancellation-policy",
 ] as const;
 
-const CURRENT_FORM_VERSION = "1.0";
-
 export const signForm = authedMutation({
   args: {
     patientId: v.id("patients"),
-    formType: FORM_TYPE_VALIDATOR,
+    formType: formTypeValidator,
     signerName: v.string(),
     signerIP: v.optional(v.string()),
-    metadata: v.optional(v.any()),
+    metadata: v.optional(
+      v.object({
+        thirdPartyName: v.optional(v.string()),
+      })
+    ),
   },
   handler: async (ctx, args) => {
-    const userId = await assertCaregiverAccess(ctx, args.patientId);
+    await assertCaregiverAccess(ctx, args.patientId);
 
-    // Prevent duplicate signing (except release-authorization which is repeatable)
-    if (args.formType !== "release-authorization") {
-      const existing = await ctx.db
-        .query("intakeForms")
-        .withIndex("by_patientId_formType", (q) =>
-          q.eq("patientId", args.patientId).eq("formType", args.formType)
-        )
-        .filter((q) => q.eq(q.field("caregiverUserId"), userId))
-        .first();
-
-      if (existing) {
-        throw new ConvexError(`Form "${args.formType}" has already been signed`);
-      }
+    const trimmedName = args.signerName.trim();
+    if (trimmedName.length < 2) {
+      throw new ConvexError("Signer name must be at least 2 characters");
     }
 
     await ctx.db.insert("intakeForms", {
       patientId: args.patientId,
-      caregiverUserId: userId,
+      caregiverUserId: ctx.userId,
       formType: args.formType,
       signedAt: Date.now(),
-      signerName: args.signerName,
+      signerName: trimmedName,
       signerIP: args.signerIP,
-      formVersion: CURRENT_FORM_VERSION,
+      formVersion: "1.0",
       metadata: args.metadata,
     });
 
-    // Log to activity
     await ctx.db.insert("activityLog", {
       patientId: args.patientId,
-      actorUserId: userId,
+      actorUserId: ctx.userId,
       action: "intake-form-signed",
       details: `Signed ${args.formType}`,
       timestamp: Date.now(),
     });
 
-    // Check if all required intake forms are now complete
-    await checkIntakeCompletion(ctx, args.patientId, userId);
+    // Check if all 4 required intake forms are now complete for this caregiver + patient
+    await checkAndSetIntakeCompletion(ctx, args.patientId, ctx.userId);
   },
 });
 
@@ -717,7 +821,12 @@ export const signTelehealthConsent = authedMutation({
     signerIP: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const userId = await assertCaregiverAccess(ctx, args.patientId);
+    await assertCaregiverAccess(ctx, args.patientId);
+
+    const trimmedName = args.signerName.trim();
+    if (trimmedName.length < 2) {
+      throw new ConvexError("Signer name must be at least 2 characters");
+    }
 
     // Check if already signed
     const existing = await ctx.db
@@ -725,29 +834,27 @@ export const signTelehealthConsent = authedMutation({
       .withIndex("by_patientId_formType", (q) =>
         q.eq("patientId", args.patientId).eq("formType", "telehealth-consent")
       )
-      .filter((q) => q.eq(q.field("caregiverUserId"), userId))
       .first();
 
-    if (existing) {
-      // Already signed — idempotent, no error
-      return;
+    if (existing && existing.caregiverUserId === ctx.userId) {
+      return; // idempotent
     }
 
     await ctx.db.insert("intakeForms", {
       patientId: args.patientId,
-      caregiverUserId: userId,
+      caregiverUserId: ctx.userId,
       formType: "telehealth-consent",
       signedAt: Date.now(),
-      signerName: args.signerName,
-      formVersion: CURRENT_FORM_VERSION,
+      signerName: trimmedName,
       signerIP: args.signerIP,
+      formVersion: "1.0",
     });
 
     await ctx.db.insert("activityLog", {
       patientId: args.patientId,
-      actorUserId: userId,
-      action: "intake-form-signed",
-      details: "Signed telehealth-consent",
+      actorUserId: ctx.userId,
+      action: "telehealth-consent-signed",
+      details: "Signed telehealth consent",
       timestamp: Date.now(),
     });
   },
@@ -770,12 +877,14 @@ export const getByCaregiver = authedQuery({
   args: { patientId: v.id("patients") },
   handler: async (ctx, args) => {
     if (!ctx.userId) return [];
+    await assertCaregiverAccess(ctx, args.patientId);
 
-    return await ctx.db
+    const allForms = await ctx.db
       .query("intakeForms")
       .withIndex("by_patientId", (q) => q.eq("patientId", args.patientId))
-      .filter((q) => q.eq(q.field("caregiverUserId"), ctx.userId!))
       .collect();
+
+    return allForms.filter((f) => f.caregiverUserId === ctx.userId);
   },
 });
 
@@ -784,89 +893,77 @@ export const hasTelehealthConsent = authedQuery({
   handler: async (ctx, args) => {
     if (!ctx.userId) return false;
 
-    const consent = await ctx.db
+    const form = await ctx.db
       .query("intakeForms")
       .withIndex("by_patientId_formType", (q) =>
         q.eq("patientId", args.patientId).eq("formType", "telehealth-consent")
       )
-      .filter((q) => q.eq(q.field("caregiverUserId"), ctx.userId!))
       .first();
 
-    return consent !== null;
+    if (!form) return false;
+    return form.caregiverUserId === ctx.userId;
   },
 });
 
-async function checkIntakeCompletion(
-  ctx: { db: any },
+async function checkAndSetIntakeCompletion(
+  ctx: { db: any; userId: string },
   patientId: any,
-  caregiverUserId: string
+  caregiverUserId: string,
 ) {
-  const signedForms = await ctx.db
+  const allForms = await ctx.db
     .query("intakeForms")
     .withIndex("by_patientId", (q: any) => q.eq("patientId", patientId))
-    .filter((q: any) => q.eq(q.field("caregiverUserId"), caregiverUserId))
     .collect();
 
-  const signedTypes = new Set(signedForms.map((f: any) => f.formType));
-  const allComplete = REQUIRED_INTAKE_FORMS.every((t) => signedTypes.has(t));
+  const caregiverForms = allForms.filter(
+    (f: { caregiverUserId: string }) => f.caregiverUserId === caregiverUserId
+  );
 
-  if (allComplete) {
-    const link = await ctx.db
-      .query("caregiverLinks")
-      .withIndex("by_caregiverUserId_patientId", (q: any) =>
-        q.eq("caregiverUserId", caregiverUserId).eq("patientId", patientId)
-      )
-      .first();
+  const signedTypes = new Set(
+    caregiverForms.map((f: { formType: string }) => f.formType)
+  );
 
-    if (link && !link.intakeCompletedAt) {
-      await ctx.db.patch(link._id, { intakeCompletedAt: Date.now() });
-    }
+  const allRequired = REQUIRED_INTAKE_FORMS.every((ft) => signedTypes.has(ft));
+  if (!allRequired) return;
+
+  const link = await ctx.db
+    .query("caregiverLinks")
+    .withIndex("by_caregiverUserId_patientId", (q: any) =>
+      q.eq("caregiverUserId", caregiverUserId).eq("patientId", patientId)
+    )
+    .first();
+
+  if (link && !link.intakeCompletedAt) {
+    await ctx.db.patch(link._id, { intakeCompletedAt: Date.now() });
   }
 }
 ```
 
 - [ ] **Step 4: Run tests to verify they pass**
+Run: `cd /Users/desha/Springfield-Vibeathon && npx vitest run convex/__tests__/intakeForms.test.ts`
+Expected: PASS (all 7 tests)
 
-Run: `npx vitest run convex/__tests__/intakeForms.test.ts --reporter=verbose`
-
-Expected: PASS
-
-- [ ] **Step 5: Run full test suite**
-
-Run: `npx vitest run --reporter=verbose 2>&1 | tail -30`
-
-Expected: All tests pass.
-
-- [ ] **Step 6: Commit**
-
-```bash
-git add convex/intakeForms.ts convex/__tests__/intakeForms.test.ts
-git commit -m "feat(backend): add intakeForms Convex functions
-
-signForm, signTelehealthConsent mutations with authorization and
-duplicate prevention. getByPatient, getByCaregiver, hasTelehealthConsent
-queries. Auto-sets intakeCompletedAt on caregiverLinks when all 4
-required forms are signed."
-```
+- [ ] **Step 5: Commit**
+Run: `cd /Users/desha/Springfield-Vibeathon && git add convex/intakeForms.ts convex/__tests__/intakeForms.test.ts && git commit -m "feat(backend): add intakeForms CRUD with intake completion logic and tests"`
 
 ---
 
-## Task 5: Form Content — Legal Text Templates
+## Task 6: Form Content Library
 
 **Files:**
 - Create: `src/features/intake/lib/form-content.ts`
 
-- [ ] **Step 1: Create the parameterized form content module**
-
-Create `src/features/intake/lib/form-content.ts`:
+- [ ] **Step 1: Create the form content module**
 
 ```typescript
+// src/features/intake/lib/form-content.ts
+
 export interface PracticeInfo {
-  practiceName?: string;
-  practiceAddress?: string;
-  practicePhone?: string;
-  slpName?: string;
-  credentials?: string;
+  practiceName: string;
+  practiceAddress: string;
+  practicePhone: string;
+  slpName: string;
+  credentials: string;
 }
 
 export interface FormSection {
@@ -874,180 +971,16 @@ export interface FormSection {
   body: string;
 }
 
-export interface FormContent {
+export interface FormTemplate {
   title: string;
   sections: FormSection[];
   disclaimer: string;
 }
 
-const DISCLAIMER =
-  "This is a template document. Please consult your legal counsel to ensure compliance with your state's specific requirements.";
+const DEFAULT_DISCLAIMER =
+  "This is a template document. Consult your legal counsel to ensure compliance with your state's specific requirements.";
 
-function p(info: PracticeInfo) {
-  return {
-    name: info.practiceName || "[Practice Name]",
-    address: info.practiceAddress || "[Practice Address]",
-    phone: info.practicePhone || "[Practice Phone]",
-    slp: info.slpName || "[Clinician Name]",
-    cred: info.credentials || "[Credentials]",
-  };
-}
-
-export function getHipaaNpp(info: PracticeInfo): FormContent {
-  const d = p(info);
-  return {
-    title: "Notice of Privacy Practices",
-    sections: [
-      {
-        heading: "About This Notice",
-        body: `${d.name} is committed to protecting the privacy of your health information. This notice describes how medical information about you or your child may be used and disclosed, and how you can access this information. It applies to all records of care generated by ${d.name}.`,
-      },
-      {
-        heading: "How We Use and Disclose Your Information",
-        body: "We may use and disclose your protected health information (PHI) for the purposes of treatment (coordinating care with other providers), payment (billing your insurance or providing receipts), and healthcare operations (quality improvement, training). We will not use or disclose your PHI for any other purpose without your written authorization.",
-      },
-      {
-        heading: "Your Rights",
-        body: "You have the right to: (1) Request restrictions on how your PHI is used or disclosed. (2) Request confidential communications. (3) Inspect and obtain a copy of your PHI. (4) Request amendments to your PHI. (5) Receive an accounting of disclosures. (6) Obtain a paper copy of this notice. (7) File a complaint with us or the U.S. Department of Health and Human Services if you believe your privacy rights have been violated.",
-      },
-      {
-        heading: "Contact Information",
-        body: `Privacy Officer: ${d.slp}, ${d.cred}\nAddress: ${d.address}\nPhone: ${d.phone}`,
-      },
-    ],
-    disclaimer: DISCLAIMER,
-  };
-}
-
-export function getConsentTreatment(
-  info: PracticeInfo,
-  patientName: string
-): FormContent {
-  const d = p(info);
-  return {
-    title: "Consent for Evaluation and Treatment",
-    sections: [
-      {
-        heading: "Authorization",
-        body: `I authorize ${d.slp}, ${d.cred}, at ${d.name} to evaluate and provide speech-language pathology services to ${patientName || "[Patient Name]"}.`,
-      },
-      {
-        heading: "Scope of Services",
-        body: "Services may include but are not limited to: speech-language evaluation, individual and/or group therapy, augmentative and alternative communication (AAC) assessment and training, parent/caregiver training, and home program development.",
-      },
-      {
-        heading: "Risks and Benefits",
-        body: "I understand that speech-language therapy is generally considered safe. Potential benefits include improved communication skills. I understand that progress is not guaranteed and outcomes vary. I may withdraw consent and discontinue services at any time.",
-      },
-    ],
-    disclaimer: DISCLAIMER,
-  };
-}
-
-export function getFinancialAgreement(info: PracticeInfo): FormContent {
-  const d = p(info);
-  return {
-    title: "Financial Responsibility Agreement",
-    sections: [
-      {
-        heading: "Payment Terms",
-        body: `I understand that I am financially responsible for all charges incurred for services rendered by ${d.name}. Payment is due at the time of service unless other arrangements have been made in advance.`,
-      },
-      {
-        heading: "Insurance",
-        body: "If insurance is billed, I understand that I am responsible for any co-pays, deductibles, and charges not covered by my insurance plan. I authorize release of information necessary to process insurance claims.",
-      },
-      {
-        heading: "Good Faith Estimate (No Surprises Act)",
-        body: "Under federal law (the No Surprises Act, effective January 2022), you have the right to receive a Good Faith Estimate of expected charges for scheduled services. If you are uninsured or self-pay, you may request a Good Faith Estimate before your appointment. If you receive a bill that is at least $400 more than your Good Faith Estimate, you can dispute the bill.",
-      },
-    ],
-    disclaimer: DISCLAIMER,
-  };
-}
-
-export function getCancellationPolicy(info: PracticeInfo): FormContent {
-  const d = p(info);
-  return {
-    title: "Cancellation and Attendance Policy",
-    sections: [
-      {
-        heading: "Cancellation Notice",
-        body: `${d.name} requires at least 24 hours advance notice if you need to cancel or reschedule an appointment. This allows the time slot to be offered to another patient.`,
-      },
-      {
-        heading: "Late Cancellations and No-Shows",
-        body: "Appointments cancelled with less than 24 hours notice or missed without notice (no-shows) may be subject to a cancellation fee. Insurance does not cover missed appointments. Repeated no-shows may result in discharge from services.",
-      },
-      {
-        heading: "How to Cancel",
-        body: `To cancel or reschedule, please contact ${d.name} via the Bridges app messaging feature or by phone at ${d.phone}.`,
-      },
-    ],
-    disclaimer: DISCLAIMER,
-  };
-}
-
-export function getReleaseAuthorization(
-  info: PracticeInfo,
-  patientName: string,
-  thirdPartyName: string
-): FormContent {
-  const d = p(info);
-  return {
-    title: "Authorization to Release/Exchange Information",
-    sections: [
-      {
-        heading: "Authorization",
-        body: `I authorize ${d.name} to release and/or exchange protected health information about ${patientName || "[Patient Name]"} with: ${thirdPartyName || "[Third Party Name]"}.`,
-      },
-      {
-        heading: "Information to Be Released",
-        body: "Information may include: evaluation reports, progress reports, treatment plans, session notes, and other clinical documentation relevant to the coordination of care.",
-      },
-      {
-        heading: "Expiration",
-        body: "This authorization will expire one (1) year from the date of signature, unless revoked earlier in writing. I understand that I may revoke this authorization at any time by providing written notice.",
-      },
-    ],
-    disclaimer: DISCLAIMER,
-  };
-}
-
-export function getTelehealthConsent(
-  info: PracticeInfo,
-  patientName: string
-): FormContent {
-  const d = p(info);
-  return {
-    title: "Telehealth Informed Consent",
-    sections: [
-      {
-        heading: "Nature of Telehealth",
-        body: `I consent to participate in telehealth speech-language therapy sessions conducted by ${d.slp}, ${d.cred}, at ${d.name}. Telehealth involves the delivery of healthcare services using interactive audio and video technology.`,
-      },
-      {
-        heading: "Risks and Limitations",
-        body: "I understand that: (1) Telehealth sessions require a stable internet connection and may be affected by technology failures. (2) Despite reasonable safeguards, electronic communication carries some risk of unauthorized access. (3) Some assessments and interventions may be less effective via telehealth. (4) My clinician may determine that telehealth is not appropriate and recommend in-person services.",
-      },
-      {
-        heading: "Technology Requirements",
-        body: "I will ensure a private, quiet environment for sessions. I will use a device with a camera, microphone, and reliable internet connection. I understand that sessions may need to be rescheduled if technology issues prevent effective communication.",
-      },
-      {
-        heading: "Emergency Protocols",
-        body: `In the event of a medical or behavioral emergency during a telehealth session, I will contact local emergency services (911). I will provide my physical location to ${d.slp} at the start of each session so appropriate emergency services can be contacted if needed.`,
-      },
-      {
-        heading: "Voluntary Participation",
-        body: `Participation in telehealth is voluntary. I may withdraw consent and discontinue telehealth services at any time. I may request in-person services as an alternative, subject to availability. ${patientName ? `This consent applies to telehealth services for ${patientName}.` : ""}`,
-      },
-    ],
-    disclaimer: DISCLAIMER,
-  };
-}
-
-export type FormType =
+export type IntakeFormType =
   | "hipaa-npp"
   | "consent-treatment"
   | "financial-agreement"
@@ -1055,355 +988,480 @@ export type FormType =
   | "release-authorization"
   | "telehealth-consent";
 
-export const FORM_LABELS: Record<FormType, string> = {
-  "hipaa-npp": "HIPAA Notice of Privacy Practices",
-  "consent-treatment": "Consent for Evaluation and Treatment",
-  "financial-agreement": "Financial Responsibility Agreement",
-  "cancellation-policy": "Cancellation and Attendance Policy",
-  "release-authorization": "Authorization to Release Information",
-  "telehealth-consent": "Telehealth Informed Consent",
-};
-
-export const REQUIRED_INTAKE_FORM_TYPES: FormType[] = [
+export const REQUIRED_INTAKE_FORMS: IntakeFormType[] = [
   "hipaa-npp",
   "consent-treatment",
   "financial-agreement",
   "cancellation-policy",
 ];
+
+export function getFormTemplate(
+  formType: IntakeFormType,
+  practice: PracticeInfo,
+  patientName: string,
+  thirdPartyName?: string,
+): FormTemplate {
+  switch (formType) {
+    case "hipaa-npp":
+      return getHipaaNpp(practice);
+    case "consent-treatment":
+      return getConsentTreatment(practice, patientName);
+    case "financial-agreement":
+      return getFinancialAgreement(practice);
+    case "cancellation-policy":
+      return getCancellationPolicy(practice);
+    case "release-authorization":
+      return getReleaseAuthorization(practice, patientName, thirdPartyName ?? "[Third Party]");
+    case "telehealth-consent":
+      return getTelehealthConsent(practice, patientName);
+  }
+}
+
+export const FORM_LABELS: Record<IntakeFormType, string> = {
+  "hipaa-npp": "HIPAA Notice of Privacy Practices",
+  "consent-treatment": "Consent for Evaluation and Treatment",
+  "financial-agreement": "Financial Agreement",
+  "cancellation-policy": "Cancellation Policy",
+  "release-authorization": "Release of Information Authorization",
+  "telehealth-consent": "Telehealth Informed Consent",
+};
+
+function getHipaaNpp(practice: PracticeInfo): FormTemplate {
+  return {
+    title: "Notice of Privacy Practices (HIPAA)",
+    sections: [
+      {
+        heading: "Your Information. Your Rights. Our Responsibilities.",
+        body: `${practice.practiceName} is committed to protecting your health information. This notice describes how medical information about you or your child may be used and disclosed, and how you can access this information.`,
+      },
+      {
+        heading: "How We Use and Disclose Your Information",
+        body: "We may use and disclose your protected health information (PHI) for the following purposes: Treatment — to provide and coordinate speech-language pathology services. Payment — to bill and collect payment for services provided. Healthcare Operations — to improve quality of care, train staff, and conduct business planning. We will not use or disclose your PHI for any other purpose without your written authorization.",
+      },
+      {
+        heading: "Your Rights",
+        body: "You have the right to: (1) Request a copy of your health records. (2) Request corrections to your health information. (3) Request restrictions on certain uses and disclosures. (4) Request confidential communications. (5) Receive a list of disclosures we have made. (6) File a complaint if you believe your privacy rights have been violated. Complaints may be filed with us or with the U.S. Department of Health and Human Services.",
+      },
+      {
+        heading: "Our Responsibilities",
+        body: "We are required by law to: maintain the privacy of your PHI, provide you with this notice of our legal duties and privacy practices, and notify you following a breach of unsecured PHI. We will not use or share your information other than as described here unless you tell us we can in writing.",
+      },
+      {
+        heading: "Contact Information",
+        body: `Privacy Officer: ${practice.slpName}, ${practice.credentials}\n${practice.practiceName}\n${practice.practiceAddress}\n${practice.practicePhone}`,
+      },
+    ],
+    disclaimer: DEFAULT_DISCLAIMER,
+  };
+}
+
+function getConsentTreatment(practice: PracticeInfo, patientName: string): FormTemplate {
+  return {
+    title: "Consent for Evaluation and Treatment",
+    sections: [
+      {
+        heading: "Authorization",
+        body: `I authorize ${practice.slpName}, ${practice.credentials}, of ${practice.practiceName} to evaluate and provide speech-language pathology services to ${patientName}.`,
+      },
+      {
+        heading: "Scope of Services",
+        body: "Services may include, but are not limited to: speech-language evaluation, articulation therapy, language therapy, fluency intervention, voice therapy, augmentative and alternative communication (AAC) assessment and training, feeding/swallowing therapy, and cognitive-communication therapy.",
+      },
+      {
+        heading: "Risks and Benefits",
+        body: "Benefits may include improved communication skills. Risks are minimal but may include temporary frustration during challenging tasks. The clinician will use evidence-based practices and adjust treatment as needed.",
+      },
+      {
+        heading: "Right to Withdraw",
+        body: "I understand that I may withdraw consent and discontinue treatment at any time by providing written or verbal notice.",
+      },
+    ],
+    disclaimer: DEFAULT_DISCLAIMER,
+  };
+}
+
+function getFinancialAgreement(practice: PracticeInfo): FormTemplate {
+  return {
+    title: "Financial Agreement",
+    sections: [
+      {
+        heading: "Payment Terms",
+        body: `${practice.practiceName} provides speech-language pathology services. Payment is due at the time of service unless other arrangements have been made. We accept payment via credit card, debit card, HSA/FSA, and electronic transfer.`,
+      },
+      {
+        heading: "Insurance",
+        body: "If you plan to use insurance, you are responsible for verifying your coverage and benefits prior to treatment. We will provide documentation (superbills) to support your insurance claims. You are responsible for any balance not covered by your insurance, including deductibles, co-pays, and co-insurance.",
+      },
+      {
+        heading: "No Surprises Act — Good Faith Estimate",
+        body: "Under the No Surprises Act, you have the right to receive a Good Faith Estimate explaining how much your medical care will cost. You can ask your healthcare provider for a Good Faith Estimate before you schedule a service. If you receive a bill that is at least $400 more than your Good Faith Estimate, you can dispute the bill.",
+      },
+    ],
+    disclaimer: DEFAULT_DISCLAIMER,
+  };
+}
+
+function getCancellationPolicy(practice: PracticeInfo): FormTemplate {
+  return {
+    title: "Cancellation and No-Show Policy",
+    sections: [
+      {
+        heading: "Required Notice",
+        body: `${practice.practiceName} requires at least 24 hours' notice for cancellations. This allows us to offer the time slot to another family.`,
+      },
+      {
+        heading: "Late Cancellation and No-Show",
+        body: "Cancellations with less than 24 hours' notice or no-shows may be subject to a fee. Repeated late cancellations or no-shows may result in schedule changes or discharge from services.",
+      },
+      {
+        heading: "How to Cancel",
+        body: `To cancel or reschedule, please contact us at ${practice.practicePhone} or through the Bridges app messaging feature.`,
+      },
+    ],
+    disclaimer: DEFAULT_DISCLAIMER,
+  };
+}
+
+function getReleaseAuthorization(
+  practice: PracticeInfo,
+  patientName: string,
+  thirdPartyName: string,
+): FormTemplate {
+  return {
+    title: "Authorization for Release of Information",
+    sections: [
+      {
+        heading: "Authorization",
+        body: `I authorize ${practice.practiceName} to exchange information regarding ${patientName}'s speech-language pathology evaluation and treatment with: ${thirdPartyName}.`,
+      },
+      {
+        heading: "Information to be Released",
+        body: "This may include: evaluation reports, treatment plans, progress notes, and relevant clinical data pertaining to speech-language services.",
+      },
+      {
+        heading: "Purpose",
+        body: "The purpose of this release is to coordinate care and ensure continuity of services for the patient.",
+      },
+      {
+        heading: "Expiration",
+        body: "This authorization expires one (1) year from the date of signing. You may revoke this authorization at any time by providing written notice.",
+      },
+    ],
+    disclaimer: DEFAULT_DISCLAIMER,
+  };
+}
+
+function getTelehealthConsent(practice: PracticeInfo, patientName: string): FormTemplate {
+  return {
+    title: "Telehealth Informed Consent",
+    sections: [
+      {
+        heading: "Description of Telehealth",
+        body: `Telehealth involves the delivery of speech-language pathology services by ${practice.slpName}, ${practice.credentials}, via live video conferencing technology. This includes evaluation, therapy, and consultation.`,
+      },
+      {
+        heading: "Risks and Limitations",
+        body: "Telehealth services may be limited by technology — poor internet connection, audio/video quality, or equipment failure may interrupt sessions. Some assessments and interventions may not be appropriate for telehealth delivery. In such cases, in-person sessions will be recommended.",
+      },
+      {
+        heading: "Technology Requirements",
+        body: "You will need a device with a camera, microphone, and speaker, plus a stable internet connection. Sessions will be conducted through the Bridges platform, which uses encrypted video conferencing.",
+      },
+      {
+        heading: "Emergency Protocols",
+        body: `In case of a medical or behavioral emergency during a telehealth session, please call 911. Please have your physical address available at the start of each session in case emergency services need to be dispatched. ${patientName} should not be left unattended during telehealth sessions.`,
+      },
+      {
+        heading: "Voluntary Participation",
+        body: "Participation in telehealth is voluntary. You may opt out of telehealth services at any time and request in-person sessions instead.",
+      },
+    ],
+    disclaimer: DEFAULT_DISCLAIMER,
+  };
+}
 ```
 
-- [ ] **Step 2: Commit**
+- [ ] **Step 2: Verify the file compiles**
+Run: `cd /Users/desha/Springfield-Vibeathon && npx tsc --noEmit src/features/intake/lib/form-content.ts 2>&1 | head -20`
+Expected: No errors (or only unrelated project-wide errors)
 
-```bash
-git add src/features/intake/lib/form-content.ts
-git commit -m "feat(intake): add parameterized legal text templates for 6 form types
-
-HIPAA NPP, consent for treatment, financial agreement, cancellation policy,
-release authorization, and telehealth consent. All parameterized with
-practice profile fields."
-```
+- [ ] **Step 3: Commit**
+Run: `cd /Users/desha/Springfield-Vibeathon && git add src/features/intake/lib/form-content.ts && git commit -m "feat(intake): add parameterized legal form content templates"`
 
 ---
 
-## Task 6: Intake Hook and Form Renderer Component
+## Task 7: Intake Hook — `use-intake-forms.ts`
 
 **Files:**
 - Create: `src/features/intake/hooks/use-intake-forms.ts`
-- Create: `src/features/intake/components/intake-form-renderer.tsx`
-- Create: `src/features/intake/components/__tests__/intake-form-renderer.test.tsx`
 
-- [ ] **Step 1: Create the intake hook**
-
-Create `src/features/intake/hooks/use-intake-forms.ts`:
+- [ ] **Step 1: Write the hook**
 
 ```typescript
+// src/features/intake/hooks/use-intake-forms.ts
 "use client";
 
 import { useMutation, useQuery } from "convex/react";
 
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
+import { REQUIRED_INTAKE_FORMS, type IntakeFormType } from "../lib/form-content";
 
 export function useIntakeForms(patientId: Id<"patients">) {
-  const forms = useQuery(api.intakeForms.getByCaregiver, { patientId });
-  const signForm = useMutation(api.intakeForms.signForm);
-  const signTelehealthConsent = useMutation(api.intakeForms.signTelehealthConsent);
+  const caregiverForms = useQuery(api.intakeForms.getByCaregiver, { patientId });
+  const signFormMutation = useMutation(api.intakeForms.signForm);
+  const signTelehealthMutation = useMutation(api.intakeForms.signTelehealthConsent);
 
-  const signedTypes = new Set(forms?.map((f) => f.formType) ?? []);
+  const signedTypes = new Set(
+    caregiverForms?.map((f) => f.formType) ?? [],
+  );
+
+  const isFormSigned = (formType: IntakeFormType) => signedTypes.has(formType);
+
+  const requiredFormProgress = {
+    signed: REQUIRED_INTAKE_FORMS.filter((ft) => signedTypes.has(ft)).length,
+    total: REQUIRED_INTAKE_FORMS.length,
+    isComplete: REQUIRED_INTAKE_FORMS.every((ft) => signedTypes.has(ft)),
+  };
+
+  const nextUnsignedForm = REQUIRED_INTAKE_FORMS.find(
+    (ft) => !signedTypes.has(ft),
+  );
+
+  async function signForm(
+    formType: IntakeFormType,
+    signerName: string,
+    signerIP?: string,
+    metadata?: { thirdPartyName?: string },
+  ) {
+    await signFormMutation({
+      patientId,
+      formType,
+      signerName,
+      signerIP,
+      metadata,
+    });
+  }
+
+  async function signTelehealthConsent(signerName: string, signerIP?: string) {
+    await signTelehealthMutation({
+      patientId,
+      signerName,
+      signerIP,
+    });
+  }
 
   return {
-    forms,
-    signedTypes,
-    isLoading: forms === undefined,
+    forms: caregiverForms ?? [],
+    isLoading: caregiverForms === undefined,
+    isFormSigned,
+    requiredFormProgress,
+    nextUnsignedForm,
     signForm,
     signTelehealthConsent,
   };
 }
 
 export function useIntakeStatus(patientId: Id<"patients">) {
-  const forms = useQuery(api.intakeForms.getByPatient, { patientId });
+  const allForms = useQuery(api.intakeForms.getByPatient, { patientId });
+
   return {
-    forms,
-    isLoading: forms === undefined,
+    forms: allForms ?? [],
+    isLoading: allForms === undefined,
   };
 }
 
-export function useTelehealthConsent(patientId: Id<"patients"> | null) {
-  const hasConsent = useQuery(
-    api.intakeForms.hasTelehealthConsent,
-    patientId ? { patientId } : "skip"
-  );
+export function useTelehealthConsent(patientId: Id<"patients">) {
+  const hasConsent = useQuery(api.intakeForms.hasTelehealthConsent, { patientId });
+  const signMutation = useMutation(api.intakeForms.signTelehealthConsent);
+
   return {
-    hasConsent: hasConsent ?? null,
+    hasConsent: hasConsent ?? false,
     isLoading: hasConsent === undefined,
+    signConsent: async (signerName: string, signerIP?: string) => {
+      await signMutation({ patientId, signerName, signerIP });
+    },
   };
 }
 ```
 
-- [ ] **Step 2: Write failing test for intake-form-renderer**
+- [ ] **Step 2: Commit**
+Run: `cd /Users/desha/Springfield-Vibeathon && git add src/features/intake/hooks/use-intake-forms.ts && git commit -m "feat(intake): add useIntakeForms, useIntakeStatus, useTelehealthConsent hooks"`
 
-Create `src/features/intake/components/__tests__/intake-form-renderer.test.tsx`:
+---
 
-```tsx
-import { render, screen, fireEvent } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+## Task 8: Intake Form Renderer Component
 
-import { IntakeFormRenderer } from "../intake-form-renderer";
+**Files:**
+- Create: `src/features/intake/components/intake-form-renderer.tsx`
 
-const MOCK_CONTENT = {
-  title: "Test Form",
-  sections: [
-    { heading: "Section 1", body: "Body text here." },
-    { heading: "Section 2", body: "More body text." },
-  ],
-  disclaimer: "This is a test disclaimer.",
-};
-
-describe("IntakeFormRenderer", () => {
-  it("renders form title and sections", () => {
-    render(
-      <IntakeFormRenderer
-        content={MOCK_CONTENT}
-        onSign={vi.fn()}
-        isSigning={false}
-      />
-    );
-
-    expect(screen.getByText("Test Form")).toBeInTheDocument();
-    expect(screen.getByText("Section 1")).toBeInTheDocument();
-    expect(screen.getByText("Body text here.")).toBeInTheDocument();
-    expect(screen.getByText("This is a test disclaimer.")).toBeInTheDocument();
-  });
-
-  it("disables sign button when name is empty or checkbox unchecked", () => {
-    render(
-      <IntakeFormRenderer
-        content={MOCK_CONTENT}
-        onSign={vi.fn()}
-        isSigning={false}
-      />
-    );
-
-    const signButton = screen.getByRole("button", { name: /sign/i });
-    expect(signButton).toBeDisabled();
-  });
-
-  it("enables sign button when name typed and checkbox checked", () => {
-    const onSign = vi.fn();
-    render(
-      <IntakeFormRenderer
-        content={MOCK_CONTENT}
-        onSign={onSign}
-        isSigning={false}
-      />
-    );
-
-    const nameInput = screen.getByPlaceholderText(/full legal name/i);
-    fireEvent.change(nameInput, { target: { value: "Jane Doe" } });
-
-    const checkbox = screen.getByRole("checkbox");
-    fireEvent.click(checkbox);
-
-    const signButton = screen.getByRole("button", { name: /sign/i });
-    expect(signButton).toBeEnabled();
-
-    fireEvent.click(signButton);
-    expect(onSign).toHaveBeenCalledWith("Jane Doe");
-  });
-
-  it("shows signed state when alreadySigned is true", () => {
-    render(
-      <IntakeFormRenderer
-        content={MOCK_CONTENT}
-        onSign={vi.fn()}
-        isSigning={false}
-        alreadySigned={{ signerName: "Jane Doe", signedAt: Date.now() }}
-      />
-    );
-
-    expect(screen.getByText(/signed by jane doe/i)).toBeInTheDocument();
-  });
-});
-```
-
-- [ ] **Step 3: Run test to verify it fails**
-
-Run: `npx vitest run src/features/intake/components/__tests__/intake-form-renderer.test.tsx --reporter=verbose`
-
-Expected: FAIL — module not found.
-
-- [ ] **Step 4: Implement intake-form-renderer.tsx**
-
-Create `src/features/intake/components/intake-form-renderer.tsx`:
+- [ ] **Step 1: Write the component**
 
 ```tsx
+// src/features/intake/components/intake-form-renderer.tsx
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
 
-import { cn } from "@/core/utils";
 import { Button } from "@/shared/components/ui/button";
 import { Checkbox } from "@/shared/components/ui/checkbox";
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
 
-import type { FormContent } from "../lib/form-content";
+import type { FormTemplate } from "../lib/form-content";
 
 interface IntakeFormRendererProps {
-  content: FormContent;
-  onSign: (signerName: string) => void;
-  isSigning: boolean;
-  alreadySigned?: { signerName: string; signedAt: number } | null;
+  template: FormTemplate;
+  alreadySigned: boolean;
+  signedAt?: number;
+  onSign: (signerName: string) => Promise<void>;
 }
 
 export function IntakeFormRenderer({
-  content,
-  onSign,
-  isSigning,
+  template,
   alreadySigned,
+  signedAt,
+  onSign,
 }: IntakeFormRendererProps) {
-  const [name, setName] = useState("");
+  const [signerName, setSignerName] = useState("");
   const [acknowledged, setAcknowledged] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const canSign = name.trim().length >= 2 && acknowledged && !isSigning;
+  const canSign = signerName.trim().length >= 2 && acknowledged && !isSubmitting;
+
+  async function handleSign() {
+    if (!canSign) return;
+    setIsSubmitting(true);
+    try {
+      await onSign(signerName.trim());
+      toast.success("Form signed successfully");
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Failed to sign form",
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
 
   if (alreadySigned) {
     return (
-      <div className="rounded-2xl bg-white p-6 shadow-sm">
-        <h2 className="text-xl font-semibold text-on-surface font-headline">
-          {content.title}
+      <div className="flex flex-col gap-4">
+        <h2 className="font-headline text-xl font-bold text-foreground">
+          {template.title}
         </h2>
-        <div className="mt-4 flex items-center gap-2 rounded-lg bg-green-50 px-4 py-3 text-green-800">
-          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-          </svg>
-          <span className="text-sm font-medium">
-            Signed by {alreadySigned.signerName} on{" "}
-            {new Date(alreadySigned.signedAt).toLocaleDateString()}
-          </span>
+        <div className="rounded-xl bg-success/10 p-4 text-sm text-success">
+          Signed on{" "}
+          {signedAt
+            ? new Date(signedAt).toLocaleDateString("en-US", {
+                month: "long",
+                day: "numeric",
+                year: "numeric",
+              })
+            : "a previous date"}
         </div>
       </div>
     );
   }
 
   return (
-    <div className="rounded-2xl bg-white p-6 shadow-sm">
-      <h2 className="text-xl font-semibold text-on-surface font-headline">
-        {content.title}
+    <div className="flex flex-col gap-6">
+      <h2 className="font-headline text-xl font-bold text-foreground">
+        {template.title}
       </h2>
 
-      <div className="mt-4 space-y-4">
-        {content.sections.map((section) => (
-          <div key={section.heading}>
-            <h3 className="text-sm font-semibold text-on-surface">
+      <div className="flex flex-col gap-4 rounded-xl bg-muted/30 p-4 text-sm leading-relaxed text-foreground">
+        {template.sections.map((section, i) => (
+          <div key={i}>
+            <h3 className="mb-1 font-semibold text-foreground">
               {section.heading}
             </h3>
-            <p className="mt-1 text-sm leading-relaxed text-on-surface-variant whitespace-pre-line">
+            <p className="whitespace-pre-line text-muted-foreground">
               {section.body}
             </p>
           </div>
         ))}
       </div>
 
-      <p className="mt-4 text-xs italic text-on-surface-variant">
-        {content.disclaimer}
+      <p className="text-xs italic text-muted-foreground">
+        {template.disclaimer}
       </p>
 
-      <div className="mt-6 border-t border-border pt-4">
-        <div className="space-y-3">
-          <div>
-            <Label htmlFor="signer-name" className="text-sm font-medium">
-              Full Legal Name
-            </Label>
-            <Input
-              id="signer-name"
-              placeholder="Full legal name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="mt-1"
-            />
-          </div>
-
-          <div className="flex items-start gap-2">
-            <Checkbox
-              id="acknowledge"
-              checked={acknowledged}
-              onCheckedChange={(checked) => setAcknowledged(checked === true)}
-              className="mt-0.5"
-            />
-            <Label htmlFor="acknowledge" className="text-sm text-on-surface-variant">
-              I have read and understand this document, and I acknowledge and agree
-              to its terms.
-            </Label>
-          </div>
-
-          <Button
-            onClick={() => onSign(name.trim())}
-            disabled={!canSign}
-            className={cn(
-              "w-full",
-              isSigning && "opacity-60",
-            )}
-          >
-            {isSigning ? "Signing…" : "Sign Document"}
-          </Button>
+      <div className="flex flex-col gap-4 rounded-xl border border-border p-4">
+        <div>
+          <Label htmlFor="signer-name" className="text-sm font-medium">
+            Full Legal Name
+          </Label>
+          <Input
+            id="signer-name"
+            value={signerName}
+            onChange={(e) => setSignerName(e.target.value)}
+            placeholder="Type your full legal name"
+            className="mt-1"
+          />
         </div>
+
+        <div className="flex items-start gap-2">
+          <Checkbox
+            id="acknowledge"
+            checked={acknowledged}
+            onCheckedChange={(checked) =>
+              setAcknowledged(checked === true)
+            }
+          />
+          <Label htmlFor="acknowledge" className="text-sm leading-snug">
+            I acknowledge that I have read and understand this document, and I agree
+            to its terms.
+          </Label>
+        </div>
+
+        <Button
+          onClick={handleSign}
+          disabled={!canSign}
+          className="w-full bg-gradient-to-br from-primary to-[#0d7377]"
+          size="lg"
+        >
+          {isSubmitting ? "Signing..." : "Sign Document"}
+        </Button>
       </div>
     </div>
   );
 }
 ```
 
-- [ ] **Step 5: Run test to verify it passes**
-
-Run: `npx vitest run src/features/intake/components/__tests__/intake-form-renderer.test.tsx --reporter=verbose`
-
-Expected: PASS
-
-- [ ] **Step 6: Commit**
-
-```bash
-git add src/features/intake/hooks/use-intake-forms.ts src/features/intake/components/intake-form-renderer.tsx src/features/intake/components/__tests__/intake-form-renderer.test.tsx
-git commit -m "feat(intake): add intake hook and form renderer component
-
-IntakeFormRenderer handles the sign flow — name input, checkbox, sign
-button. Shows signed state when already completed. useIntakeForms hook
-wraps Convex queries and mutations."
-```
+- [ ] **Step 2: Commit**
+Run: `cd /Users/desha/Springfield-Vibeathon && git add src/features/intake/components/intake-form-renderer.tsx && git commit -m "feat(intake): add IntakeFormRenderer component"`
 
 ---
 
-## Task 7: Intake Flow Stepper
+## Task 9: Intake Flow Stepper Component
 
 **Files:**
 - Create: `src/features/intake/components/intake-flow.tsx`
-- Create: `src/app/intake/[patientId]/page.tsx`
 
-- [ ] **Step 1: Create the intake flow stepper**
-
-Create `src/features/intake/components/intake-flow.tsx`:
+- [ ] **Step 1: Write the component**
 
 ```tsx
+// src/features/intake/components/intake-flow.tsx
 "use client";
 
-import { useConvexAuth, useQuery } from "convex/react";
 import { useState } from "react";
-import { toast } from "sonner";
+import { useConvexAuth, useQuery } from "convex/react";
 
 import { cn } from "@/core/utils";
+import { MaterialIcon } from "@/shared/components/material-icon";
 import { Button } from "@/shared/components/ui/button";
+import { Skeleton } from "@/shared/components/ui/skeleton";
 
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 import { useIntakeForms } from "../hooks/use-intake-forms";
 import {
-  type FormType,
   FORM_LABELS,
-  REQUIRED_INTAKE_FORM_TYPES,
-  getHipaaNpp,
-  getConsentTreatment,
-  getFinancialAgreement,
-  getCancellationPolicy,
+  REQUIRED_INTAKE_FORMS,
+  getFormTemplate,
+  type IntakeFormType,
   type PracticeInfo,
 } from "../lib/form-content";
 import { IntakeFormRenderer } from "./intake-form-renderer";
@@ -1412,646 +1470,755 @@ interface IntakeFlowProps {
   patientId: Id<"patients">;
 }
 
+const DEFAULT_PRACTICE: PracticeInfo = {
+  practiceName: "Your Therapist's Practice",
+  practiceAddress: "",
+  practicePhone: "",
+  slpName: "Your Therapist",
+  credentials: "SLP",
+};
+
 export function IntakeFlow({ patientId }: IntakeFlowProps) {
   const { isAuthenticated } = useConvexAuth();
   const patient = useQuery(
     api.patients.get,
-    isAuthenticated ? { patientId } : "skip"
+    isAuthenticated ? { patientId } : "skip",
   );
-  const { forms, signedTypes, isLoading, signForm } = useIntakeForms(patientId);
-  const [currentStep, setCurrentStep] = useState(0);
-  const [isSigning, setIsSigning] = useState(false);
-
-  // Resolve the SLP's practice profile for form content
-  const slpId = patient?.slpUserId;
   const practiceProfile = useQuery(
     api.practiceProfile.getBySlpId,
-    slpId ? { slpId } : "skip"
+    patient ? { slpUserId: patient.slpUserId } : "skip",
   );
+
+  const { forms, isLoading, isFormSigned, requiredFormProgress, signForm } =
+    useIntakeForms(patientId);
+
+  const [currentIndex, setCurrentIndex] = useState(0);
 
   if (isLoading || patient === undefined) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-surface">
-        <p className="text-on-surface-variant">Loading intake forms…</p>
+      <div className="mx-auto max-w-2xl p-6">
+        <Skeleton className="mb-4 h-8 w-64" />
+        <Skeleton className="h-96 rounded-xl" />
       </div>
     );
   }
 
-  if (!patient) {
+  if (patient === null) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-surface">
-        <p className="text-on-surface-variant">Patient not found.</p>
+      <div className="mx-auto max-w-2xl p-6">
+        <p className="text-muted-foreground">Patient not found.</p>
       </div>
     );
   }
 
-  const practiceInfo: PracticeInfo = {
-    practiceName: practiceProfile?.practiceName ?? undefined,
-    practiceAddress: practiceProfile?.practiceAddress ?? undefined,
-    practicePhone: practiceProfile?.practicePhone ?? undefined,
-    slpName: undefined, // Will come from Clerk user — acceptable as placeholder for now
-    credentials: practiceProfile?.credentials ?? undefined,
-  };
+  if (requiredFormProgress.isComplete) {
+    return (
+      <div className="mx-auto max-w-2xl p-6 text-center">
+        <div className="mb-4 flex justify-center">
+          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-success/10">
+            <MaterialIcon icon="check_circle" className="text-4xl text-success" />
+          </div>
+        </div>
+        <h1 className="font-headline text-2xl font-bold text-foreground">
+          Intake Complete
+        </h1>
+        <p className="mt-2 text-muted-foreground">
+          All required forms for {patient.firstName} have been signed. Thank you!
+        </p>
+      </div>
+    );
+  }
+
+  const practice: PracticeInfo = practiceProfile
+    ? {
+        practiceName: practiceProfile.practiceName ?? DEFAULT_PRACTICE.practiceName,
+        practiceAddress: practiceProfile.practiceAddress ?? DEFAULT_PRACTICE.practiceAddress,
+        practicePhone: practiceProfile.practicePhone ?? DEFAULT_PRACTICE.practicePhone,
+        slpName: DEFAULT_PRACTICE.slpName,
+        credentials: practiceProfile.credentials ?? DEFAULT_PRACTICE.credentials,
+      }
+    : DEFAULT_PRACTICE;
 
   const patientName = `${patient.firstName} ${patient.lastName}`;
-
-  const formContents = [
-    getHipaaNpp(practiceInfo),
-    getConsentTreatment(practiceInfo, patientName),
-    getFinancialAgreement(practiceInfo),
-    getCancellationPolicy(practiceInfo),
-  ];
-
-  const allComplete = REQUIRED_INTAKE_FORM_TYPES.every((t) => signedTypes.has(t));
-
-  if (allComplete) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-surface px-4">
-        <div className="max-w-md text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
-            <svg className="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-            </svg>
-          </div>
-          <h1 className="text-2xl font-semibold text-on-surface font-headline">
-            Intake Complete
-          </h1>
-          <p className="mt-2 text-on-surface-variant">
-            All intake forms for {patientName} have been signed. You&apos;re all set!
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  const currentFormType = REQUIRED_INTAKE_FORM_TYPES[currentStep];
-  const currentContent = formContents[currentStep];
-  const currentSigned = forms?.find((f) => f.formType === currentFormType);
-
-  async function handleSign(signerName: string) {
-    setIsSigning(true);
-    try {
-      await signForm({
-        patientId,
-        formType: currentFormType,
-        signerName,
-      });
-      toast.success(`${FORM_LABELS[currentFormType]} signed`);
-      // Auto-advance to next unsigned form
-      if (currentStep < REQUIRED_INTAKE_FORM_TYPES.length - 1) {
-        setCurrentStep((s) => s + 1);
-      }
-    } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Failed to sign form"
-      );
-    } finally {
-      setIsSigning(false);
-    }
-  }
+  const currentFormType = REQUIRED_INTAKE_FORMS[currentIndex];
+  const template = getFormTemplate(currentFormType, practice, patientName);
+  const alreadySigned = isFormSigned(currentFormType);
+  const signedForm = forms.find((f) => f.formType === currentFormType);
 
   return (
-    <div className="min-h-screen bg-surface px-4 py-8">
-      <div className="mx-auto max-w-2xl">
-        <div className="mb-6 text-center">
-          <h1 className="text-2xl font-semibold text-on-surface font-headline">
-            Intake Forms for {patientName}
-          </h1>
-          <p className="mt-1 text-sm text-on-surface-variant">
-            Step {currentStep + 1} of {REQUIRED_INTAKE_FORM_TYPES.length}
-          </p>
-        </div>
+    <div className="mx-auto max-w-2xl p-4 sm:p-6">
+      <h1 className="mb-2 font-headline text-2xl font-bold text-foreground">
+        Intake Forms for {patient.firstName}
+      </h1>
+      <p className="mb-6 text-sm text-muted-foreground">
+        {requiredFormProgress.signed} of {requiredFormProgress.total} forms completed
+      </p>
 
-        {/* Step indicators */}
-        <div className="mb-6 flex justify-center gap-2">
-          {REQUIRED_INTAKE_FORM_TYPES.map((formType, i) => (
+      {/* Step indicators */}
+      <div className="mb-6 flex gap-2">
+        {REQUIRED_INTAKE_FORMS.map((ft, i) => {
+          const signed = isFormSigned(ft);
+          const isCurrent = i === currentIndex;
+          return (
             <button
-              key={formType}
-              type="button"
-              onClick={() => setCurrentStep(i)}
+              key={ft}
+              onClick={() => setCurrentIndex(i)}
               className={cn(
-                "h-2 w-8 rounded-full transition-colors duration-300",
-                i === currentStep
-                  ? "bg-primary"
-                  : signedTypes.has(formType)
-                    ? "bg-green-400"
-                    : "bg-surface-container-high"
+                "flex h-2 flex-1 rounded-full transition-colors duration-300",
+                signed
+                  ? "bg-success"
+                  : isCurrent
+                    ? "bg-primary"
+                    : "bg-muted",
               )}
-              aria-label={`${FORM_LABELS[formType]}${signedTypes.has(formType) ? " (signed)" : ""}`}
+              aria-label={`${FORM_LABELS[ft]} — ${signed ? "signed" : "not signed"}`}
             />
-          ))}
-        </div>
+          );
+        })}
+      </div>
 
-        <IntakeFormRenderer
-          content={currentContent}
-          onSign={handleSign}
-          isSigning={isSigning}
-          alreadySigned={
-            currentSigned
-              ? { signerName: currentSigned.signerName, signedAt: currentSigned.signedAt }
-              : null
+      <IntakeFormRenderer
+        template={template}
+        alreadySigned={alreadySigned}
+        signedAt={signedForm?.signedAt}
+        onSign={async (signerName) => {
+          await signForm(currentFormType, signerName);
+          // Auto-advance to next unsigned form
+          const nextIndex = REQUIRED_INTAKE_FORMS.findIndex(
+            (ft, i) => i > currentIndex && !isFormSigned(ft),
+          );
+          if (nextIndex !== -1) {
+            setCurrentIndex(nextIndex);
           }
-        />
+        }}
+      />
 
-        {/* Navigation */}
-        <div className="mt-4 flex justify-between">
-          <Button
-            variant="ghost"
-            onClick={() => setCurrentStep((s) => Math.max(0, s - 1))}
-            disabled={currentStep === 0}
-          >
-            Previous
-          </Button>
-          <Button
-            variant="ghost"
-            onClick={() =>
-              setCurrentStep((s) =>
-                Math.min(REQUIRED_INTAKE_FORM_TYPES.length - 1, s + 1)
-              )
-            }
-            disabled={currentStep === REQUIRED_INTAKE_FORM_TYPES.length - 1}
-          >
-            Next
-          </Button>
-        </div>
+      {/* Navigation */}
+      <div className="mt-6 flex justify-between">
+        <Button
+          variant="ghost"
+          size="sm"
+          disabled={currentIndex === 0}
+          onClick={() => setCurrentIndex((i) => i - 1)}
+        >
+          <MaterialIcon icon="arrow_back" size="sm" />
+          Previous
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          disabled={currentIndex === REQUIRED_INTAKE_FORMS.length - 1}
+          onClick={() => setCurrentIndex((i) => i + 1)}
+        >
+          Next
+          <MaterialIcon icon="arrow_forward" size="sm" />
+        </Button>
       </div>
     </div>
   );
 }
 ```
 
-- [ ] **Step 2: Create the intake route page**
+- [ ] **Step 2: Commit**
+Run: `cd /Users/desha/Springfield-Vibeathon && git add src/features/intake/components/intake-flow.tsx && git commit -m "feat(intake): add IntakeFlow 4-step stepper component"`
 
-Create `src/app/intake/[patientId]/page.tsx`:
+---
+
+## Task 10: Intake Route Page
+
+**Files:**
+- Create: `src/app/intake/[patientId]/page.tsx`
+
+- [ ] **Step 1: Create the route page**
 
 ```tsx
+// src/app/intake/[patientId]/page.tsx
+import type { Metadata } from "next";
+
 import { IntakeFlow } from "@/features/intake/components/intake-flow";
 import type { Id } from "../../../../convex/_generated/dataModel";
+
+export const metadata: Metadata = {
+  title: "Complete Intake Forms — Bridges",
+};
 
 export default function IntakePage({
   params,
 }: {
   params: Promise<{ patientId: string }>;
 }) {
+  // IntakeFlow is a client component, pass the promise
   return <IntakeFlowWrapper paramsPromise={params} />;
 }
 
-// Client wrapper needed because IntakeFlow uses hooks
-import dynamic from "next/dynamic";
-
-const IntakeFlowWrapper = dynamic(
-  () =>
-    Promise.resolve(function Wrapper({
-      paramsPromise,
-    }: {
-      paramsPromise: Promise<{ patientId: string }>;
-    }) {
-      // eslint-disable-next-line react-hooks/rules-of-hooks
-      const { use } = require("react");
-      const { patientId } = use(paramsPromise);
-      return (
-        <IntakeFlow patientId={patientId as Id<"patients">} />
-      );
-    }),
-  { ssr: false }
-);
-```
-
-Wait — that pattern is awkward. Let me use the same pattern the codebase uses elsewhere. Looking at the existing code, `CallPage` and `FamilyDashboard` both accept `paramsPromise` and use `use()` directly as client components. Let me redo this:
-
-Replace `src/app/intake/[patientId]/page.tsx` with:
-
-```tsx
-"use client";
-
-import { use } from "react";
-
-import { IntakeFlow } from "@/features/intake/components/intake-flow";
-import type { Id } from "../../../../convex/_generated/dataModel";
-
-export default function IntakePage({
-  params,
+async function IntakeFlowWrapper({
+  paramsPromise,
 }: {
-  params: Promise<{ patientId: string }>;
+  paramsPromise: Promise<{ patientId: string }>;
 }) {
-  const { patientId } = use(params);
+  const { patientId } = await paramsPromise;
   return <IntakeFlow patientId={patientId as Id<"patients">} />;
 }
 ```
 
-Note: This page lives outside the `(app)` layout group — it needs to be wrapped in providers. Check if `src/app/layout.tsx` already provides `ClerkProvider` + `ConvexProviderWithClerk`. If it does, this route will inherit them automatically. If not, a layout.tsx specific to this route may be needed.
+Wait — `IntakeFlow` is `"use client"`. A Server Component can render a Client Component and pass props. But we need to await the params Promise in the Server Component. Let me fix:
 
-- [ ] **Step 3: Commit**
+```tsx
+// src/app/intake/[patientId]/page.tsx
+import type { Metadata } from "next";
 
-```bash
-git add src/features/intake/components/intake-flow.tsx src/app/intake/\[patientId\]/page.tsx
-git commit -m "feat(intake): add intake flow stepper and route
+import { IntakeFlow } from "@/features/intake/components/intake-flow";
+import type { Id } from "../../../../convex/_generated/dataModel";
 
-4-form sequential stepper with step indicators, auto-advance on sign,
-and completion state. Route at /intake/[patientId] outside (app) layout."
+export const metadata: Metadata = {
+  title: "Complete Intake Forms — Bridges",
+};
+
+export default async function IntakePage({
+  params,
+}: {
+  params: Promise<{ patientId: string }>;
+}) {
+  const { patientId } = await params;
+  return <IntakeFlow patientId={patientId as Id<"patients">} />;
+}
 ```
+
+- [ ] **Step 2: Commit**
+Run: `cd /Users/desha/Springfield-Vibeathon && git add src/app/intake/[patientId]/page.tsx && git commit -m "feat(intake): add /intake/[patientId] caregiver route"`
 
 ---
 
-## Task 8: Intake Status Widget (SLP-Facing)
+## Task 11: Intake Status Widget (SLP-facing)
 
 **Files:**
 - Create: `src/features/intake/components/intake-status-widget.tsx`
-- Create: `src/features/intake/components/__tests__/intake-status-widget.test.tsx`
-- Modify: `src/features/patients/components/patient-detail-page.tsx`
 
-- [ ] **Step 1: Write failing test for intake status widget**
-
-Create `src/features/intake/components/__tests__/intake-status-widget.test.tsx`:
+- [ ] **Step 1: Write the component**
 
 ```tsx
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
-
-// Mock Convex hooks
-vi.mock("convex/react", () => ({
-  useQuery: vi.fn(),
-}));
-
-import { useQuery } from "convex/react";
-import { IntakeStatusWidget } from "../intake-status-widget";
-
-describe("IntakeStatusWidget", () => {
-  it("shows loading state", () => {
-    vi.mocked(useQuery).mockReturnValue(undefined);
-    render(<IntakeStatusWidget patientId={"patient123" as any} />);
-    expect(screen.getByText(/loading/i)).toBeInTheDocument();
-  });
-
-  it("shows complete badge when all 4 forms signed", () => {
-    vi.mocked(useQuery).mockReturnValue([
-      { formType: "hipaa-npp", signerName: "Jane", signedAt: Date.now() },
-      { formType: "consent-treatment", signerName: "Jane", signedAt: Date.now() },
-      { formType: "financial-agreement", signerName: "Jane", signedAt: Date.now() },
-      { formType: "cancellation-policy", signerName: "Jane", signedAt: Date.now() },
-    ]);
-    render(<IntakeStatusWidget patientId={"patient123" as any} />);
-    expect(screen.getByText(/intake complete/i)).toBeInTheDocument();
-  });
-
-  it("shows incomplete count when forms are missing", () => {
-    vi.mocked(useQuery).mockReturnValue([
-      { formType: "hipaa-npp", signerName: "Jane", signedAt: Date.now() },
-    ]);
-    render(<IntakeStatusWidget patientId={"patient123" as any} />);
-    expect(screen.getByText(/1.*4.*forms signed/i)).toBeInTheDocument();
-  });
-
-  it("shows no forms signed state", () => {
-    vi.mocked(useQuery).mockReturnValue([]);
-    render(<IntakeStatusWidget patientId={"patient123" as any} />);
-    expect(screen.getByText(/0.*4.*forms signed/i)).toBeInTheDocument();
-  });
-});
-```
-
-- [ ] **Step 2: Run test to verify it fails**
-
-Run: `npx vitest run src/features/intake/components/__tests__/intake-status-widget.test.tsx --reporter=verbose`
-
-Expected: FAIL — module not found.
-
-- [ ] **Step 3: Implement intake-status-widget.tsx**
-
-Create `src/features/intake/components/intake-status-widget.tsx`:
-
-```tsx
+// src/features/intake/components/intake-status-widget.tsx
 "use client";
 
-import { useQuery } from "convex/react";
 import { useState } from "react";
 
 import { cn } from "@/core/utils";
+import { MaterialIcon } from "@/shared/components/material-icon";
+import { Button } from "@/shared/components/ui/button";
 
-import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
-import { FORM_LABELS, REQUIRED_INTAKE_FORM_TYPES } from "../lib/form-content";
+import { useIntakeStatus } from "../hooks/use-intake-forms";
+import { FORM_LABELS, REQUIRED_INTAKE_FORMS, type IntakeFormType } from "../lib/form-content";
 
 interface IntakeStatusWidgetProps {
   patientId: Id<"patients">;
 }
 
 export function IntakeStatusWidget({ patientId }: IntakeStatusWidgetProps) {
-  const forms = useQuery(api.intakeForms.getByPatient, { patientId });
+  const { forms, isLoading } = useIntakeStatus(patientId);
   const [expanded, setExpanded] = useState(false);
 
-  if (forms === undefined) {
-    return (
-      <div className="rounded-2xl bg-white p-4 shadow-sm">
-        <p className="text-sm text-on-surface-variant">Loading intake status…</p>
-      </div>
-    );
-  }
+  if (isLoading) return null;
 
-  const signedTypes = new Set(
-    forms
-      .filter((f) =>
-        (REQUIRED_INTAKE_FORM_TYPES as readonly string[]).includes(f.formType)
-      )
-      .map((f) => f.formType)
+  // Group forms by caregiver
+  const signedTypes = new Set(forms.map((f) => f.formType));
+  const requiredSigned = REQUIRED_INTAKE_FORMS.filter((ft) =>
+    signedTypes.has(ft),
   );
-  const signedCount = signedTypes.size;
-  const total = REQUIRED_INTAKE_FORM_TYPES.length;
-  const isComplete = signedCount === total;
+  const isComplete = requiredSigned.length === REQUIRED_INTAKE_FORMS.length;
+
+  const badgeColor = isComplete
+    ? "bg-success/10 text-success"
+    : "bg-caution/10 text-caution";
+  const badgeLabel = isComplete
+    ? "Intake complete"
+    : `${requiredSigned.length}/${REQUIRED_INTAKE_FORMS.length} forms signed`;
 
   return (
-    <div className="rounded-2xl bg-white p-4 shadow-sm">
-      <button
-        type="button"
-        onClick={() => setExpanded(!expanded)}
-        className="flex w-full items-center justify-between"
-      >
+    <div className="rounded-xl bg-surface-container-low p-4">
+      <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div
-            className={cn(
-              "h-2.5 w-2.5 rounded-full",
-              isComplete ? "bg-green-500" : "bg-amber-500"
-            )}
+          <MaterialIcon
+            icon={isComplete ? "verified" : "pending"}
+            className={isComplete ? "text-success" : "text-caution"}
           />
-          <span className="text-sm font-medium text-on-surface">
-            {isComplete
-              ? "Intake Complete"
-              : `${signedCount} of ${total} forms signed`}
-          </span>
+          <h3 className="text-sm font-semibold text-foreground">
+            Intake Status
+          </h3>
         </div>
-        <svg
+        <span
           className={cn(
-            "h-4 w-4 text-on-surface-variant transition-transform duration-300",
-            expanded && "rotate-180"
+            "rounded-full px-2.5 py-0.5 text-xs font-medium",
+            badgeColor,
           )}
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth={2}
         >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-        </svg>
-      </button>
+          {badgeLabel}
+        </span>
+      </div>
+
+      <Button
+        variant="ghost"
+        size="sm"
+        className="mt-2 h-auto p-0 text-xs text-muted-foreground hover:text-foreground"
+        onClick={() => setExpanded(!expanded)}
+      >
+        {expanded ? "Hide details" : "Show details"}
+      </Button>
 
       {expanded && (
-        <div className="mt-3 space-y-2 border-t border-border pt-3">
-          {REQUIRED_INTAKE_FORM_TYPES.map((formType) => {
-            const signed = forms.find((f) => f.formType === formType);
+        <ul className="mt-3 flex flex-col gap-2">
+          {REQUIRED_INTAKE_FORMS.map((ft) => {
+            const form = forms.find((f) => f.formType === ft);
+            const signed = !!form;
             return (
-              <div key={formType} className="flex items-center justify-between text-sm">
-                <span className={cn(
-                  signed ? "text-on-surface" : "text-on-surface-variant"
-                )}>
-                  {FORM_LABELS[formType]}
+              <li key={ft} className="flex items-center gap-2 text-sm">
+                <MaterialIcon
+                  icon={signed ? "check_circle" : "radio_button_unchecked"}
+                  size="sm"
+                  className={signed ? "text-success" : "text-muted-foreground"}
+                />
+                <span className={signed ? "text-foreground" : "text-muted-foreground"}>
+                  {FORM_LABELS[ft as IntakeFormType]}
                 </span>
-                {signed ? (
-                  <span className="text-xs text-green-600">
-                    {new Date(signed.signedAt).toLocaleDateString()}
+                {signed && form && (
+                  <span className="ml-auto text-xs text-muted-foreground">
+                    {new Date(form.signedAt).toLocaleDateString()}
                   </span>
-                ) : (
-                  <span className="text-xs text-amber-600">Outstanding</span>
                 )}
-              </div>
+              </li>
             );
           })}
-        </div>
+
+          {/* Show telehealth consent separately if signed */}
+          {forms.find((f) => f.formType === "telehealth-consent") && (
+            <li className="flex items-center gap-2 text-sm">
+              <MaterialIcon icon="check_circle" size="sm" className="text-success" />
+              <span className="text-foreground">{FORM_LABELS["telehealth-consent"]}</span>
+              <span className="ml-auto text-xs text-muted-foreground">
+                {new Date(
+                  forms.find((f) => f.formType === "telehealth-consent")!.signedAt,
+                ).toLocaleDateString()}
+              </span>
+            </li>
+          )}
+        </ul>
       )}
     </div>
   );
 }
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
-
-Run: `npx vitest run src/features/intake/components/__tests__/intake-status-widget.test.tsx --reporter=verbose`
-
-Expected: PASS
-
-- [ ] **Step 5: Add IntakeStatusWidget to patient detail page**
-
-In `src/features/patients/components/patient-detail-page.tsx`, add the import at the top:
-
-```typescript
-import { IntakeStatusWidget } from "@/features/intake/components/intake-status-widget";
-```
-
-Then add the widget in the right column, before `<CaregiverInfo>` (around line 63):
-
-```tsx
-          <IntakeStatusWidget patientId={patient._id} />
-```
-
-The right column section should look like:
-
-```tsx
-        <div className="flex flex-col gap-6">
-          <AssignedMaterials patientId={patient._id} />
-          <IntakeStatusWidget patientId={patient._id} />
-          <CaregiverInfo patientId={patient._id} />
-          <HomeProgramsWidget patientId={patient._id} />
-          <ChildAppsSection patientId={patient._id} />
-        </div>
-```
-
-- [ ] **Step 6: Commit**
-
-```bash
-git add src/features/intake/components/intake-status-widget.tsx src/features/intake/components/__tests__/intake-status-widget.test.tsx src/features/patients/components/patient-detail-page.tsx
-git commit -m "feat(intake): add intake status widget to patient detail page
-
-SLP-facing badge showing intake completion status. Expandable to show
-which forms are signed and which are outstanding."
-```
+- [ ] **Step 2: Commit**
+Run: `cd /Users/desha/Springfield-Vibeathon && git add src/features/intake/components/intake-status-widget.tsx && git commit -m "feat(intake): add IntakeStatusWidget for SLP patient detail page"`
 
 ---
 
-## Task 9: Telehealth Consent Gate
+## Task 12: Telehealth Consent Gate Component
 
 **Files:**
 - Create: `src/features/intake/components/telehealth-consent-gate.tsx`
-- Modify: `src/features/sessions/components/call-page.tsx`
 
-- [ ] **Step 1: Create the telehealth consent gate component**
-
-Create `src/features/intake/components/telehealth-consent-gate.tsx`:
+- [ ] **Step 1: Write the component**
 
 ```tsx
+// src/features/intake/components/telehealth-consent-gate.tsx
 "use client";
 
-import { useState } from "react";
-import { toast } from "sonner";
+import { useConvexAuth, useQuery } from "convex/react";
 
+import { Skeleton } from "@/shared/components/ui/skeleton";
+
+import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
-import { useIntakeForms } from "../hooks/use-intake-forms";
-import { getTelehealthConsent, type PracticeInfo } from "../lib/form-content";
+import { useTelehealthConsent } from "../hooks/use-intake-forms";
+import {
+  getFormTemplate,
+  type PracticeInfo,
+} from "../lib/form-content";
 import { IntakeFormRenderer } from "./intake-form-renderer";
 
 interface TelehealthConsentGateProps {
   patientId: Id<"patients">;
-  patientName: string;
-  practiceInfo?: PracticeInfo;
-  onConsentGiven: () => void;
+  children: React.ReactNode;
 }
+
+const DEFAULT_PRACTICE: PracticeInfo = {
+  practiceName: "Your Therapist's Practice",
+  practiceAddress: "",
+  practicePhone: "",
+  slpName: "Your Therapist",
+  credentials: "SLP",
+};
 
 export function TelehealthConsentGate({
   patientId,
-  patientName,
-  practiceInfo,
-  onConsentGiven,
+  children,
 }: TelehealthConsentGateProps) {
-  const { signTelehealthConsent } = useIntakeForms(patientId);
-  const [isSigning, setIsSigning] = useState(false);
+  const { isAuthenticated } = useConvexAuth();
+  const { hasConsent, isLoading, signConsent } =
+    useTelehealthConsent(patientId);
 
-  const content = getTelehealthConsent(practiceInfo ?? {}, patientName);
+  const patient = useQuery(
+    api.patients.get,
+    isAuthenticated ? { patientId } : "skip",
+  );
+  const practiceProfile = useQuery(
+    api.practiceProfile.getBySlpId,
+    patient ? { slpUserId: patient.slpUserId } : "skip",
+  );
 
-  async function handleSign(signerName: string) {
-    setIsSigning(true);
-    try {
-      await signTelehealthConsent({ patientId, signerName });
-      toast.success("Telehealth consent signed");
-      onConsentGiven();
-    } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Failed to sign consent"
-      );
-    } finally {
-      setIsSigning(false);
-    }
+  if (isLoading || patient === undefined) {
+    return <Skeleton className="h-96 rounded-xl" />;
   }
 
+  if (hasConsent) {
+    return <>{children}</>;
+  }
+
+  const practice: PracticeInfo = practiceProfile
+    ? {
+        practiceName: practiceProfile.practiceName ?? DEFAULT_PRACTICE.practiceName,
+        practiceAddress: practiceProfile.practiceAddress ?? DEFAULT_PRACTICE.practiceAddress,
+        practicePhone: practiceProfile.practicePhone ?? DEFAULT_PRACTICE.practicePhone,
+        slpName: DEFAULT_PRACTICE.slpName,
+        credentials: practiceProfile.credentials ?? DEFAULT_PRACTICE.credentials,
+      }
+    : DEFAULT_PRACTICE;
+
+  const patientName = patient
+    ? `${patient.firstName} ${patient.lastName}`
+    : "your child";
+
+  const template = getFormTemplate("telehealth-consent", practice, patientName);
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-surface px-4 py-8">
-      <div className="mx-auto max-w-2xl">
-        <div className="mb-6 text-center">
-          <h1 className="text-2xl font-semibold text-on-surface font-headline">
-            Telehealth Consent Required
-          </h1>
-          <p className="mt-1 text-sm text-on-surface-variant">
-            Please review and sign this consent form before joining your first
-            video session.
-          </p>
-        </div>
-        <IntakeFormRenderer
-          content={content}
-          onSign={handleSign}
-          isSigning={isSigning}
-        />
-      </div>
+    <div className="mx-auto max-w-2xl p-4 sm:p-6">
+      <p className="mb-4 text-sm text-muted-foreground">
+        Before joining the video call, please review and sign the telehealth
+        consent form.
+      </p>
+      <IntakeFormRenderer
+        template={template}
+        alreadySigned={false}
+        onSign={async (signerName) => {
+          await signConsent(signerName);
+        }}
+      />
     </div>
   );
 }
 ```
 
-- [ ] **Step 2: Integrate the gate into call-page.tsx**
+- [ ] **Step 2: Commit**
+Run: `cd /Users/desha/Springfield-Vibeathon && git add src/features/intake/components/telehealth-consent-gate.tsx && git commit -m "feat(intake): add TelehealthConsentGate for call-join flow"`
 
-Modify `src/features/sessions/components/call-page.tsx`. The gate checks `hasTelehealthConsent` for the patient. If false and the user is a caregiver, show the consent form before the `CallRoom`.
+---
 
-Replace the full file:
+## Task 13: Practice Profile Form Component
+
+**Files:**
+- Create: `src/features/intake/components/practice-profile-form.tsx`
+
+- [ ] **Step 1: Write the component**
 
 ```tsx
+// src/features/intake/components/practice-profile-form.tsx
 "use client";
 
-import { use, useCallback, useEffect, useState } from "react";
-import { useUser } from "@clerk/nextjs";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery } from "convex/react";
-import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import dynamic from "next/dynamic";
+
+import { Button } from "@/shared/components/ui/button";
+import { Input } from "@/shared/components/ui/input";
+import { Label } from "@/shared/components/ui/label";
+import { Skeleton } from "@/shared/components/ui/skeleton";
 
 import { api } from "../../../../convex/_generated/api";
-import type { Id } from "../../../../convex/_generated/dataModel";
-import { useTelehealthConsent } from "@/features/intake/hooks/use-intake-forms";
 
-const CallRoom = dynamic(
-  () => import("./call-room").then((m) => ({ default: m.CallRoom })),
-  { ssr: false }
-);
-
-const TelehealthConsentGate = dynamic(
-  () =>
-    import("@/features/intake/components/telehealth-consent-gate").then((m) => ({
-      default: m.TelehealthConsentGate,
-    })),
-  { ssr: false }
-);
-
-interface CallPageProps {
-  paramsPromise: Promise<{ id: string }>;
+interface FormFields {
+  practiceName: string;
+  practiceAddress: string;
+  practicePhone: string;
+  npiNumber: string;
+  licenseNumber: string;
+  licenseState: string;
+  taxId: string;
+  credentials: string;
 }
 
-export function CallPage({ paramsPromise }: CallPageProps) {
-  const { id } = use(paramsPromise);
-  const { user } = useUser();
-  const router = useRouter();
-  const [consentDismissed, setConsentDismissed] = useState(false);
+const EMPTY_FIELDS: FormFields = {
+  practiceName: "",
+  practiceAddress: "",
+  practicePhone: "",
+  npiNumber: "",
+  licenseNumber: "",
+  licenseState: "",
+  taxId: "",
+  credentials: "",
+};
+
+export function PracticeProfileForm() {
+  const profile = useQuery(api.practiceProfile.get, {});
+  const updateProfile = useMutation(api.practiceProfile.update);
+  const [fields, setFields] = useState<FormFields>(EMPTY_FIELDS);
+  const [isSaving, setIsSaving] = useState(false);
+  const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
-    const link = document.createElement("link");
-    link.rel = "stylesheet";
-    link.href = "/livekit-components.css";
-    document.head.appendChild(link);
-    return () => {
-      document.head.removeChild(link);
-    };
-  }, []);
+    if (profile && !initialized) {
+      setFields({
+        practiceName: profile.practiceName ?? "",
+        practiceAddress: profile.practiceAddress ?? "",
+        practicePhone: profile.practicePhone ?? "",
+        npiNumber: profile.npiNumber ?? "",
+        licenseNumber: profile.licenseNumber ?? "",
+        licenseState: profile.licenseState ?? "",
+        taxId: profile.taxId ?? "",
+        credentials: profile.credentials ?? "",
+      });
+      setInitialized(true);
+    }
+    // Initialize with empty if no profile exists
+    if (profile === null && !initialized) {
+      setInitialized(true);
+    }
+  }, [profile, initialized]);
 
-  const role = user?.publicMetadata?.role as string | undefined;
-  const isSLP = role !== "caregiver";
-  const isCaregiver = role === "caregiver";
-
-  const appointment = useQuery(
-    api.appointments.get,
-    { appointmentId: id as Id<"appointments"> }
-  );
-
-  const patientId = appointment?.patientId ?? null;
-  const { hasConsent, isLoading: consentLoading } =
-    useTelehealthConsent(isCaregiver ? patientId : null);
-
-  const completeSession = useMutation(api.appointments.completeSession);
-
-  const handleCallEnd = useCallback(
-    async (durationSeconds: number, interactionLog: string) => {
-      if (isSLP) {
-        try {
-          await completeSession({
-            appointmentId: id as Id<"appointments">,
-            durationSeconds,
-            interactionLog,
-          });
-        } catch (e) {
-          toast.error(
-            e instanceof Error ? e.message : "Could not save session record."
-          );
-        }
-      }
-      router.push(`/sessions/${id}/notes`);
-    },
-    [id, isSLP, completeSession, router]
-  );
-
-  // Show telehealth consent gate for caregivers who haven't signed
-  if (
-    isCaregiver &&
-    !consentDismissed &&
-    hasConsent === false &&
-    appointment?.patient
-  ) {
-    return (
-      <TelehealthConsentGate
-        patientId={appointment.patientId}
-        patientName={`${appointment.patient.firstName} ${appointment.patient.lastName}`}
-        onConsentGiven={() => setConsentDismissed(true)}
-      />
-    );
+  if (profile === undefined) {
+    return <Skeleton className="h-64 rounded-xl" />;
   }
 
-  // Loading state while checking consent
-  if (isCaregiver && !consentDismissed && consentLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-[#F6F3EE]">
-        <p className="text-stone-500">Checking session requirements…</p>
+  function setField(key: keyof FormFields, value: string) {
+    setFields((prev) => ({ ...prev, [key]: value }));
+  }
+
+  async function handleSave() {
+    setIsSaving(true);
+    try {
+      await updateProfile({
+        practiceName: fields.practiceName || undefined,
+        practiceAddress: fields.practiceAddress || undefined,
+        practicePhone: fields.practicePhone || undefined,
+        npiNumber: fields.npiNumber || undefined,
+        licenseNumber: fields.licenseNumber || undefined,
+        licenseState: fields.licenseState || undefined,
+        taxId: fields.taxId || undefined,
+        credentials: fields.credentials || undefined,
+      });
+      toast.success("Practice profile saved");
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Failed to save profile",
+      );
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  const FIELD_CONFIG: { key: keyof FormFields; label: string; placeholder: string }[] = [
+    { key: "practiceName", label: "Practice Name", placeholder: "Springfield Speech Center" },
+    { key: "practiceAddress", label: "Practice Address", placeholder: "123 Main St, Springfield, IL 62701" },
+    { key: "practicePhone", label: "Phone Number", placeholder: "(217) 555-0100" },
+    { key: "credentials", label: "Credentials", placeholder: "M.S., CCC-SLP" },
+    { key: "npiNumber", label: "NPI Number", placeholder: "1234567890" },
+    { key: "licenseNumber", label: "License Number", placeholder: "SLP-12345" },
+    { key: "licenseState", label: "License State", placeholder: "IL" },
+    { key: "taxId", label: "Tax ID (EIN)", placeholder: "12-3456789" },
+  ];
+
+  return (
+    <div className="flex flex-col gap-6">
+      <div>
+        <h2 className="font-headline text-lg font-semibold text-foreground">
+          Practice Profile
+        </h2>
+        <p className="text-sm text-muted-foreground">
+          This information appears on patient intake forms and legal documents.
+        </p>
       </div>
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        {FIELD_CONFIG.map(({ key, label, placeholder }) => (
+          <div key={key} className={key === "practiceAddress" ? "sm:col-span-2" : ""}>
+            <Label htmlFor={`practice-${key}`} className="text-sm font-medium">
+              {label}
+            </Label>
+            <Input
+              id={`practice-${key}`}
+              value={fields[key]}
+              onChange={(e) => setField(key, e.target.value)}
+              placeholder={placeholder}
+              className="mt-1"
+            />
+          </div>
+        ))}
+      </div>
+
+      <Button
+        onClick={handleSave}
+        disabled={isSaving}
+        className="w-fit bg-gradient-to-br from-primary to-[#0d7377]"
+      >
+        {isSaving ? "Saving..." : "Save Practice Profile"}
+      </Button>
+    </div>
+  );
+}
+```
+
+- [ ] **Step 2: Commit**
+Run: `cd /Users/desha/Springfield-Vibeathon && git add src/features/intake/components/practice-profile-form.tsx && git commit -m "feat(intake): add PracticeProfileForm settings component"`
+
+---
+
+## Task 14: Integrate IntakeStatusWidget into Patient Detail Page
+
+**Files:**
+- Modify: `src/features/patients/components/patient-detail-page.tsx:1-73`
+
+- [ ] **Step 1: Add IntakeStatusWidget import and render**
+
+At the top of `patient-detail-page.tsx`, after the existing imports (line 19), add:
+
+```typescript
+import { IntakeStatusWidget } from "@/features/intake/components/intake-status-widget";
+```
+
+In the JSX, after `<PatientProfileWidget patient={patient} />` (line 54) and before the grid `<div className="grid grid-cols-1 gap-6 lg:grid-cols-2">` (line 56), add:
+
+```tsx
+      <IntakeStatusWidget patientId={patient._id} />
+```
+
+- [ ] **Step 2: Verify no TypeScript errors**
+Run: `cd /Users/desha/Springfield-Vibeathon && npx tsc --noEmit 2>&1 | grep -i "patient-detail-page" | head -5`
+Expected: No errors related to patient-detail-page
+
+- [ ] **Step 3: Commit**
+Run: `cd /Users/desha/Springfield-Vibeathon && git add src/features/patients/components/patient-detail-page.tsx && git commit -m "feat(intake): integrate IntakeStatusWidget into patient detail page"`
+
+---
+
+## Task 15: Integrate Intake Banner into Family Dashboard
+
+**Files:**
+- Modify: `src/features/family/components/family-dashboard.tsx:1-228`
+
+- [ ] **Step 1: Add intake banner**
+
+At the top of `family-dashboard.tsx`, after the existing imports (line 19, before `import { AppPicker }`), add:
+
+```typescript
+import { useIntakeForms } from "@/features/intake/hooks/use-intake-forms";
+```
+
+Inside the `FamilyDashboard` component, after the `useFamilyData` hook call (line 47-49) and before `const router = useRouter();` (line 51), add:
+
+```typescript
+  const { requiredFormProgress } = useIntakeForms(patientId as Id<"patients">);
+```
+
+In the JSX, after the `{/* Header */}` section closing `</div>` (line 99) and before the `{/* Kid Mode entry */}` comment (line 101), add:
+
+```tsx
+      {/* Intake banner */}
+      {!requiredFormProgress.isComplete && (
+        <Link
+          href={`/intake/${patientId}`}
+          className="flex items-center gap-3 rounded-xl bg-caution/10 p-4 transition-colors hover:bg-caution/15"
+        >
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-caution/20">
+            <MaterialIcon icon="description" className="text-caution" />
+          </div>
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-foreground">
+              Complete intake forms for {childName}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {requiredFormProgress.signed} of {requiredFormProgress.total} required forms signed
+            </p>
+          </div>
+          <MaterialIcon icon="chevron_right" className="text-muted-foreground" />
+        </Link>
+      )}
+```
+
+- [ ] **Step 2: Verify no TypeScript errors**
+Run: `cd /Users/desha/Springfield-Vibeathon && npx tsc --noEmit 2>&1 | grep -i "family-dashboard" | head -5`
+Expected: No errors related to family-dashboard
+
+- [ ] **Step 3: Commit**
+Run: `cd /Users/desha/Springfield-Vibeathon && git add src/features/family/components/family-dashboard.tsx && git commit -m "feat(intake): add intake banner to family dashboard"`
+
+---
+
+## Task 16: Integrate Telehealth Consent Gate into Call Page
+
+**Files:**
+- Modify: `src/features/sessions/components/call-page.tsx:1-70`
+
+- [ ] **Step 1: Add consent gate**
+
+At the top of `call-page.tsx`, after the existing imports (line 10), add:
+
+```typescript
+import { useConvexAuth, useQuery } from "convex/react";
+import { TelehealthConsentGate } from "@/features/intake/components/telehealth-consent-gate";
+```
+
+Inside the `CallPage` component, after `const role = ...` (line 39) and before `const completeSession = ...` (line 41), add:
+
+```typescript
+  // Determine if the user is a caregiver — only caregivers need the consent gate
+  const isCaregiver = role === "caregiver";
+
+  // Resolve patientId from appointment for the consent gate
+  const { isAuthenticated } = useConvexAuth();
+  const appointment = useQuery(
+    api.appointments.get,
+    isAuthenticated ? { appointmentId: id as Id<"appointments"> } : "skip",
+  );
+```
+
+Note: `useConvexAuth` is already imported via a separate import. We need to check. Looking at the existing file, it does not import `useConvexAuth` or `useQuery`. We need to add these. The file already imports `useMutation` from `convex/react`.
+
+Replace the existing `import { useMutation } from "convex/react";` (line 6) with:
+
+```typescript
+import { useConvexAuth, useMutation, useQuery } from "convex/react";
+```
+
+After the `api` import line (line 8), ensure the `TelehealthConsentGate` import is present:
+
+```typescript
+import { TelehealthConsentGate } from "@/features/intake/components/telehealth-consent-gate";
+```
+
+In the JSX return, wrap the `<CallRoom>` with the consent gate for caregivers. Replace:
+
+```tsx
+  return (
+    <CallRoom
+      appointmentId={id}
+      isSLP={isSLP}
+      onCallEnd={handleCallEnd}
+    />
+  );
+```
+
+With:
+
+```tsx
+  if (isCaregiver && appointment?.patientId) {
+    return (
+      <TelehealthConsentGate patientId={appointment.patientId}>
+        <CallRoom
+          appointmentId={id}
+          isSLP={isSLP}
+          onCallEnd={handleCallEnd}
+        />
+      </TelehealthConsentGate>
     );
   }
 
@@ -2062,224 +2229,49 @@ export function CallPage({ paramsPromise }: CallPageProps) {
       onCallEnd={handleCallEnd}
     />
   );
-}
 ```
+
+- [ ] **Step 2: Verify no TypeScript errors**
+Run: `cd /Users/desha/Springfield-Vibeathon && npx tsc --noEmit 2>&1 | grep -i "call-page" | head -5`
+Expected: No errors related to call-page
 
 - [ ] **Step 3: Commit**
-
-```bash
-git add src/features/intake/components/telehealth-consent-gate.tsx src/features/sessions/components/call-page.tsx
-git commit -m "feat(intake): add telehealth consent gate before video sessions
-
-Caregivers must sign telehealth consent before their first video call.
-Gate renders inline at call-page level. One-time per patient."
-```
+Run: `cd /Users/desha/Springfield-Vibeathon && git add src/features/sessions/components/call-page.tsx && git commit -m "feat(intake): add telehealth consent gate before call lobby for caregivers"`
 
 ---
 
-## Task 10: Family Dashboard Intake Banner
+## Task 17: Integrate Practice Profile into Settings Page
 
 **Files:**
-- Modify: `src/features/family/components/family-dashboard.tsx`
+- Modify: `src/features/settings/components/settings-page.tsx:1-114`
+- Modify: `src/features/settings/components/settings-sidebar.tsx:1-64`
 
-- [ ] **Step 1: Add intake banner to family dashboard**
+- [ ] **Step 1: Add "practice" section to SettingsSection type and sidebar**
 
-In `src/features/family/components/family-dashboard.tsx`, add imports at the top:
+In `settings-page.tsx`, update the `SettingsSection` type (line 16):
 
+Replace:
 ```typescript
-import { useQuery as useConvexQuery } from "convex/react";
+export type SettingsSection = "profile" | "account" | "appearance" | "billing";
 ```
-
-Wait — `useQuery` is already imported from `convex/react` on line 3. Good. Add this import:
-
+With:
 ```typescript
-import { REQUIRED_INTAKE_FORM_TYPES } from "@/features/intake/lib/form-content";
+export type SettingsSection = "profile" | "account" | "appearance" | "billing" | "practice";
 ```
 
-Inside the `FamilyDashboard` component, after the existing queries (~line 58), add:
+Update `SECTION_LABELS` (lines 18-23):
 
+Replace:
 ```typescript
-  const intakeForms = useQuery(
-    api.intakeForms.getByCaregiver,
-    isAuthenticated ? { patientId: patientId as Id<"patients"> } : "skip"
-  );
-
-  const intakeComplete = intakeForms !== undefined &&
-    REQUIRED_INTAKE_FORM_TYPES.every((t) =>
-      intakeForms.some((f) => f.formType === t)
-    );
+const SECTION_LABELS: Record<SettingsSection, string> = {
+  profile: "Profile",
+  account: "Account",
+  appearance: "Appearance",
+  billing: "Billing",
+};
 ```
-
-Then in the JSX, before the main content area (after the header section), add the banner:
-
-```tsx
-      {intakeForms !== undefined && !intakeComplete && (
-        <Link
-          href={`/intake/${patientId}`}
-          className="mx-4 flex items-center gap-3 rounded-2xl bg-amber-50 px-4 py-3 transition-colors hover:bg-amber-100"
-        >
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-200 text-amber-700">
-            <MaterialIcon icon="description" size="xs" />
-          </div>
-          <div className="flex-1">
-            <p className="text-sm font-medium text-amber-900">
-              Complete intake forms for {patient?.firstName}
-            </p>
-            <p className="text-xs text-amber-700">
-              {intakeForms.filter((f) =>
-                (REQUIRED_INTAKE_FORM_TYPES as readonly string[]).includes(f.formType)
-              ).length}{" "}
-              of {REQUIRED_INTAKE_FORM_TYPES.length} forms signed
-            </p>
-          </div>
-          <MaterialIcon icon="chevron_right" size="xs" className="text-amber-600" />
-        </Link>
-      )}
-```
-
-- [ ] **Step 2: Commit**
-
-```bash
-git add src/features/family/components/family-dashboard.tsx
-git commit -m "feat(intake): add intake banner to family dashboard
-
-Shows amber banner with form progress when intake is incomplete.
-Links to /intake/[patientId] flow. Disappears when all 4 forms signed."
-```
-
----
-
-## Task 11: Practice Profile Settings Form
-
-**Files:**
-- Create: `src/features/intake/components/practice-profile-form.tsx`
-- Modify: `src/features/settings/components/settings-page.tsx`
-
-- [ ] **Step 1: Create the practice profile form**
-
-Create `src/features/intake/components/practice-profile-form.tsx`:
-
-```tsx
-"use client";
-
-import { useMutation, useQuery } from "convex/react";
-import { useState } from "react";
-import { toast } from "sonner";
-
-import { Button } from "@/shared/components/ui/button";
-import { Input } from "@/shared/components/ui/input";
-import { Label } from "@/shared/components/ui/label";
-
-import { api } from "../../../../convex/_generated/api";
-
-export function PracticeProfileForm() {
-  const profile = useQuery(api.practiceProfile.get, {});
-  const updateProfile = useMutation(api.practiceProfile.update);
-  const [isSaving, setIsSaving] = useState(false);
-
-  const [form, setForm] = useState<Record<string, string>>({});
-  const initialized = profile !== undefined;
-
-  // Merge loaded profile into form state (once)
-  const effectiveValues = {
-    practiceName: form.practiceName ?? profile?.practiceName ?? "",
-    practiceAddress: form.practiceAddress ?? profile?.practiceAddress ?? "",
-    practicePhone: form.practicePhone ?? profile?.practicePhone ?? "",
-    npiNumber: form.npiNumber ?? profile?.npiNumber ?? "",
-    licenseNumber: form.licenseNumber ?? profile?.licenseNumber ?? "",
-    licenseState: form.licenseState ?? profile?.licenseState ?? "",
-    taxId: form.taxId ?? profile?.taxId ?? "",
-    credentials: form.credentials ?? profile?.credentials ?? "",
-  };
-
-  function handleChange(field: string, value: string) {
-    setForm((prev) => ({ ...prev, [field]: value }));
-  }
-
-  async function handleSave() {
-    setIsSaving(true);
-    try {
-      const updates: Record<string, string> = {};
-      for (const [key, value] of Object.entries(effectiveValues)) {
-        if (value.trim()) {
-          updates[key] = value.trim();
-        }
-      }
-      await updateProfile(updates);
-      toast.success("Practice profile saved");
-    } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Failed to save profile"
-      );
-    } finally {
-      setIsSaving(false);
-    }
-  }
-
-  if (!initialized) {
-    return <p className="text-sm text-on-surface-variant">Loading practice profile…</p>;
-  }
-
-  const fields = [
-    { key: "practiceName", label: "Practice Name", placeholder: "Bridges Speech Therapy" },
-    { key: "credentials", label: "Credentials", placeholder: "M.S., CCC-SLP" },
-    { key: "npiNumber", label: "NPI Number", placeholder: "1234567890" },
-    { key: "licenseNumber", label: "License Number", placeholder: "SLP-12345" },
-    { key: "licenseState", label: "License State", placeholder: "IL" },
-    { key: "practiceAddress", label: "Practice Address", placeholder: "123 Main St, Springfield, IL 62701" },
-    { key: "practicePhone", label: "Practice Phone", placeholder: "(217) 555-0100" },
-    { key: "taxId", label: "Tax ID (EIN)", placeholder: "12-3456789" },
-  ];
-
-  return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-lg font-semibold text-on-surface font-headline">
-          Practice Profile
-        </h2>
-        <p className="text-sm text-on-surface-variant">
-          This information appears on intake forms, treatment plans, and superbills.
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        {fields.map(({ key, label, placeholder }) => (
-          <div key={key}>
-            <Label htmlFor={key} className="text-sm font-medium">
-              {label}
-            </Label>
-            <Input
-              id={key}
-              value={effectiveValues[key as keyof typeof effectiveValues]}
-              onChange={(e) => handleChange(key, e.target.value)}
-              placeholder={placeholder}
-              className="mt-1"
-            />
-          </div>
-        ))}
-      </div>
-
-      <Button onClick={handleSave} disabled={isSaving}>
-        {isSaving ? "Saving…" : "Save Practice Profile"}
-      </Button>
-    </div>
-  );
-}
-```
-
-- [ ] **Step 2: Add Practice section to settings page**
-
-In `src/features/settings/components/settings-page.tsx`:
-
-Add import:
+With:
 ```typescript
-import { PracticeProfileForm } from "../../intake/components/practice-profile-form";
-```
-
-Update the `SettingsSection` type and `SECTION_LABELS`:
-```typescript
-export type SettingsSection = "profile" | "practice" | "account" | "appearance" | "billing";
-
 const SECTION_LABELS: Record<SettingsSection, string> = {
   profile: "Profile",
   practice: "Practice",
@@ -2289,71 +2281,93 @@ const SECTION_LABELS: Record<SettingsSection, string> = {
 };
 ```
 
-Add the render case in the main content area (after the profile section, before account):
+Add the import at the top of `settings-page.tsx` (after the existing imports, line 11):
+
+```typescript
+import { PracticeProfileForm } from "@/features/intake/components/practice-profile-form";
+```
+
+In the JSX, after `{section === "billing" ? <BillingSection /> : null}` (line 109), add:
+
 ```tsx
           {section === "practice" ? <PracticeProfileForm /> : null}
 ```
 
-- [ ] **Step 3: Commit**
+- [ ] **Step 2: Add "practice" entry to sidebar**
 
-```bash
-git add src/features/intake/components/practice-profile-form.tsx src/features/settings/components/settings-page.tsx
-git commit -m "feat(intake): add practice profile settings form
+In `settings-sidebar.tsx`, update the `SECTIONS` array (lines 11-16):
 
-New 'Practice' section in settings with fields for practice name,
-credentials, NPI, license, address, phone, and tax ID. Auto-populates
-intake form headers and will be reused by billing."
+Replace:
+```typescript
+const SECTIONS: { id: SettingsSection; label: string; icon: string }[] = [
+  { id: "profile", label: "Profile", icon: "person" },
+  { id: "account", label: "Account", icon: "shield" },
+  { id: "appearance", label: "Appearance", icon: "palette" },
+  { id: "billing", label: "Billing", icon: "payments" },
+];
 ```
+With:
+```typescript
+const SECTIONS: { id: SettingsSection; label: string; icon: string }[] = [
+  { id: "profile", label: "Profile", icon: "person" },
+  { id: "practice", label: "Practice", icon: "local_hospital" },
+  { id: "account", label: "Account", icon: "shield" },
+  { id: "appearance", label: "Appearance", icon: "palette" },
+  { id: "billing", label: "Billing", icon: "payments" },
+];
+```
+
+- [ ] **Step 3: Verify no TypeScript errors**
+Run: `cd /Users/desha/Springfield-Vibeathon && npx tsc --noEmit 2>&1 | grep -i "settings" | head -5`
+Expected: No errors related to settings files
+
+- [ ] **Step 4: Commit**
+Run: `cd /Users/desha/Springfield-Vibeathon && git add src/features/settings/components/settings-page.tsx src/features/settings/components/settings-sidebar.tsx && git commit -m "feat(intake): add Practice Profile section to settings page"`
 
 ---
 
-## Task 12: Final Integration Test and Cleanup
+## Task 18: Full Test Suite Verification
 
-**Files:**
-- All files from previous tasks
+**Files:** (none — verification only)
 
-- [ ] **Step 1: Run full test suite**
+- [ ] **Step 1: Run all Convex backend tests**
+Run: `cd /Users/desha/Springfield-Vibeathon && npx vitest run convex/__tests__/ 2>&1 | tail -30`
+Expected: All tests pass, including new intakeForms and practiceProfile tests
 
-Run: `npx vitest run --reporter=verbose 2>&1 | tail -40`
+- [ ] **Step 2: Run full Vitest suite**
+Run: `cd /Users/desha/Springfield-Vibeathon && npx vitest run 2>&1 | tail -30`
+Expected: All tests pass (636+ existing tests plus new ones)
 
-Expected: All tests pass.
+- [ ] **Step 3: Run TypeScript check**
+Run: `cd /Users/desha/Springfield-Vibeathon && npx tsc --noEmit 2>&1 | tail -20`
+Expected: No errors
 
-- [ ] **Step 2: Run TypeScript type check**
-
-Run: `npx tsc --noEmit 2>&1 | tail -20`
-
-Expected: No errors.
-
-- [ ] **Step 3: Run Next.js build check**
-
-Run: `npx next build 2>&1 | tail -20`
-
-Expected: Build succeeds. (May need to skip if Turbopack symlink issues are present — check memory notes.)
-
-- [ ] **Step 4: Commit any remaining fixes**
-
-If any type errors or test failures surfaced, fix them and commit:
-
-```bash
-git add -A
-git commit -m "fix: resolve type errors and test failures from SP1 integration"
-```
+- [ ] **Step 4: Run Convex push to validate all backend changes**
+Run: `cd /Users/desha/Springfield-Vibeathon && npx convex dev --once`
+Expected: Schema and functions deployed successfully
 
 ---
 
 ## Task Summary
 
-| Task | Description | Estimated Steps |
-|------|-------------|-----------------|
-| 1 | LiveKit token auth fix | 3 |
-| 2 | Schema changes (intakeForms, practiceProfiles, caregiverLinks) | 9 |
-| 3 | practiceProfile.ts backend | 5 |
-| 4 | intakeForms.ts backend | 6 |
-| 5 | Form content templates | 2 |
-| 6 | Intake hook + form renderer | 6 |
-| 7 | Intake flow stepper + route | 3 |
-| 8 | Intake status widget (SLP) | 6 |
-| 9 | Telehealth consent gate | 3 |
-| 10 | Family dashboard intake banner | 2 |
-| 11 | Practice profile settings | 3 |
-| 12 | Final integration test | 4 |
+| Task | Component | Files | Est. Time |
+|------|-----------|-------|-----------|
+| 1 | LiveKit token route tests | 1 create | 5 min |
+| 2 | LiveKit token route fix | 1 modify | 5 min |
+| 3 | Schema changes | 1 modify (3 locations) | 5 min |
+| 4 | `practiceProfile.ts` backend | 1 create + 1 test | 10 min |
+| 5 | `intakeForms.ts` backend | 1 create + 1 test | 15 min |
+| 6 | Form content library | 1 create | 10 min |
+| 7 | `useIntakeForms` hook | 1 create | 5 min |
+| 8 | IntakeFormRenderer component | 1 create | 5 min |
+| 9 | IntakeFlow stepper component | 1 create | 5 min |
+| 10 | `/intake/[patientId]` route | 1 create | 3 min |
+| 11 | IntakeStatusWidget | 1 create | 5 min |
+| 12 | TelehealthConsentGate | 1 create | 5 min |
+| 13 | PracticeProfileForm | 1 create | 5 min |
+| 14 | Patient detail integration | 1 modify | 3 min |
+| 15 | Family dashboard integration | 1 modify | 3 min |
+| 16 | Call page integration | 1 modify | 5 min |
+| 17 | Settings page integration | 2 modify | 5 min |
+| 18 | Full test suite verification | 0 (verification) | 5 min |
+| **Total** | | **13 create, 7 modify** | **~105 min** |
