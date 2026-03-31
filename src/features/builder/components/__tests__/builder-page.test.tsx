@@ -1,13 +1,11 @@
 // src/features/builder/components/__tests__/builder-page.test.tsx
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
-// jsdom doesn't implement scrollIntoView
 beforeAll(() => {
   Element.prototype.scrollIntoView = vi.fn();
 });
 
-// Mock Next.js navigation before imports
 const mockGet = vi.fn().mockReturnValue(null);
 const mockReplace = vi.fn();
 const mockPush = vi.fn();
@@ -17,21 +15,21 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ replace: mockReplace, push: mockPush }),
 }));
 
-// Mock Convex hooks — return undefined (not null) to match real convex behavior for skipped/loading queries
 vi.mock("convex/react", () => ({
   useQuery: vi.fn().mockReturnValue(undefined),
   useMutation: vi.fn().mockReturnValue(vi.fn().mockResolvedValue(null)),
-  useAction: vi.fn().mockReturnValue(vi.fn().mockResolvedValue({ audioUrl: "https://test.example.com/audio.mp3" })),
+  useAction: vi.fn().mockReturnValue(vi.fn().mockResolvedValue(null)),
 }));
 
-// Mock use-mobile hook
+vi.mock("@clerk/nextjs", () => ({
+  useUser: () => ({ user: { firstName: "Sam", lastName: "Lee" } }),
+}));
+
 vi.mock("@/core/hooks/use-mobile", () => ({
   useIsMobile: vi.fn().mockReturnValue(false),
 }));
 
-// Mock the streaming hook
 const mockResumeSession = vi.fn();
-
 vi.mock("../../hooks/use-streaming", () => ({
   useStreaming: vi.fn().mockReturnValue({
     status: "idle",
@@ -47,224 +45,46 @@ vi.mock("../../hooks/use-streaming", () => ({
     bundleHtml: null,
     buildFailed: false,
     notableMessage: null,
+    reset: vi.fn(),
   }),
+}));
+
+vi.mock("../home-screen", () => ({
+  HomeScreen: () => <div data-testid="home-screen" />,
+}));
+
+vi.mock("../chat-column", () => ({
+  ChatColumn: () => <div data-testid="chat-column" />,
+}));
+
+vi.mock("../preview-column", () => ({
+  PreviewColumn: () => <div data-testid="preview-column" />,
+}));
+
+vi.mock("@/shared/components/share-dialog", () => ({
+  ShareDialog: () => null,
+}));
+
+vi.mock("@/shared/components/fullscreen-app-view", () => ({
+  FullscreenAppView: () => null,
 }));
 
 import { BuilderPage } from "../builder-page";
 
-describe("BuilderPage — three-panel layout", () => {
+describe("BuilderPage", () => {
+  beforeEach(() => vi.clearAllMocks());
+
   it("renders without crashing", () => {
     render(<BuilderPage initialSessionId={null} />);
   });
 
-  it("renders at least 2 resizable panels when a session is active", () => {
-    render(<BuilderPage initialSessionId="active_session_123" />);
-    // Default viewMode is "preview" which shows chat + preview (2 panels)
-    const panels = document.querySelectorAll("[data-panel]");
-    expect(panels.length).toBeGreaterThanOrEqual(2);
-  });
-
-  it("renders the prompt screen with category picker when no session", () => {
+  it("shows HomeScreen when status is idle and no session", () => {
     render(<BuilderPage initialSessionId={null} />);
-    // The new prompt screen shows the InterviewController (category picker) by default
-    expect(screen.getByText("What would you like to build?")).toBeTruthy();
+    expect(screen.getByTestId("home-screen")).toBeInTheDocument();
   });
 
-  it("does not render PhaseTimeline component", () => {
+  it("does NOT render a BuilderToolbar", () => {
     render(<BuilderPage initialSessionId={null} />);
-    // The old phasic pipeline showed a phase timeline — streaming builder removes it
-    const timeline = screen.queryByTestId("phase-timeline");
-    expect(timeline).toBeNull();
-  });
-
-  it("shows preview panel area when a session is active", () => {
-    const { container } = render(<BuilderPage initialSessionId="active_session_123" />);
-    // Preview panel shows a monitor icon placeholder when no bundleHtml
-    const panelGroup = container.querySelector("[data-panel-group]");
-    expect(panelGroup).toBeTruthy();
-  });
-
-  it("renders without crashing when initialSessionId is provided", () => {
-    render(<BuilderPage initialSessionId="test_session_123" />);
-    // Should not crash when a sessionId is provided
-  });
-
-  it("renders the builder toolbar when a session is active", () => {
-    render(<BuilderPage initialSessionId="active_session_123" />);
-    // Toolbar should show the project name (may appear in multiple spots)
-    expect(screen.getAllByText("Untitled App").length).toBeGreaterThan(0);
-  });
-
-  it("renders code panel when viewMode is code (via initial state override)", async () => {
-    // Simulate files available so code panel has content
-    const { useStreaming } = await import("../../hooks/use-streaming");
-    vi.mocked(useStreaming).mockReturnValueOnce({
-      status: "live",
-      files: [{ path: "src/App.tsx", contents: "export default () => <div />" }],
-      generate: vi.fn(),
-      resumeSession: mockResumeSession,
-      blueprint: null,
-      appName: null,
-      error: null,
-      sessionId: "session_123",
-      streamingText: "",
-      activities: [],
-      bundleHtml: null,
-      buildFailed: false,
-      notableMessage: null,
-    });
-    render(<BuilderPage initialSessionId={null} />);
-    // Default viewMode is "preview" — at least chat panel should render
-    expect(screen.queryByRole("textbox")).toBeTruthy();
-  });
-
-  it("renders in mobile view when useIsMobile returns true", async () => {
-    const { useIsMobile } = await import("@/core/hooks/use-mobile");
-    vi.mocked(useIsMobile).mockReturnValueOnce(true);
-
-    render(<BuilderPage initialSessionId={null} />);
-    // Mobile view with no session shows the prompt screen (category picker)
-    expect(screen.getByText("What would you like to build?")).toBeTruthy();
-  });
-
-  it("shows error state in streaming hook", async () => {
-    const { useStreaming } = await import("../../hooks/use-streaming");
-    vi.mocked(useStreaming).mockReturnValueOnce({
-      status: "failed",
-      files: [],
-      generate: vi.fn(),
-      resumeSession: mockResumeSession,
-      blueprint: null,
-      appName: null,
-      error: "Generation failed",
-      sessionId: null,
-      streamingText: "",
-      activities: [],
-      bundleHtml: null,
-      buildFailed: false,
-      notableMessage: null,
-    });
-
-    render(<BuilderPage initialSessionId={null} />);
-    expect(screen.getAllByText(/We hit a small bump/i).length).toBeGreaterThan(0);
-  });
-
-  it("shows project name from blueprint title", async () => {
-    const { useStreaming } = await import("../../hooks/use-streaming");
-    vi.mocked(useStreaming).mockReturnValueOnce({
-      status: "live",
-      files: [],
-      generate: vi.fn(),
-      resumeSession: mockResumeSession,
-      blueprint: { title: "My Therapy Tool" } as Record<string, unknown>,
-      appName: null,
-      error: null,
-      sessionId: "session_123",
-      streamingText: "",
-      activities: [],
-      bundleHtml: null,
-      buildFailed: false,
-      notableMessage: null,
-    });
-
-    render(<BuilderPage initialSessionId={null} />);
-    expect(screen.getAllByText("My Therapy Tool").length).toBeGreaterThan(0);
-  });
-
-  it("shows code panel when viewMode is 'code'", async () => {
-    const { useStreaming } = await import("../../hooks/use-streaming");
-    vi.mocked(useStreaming).mockReturnValue({
-      status: "live",
-      files: [{ path: "src/App.tsx", contents: "export default () => <div />" }],
-      generate: vi.fn(),
-      resumeSession: mockResumeSession,
-      blueprint: null,
-      appName: null,
-      error: null,
-      sessionId: "session_123",
-      streamingText: "",
-      activities: [],
-      bundleHtml: null,
-      buildFailed: false,
-      notableMessage: null,
-    });
-
-    // Render with default viewMode (preview), test still renders
-    render(<BuilderPage initialSessionId={null} />);
-    expect(screen.queryByRole("textbox")).toBeTruthy();
-  });
-
-  it("calls resumeSession when initialSessionId is provided and data is loaded", async () => {
-    // Mock useQuery to return session data and files
-    const { useQuery } = await import("convex/react");
-
-    // More specific mocking: sessions.get returns a session, generated_files.list returns files
-    let queryCallCount = 0;
-    vi.mocked(useQuery).mockImplementation((_queryFn: unknown, args: unknown) => {
-      if (args === "skip") return null;
-      queryCallCount++;
-      // sessions.get is called first, generated_files.list second
-      if (queryCallCount % 2 === 1) {
-        return { _id: "test_session_123", title: "Test App", state: "live", query: "test", blueprint: null };
-      }
-      return [{ path: "src/App.tsx", contents: "<div>Hello</div>", _id: "f1", sessionId: "test_session_123" }];
-    });
-
-    // Re-mock useStreaming to provide resumeSession
-    const { useStreaming } = await import("../../hooks/use-streaming");
-    vi.mocked(useStreaming).mockReturnValue({
-      status: "idle",
-      files: [],
-      generate: vi.fn(),
-      resumeSession: mockResumeSession,
-      blueprint: null,
-      appName: null,
-      error: null,
-      sessionId: null,
-      streamingText: "",
-      activities: [],
-      bundleHtml: null,
-      buildFailed: false,
-      notableMessage: null,
-    });
-
-    render(<BuilderPage initialSessionId="test_session_123" />);
-
-    await waitFor(() => {
-      expect(mockResumeSession).toHaveBeenCalledWith({
-        sessionId: "test_session_123",
-        files: [{ path: "src/App.tsx", contents: "<div>Hello</div>" }],
-        blueprint: null,
-        bundleHtml: null,
-      });
-    });
-
-    // Reset mocks
-    vi.mocked(useQuery).mockReturnValue(null);
-  });
-
-  it("passes bundleHtml from streaming hook to PreviewPanel", async () => {
-    const { useStreaming } = await import("../../hooks/use-streaming");
-    vi.mocked(useStreaming).mockReturnValue({
-      status: "live",
-      files: [],
-      generate: vi.fn(),
-      resumeSession: mockResumeSession,
-      blueprint: null,
-      appName: null,
-      error: null,
-      sessionId: "session_123",
-      streamingText: "",
-      activities: [],
-      bundleHtml: "<html><body><h1>Hello</h1></body></html>",
-      buildFailed: false,
-      notableMessage: null,
-    });
-
-    render(<BuilderPage initialSessionId="session_123" />);
-
-    // When bundleHtml is present, the preview panel renders an iframe
-    const iframe = document.querySelector("iframe[title='App preview']");
-    expect(iframe).toBeTruthy();
+    expect(screen.queryByRole("link", { name: /back to dashboard/i })).not.toBeInTheDocument();
   });
 });

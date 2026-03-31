@@ -1,18 +1,13 @@
 "use client";
 
 import { useMutation, useQuery } from "convex/react";
-import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
 import { startTransition, useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { useIsMobile } from "@/core/hooks/use-mobile";
 import { FullscreenAppView } from "@/shared/components/fullscreen-app-view";
-import { MaterialIcon } from "@/shared/components/material-icon";
 import { ShareDialog } from "@/shared/components/share-dialog";
-import { SuggestionChips } from "@/shared/components/suggestion-chips";
-import { Button } from "@/shared/components/ui/button";
-import { Input } from "@/shared/components/ui/input";
 import {
   ResizableHandle,
   ResizablePanel,
@@ -24,25 +19,10 @@ import type { Id } from "../../../../convex/_generated/dataModel";
 import { useProgressNarration } from "../hooks/use-progress-narration";
 import { useSessionResume } from "../hooks/use-session-resume";
 import { useStreaming } from "../hooks/use-streaming";
-import { THERAPY_SUGGESTIONS } from "../lib/constants";
 import type { TherapyBlueprint } from "../lib/schemas";
-import { BuilderToolbar, type DeviceSize, type ViewMode } from "./builder-toolbar";
-import { ContinueCard } from "./continue-card";
-
-const ChatPanel = dynamic(
-  () => import("./chat-panel").then((m) => ({ default: m.ChatPanel })),
-  {
-    ssr: false,
-    loading: () => <div className="animate-pulse rounded-2xl bg-surface-container-low h-full" />,
-  }
-);
-const CodePanel = dynamic(
-  () => import("./code-panel").then((m) => ({ default: m.CodePanel })),
-  { ssr: false }
-);
-import { InterviewController } from "./interview/interview-controller";
-import { PatientContextCard } from "./patient-context-card";
-import { PreviewPanel } from "./preview-panel";
+import { ChatColumn } from "./chat-column";
+import { HomeScreen } from "./home-screen";
+import { PreviewColumn, type DeviceSize, type ViewMode } from "./preview-column";
 
 interface BuilderPageProps {
   initialSessionId: string | null;
@@ -82,11 +62,8 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
     patientId ? { patientId } : "skip",
   );
   const [isEditingName, setIsEditingName] = useState(false);
-  const [promptInput, setPromptInput] = useState("");
   const [pendingPrompt, setPendingPrompt] = useState<string | null>(null);
   const lastPromptRef = useRef("");
-  const promptInputRef = useRef<HTMLInputElement>(null);
-  const [showFreeformInput, setShowFreeformInput] = useState(false);
   const [generationStartTime, setGenerationStartTime] = useState<number>(() => Date.now());
 
   useEffect(() => { localStorage.setItem("bridges-viewMode", viewMode); }, [viewMode]);
@@ -306,206 +283,112 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
     setShareDialogOpen(true);
   }
 
-  const showPromptScreen = !sessionId && status === "idle" && !initialSessionId;
+  const showPromptScreen = status === "idle" && !sessionId;
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
       {showPromptScreen ? (
-        <div className="flex flex-1 flex-col items-center justify-center gap-6 overflow-y-auto p-6">
-          {patientId && (
-            <div className="w-full max-w-2xl">
-              <PatientContextCard patientId={patientId} />
-            </div>
-          )}
-          <div className="text-center">
-            <h1 className="font-headline text-3xl font-normal text-foreground">
-              What would you like to build?
-            </h1>
-            <p className="mt-2 text-base text-on-surface-variant">
-              Choose a category or describe what you need.
-            </p>
-          </div>
-
-          {showFreeformInput ? (
-            <>
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  if (!promptInput.trim()) return;
-                  handleGenerate(promptInput.trim());
-                  setPromptInput("");
-                }}
-                className="w-full max-w-2xl"
-              >
-                <div className="flex items-center gap-2 rounded-full border border-outline-variant/40 bg-surface-container-lowest px-4 py-2 shadow-sm focus-within:ring-2 focus-within:ring-primary/30">
-                  <Input
-                    ref={promptInputRef}
-                    value={promptInput}
-                    onChange={(e) => setPromptInput(e.target.value)}
-                    placeholder="Describe the therapy tool you want to build…"
-                    className="flex-1 border-0 bg-transparent p-0 text-base shadow-none focus-visible:ring-0"
-                    aria-label="Describe the therapy tool you want to build"
-                  />
-                  <Button
-                    type="submit"
-                    disabled={!promptInput.trim()}
-                    size="icon"
-                    className="shrink-0 rounded-full"
-                    aria-label="Generate app"
-                  >
-                    <MaterialIcon icon="auto_fix_high" size="xs" />
-                  </Button>
-                </div>
-              </form>
-              <SuggestionChips
-                suggestions={THERAPY_SUGGESTIONS}
-                onSelect={(suggestion) => handleGenerate(suggestion)}
-              />
-              <button
-                type="button"
-                onClick={() => setShowFreeformInput(false)}
-                className="text-sm text-on-surface-variant/60 hover:text-on-surface-variant transition-colors"
-              >
-                ← Back to categories
-              </button>
-            </>
-          ) : (
-            <div className="w-full max-w-2xl">
-              <InterviewController
-                onGenerate={(prompt, blueprint) => handleGenerate(prompt, blueprint)}
-                onEscapeHatch={() => {
-                  setShowFreeformInput(true);
-                  setTimeout(() => promptInputRef.current?.focus(), 100);
-                }}
-              />
-            </div>
-          )}
-
-          {mostRecent && !continueDismissed && (
-            <ContinueCard
-              sessionId={mostRecent._id}
-              title={mostRecent.title}
-              onDismiss={() => setContinueDismissed(true)}
-            />
-          )}
-        </div>
+        <HomeScreen
+          onGenerate={handleGenerate}
+          mostRecent={!continueDismissed ? mostRecent ?? null : null}
+          onContinueDismiss={() => setContinueDismissed(true)}
+        />
       ) : (
-        /* Phase 2+: Split-panel layout with toolbar */
         <>
-          <BuilderToolbar
-            view={viewMode}
-            onViewChange={setViewMode}
-            deviceSize={deviceSize}
-            onDeviceSizeChange={setDeviceSize}
-            status={status}
-            projectName={appName}
-            isEditingName={isEditingName}
-            onNameEditStart={() => setIsEditingName(true)}
-            onNameEditEnd={handleNameEditEnd}
-            onSave={handleSave}
-            isSaved={!!appRecord}
-            onShare={handleShare}
-            onNewChat={() => {
-              reset();
-              router.push("/builder");
-            }}
-            isMobile={isMobile}
-            mobilePanel={mobilePanel}
-            onMobilePanelChange={setMobilePanel}
-            hasFiles={files.length > 0}
-            onFullscreen={bundleHtml ? () => setIsFullscreen(true) : undefined}
-          />
+          {isMobile ? (
+            /* Mobile: single-panel view toggled via ChatColumn header */
+            <div className="flex h-full flex-col overflow-hidden">
+              {mobilePanel === "chat" ? (
+                <ChatColumn
+                  sessionId={sessionId}
+                  status={status}
+                  blueprint={blueprint}
+                  error={error}
+                  onGenerate={handleGenerate}
+                  onRetry={handleRetry}
+                  streamingText={streamingText}
+                  activities={activities}
+                  pendingPrompt={pendingPrompt}
+                  onPendingPromptClear={() => setPendingPrompt(null)}
+                  narrationMessage={narrationMessage}
+                  startTime={generationStartTime}
+                  appName={appName}
+                  isEditingName={isEditingName}
+                  onNameEditStart={() => setIsEditingName(true)}
+                  onNameEditEnd={handleNameEditEnd}
+                  patientId={patientId}
+                  isMobile={isMobile}
+                  mobilePanel={mobilePanel}
+                  onMobilePanelChange={setMobilePanel}
+                />
+              ) : (
+                <PreviewColumn
+                  bundleHtml={bundleHtml}
+                  status={status}
+                  error={error ?? undefined}
+                  deviceSize="mobile"
+                  buildFailed={buildFailed}
+                  activityMessage={narrationMessage ?? undefined}
+                  onRetry={handleRetry}
+                  viewMode={viewMode}
+                  onViewChange={setViewMode}
+                  files={files}
+                  onPublish={handleShare}
+                  onClose={() => {
+                    reset();
+                    router.push("/builder");
+                  }}
+                />
+              )}
+            </div>
+          ) : (
+            /* Desktop: resizable side-by-side columns */
+            <ResizablePanelGroup orientation="horizontal" className="flex-1 min-h-0">
+              <ResizablePanel defaultSize={45} minSize={20}>
+                <ChatColumn
+                  sessionId={sessionId}
+                  status={status}
+                  blueprint={blueprint}
+                  error={error}
+                  onGenerate={handleGenerate}
+                  onRetry={handleRetry}
+                  streamingText={streamingText}
+                  activities={activities}
+                  pendingPrompt={pendingPrompt}
+                  onPendingPromptClear={() => setPendingPrompt(null)}
+                  narrationMessage={narrationMessage}
+                  startTime={generationStartTime}
+                  appName={appName}
+                  isEditingName={isEditingName}
+                  onNameEditStart={() => setIsEditingName(true)}
+                  onNameEditEnd={handleNameEditEnd}
+                  patientId={patientId}
+                />
+              </ResizablePanel>
 
-          <div className="min-h-0 flex-1 bg-surface-container-low p-2">
-            {isMobile ? (
-              /* Mobile: single-panel view toggled via toolbar */
-              <div className="h-full">
-                {mobilePanel === "chat" ? (
-                  <div className="flex h-full flex-col overflow-hidden rounded-2xl bg-surface-container-lowest">
-                    {patientId ? <PatientContextCard patientId={patientId} /> : null}
-                    <ChatPanel
-                      sessionId={sessionId}
-                      status={status}
-                      blueprint={blueprint}
-                      error={error}
-                      onGenerate={handleGenerate}
-                      onRetry={handleRetry}
-                      streamingText={streamingText}
-                      activities={activities}
-                      pendingPrompt={pendingPrompt}
-                      onPendingPromptClear={() => setPendingPrompt(null)}
-                      narrationMessage={narrationMessage}
-                      startTime={generationStartTime}
-                    />
-                  </div>
-                ) : (
-                  <div className="h-full overflow-hidden rounded-2xl bg-surface-container-lowest">
-                    <PreviewPanel
-                      bundleHtml={bundleHtml}
-                      state={status}
-                      error={error ?? undefined}
-                      deviceSize="mobile"
-                      buildFailed={buildFailed}
-                      activityMessage={narrationMessage ?? undefined}
-                      onRetry={handleRetry}
-                    />
-                  </div>
-                )}
-              </div>
-            ) : (
-              /* Desktop: resizable side-by-side panels */
-              <ResizablePanelGroup orientation="horizontal" className="h-full">
-                <ResizablePanel defaultSize={30} minSize={20}>
-                  <div className="flex h-full flex-col overflow-hidden rounded-2xl bg-surface-container-lowest">
-                    {patientId ? <PatientContextCard patientId={patientId} /> : null}
-                    <ChatPanel
-                      sessionId={sessionId}
-                      status={status}
-                      blueprint={blueprint}
-                      error={error}
-                      onGenerate={handleGenerate}
-                      onRetry={handleRetry}
-                      streamingText={streamingText}
-                      activities={activities}
-                      pendingPrompt={pendingPrompt}
-                      onPendingPromptClear={() => setPendingPrompt(null)}
-                      narrationMessage={narrationMessage}
-                      startTime={generationStartTime}
-                    />
-                  </div>
-                </ResizablePanel>
+              <ResizableHandle withHandle />
 
-                <ResizableHandle withHandle />
-
-                {viewMode === "code" && (
-                  <>
-                    <ResizablePanel defaultSize={35} minSize={20}>
-                      <div className="h-full overflow-hidden rounded-2xl bg-surface-container-lowest">
-                        <CodePanel files={files} status={status} />
-                      </div>
-                    </ResizablePanel>
-                    <ResizableHandle withHandle />
-                  </>
-                )}
-
-                {viewMode === "preview" && (
-                  <ResizablePanel defaultSize={70} minSize={20}>
-                    <div className="h-full overflow-hidden rounded-2xl bg-surface-container-lowest">
-                      <PreviewPanel
-                        bundleHtml={bundleHtml}
-                        state={status}
-                        error={error ?? undefined}
-                        deviceSize={deviceSize}
-                        buildFailed={buildFailed}
-                        activityMessage={narrationMessage ?? undefined}
-                        onRetry={handleRetry}
-                      />
-                    </div>
-                  </ResizablePanel>
-                )}
-              </ResizablePanelGroup>
-            )}
-          </div>
+              <ResizablePanel defaultSize={55} minSize={20}>
+                <PreviewColumn
+                  bundleHtml={bundleHtml}
+                  status={status}
+                  error={error ?? undefined}
+                  deviceSize={deviceSize}
+                  buildFailed={buildFailed}
+                  activityMessage={narrationMessage ?? undefined}
+                  onRetry={handleRetry}
+                  viewMode={viewMode}
+                  onViewChange={setViewMode}
+                  files={files}
+                  onPublish={handleShare}
+                  onClose={() => {
+                    reset();
+                    router.push("/builder");
+                  }}
+                />
+              </ResizablePanel>
+            </ResizablePanelGroup>
+          )}
         </>
       )}
 
