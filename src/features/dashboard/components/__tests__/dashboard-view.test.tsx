@@ -27,10 +27,6 @@ vi.mock("@/shared/components/empty-state", () => ({
   EmptyState: ({ title }: any) => <div data-testid="empty-state">{title}</div>,
 }));
 
-vi.mock("@/shared/components/mobile-nav-drawer", () => ({
-  MobileNavDrawer: () => null,
-}));
-
 vi.mock("@/shared/components/material-icon", () => ({
   MaterialIcon: ({ icon }: { icon: string }) => (
     <span data-testid="icon">{icon}</span>
@@ -170,25 +166,10 @@ describe("DashboardView", () => {
     expect(createLinks).toHaveLength(0);
   });
 
-  it("mobile menu button has aria-label 'Open navigation menu'", () => {
-    render(<DashboardView />);
-    const menuBtn = screen.getByRole("button", {
-      name: /Open navigation menu/i,
-    });
-    expect(menuBtn).toBeInTheDocument();
-  });
-
   it("renders TemplatesTab in templates tab content", () => {
     render(<DashboardView />);
     expect(screen.getByTestId("tab-templates")).toBeInTheDocument();
     expect(screen.getByTestId("templates-tab")).toBeInTheDocument();
-  });
-
-  it("clicking mobile menu button opens the drawer (no crash)", () => {
-    render(<DashboardView />);
-    const menuBtn = screen.getByRole("button", { name: /Open navigation menu/i });
-    menuBtn.click();
-    // MobileNavDrawer is mocked, so we just check no crash
   });
 
   it("handleTabChange with non-recent tab calls replace with ?tab= param", () => {

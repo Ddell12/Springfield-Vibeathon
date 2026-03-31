@@ -6,14 +6,12 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 
-import { APP_BRAND } from "@/core/config";
 const DeleteConfirmationDialog = dynamic(
   () => import("@/shared/components/delete-confirmation-dialog").then((m) => ({ default: m.DeleteConfirmationDialog })),
   { ssr: false }
 );
 import { EmptyState } from "@/shared/components/empty-state";
 import { MaterialIcon } from "@/shared/components/material-icon";
-import { MobileNavDrawer } from "@/shared/components/mobile-nav-drawer";
 import { ProjectCard } from "@/shared/components/project-card";
 import { Button } from "@/shared/components/ui/button";
 import { Skeleton } from "@/shared/components/ui/skeleton";
@@ -28,7 +26,6 @@ const VALID_TABS = ["recent", "my-projects", "shared", "templates"] as const;
 type TabValue = (typeof VALID_TABS)[number];
 
 export function DashboardView() {
-  const [drawerOpen, setDrawerOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<{ id: Id<"sessions">; title: string } | null>(null);
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -55,43 +52,6 @@ export function DashboardView() {
 
   return (
     <main className="flex h-full flex-col overflow-y-auto bg-background">
-      {/* Mobile top bar */}
-      <header className="sticky top-0 z-30 flex h-16 w-full items-center justify-between bg-background/70 px-4 backdrop-blur-xl md:hidden">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setDrawerOpen(true)}
-            className="flex h-11 w-11 items-center justify-center rounded-lg hover:bg-surface-container-low transition-colors duration-300 active:scale-95"
-            aria-label="Open navigation menu"
-          >
-            <MaterialIcon icon="menu" size="md" className="text-primary" />
-          </button>
-          <span className="font-medium tracking-tight text-lg text-primary">
-            Bridges
-          </span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-tertiary text-xs font-bold text-on-tertiary">
-            D
-          </div>
-        </div>
-      </header>
-
-      <MobileNavDrawer open={drawerOpen} onOpenChange={setDrawerOpen} />
-
-      {/* Desktop Top Nav Bar */}
-      <header className="sticky top-0 z-30 hidden h-16 w-full items-center justify-between bg-background/70 px-8 backdrop-blur-xl md:flex">
-        <div className="flex items-center gap-3">
-          <h1 className="font-headline text-xl font-normal tracking-tight text-primary">
-            {APP_BRAND}
-          </h1>
-        </div>
-        <div className="flex items-center gap-6">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-tertiary text-xs font-bold text-on-tertiary">
-            D
-          </div>
-        </div>
-      </header>
-
       {/* Hero Section */}
       <section className="relative shrink-0 overflow-hidden mx-auto max-w-4xl px-6 pb-16 pt-20 text-center">
         <div className="pointer-events-none absolute -top-20 left-1/2 -translate-x-1/2 h-[300px] w-[600px] rounded-full bg-primary/3 blur-[80px]" />
