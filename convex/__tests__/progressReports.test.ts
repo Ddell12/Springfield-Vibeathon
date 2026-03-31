@@ -96,3 +96,30 @@ describe("progressReports sign workflow", () => {
     ).rejects.toThrow("Not authorized");
   });
 });
+
+describe("progressReports audience", () => {
+  it("stores audience when provided", async () => {
+    const t = convexTest(schema, modules).withIdentity(SLP_IDENTITY);
+    const { patientId } = await t.mutation(api.patients.create, VALID_PATIENT);
+
+    const reportId = await t.mutation(api.progressReports.create, {
+      patientId,
+      reportType: "weekly-summary" as const,
+      periodStart: "2026-03-21",
+      periodEnd: "2026-03-28",
+      goalSummaries: [VALID_GOAL_SUMMARY],
+      overallNarrative: "Good progress.",
+      audience: "parent" as const,
+    });
+
+    const report = await t.query(api.progressReports.get, { reportId });
+    expect(report.audience).toBe("parent");
+  });
+
+  it("defaults to undefined when audience is omitted (backward compat)", async () => {
+    const t = convexTest(schema, modules).withIdentity(SLP_IDENTITY);
+    const { reportId } = await createReportSetup(t);
+    const report = await t.query(api.progressReports.get, { reportId });
+    expect(report.audience).toBeUndefined();
+  });
+});

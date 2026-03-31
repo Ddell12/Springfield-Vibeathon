@@ -310,9 +310,13 @@ export default defineSchema({
     aiGenerated: v.boolean(),
     signedAt: v.optional(v.number()),
     meetingRecordId: v.optional(v.id("meetingRecords")),
+    // Group session fields (CPT 92508)
+    groupSessionId: v.optional(v.string()),
+    groupPatientIds: v.optional(v.array(v.id("patients"))),
   })
     .index("by_patientId_sessionDate", ["patientId", "sessionDate"])
-    .index("by_slpUserId", ["slpUserId"]),
+    .index("by_slpUserId", ["slpUserId"])
+    .index("by_groupSessionId", ["groupSessionId"]),
 
   availability: defineTable({
     slpId: v.string(),
@@ -502,6 +506,11 @@ export default defineSchema({
       v.literal("signed")
     ),
     signedAt: v.optional(v.number()),
+    audience: v.optional(v.union(
+      v.literal("clinical"),
+      v.literal("parent"),
+      v.literal("iep-team")
+    )),
   })
     .index("by_patientId", ["patientId"])
     .index("by_patientId_reportType", ["patientId", "reportType"]),

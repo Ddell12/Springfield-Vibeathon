@@ -45,3 +45,7 @@ export function useUnsignSessionNote() {
 export function useDeleteSessionNote() {
   return useMutation(api.sessionNotes.remove);
 }
+
+export function useCreateGroupSessionNote() {
+  return useMutation(api.sessionNotes.createGroup);
+}

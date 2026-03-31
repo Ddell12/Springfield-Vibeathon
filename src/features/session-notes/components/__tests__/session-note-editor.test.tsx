@@ -54,6 +54,16 @@ vi.mock("../../hooks/use-session-notes", () => ({
   useUpdateSessionNoteStatus: () => mockUseUpdateSessionNoteStatus(),
   useSignSessionNote: () => mockUseSignSessionNote(),
   useUnsignSessionNote: () => mockUseUnsignSessionNote(),
+  useCreateGroupSessionNote: () => vi.fn(),
+}));
+
+vi.mock("../../lib/session-utils", () => ({
+  isLateSignature: () => false,
+  getSignatureDelayDays: () => null,
+}));
+
+vi.mock("../group-patient-picker", () => ({
+  GroupPatientPicker: () => <div data-testid="group-patient-picker" />,
 }));
 
 vi.mock("../../hooks/use-soap-generation", () => ({

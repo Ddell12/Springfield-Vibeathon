@@ -35,6 +35,8 @@ vi.mock("../../lib/session-utils", () => ({
     accuracy === null ? "—" : accuracy >= 80 ? `${accuracy}% ✓` : `${accuracy}%`,
   accuracyColor: (accuracy: number | null) =>
     accuracy === null ? "text-muted-foreground" : "text-green-600",
+  isLateSignature: () => false,
+  getSignatureDelayDays: () => null,
 }));
 
 function makeNote(overrides: Record<string, any> = {}) {

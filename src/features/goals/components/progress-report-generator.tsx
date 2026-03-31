@@ -7,6 +7,10 @@ import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
 import {
+  RadioGroup,
+  RadioGroupItem,
+} from "@/shared/components/ui/radio-group";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -62,6 +66,7 @@ export function ProgressReportGenerator({
   const period = defaultPeriod(reportType);
   const [periodStart, setPeriodStart] = useState(period.start);
   const [periodEnd, setPeriodEnd] = useState(period.end);
+  const [audience, setAudience] = useState<"clinical" | "parent" | "iep-team">("clinical");
 
   const { status, streamedText, reportId, error, generate, reset } = useReportGeneration();
 
@@ -78,6 +83,7 @@ export function ProgressReportGenerator({
       reportType,
       periodStart,
       periodEnd,
+      audience,
     });
   }
 
@@ -121,6 +127,34 @@ export function ProgressReportGenerator({
                 <Label>Period End</Label>
                 <Input type="date" value={periodEnd} onChange={(e) => setPeriodEnd(e.target.value)} />
               </div>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <Label>Audience</Label>
+              <RadioGroup
+                value={audience}
+                onValueChange={(v) => setAudience(v as "clinical" | "parent" | "iep-team")}
+                className="flex gap-4"
+              >
+                <div className="flex items-center gap-2">
+                  <RadioGroupItem value="clinical" id="audience-clinical" />
+                  <Label htmlFor="audience-clinical" className="text-sm font-normal">
+                    Clinical
+                  </Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <RadioGroupItem value="parent" id="audience-parent" />
+                  <Label htmlFor="audience-parent" className="text-sm font-normal">
+                    Parent-Friendly
+                  </Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <RadioGroupItem value="iep-team" id="audience-iep" />
+                  <Label htmlFor="audience-iep" className="text-sm font-normal">
+                    IEP Team
+                  </Label>
+                </div>
+              </RadioGroup>
             </div>
 
             {error && (

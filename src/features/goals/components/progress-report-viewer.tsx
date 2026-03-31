@@ -17,6 +17,26 @@ import {
 } from "../hooks/use-report-generation";
 import { domainColor, domainLabel, statusBadgeColor,trendArrow } from "../lib/goal-utils";
 
+// Physician signature data from Plan of Care (SP2 dependency).
+// Returns undefined if plansOfCare table does not exist yet.
+interface PhysicianSigInfo {
+  onFile: boolean;
+  physicianName?: string;
+  signatureDate?: string;
+}
+function usePhysicianSignature(_patientId: Id<"patients"> | undefined): PhysicianSigInfo | undefined {
+  // SP2 dependency: plansOfCare table may not exist yet.
+  // When SP2 is implemented, replace this with:
+  //   const poc = useQuery(api.plansOfCare.getActive, { patientId });
+  //   if (!poc) return undefined;
+  //   return {
+  //     onFile: poc.physicianSignatureOnFile ?? false,
+  //     physicianName: poc.physicianName,
+  //     signatureDate: poc.physicianSignatureDate,
+  //   };
+  return undefined;
+}
+
 interface ProgressReportViewerProps {
   reportId: Id<"progressReports">;
 }
@@ -28,6 +48,8 @@ export function ProgressReportViewer({ reportId }: ProgressReportViewerProps) {
   const unsignReport = useUnsignReport();
   const updateNarrative = useUpdateReportNarrative();
   const [saving, setSaving] = useState(false);
+  // IMPORTANT: Call hook unconditionally before any early return — React Rules of Hooks
+  const physicianSig = usePhysicianSignature(report?.patientId);
 
   if (!report) {
     return <p className="text-sm text-muted-foreground">Loading report...</p>;
@@ -61,9 +83,20 @@ export function ProgressReportViewer({ reportId }: ProgressReportViewerProps) {
     <div className="flex flex-col gap-6 print:gap-4">
       <div className="flex items-center justify-between print:hidden">
         <div>
-          <p className="text-sm font-medium capitalize">
-            {report.reportType.replace(/-/g, " ")}
-          </p>
+          <div className="flex items-center gap-2">
+            <p className="text-sm font-medium capitalize">
+              {report.reportType.replace(/-/g, " ")}
+            </p>
+            {report.audience && (
+              <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
+                {report.audience === "clinical"
+                  ? "Clinical"
+                  : report.audience === "parent"
+                    ? "Parent-Friendly"
+                    : "IEP Team"}
+              </span>
+            )}
+          </div>
           <p className="text-xs text-muted-foreground">
             {report.periodStart} to {report.periodEnd}
           </p>
@@ -134,6 +167,34 @@ export function ProgressReportViewer({ reportId }: ProgressReportViewerProps) {
           <MaterialIcon icon="print" size="sm" />
           Print / Export PDF
         </Button>
+      </div>
+
+      {/* Physician signature status */}
+      <div className="flex items-center gap-2 rounded-lg bg-muted/30 px-4 py-3 print:break-inside-avoid">
+        <MaterialIcon
+          icon={physicianSig?.onFile ? "verified" : "pending"}
+          size="sm"
+          className={physicianSig?.onFile ? "text-success" : "text-muted-foreground"}
+        />
+        <div className="flex flex-col">
+          {physicianSig?.onFile ? (
+            <>
+              <p className="text-sm font-medium text-foreground">
+                Physician signature on file
+              </p>
+              {physicianSig.physicianName && (
+                <p className="text-xs text-muted-foreground">
+                  {physicianSig.physicianName}
+                  {physicianSig.signatureDate && ` - Signed ${physicianSig.signatureDate}`}
+                </p>
+              )}
+            </>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              Physician signature: Not on file
+            </p>
+          )}
+        </div>
       </div>
 
       <div className="hidden print:block print:mt-8 print:border-t print:pt-4">
