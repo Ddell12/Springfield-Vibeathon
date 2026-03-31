@@ -179,11 +179,9 @@ export const sign = slpMutation({
     await ctx.db.patch(args.evalId, { status: "signed", signedAt: now });
 
     // Propagate ICD codes to patient record
-    if (evaluation.diagnosisCodes.length > 0) {
-      await ctx.db.patch(evaluation.patientId, {
-        icdCodes: evaluation.diagnosisCodes,
-      });
-    }
+    await ctx.db.patch(evaluation.patientId, {
+      icdCodes: evaluation.diagnosisCodes,
+    });
 
     await ctx.db.insert("activityLog", {
       patientId: evaluation.patientId,
