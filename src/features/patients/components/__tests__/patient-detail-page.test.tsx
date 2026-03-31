@@ -52,6 +52,9 @@ vi.mock("../create-material-button", () => ({
 vi.mock("@/shared/components/child-apps-section", () => ({
   ChildAppsSection: () => null,
 }));
+vi.mock("@/features/intake/components/intake-status-widget", () => ({
+  IntakeStatusWidget: () => null,
+}));
 
 // Mock React.use to return params synchronously (avoids Suspense complexity)
 vi.mock("react", async () => {
