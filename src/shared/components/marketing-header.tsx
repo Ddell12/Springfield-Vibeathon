@@ -17,9 +17,9 @@ import {
 } from "@/shared/components/ui/sheet";
 
 const navLinks = [
-  { href: "/demo-tools", label: "Meet Bridges" },
-  { href: "/demo-tools", label: "Platform" },
-  { href: "/explore", label: "Solutions" },
+  { href: "/meet-bridges", label: "Meet Bridges" },
+  { href: "/platform", label: "Platform" },
+  { href: "/solutions", label: "Solutions" },
   { href: "/pricing", label: "Pricing" },
   { href: "/learn", label: "Learn" },
 ];
