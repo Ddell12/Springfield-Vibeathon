@@ -188,7 +188,7 @@ export function ClaudeSignInCard({
       return;
     }
 
-    if (signIn.status === "complete") {
+    if (signIn.status === "complete" || signIn.status === "needs_client_trust") {
       await finalizeSignIn();
       return;
     }
@@ -231,11 +231,11 @@ export function ClaudeSignInCard({
 
     setFormError(null);
 
-    const redirectUrl = `${window.location.origin}/sso-callback`;
-    const { error } = await signIn.create({
+    const redirectCallbackUrl = `${window.location.origin}/sso-callback`;
+    const { error } = await signIn.sso({
       strategy: "oauth_google",
-      redirectUrl,
-      actionCompleteRedirectUrl: AUTH_REDIRECT_URL,
+      redirectCallbackUrl,
+      redirectUrl: AUTH_REDIRECT_URL,
     });
 
     if (error) {

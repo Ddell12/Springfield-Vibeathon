@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  allowedDevOrigins: ["127.0.0.1"],
   // esbuild ships a native binary that Turbopack can't parse — keep it external
   serverExternalPackages: ["esbuild"],
   // recharts uses CJS without explicit package.json exports — Turbopack needs this
