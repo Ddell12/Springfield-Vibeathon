@@ -78,6 +78,7 @@ interface ChatPanelProps {
   pendingPrompt?: string | null;
   onPendingPromptClear?: () => void;
   appTitle: string;
+  onArtifactClick?: () => void;
 }
 
 export function ChatPanel({
@@ -91,6 +92,7 @@ export function ChatPanel({
   pendingPrompt,
   onPendingPromptClear,
   appTitle,
+  onArtifactClick,
 }: ChatPanelProps) {
   const scrollEndRef = useRef<HTMLDivElement>(null);
 
@@ -132,7 +134,11 @@ export function ChatPanel({
         {blueprint ? <BlueprintCard blueprint={blueprint} /> : null}
 
         {(isGenerating || isLive) && (
-          <ArtifactCard title={appTitle} isGenerating={isGenerating} />
+          <ArtifactCard
+            title={appTitle}
+            isGenerating={isGenerating}
+            onClick={isLive ? onArtifactClick : undefined}
+          />
         )}
 
         {error && (

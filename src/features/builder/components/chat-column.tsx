@@ -37,6 +37,7 @@ interface ChatColumnProps {
   isMobile?: boolean;
   mobilePanel?: "chat" | "preview";
   onMobilePanelChange?: (panel: "chat" | "preview") => void;
+  onArtifactClick?: () => void;
 }
 
 export function ChatColumn({
@@ -59,6 +60,7 @@ export function ChatColumn({
   isMobile,
   mobilePanel,
   onMobilePanelChange,
+  onArtifactClick,
 }: ChatColumnProps) {
   const [input, setInput] = useState("");
 
@@ -159,6 +161,7 @@ export function ChatColumn({
         onPendingPromptClear={onPendingPromptClear}
         narrationMessage={narrationMessage}
         appTitle={appName}
+        onArtifactClick={onArtifactClick}
       />
 
       {/* Sticky input */}
