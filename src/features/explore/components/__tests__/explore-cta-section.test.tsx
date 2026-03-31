@@ -30,9 +30,9 @@ describe("ExploreCtaSection", () => {
     expect(link).toHaveAttribute("href", "/builder");
   });
 
-  test("renders secondary CTA linking to /templates", () => {
+  test("renders secondary CTA linking to /library?tab=templates", () => {
     render(<ExploreCtaSection />);
     const link = screen.getByRole("link", { name: /browse templates/i });
-    expect(link).toHaveAttribute("href", "/templates");
+    expect(link).toHaveAttribute("href", "/library?tab=templates");
   });
 });

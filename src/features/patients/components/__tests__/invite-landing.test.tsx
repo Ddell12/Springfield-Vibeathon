@@ -156,7 +156,7 @@ describe("InviteLanding", () => {
 
     await waitFor(() => {
       expect(toast.success).toHaveBeenCalledWith("You're connected!");
-      expect(mockPush).toHaveBeenCalledWith("/dashboard");
+      expect(mockPush).toHaveBeenCalledWith("/builder");
     });
   });
 

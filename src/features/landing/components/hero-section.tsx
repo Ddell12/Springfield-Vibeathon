@@ -36,7 +36,7 @@ export function HeroSection() {
               />
             </Link>
             <Link
-              href="/templates"
+              href="/library?tab=templates"
               className="bg-surface-container-low text-on-surface px-8 py-3.5 rounded-lg text-lg font-semibold hover:bg-surface-container-high transition-colors duration-300 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
             >
               View Templates

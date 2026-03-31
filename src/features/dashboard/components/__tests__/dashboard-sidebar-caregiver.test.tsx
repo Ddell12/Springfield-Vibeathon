@@ -1,86 +1,36 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
-
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { DashboardSidebar } from "../dashboard-sidebar";
 
+vi.mock("convex/react", () => ({ useQuery: () => [] }));
 vi.mock("@clerk/nextjs", () => ({
-  UserButton: () => <div data-testid="user-button" />,
-  Show: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-  useUser: () => ({
-    user: { publicMetadata: { role: "caregiver" } },
-  }),
+  useUser: () => ({ user: { firstName: "Parent", lastName: "User", publicMetadata: { role: "caregiver" } } }),
+  useClerk: () => ({ signOut: vi.fn() }),
+  Show: ({ when, children }: any) => (when === "signed-in" ? <>{children}</> : null),
 }));
-
-vi.mock("@/features/sessions/components/notification-bell", () => ({
-  NotificationBell: () => <div data-testid="notification-bell" />,
-}));
-
-vi.mock("next/link", () => ({
-  default: ({ href, children, ...props }: any) => (
-    <a href={href} {...props}>
-      {children}
-    </a>
-  ),
-}));
-
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/family",
+  usePathname: () => "/sessions",
   useSearchParams: () => ({ get: () => null }),
-  useRouter: () => ({ replace: vi.fn() }),
+  useRouter: () => ({ replace: vi.fn(), push: vi.fn() }),
+}));
+vi.mock("next/link", () => ({ default: ({ href, children, ...props }: any) => <a href={href} {...props}>{children}</a> }));
+vi.mock("@/shared/components/ui/popover", () => ({
+  Popover: ({ children }: any) => <div>{children}</div>,
+  PopoverTrigger: ({ children }: any) => <div>{children}</div>,
+  PopoverContent: ({ children }: any) => <div>{children}</div>,
 }));
 
-vi.mock("@/shared/components/material-icon", () => ({
-  MaterialIcon: ({ icon }: { icon: string }) => (
-    <span data-testid="icon">{icon}</span>
-  ),
-}));
-
-vi.mock("@/core/utils", () => ({
-  cn: (...classes: any[]) => classes.filter(Boolean).join(" "),
-}));
-
-vi.mock("@/shared/lib/navigation", () => ({
-  NAV_ITEMS: [
-    { icon: "home", label: "Home", href: "/dashboard" },
-    { icon: "group", label: "Patients", href: "/patients" },
-    { icon: "settings", label: "Settings", href: "/settings" },
-  ],
-  CAREGIVER_NAV_ITEMS: [
-    { icon: "home", label: "Home", href: "/family" },
-    { icon: "settings", label: "Settings", href: "/settings" },
-  ],
-  isNavActive: vi.fn((href: string) => href === "/family"),
-}));
+beforeEach(() => {
+  localStorage.clear();
+});
 
 describe("DashboardSidebar (caregiver)", () => {
-  it("shows caregiver nav items (Home + Settings only)", () => {
+  it("renders Sessions and Speech Coach only", () => {
     render(<DashboardSidebar />);
-    expect(screen.getByText("Home")).toBeInTheDocument();
-    expect(screen.getByText("Settings")).toBeInTheDocument();
-  });
-
-  it("does NOT show SLP-only nav items", () => {
-    render(<DashboardSidebar />);
+    expect(screen.getByText("Sessions")).toBeInTheDocument();
+    expect(screen.getByText("Speech Coach")).toBeInTheDocument();
     expect(screen.queryByText("Patients")).not.toBeInTheDocument();
-  });
-
-  it("logo links to /family for caregivers", () => {
-    render(<DashboardSidebar />);
-    const logoLink = screen.getByText("B").closest("a");
-    expect(logoLink).toHaveAttribute("href", "/family");
-  });
-
-  it("renders caregiver nav links", () => {
-    render(<DashboardSidebar />);
-    const links = screen.getAllByRole("link");
-    const hrefs = links.map((l) => l.getAttribute("href"));
-    expect(hrefs).toContain("/family");
-    expect(hrefs).toContain("/settings");
-    expect(hrefs).not.toContain("/patients");
-  });
-
-  it("shows user button", () => {
-    render(<DashboardSidebar />);
-    expect(screen.getByTestId("user-button")).toBeInTheDocument();
+    expect(screen.queryByText("Billing")).not.toBeInTheDocument();
+    expect(screen.queryByText("Library")).not.toBeInTheDocument();
   });
 });

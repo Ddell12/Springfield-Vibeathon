@@ -5,6 +5,7 @@ export const ROUTES = {
   BUILDER_SESSION: (sessionId: string) => `/builder/${sessionId}` as const,
   MY_TOOLS: "/my-tools",
   TEMPLATES: "/templates",
+  LIBRARY: "/library",
   FLASHCARDS: "/flashcards",
   SETTINGS: "/settings",
   TOOL_VIEW: (toolId: string) => `/tool/${toolId}` as const,

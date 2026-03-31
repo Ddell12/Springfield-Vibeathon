@@ -36,7 +36,11 @@ const SORT_OPTIONS: { label: string; value: SortOption }[] = [
   { label: "A–Z", value: "alphabetical" },
 ];
 
-export function TemplatesPage() {
+interface TemplatesPageProps {
+  embedded?: boolean;
+}
+
+export function TemplatesPage({ embedded = false }: TemplatesPageProps) {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -87,15 +91,17 @@ export function TemplatesPage() {
   return (
     <div className="max-w-5xl mx-auto px-6 py-12">
       {/* Header */}
-      <section className="mb-12 text-center">
-        <h1 className="font-headline font-normal text-4xl md:text-5xl tracking-tight text-on-surface mb-4">
-          Start with a Template
-        </h1>
-        <p className="text-on-surface-variant text-lg leading-relaxed max-w-2xl mx-auto">
-          Choose a proven therapy app template and watch it get built in real time.
-          Customize it with your own words, images, and goals.
-        </p>
-      </section>
+      {!embedded && (
+        <section className="mb-12 text-center">
+          <h1 className="font-headline font-normal text-4xl md:text-5xl tracking-tight text-on-surface mb-4">
+            Start with a Template
+          </h1>
+          <p className="text-on-surface-variant text-lg leading-relaxed max-w-2xl mx-auto">
+            Choose a proven therapy app template and watch it get built in real time.
+            Customize it with your own words, images, and goals.
+          </p>
+        </section>
+      )}
 
       {/* Search + Sort Bar */}
       <div className="flex flex-col sm:flex-row gap-4 mb-6">

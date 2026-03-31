@@ -35,7 +35,7 @@ export function InviteLanding({ paramsPromise }: InviteLandingProps) {
       acceptInvite({ token })
         .then(() => {
           toast.success("You're connected!");
-          router.push("/dashboard");
+          router.push("/builder");
         })
         .catch((err) => {
           console.error("[invite] Failed to accept:", err);
@@ -98,7 +98,7 @@ export function InviteLanding({ paramsPromise }: InviteLandingProps) {
             caregiver instead.
           </p>
           <Button asChild className="w-full">
-            <Link href="/dashboard">Back to Dashboard</Link>
+            <Link href="/builder">Back to Home</Link>
           </Button>
         </div>
       </div>

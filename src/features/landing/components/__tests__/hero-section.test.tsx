@@ -49,9 +49,9 @@ describe("HeroSection", () => {
     expect(cta).toHaveAttribute("href", "/builder");
   });
 
-  it("renders the templates link pointing to /templates", () => {
+  it("renders the templates link pointing to /library?tab=templates", () => {
     render(<HeroSection />);
     const link = screen.getByRole("link", { name: /View Templates/ });
-    expect(link).toHaveAttribute("href", "/templates");
+    expect(link).toHaveAttribute("href", "/library?tab=templates");
   });
 });

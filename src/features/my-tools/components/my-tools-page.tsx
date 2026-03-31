@@ -29,7 +29,11 @@ const SORT_OPTIONS: { label: string; value: SortOption }[] = [
   { label: "A–Z", value: "alphabetical" },
 ];
 
-export function MyToolsPage() {
+interface MyToolsPageProps {
+  embedded?: boolean;
+}
+
+export function MyToolsPage({ embedded = false }: MyToolsPageProps) {
   const sessions = useQuery(api.sessions.list);
   const archiveSession = useMutation(api.sessions.archive);
   const duplicateSession = useMutation(api.sessions.duplicateSession);
@@ -126,7 +130,7 @@ export function MyToolsPage() {
 
   if (filteredSessions === undefined) {
     return (
-      <div className="max-w-7xl mx-auto px-8 pt-12 pb-24">
+      <div className={!embedded ? "max-w-7xl mx-auto px-8 pt-12 pb-24" : "py-4"}>
         <div data-testid="loading-skeleton" className="animate-pulse space-y-6">
           <div className="h-10 bg-surface-container-low rounded-xl w-48" />
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -141,12 +145,17 @@ export function MyToolsPage() {
 
   if (sessions && sessions.length === 0) {
     return (
-      <div className="max-w-7xl mx-auto px-8 pt-12 pb-24 flex flex-col items-center justify-center gap-6 min-h-[60vh]">
+      <div className={cn(
+        "flex flex-col items-center justify-center gap-6",
+        !embedded ? "max-w-7xl mx-auto px-8 pt-12 pb-24 min-h-[60vh]" : "py-8",
+      )}>
         <div className="text-center">
           <MaterialIcon icon="dashboard_customize" className="text-6xl text-primary/40 mb-4" />
-          <h1 className="font-headline font-normal text-3xl text-on-surface mb-3">
-            No apps yet
-          </h1>
+          {!embedded && (
+            <h1 className="font-headline font-normal text-3xl text-on-surface mb-3">
+              No apps yet
+            </h1>
+          )}
           <p className="text-on-surface-variant text-lg mb-8">
             Describe a therapy activity and Bridges will build a visual app for you.
           </p>
@@ -164,36 +173,38 @@ export function MyToolsPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-8 pt-12 pb-24">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
-        <div>
-          <h1 className="font-headline font-normal text-4xl md:text-5xl text-on-surface tracking-tight mb-2">
-            My Apps
-          </h1>
-          <p className="text-on-surface-variant text-lg">
-            {sessions!.length} app{sessions!.length !== 1 ? "s" : ""} created
-          </p>
+      {!embedded && (
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
+          <div>
+            <h1 className="font-headline font-normal text-4xl md:text-5xl text-on-surface tracking-tight mb-2">
+              My Apps
+            </h1>
+            <p className="text-on-surface-variant text-lg">
+              {sessions!.length} app{sessions!.length !== 1 ? "s" : ""} created
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setSelectionMode(!selectionMode);
+                setSelectedIds(new Set());
+              }}
+              className="text-on-surface-variant hover:text-on-surface"
+            >
+              {selectionMode ? "Cancel" : "Select"}
+            </Button>
+            <Link
+              href="/builder"
+              className="bg-primary-gradient text-white px-8 py-4 rounded-lg font-semibold flex items-center gap-2 shadow-lg shadow-primary/10 hover:shadow-primary/20 transition-all active:scale-95"
+            >
+              <MaterialIcon icon="add_circle" />
+              Create New App
+            </Link>
+          </div>
         </div>
-        <div className="flex items-center gap-3">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              setSelectionMode(!selectionMode);
-              setSelectedIds(new Set());
-            }}
-            className="text-on-surface-variant hover:text-on-surface"
-          >
-            {selectionMode ? "Cancel" : "Select"}
-          </Button>
-          <Link
-            href="/builder"
-            className="bg-primary-gradient text-white px-8 py-4 rounded-lg font-semibold flex items-center gap-2 shadow-lg shadow-primary/10 hover:shadow-primary/20 transition-all active:scale-95"
-          >
-            <MaterialIcon icon="add_circle" />
-            Create New App
-          </Link>
-        </div>
-      </div>
+      )}
 
       {/* Search + Sort Bar */}
       <div className="flex flex-col sm:flex-row gap-4 mb-8">
@@ -358,7 +369,7 @@ export function MyToolsPage() {
               Start Building
             </Link>
             <Link
-              href="/templates"
+              href="/library?tab=templates"
               className="text-primary font-semibold px-6 py-3 rounded-lg hover:bg-surface-container-high transition-colors"
             >
               Browse Templates
