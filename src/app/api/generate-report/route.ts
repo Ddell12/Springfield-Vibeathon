@@ -8,6 +8,7 @@ const ReportInputSchema = z.object({
   reportType: z.enum(["weekly-summary", "monthly-summary", "iep-progress-report"]),
   periodStart: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   periodEnd: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  audience: z.enum(["clinical", "parent", "iep-team"]).optional(),
 });
 
 import {
@@ -59,7 +60,7 @@ export async function POST(request: Request): Promise<Response> {
   if (!parsedBody.success) {
     return new Response(JSON.stringify({ error: parsedBody.error.issues[0]?.message ?? "Invalid request" }), { status: 400, headers: { "Content-Type": "application/json" } });
   }
-  const { patientId, reportType, periodStart, periodEnd } = parsedBody.data;
+  const { patientId, reportType, periodStart, periodEnd, audience } = parsedBody.data;
 
   const pid = patientId as Id<"patients">;
 
@@ -117,6 +118,7 @@ export async function POST(request: Request): Promise<Response> {
     periodStart,
     periodEnd,
     previousNarrative,
+    audience,
   );
 
   const encoder = new TextEncoder();
@@ -182,6 +184,7 @@ export async function POST(request: Request): Promise<Response> {
             periodEnd,
             goalSummaries,
             overallNarrative: parsed.overallNarrative,
+            audience,
           });
 
           send("report-complete", { reportId });
