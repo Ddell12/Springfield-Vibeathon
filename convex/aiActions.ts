@@ -2,7 +2,8 @@
 
 import { v } from "convex/values";
 
-import { action, internal } from "./_generated/server";
+import { action } from "./_generated/server";
+import { internal } from "./_generated/api";
 
 // Voice IDs verified and audio tested 2026-03-25. All three produce clear therapy-appropriate speech.
 const VOICE_MAP: Record<string, string> = {
