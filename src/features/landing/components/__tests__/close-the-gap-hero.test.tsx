@@ -31,10 +31,10 @@ describe("CloseTheGapHero", () => {
     expect(link).toHaveAttribute("href", "/builder");
   });
 
-  it("renders the Browse Templates link pointing to /templates", () => {
+  it("renders the Browse Templates link pointing to /library?tab=templates", () => {
     render(<CloseTheGapHero />);
     const link = screen.getByRole("link", { name: /Browse Templates/i });
-    expect(link).toHaveAttribute("href", "/templates");
+    expect(link).toHaveAttribute("href", "/library?tab=templates");
   });
 
   it("renders the 5 min stat", () => {
