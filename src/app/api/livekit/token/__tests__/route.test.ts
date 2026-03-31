@@ -36,6 +36,18 @@ describe("POST /api/livekit/token", () => {
     vi.clearAllMocks();
   });
 
+  it("returns 401 when user is not authenticated", async () => {
+    mockAuthenticate.mockResolvedValue({
+      convex: { setAuth: vi.fn(), query: mockQuery },
+      userId: null,
+    });
+
+    const res = await POST(makeRequest({ appointmentId: "appt-1" }));
+    expect(res.status).toBe(401);
+    const json = await res.json();
+    expect(json.error).toContain("Not authenticated");
+  });
+
   it("returns 403 when appointment status is cancelled", async () => {
     mockAuthenticate.mockResolvedValue({
       userId: "slp-user-123",
