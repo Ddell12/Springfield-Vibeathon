@@ -540,6 +540,51 @@ export default defineSchema({
       targetSounds: v.array(v.string()),
       ageRange: v.union(v.literal("2-4"), v.literal("5-7")),
       defaultDurationMinutes: v.number(),
+      coachSetup: v.optional(v.object({
+        targetPositions: v.array(v.union(
+          v.literal("initial"),
+          v.literal("medial"),
+          v.literal("final"),
+          v.literal("blend")
+        )),
+        sessionGoal: v.union(
+          v.literal("drill"),
+          v.literal("mixed"),
+          v.literal("carryover"),
+          v.literal("listening")
+        ),
+        coachTone: v.union(
+          v.literal("playful"),
+          v.literal("calm"),
+          v.literal("energetic"),
+          v.literal("neutral")
+        ),
+        sessionPace: v.union(
+          v.literal("slow"),
+          v.literal("steady"),
+          v.literal("brisk")
+        ),
+        promptStyle: v.union(
+          v.literal("model-first"),
+          v.literal("ask-first"),
+          v.literal("choice-based"),
+          v.literal("imitation-heavy")
+        ),
+        correctionStyle: v.union(
+          v.literal("recast"),
+          v.literal("gentle-direct"),
+          v.literal("explicit")
+        ),
+        maxRetriesPerWord: v.union(v.literal(1), v.literal(2), v.literal(3)),
+        frustrationSupport: v.union(
+          v.literal("back-off-fast"),
+          v.literal("balanced"),
+          v.literal("keep-challenge")
+        ),
+        preferredThemes: v.array(v.string()),
+        avoidThemes: v.array(v.string()),
+        slpNotes: v.optional(v.string()),
+      })),
     })),
   })
     .index("by_patientId", ["patientId"])

@@ -1,9 +1,11 @@
 "use client";
 
+import { useUser } from "@clerk/nextjs";
 import { useConvexAuth,useQuery } from "convex/react";
 import { useState } from "react";
 
 import { cn } from "@/core/utils";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/components/ui/card";
 
 import { api } from "../../../../convex/_generated/api";
 import { useStandaloneSpeechSession } from "../hooks/use-standalone-speech-session";
@@ -11,7 +13,7 @@ import { ActiveSession } from "./active-session";
 import { SessionConfig } from "./session-config";
 import { SessionHistory } from "./session-history";
 
-type Tab = "new" | "history";
+type Tab = "new" | "history" | "coach-setup";
 
 const DEFAULT_CONFIG = {
   targetSounds: ["/s/"],
@@ -20,9 +22,12 @@ const DEFAULT_CONFIG = {
 };
 
 export function StandaloneSpeechCoachPage() {
+  const { user } = useUser();
   const { isAuthenticated } = useConvexAuth();
   const [activeTab, setActiveTab] = useState<Tab>("new");
   const session = useStandaloneSpeechSession();
+  const role = (user?.publicMetadata as { role?: string } | undefined)?.role;
+  const isSLP = role !== "caregiver";
 
   const progress = useQuery(
     api.speechCoach.getStandaloneProgress,
@@ -48,6 +53,7 @@ export function StandaloneSpeechCoachPage() {
         onEnd={() => session.endSession()}
         durationMinutes={session.durationMinutes}
         sessionConfig={session.sessionConfig ?? undefined}
+        speechCoachConfig={DEFAULT_CONFIG}
       />
     );
   }
@@ -98,30 +104,29 @@ export function StandaloneSpeechCoachPage() {
   const TABS: { id: Tab; label: string }[] = [
     { id: "new", label: "New Session" },
     { id: "history", label: "History" },
+    ...(isSLP ? [{ id: "coach-setup" as const, label: "Coach Setup" }] : []),
   ];
 
   return (
-    <div className="flex h-full flex-col">
-      {/* Header */}
-      <div className="bg-surface-container-low px-6 pt-6 pb-4">
-        <h1 className="font-headline text-2xl font-bold text-foreground">Speech Coach</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Try an interactive voice session — practice speech sounds with an AI coach
+    <div className="flex flex-col gap-6 p-4 sm:p-6 lg:p-8">
+      <div>
+        <h1 className="font-headline text-2xl font-semibold text-on-surface">Speech Coach</h1>
+        <p className="mt-1 text-sm text-on-surface-variant">
+          Try an interactive voice session and practice speech sounds with an AI coach.
         </p>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-1 bg-surface-container-low px-6">
+      <div className="flex gap-1 rounded-full bg-surface-container p-1 w-fit">
         {TABS.map((tab) => (
           <button
             key={tab.id}
             type="button"
             onClick={() => setActiveTab(tab.id)}
             className={cn(
-              "border-b-2 px-4 py-3 text-sm font-medium transition-colors",
+              "rounded-full px-4 py-2 text-sm font-medium transition-colors",
               activeTab === tab.id
-                ? "border-primary text-foreground"
-                : "border-transparent text-muted-foreground hover:text-foreground"
+                ? "bg-white text-on-surface shadow-sm"
+                : "text-on-surface-variant hover:text-on-surface"
             )}
           >
             {tab.label}
@@ -129,10 +134,9 @@ export function StandaloneSpeechCoachPage() {
         ))}
       </div>
 
-      {/* Tab content */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="rounded-3xl bg-surface-container-lowest p-4 sm:p-6">
         {activeTab === "new" && (
-          <div className="mx-auto max-w-lg p-6">
+          <div className="mx-auto max-w-lg">
             <SessionConfig
               speechCoachConfig={DEFAULT_CONFIG}
               onStart={session.begin}
@@ -142,6 +146,23 @@ export function StandaloneSpeechCoachPage() {
           </div>
         )}
         {activeTab === "history" ? <SessionHistory mode="standalone" /> : null}
+        {activeTab === "coach-setup" ? (
+          <div className="mx-auto max-w-3xl">
+            <Card className="rounded-xl py-5">
+              <CardHeader className="gap-1 px-5">
+                <CardTitle className="font-headline text-xl text-foreground">Coach Setup</CardTitle>
+                <CardDescription>
+                  Speech coach setup is saved per child, not as one global default.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="px-5">
+                <p className="text-sm leading-6 text-muted-foreground">
+                  To customize how the coach talks, cues, and adapts for a specific child, open that child&apos;s Speech Coach program from the patient or family workflow. This standalone page stays focused on quick try-it-now sessions.
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        ) : null}
       </div>
     </div>
   );

@@ -6,22 +6,7 @@ import { cn } from "@/core/utils";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
 
-const TARGET_SOUNDS = [
-  { id: "/s/", label: "/s/ & /z/" },
-  { id: "/r/", label: "/r/" },
-  { id: "/l/", label: "/l/" },
-  { id: "/th/", label: "/th/" },
-  { id: "/ch/", label: "/ch/ & /sh/" },
-  { id: "/f/", label: "/f/ & /v/" },
-  { id: "/k/", label: "/k/ & /g/" },
-  { id: "blends", label: "Blends" },
-] as const;
-
-type SpeechCoachConfig = {
-  targetSounds: string[];
-  ageRange: "2-4" | "5-7";
-  defaultDurationMinutes: number;
-};
+import { type SpeechCoachConfig,TARGET_SOUNDS } from "../lib/config";
 
 type SessionConfigData = {
   targetSounds: string[];

@@ -10,6 +10,9 @@ import { toast } from "sonner";
 import { cn } from "@/core/utils";
 import { Button } from "@/shared/components/ui/button";
 
+import type { SpeechCoachConfig } from "../lib/config";
+import { buildSessionGuidance } from "../lib/session-guidance";
+
 type SessionConfig = {
   targetSounds: string[];
   ageRange: "2-4" | "5-7";
@@ -23,6 +26,7 @@ type Props = {
   onEnd: () => void;
   durationMinutes: number;
   sessionConfig?: SessionConfig;
+  speechCoachConfig?: SpeechCoachConfig;
 };
 
 export function ActiveSession(props: Props) {
@@ -39,17 +43,21 @@ function ActiveSessionInner({
   onConversationStarted,
   onEnd,
   durationMinutes,
+  sessionConfig,
+  speechCoachConfig,
 }: Props) {
   // wasConnected distinguishes "never connected" (initial disconnected state)
   // from "disconnected after a live session" so we only call onEnd on the latter.
   const wasConnected = useRef(false);
   const hasStarted = useRef(false);
+  const hasSentGuidance = useRef(false);
+  const sessionGuidance = buildSessionGuidance(sessionConfig, speechCoachConfig);
 
   // useConversation is the recommended ElevenLabs SDK hook. Callbacks are
   // registered via useLayoutEffect (useRegisterCallbacks inside the hook), so
   // they are stable across re-renders and are live in listenerMap before
   // startSession is called. status/isSpeaking are read from SDK-managed state.
-  const { startSession, endSession, status, isSpeaking } = useConversation({
+  const { startSession, endSession, sendContextualUpdate, status, isSpeaking } = useConversation({
     onConnect: ({ conversationId }) => {
       wasConnected.current = true;
       onConversationStarted(conversationId);
@@ -87,6 +95,12 @@ function ActiveSessionInner({
     }, 0);
     return () => clearTimeout(timer);
   }, [startSession]);
+
+  useEffect(() => {
+    if (status !== "connected" || hasSentGuidance.current || !sessionGuidance) return;
+    hasSentGuidance.current = true;
+    sendContextualUpdate(sessionGuidance);
+  }, [sendContextualUpdate, sessionGuidance, status]);
 
   // Connection timeout — exit gracefully if WebSocket never establishes.
   useEffect(() => {

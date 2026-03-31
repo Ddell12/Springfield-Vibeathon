@@ -1,18 +1,22 @@
 "use client";
 
-import { useConvexAuth,useQuery } from "convex/react";
+import { useUser } from "@clerk/nextjs";
+import { useConvexAuth,useMutation,useQuery } from "convex/react";
 import { useState } from "react";
+import { toast } from "sonner";
 
 import { cn } from "@/core/utils";
 
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 import { useSpeechSession } from "../hooks/use-speech-session";
+import type { SpeechCoachConfig } from "../lib/config";
 import { ActiveSession } from "./active-session";
+import { CoachSetupTab } from "./coach-setup-tab";
 import { SessionConfig } from "./session-config";
 import { SessionHistory } from "./session-history";
 
-type Tab = "new" | "history";
+type Tab = "new" | "history" | "coach-setup";
 
 type Props = {
   patientId: Id<"patients">;
@@ -20,9 +24,14 @@ type Props = {
 };
 
 export function SpeechCoachPage({ patientId, homeProgramId }: Props) {
+  const { user } = useUser();
   const { isAuthenticated } = useConvexAuth();
   const [activeTab, setActiveTab] = useState<Tab>("new");
   const session = useSpeechSession(homeProgramId);
+  const updateProgram = useMutation(api.homePrograms.update);
+  const [isSavingSetup, setIsSavingSetup] = useState(false);
+  const role = (user?.publicMetadata as { role?: string } | undefined)?.role;
+  const isSLP = role !== "caregiver";
 
   // Get the home program for config defaults
   const programs = useQuery(
@@ -64,6 +73,7 @@ export function SpeechCoachPage({ patientId, homeProgramId }: Props) {
         onEnd={() => session.endSession()}
         durationMinutes={session.durationMinutes}
         sessionConfig={session.sessionConfig ?? undefined}
+        speechCoachConfig={program.speechCoachConfig}
       />
     );
   }
@@ -110,34 +120,48 @@ export function SpeechCoachPage({ patientId, homeProgramId }: Props) {
     );
   }
 
-  // Tab view
   const TABS: { id: Tab; label: string }[] = [
     { id: "new", label: "New Session" },
     { id: "history", label: "History" },
+    ...(isSLP ? [{ id: "coach-setup" as const, label: "Coach Setup" }] : []),
   ];
 
+  async function handleSaveCoachSetup(config: SpeechCoachConfig) {
+    setIsSavingSetup(true);
+    try {
+      await updateProgram({
+        id: homeProgramId,
+        speechCoachConfig: config,
+      });
+      toast.success("Coach setup saved");
+    } catch (error) {
+      console.error("[SpeechCoach] Failed to save coach setup:", error);
+      toast.error("Could not save coach setup");
+    } finally {
+      setIsSavingSetup(false);
+    }
+  }
+
   return (
-    <div className="flex h-full flex-col">
-      {/* Header */}
-      <div className="bg-surface-container-low px-6 pt-6 pb-4">
-        <h1 className="font-headline text-2xl font-bold text-foreground">Speech Coach</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Interactive voice sessions to help practice speech sounds
+    <div className="flex flex-col gap-6 p-4 sm:p-6 lg:p-8">
+      <div>
+        <h1 className="font-headline text-2xl font-semibold text-on-surface">Speech Coach</h1>
+        <p className="mt-1 text-sm text-on-surface-variant">
+          Interactive voice sessions to help practice speech sounds.
         </p>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-1 bg-surface-container-low px-6">
+      <div className="flex gap-1 rounded-full bg-surface-container p-1 w-fit">
         {TABS.map((tab) => (
           <button
             key={tab.id}
             type="button"
             onClick={() => setActiveTab(tab.id)}
             className={cn(
-              "border-b-2 px-4 py-3 text-sm font-medium transition-colors",
+              "rounded-full px-4 py-2 text-sm font-medium transition-colors",
               activeTab === tab.id
-                ? "border-primary text-foreground"
-                : "border-transparent text-muted-foreground hover:text-foreground"
+                ? "bg-white text-on-surface shadow-sm"
+                : "text-on-surface-variant hover:text-on-surface"
             )}
           >
             {tab.label}
@@ -145,10 +169,9 @@ export function SpeechCoachPage({ patientId, homeProgramId }: Props) {
         ))}
       </div>
 
-      {/* Tab content */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="rounded-3xl bg-surface-container-lowest p-4 sm:p-6">
         {activeTab === "new" && program.speechCoachConfig && (
-          <div className="mx-auto max-w-lg p-6">
+          <div className="mx-auto max-w-lg">
             <SessionConfig
               speechCoachConfig={program.speechCoachConfig}
               onStart={session.begin}
@@ -158,6 +181,14 @@ export function SpeechCoachPage({ patientId, homeProgramId }: Props) {
           </div>
         )}
         {activeTab === "history" ? <SessionHistory patientId={patientId} /> : null}
+        {activeTab === "coach-setup" && program.speechCoachConfig ? (
+          <CoachSetupTab
+            key={JSON.stringify(program.speechCoachConfig.coachSetup ?? null)}
+            speechCoachConfig={program.speechCoachConfig}
+            onSave={handleSaveCoachSetup}
+            isSaving={isSavingSetup}
+          />
+        ) : null}
       </div>
     </div>
   );
