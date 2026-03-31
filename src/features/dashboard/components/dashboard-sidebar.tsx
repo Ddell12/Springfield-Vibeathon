@@ -1,17 +1,31 @@
 "use client";
 
-import { useClerk, useUser, Show } from "@clerk/nextjs";
+import { Show,useClerk, useUser } from "@clerk/nextjs";
 import { useQuery } from "convex/react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
-import { api } from "../../../../convex/_generated/api";
-import { cn } from "@/core/utils";
 import { ROUTES } from "@/core/routes";
+import { cn } from "@/core/utils";
+import { AUTH_SIGN_OUT_URL } from "@/features/auth/lib/auth-content";
 import { MaterialIcon } from "@/shared/components/material-icon";
 import { Popover, PopoverContent, PopoverTrigger } from "@/shared/components/ui/popover";
 import { CAREGIVER_NAV_ITEMS, isNavActive, NAV_ITEMS } from "@/shared/lib/navigation";
+
+import { api } from "../../../../convex/_generated/api";
+
+const CAREGIVER_ALLOWED_PREFIXES = [
+  "/family",
+  "/settings",
+  "/speech-coach",
+  "/sessions",
+  "/builder",
+  "/flashcards",
+  "/my-tools",
+  "/templates",
+  "/library",
+];
 
 export function DashboardSidebar() {
   const pathname = usePathname();
@@ -23,11 +37,11 @@ export function DashboardSidebar() {
   const isCaregiver = role === "caregiver";
   const navItems = isCaregiver ? CAREGIVER_NAV_ITEMS : NAV_ITEMS;
 
-  const [collapsed, setCollapsed] = useState(false);
-  useEffect(() => {
-    const saved = localStorage.getItem("bridges_sidebar_collapsed");
-    if (saved === "true") setCollapsed(true);
-  }, []);
+  const [collapsed, setCollapsed] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem("bridges_sidebar_collapsed") === "true";
+  });
+
   const toggleCollapsed = () => {
     setCollapsed((prev) => {
       localStorage.setItem("bridges_sidebar_collapsed", String(!prev));
@@ -36,19 +50,6 @@ export function DashboardSidebar() {
   };
 
   const recentSessions = useQuery(api.sessions.listRecent) ?? [];
-
-  // Redirect caregivers away from SLP-only routes
-  const CAREGIVER_ALLOWED_PREFIXES = [
-    "/family",
-    "/settings",
-    "/speech-coach",
-    "/sessions",
-    "/builder",
-    "/flashcards",
-    "/my-tools",
-    "/templates",
-    "/library",
-  ];
 
   useEffect(() => {
     if (isCaregiver && !CAREGIVER_ALLOWED_PREFIXES.some((p) => pathname.startsWith(p))) {
@@ -214,8 +215,8 @@ export function DashboardSidebar() {
               <div className="my-1 border-t border-outline-variant/20" />
               <button
                 type="button"
-                onClick={() => signOut({ redirectUrl: "/sign-in" })}
-                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-on-surface hover:bg-surface-container-high transition-colors"
+                onClick={() => signOut({ redirectUrl: AUTH_SIGN_OUT_URL })}
+                className="flex w-full items-center gap-2 rounded-2xl px-3 py-2 text-sm text-on-surface hover:bg-surface-container-high transition-colors"
               >
                 <MaterialIcon icon="logout" size="sm" />
                 Sign out

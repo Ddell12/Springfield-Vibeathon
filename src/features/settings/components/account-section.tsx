@@ -2,6 +2,7 @@
 
 import { useClerk } from "@clerk/nextjs";
 
+import { AUTH_SIGN_OUT_URL } from "@/features/auth/lib/auth-content";
 import { MaterialIcon } from "@/shared/components/material-icon";
 import { Button } from "@/shared/components/ui/button";
 
@@ -20,7 +21,7 @@ export function AccountSection() {
         <h3 className="font-body font-bold text-on-surface mb-3">Session</h3>
         <Button
           variant="outline"
-          onClick={() => signOut({ redirectUrl: "/" })}
+          onClick={() => signOut({ redirectUrl: AUTH_SIGN_OUT_URL })}
           className="w-full py-3 rounded-lg"
         >
           <MaterialIcon icon="logout" size="sm" className="mr-2" />
