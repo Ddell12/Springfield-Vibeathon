@@ -5,9 +5,13 @@ import { toast } from "sonner";
 
 import { MaterialIcon } from "@/shared/components/material-icon";
 import { Button } from "@/shared/components/ui/button";
+import { Checkbox } from "@/shared/components/ui/checkbox";
+import { Input } from "@/shared/components/ui/input";
+import { Label } from "@/shared/components/ui/label";
 import { Textarea } from "@/shared/components/ui/textarea";
 
 import type { Id } from "../../../../convex/_generated/dataModel";
+import { useActiveGoals } from "../../goals/hooks/use-goals";
 import {
   useCreateDischargeSummary,
   useDischargeGeneration,
@@ -36,6 +40,7 @@ export function DischargeForm({ patientId, onComplete }: DischargeFormProps) {
   const updateDischarge = useUpdateDischargeSummary();
   const signDischarge = useSignDischargeSummary();
   const aiGen = useDischargeGeneration();
+  const goals = useActiveGoals(patientId);
 
   const [reason, setReason] = useState<DischargeReason>("goals-met");
   const [reasonOther, setReasonOther] = useState("");
@@ -43,6 +48,9 @@ export function DischargeForm({ patientId, onComplete }: DischargeFormProps) {
   const [recommendations, setRecommendations] = useState("");
   const [returnCriteria, setReturnCriteria] = useState("");
   const [dischargeId, setDischargeId] = useState<Id<"dischargeSummaries"> | null>(null);
+  const [goalOutcomes, setGoalOutcomes] = useState<
+    Record<string, { met: boolean; finalAccuracy: number; reason: string }>
+  >({});
 
   useEffect(() => {
     if (aiGen.result) {
@@ -50,6 +58,23 @@ export function DischargeForm({ patientId, onComplete }: DischargeFormProps) {
       setRecommendations(aiGen.result.recommendations);
     }
   }, [aiGen.result]);
+
+  const goalsAchieved = Object.entries(goalOutcomes)
+    .filter(([, v]) => v.met)
+    .map(([goalId, v]) => ({
+      goalId,
+      shortDescription: goals?.find((g) => g._id === goalId)?.shortDescription ?? "",
+      finalAccuracy: v.finalAccuracy,
+    }));
+
+  const goalsNotMet = Object.entries(goalOutcomes)
+    .filter(([, v]) => !v.met && v.finalAccuracy > 0)
+    .map(([goalId, v]) => ({
+      goalId,
+      shortDescription: goals?.find((g) => g._id === goalId)?.shortDescription ?? "",
+      finalAccuracy: v.finalAccuracy,
+      reason: v.reason,
+    }));
 
   async function handleCreate() {
     try {
@@ -59,8 +84,8 @@ export function DischargeForm({ patientId, onComplete }: DischargeFormProps) {
         serviceStartDate: today,
         serviceEndDate: today,
         presentingDiagnosis: "",
-        goalsAchieved: [],
-        goalsNotMet: [],
+        goalsAchieved,
+        goalsNotMet,
         dischargeReason: reason,
         dischargeReasonOther: reason === "other" ? reasonOther : undefined,
         narrative,
@@ -107,6 +132,66 @@ export function DischargeForm({ patientId, onComplete }: DischargeFormProps) {
 
   return (
     <div className="flex flex-col gap-4">
+      {/* Goal Outcomes */}
+      <div className="flex flex-col gap-3">
+        <Label className="text-sm font-semibold">Goal Outcomes</Label>
+        <p className="text-xs text-muted-foreground">
+          For each goal, indicate whether it was met and the final accuracy.
+        </p>
+        {goals?.map((goal) => {
+          const outcome = goalOutcomes[goal._id];
+          return (
+            <div key={goal._id} className="rounded-lg border border-border p-3">
+              <p className="mb-2 text-sm font-medium">{goal.shortDescription}</p>
+              <div className="flex flex-wrap items-center gap-3">
+                <label className="flex items-center gap-2 text-sm">
+                  <Checkbox
+                    checked={outcome?.met ?? false}
+                    onCheckedChange={(checked) =>
+                      setGoalOutcomes((prev) => ({
+                        ...prev,
+                        [goal._id]: { met: !!checked, finalAccuracy: prev[goal._id]?.finalAccuracy ?? 0, reason: prev[goal._id]?.reason ?? "" },
+                      }))
+                    }
+                  />
+                  Goal met
+                </label>
+                <div className="flex items-center gap-1">
+                  <Input
+                    type="number"
+                    min={0}
+                    max={100}
+                    placeholder="0"
+                    value={outcome?.finalAccuracy ?? ""}
+                    onChange={(e) =>
+                      setGoalOutcomes((prev) => ({
+                        ...prev,
+                        [goal._id]: { met: prev[goal._id]?.met ?? false, finalAccuracy: Number(e.target.value), reason: prev[goal._id]?.reason ?? "" },
+                      }))
+                    }
+                    className="h-8 w-20 text-sm"
+                  />
+                  <span className="text-sm text-muted-foreground">% final accuracy</span>
+                </div>
+                {!outcome?.met && (
+                  <Input
+                    placeholder="Reason not met..."
+                    value={outcome?.reason ?? ""}
+                    onChange={(e) =>
+                      setGoalOutcomes((prev) => ({
+                        ...prev,
+                        [goal._id]: { ...prev[goal._id]!, reason: e.target.value },
+                      }))
+                    }
+                    className="h-8 flex-1 text-sm"
+                  />
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
       <div className="flex flex-col gap-1.5">
         <label className="text-sm font-medium text-on-surface">Discharge Reason</label>
         <div className="flex flex-wrap gap-2">

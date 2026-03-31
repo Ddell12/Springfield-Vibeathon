@@ -21,6 +21,8 @@ import {
   useUpdateEvaluation,
   useUpdateEvaluationStatus,
 } from "../hooks/use-evaluations";
+import { AssessmentToolsForm, type AssessmentTool } from "./assessment-tools-form";
+import { DomainFindingsForm, type DomainFindings } from "./domain-findings-form";
 import { ICD10Picker } from "./icd10-picker";
 
 interface EvaluationEditorProps {
@@ -56,6 +58,8 @@ export function EvaluationEditor({ patientId, evalId }: EvaluationEditorProps) {
     { code: string; description: string }[]
   >([]);
   const [prognosis, setPrognosis] = useState<(typeof PROGNOSIS_OPTIONS)[number]>("good");
+  const [assessmentTools, setAssessmentTools] = useState<AssessmentTool[]>([]);
+  const [domainFindings, setDomainFindings] = useState<DomainFindings>({});
   const [currentEvalId, setCurrentEvalId] = useState<Id<"evaluations"> | null>(typedEvalId);
 
   const hasInitialized = useRef(false);
@@ -70,6 +74,16 @@ export function EvaluationEditor({ patientId, evalId }: EvaluationEditorProps) {
     setRecommendations(existingEval.recommendations);
     setDiagnosisCodes(existingEval.diagnosisCodes);
     setPrognosis(existingEval.prognosis);
+    setAssessmentTools(
+      (existingEval.assessmentTools ?? []).map((t) => ({
+        name: t.name,
+        scoresRaw: t.scoresRaw,
+        scoresStandard: t.scoresStandard,
+        percentile: t.percentile,
+        notes: t.notes,
+      }))
+    );
+    setDomainFindings(existingEval.domainFindings ?? {});
   }, [existingEval]);
 
   useEffect(() => {
@@ -94,8 +108,8 @@ export function EvaluationEditor({ patientId, evalId }: EvaluationEditorProps) {
           recommendations,
           diagnosisCodes,
           prognosis,
-          assessmentTools: existingEval?.assessmentTools ?? [],
-          domainFindings: existingEval?.domainFindings ?? {},
+          assessmentTools: assessmentTools.filter((t) => t.name.trim() !== ""),
+          domainFindings,
         });
         toast.success("Evaluation saved");
       } else {
@@ -104,8 +118,8 @@ export function EvaluationEditor({ patientId, evalId }: EvaluationEditorProps) {
           evaluationDate,
           referralSource: referralSource || undefined,
           backgroundHistory,
-          assessmentTools: [],
-          domainFindings: {},
+          assessmentTools: assessmentTools.filter((t) => t.name.trim() !== ""),
+          domainFindings,
           behavioralObservations,
           clinicalInterpretation,
           diagnosisCodes,
@@ -195,6 +209,32 @@ export function EvaluationEditor({ patientId, evalId }: EvaluationEditorProps) {
         <div className="flex flex-col gap-1.5">
           <label className="text-sm font-medium text-on-surface">Background History</label>
           <Textarea rows={4} value={backgroundHistory} onChange={(e) => setBackgroundHistory(e.target.value)} placeholder="Developmental history, prior services, chief complaint" disabled={isSigned} />
+        </div>
+
+        {/* Assessment Tools */}
+        <div className="flex flex-col gap-2">
+          <h3 className="text-sm font-semibold text-foreground">Assessment Tools</h3>
+          <p className="text-xs text-muted-foreground">
+            Document each standardized test administered, scores, and percentiles.
+          </p>
+          <AssessmentToolsForm
+            value={assessmentTools}
+            onChange={setAssessmentTools}
+            disabled={existingEval?.status === "signed"}
+          />
+        </div>
+
+        {/* Domain Findings */}
+        <div className="flex flex-col gap-2">
+          <h3 className="text-sm font-semibold text-foreground">Domain Findings</h3>
+          <p className="text-xs text-muted-foreground">
+            Clinical findings by area. Leave blank for domains not evaluated.
+          </p>
+          <DomainFindingsForm
+            value={domainFindings}
+            onChange={setDomainFindings}
+            disabled={existingEval?.status === "signed"}
+          />
         </div>
 
         <div className="flex flex-col gap-1.5">

@@ -7,6 +7,8 @@ const isProtectedRoute = createRouteMatcher([
   "/patients(.*)",
   "/family(.*)",
   "/sessions(.*)",
+  "/billing(.*)",
+  "/speech-coach(.*)",
 ]);
 
 const isPublicApiRoute = createRouteMatcher([

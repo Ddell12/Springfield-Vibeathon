@@ -3,7 +3,7 @@ import { ConvexError } from "convex/values";
 
 import { query } from "./_generated/server";
 import { internal } from "./_generated/api";
-import { getAuthRole } from "./lib/auth";
+import { getAuthRole, getAuthUserId } from "./lib/auth";
 import { authedMutation, authedQuery, slpMutation } from "./lib/customFunctions";
 
 function generateInviteToken(): string {
@@ -212,5 +212,22 @@ export const listByCaregiver = authedQuery({
       .take(50);
 
     return links;
+  },
+});
+
+/** Returns true if the signed-in user has an accepted caregiver link for this patient. */
+export const hasAcceptedLinkForPatient = query({
+  args: { patientId: v.id("patients") },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return false;
+    const link = await ctx.db
+      .query("caregiverLinks")
+      .withIndex("by_caregiverUserId_patientId", (q) =>
+        q.eq("caregiverUserId", userId).eq("patientId", args.patientId)
+      )
+      .filter((q) => q.eq(q.field("inviteStatus"), "accepted"))
+      .first();
+    return link !== null;
   },
 });

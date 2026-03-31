@@ -21,6 +21,13 @@ interface PatientProfileWidgetProps {
   patient: Doc<"patients">;
 }
 
+function toTitleCase(str: string): string {
+  return str
+    .split(" ")
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+    .join(" ");
+}
+
 export function PatientProfileWidget({ patient }: PatientProfileWidgetProps) {
   const updatePatient = useMutation(api.patients.update);
   const [isEditing, setIsEditing] = useState(false);
@@ -64,7 +71,7 @@ export function PatientProfileWidget({ patient }: PatientProfileWidgetProps) {
             </Badge>
             {patient.communicationLevel && (
               <Badge variant="secondary">
-                {patient.communicationLevel.replace("-", " ")}
+                {toTitleCase(patient.communicationLevel.replace("-", " "))}
               </Badge>
             )}
           </div>

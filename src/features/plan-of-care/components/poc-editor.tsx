@@ -4,10 +4,14 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
+import { ICD10Picker } from "@/features/evaluations/components/icd10-picker";
+import { useActiveGoals } from "@/features/goals/hooks/use-goals";
 import { usePatient } from "@/shared/clinical";
 import { MaterialIcon } from "@/shared/components/material-icon";
 import { Button } from "@/shared/components/ui/button";
+import { Checkbox } from "@/shared/components/ui/checkbox";
 import { Input } from "@/shared/components/ui/input";
+import { Label } from "@/shared/components/ui/label";
 import { Textarea } from "@/shared/components/ui/textarea";
 
 import type { Id } from "@convex/_generated/dataModel";
@@ -27,6 +31,7 @@ export function POCEditor({ patientId }: POCEditorProps) {
   const typedPatientId = patientId as Id<"patients">;
   const patient = usePatient(typedPatientId);
   const activePoc = useActivePlanOfCare(typedPatientId);
+  const goals = useActiveGoals(typedPatientId);
   const createPoc = useCreatePlanOfCare();
   const updatePoc = useUpdatePlanOfCare();
   const signPoc = useSignPlanOfCare();
@@ -40,6 +45,8 @@ export function POCEditor({ patientId }: POCEditorProps) {
   const [physicianNPI, setPhysicianNPI] = useState("");
   const [physicianSigOnFile, setPhysicianSigOnFile] = useState(false);
   const [currentPocId, setCurrentPocId] = useState<Id<"plansOfCare"> | null>(null);
+  const [selectedGoalIds, setSelectedGoalIds] = useState<string[]>([]);
+  const [diagnosisCodes, setDiagnosisCodes] = useState<{ code: string; description: string }[]>([]);
 
   const hasInitialized = useRef(false);
   useEffect(() => {
@@ -53,6 +60,11 @@ export function POCEditor({ patientId }: POCEditorProps) {
     setPhysicianNPI(activePoc.physicianNPI ?? "");
     setPhysicianSigOnFile(activePoc.physicianSignatureOnFile);
     setCurrentPocId(activePoc._id);
+    setSelectedGoalIds([
+      ...(activePoc.longTermGoals ?? []),
+      ...(activePoc.shortTermGoals ?? []),
+    ]);
+    setDiagnosisCodes(activePoc.diagnosisCodes ?? []);
   }, [activePoc]);
 
   const isActive = activePoc?.status === "active";
@@ -61,8 +73,8 @@ export function POCEditor({ patientId }: POCEditorProps) {
     try {
       const pocId = await createPoc({
         patientId: typedPatientId,
-        diagnosisCodes: [],
-        longTermGoals: [],
+        diagnosisCodes,
+        longTermGoals: selectedGoalIds,
         shortTermGoals: [],
         frequency,
         sessionDuration,
@@ -91,6 +103,9 @@ export function POCEditor({ patientId }: POCEditorProps) {
         physicianName: physicianName || undefined,
         physicianNPI: physicianNPI || undefined,
         physicianSignatureOnFile: physicianSigOnFile,
+        diagnosisCodes,
+        longTermGoals: selectedGoalIds,
+        shortTermGoals: [],
       });
       toast.success("Plan of Care saved");
     } catch (err) {
@@ -172,6 +187,48 @@ export function POCEditor({ patientId }: POCEditorProps) {
         <div className="flex flex-col gap-1.5">
           <label className="text-sm font-medium text-on-surface">Discharge Criteria</label>
           <Textarea rows={3} value={dischargeCriteria} onChange={(e) => setDischargeCriteria(e.target.value)} placeholder="When is the patient ready for discharge?" disabled={isActive} />
+        </div>
+
+        {/* Diagnosis Codes */}
+        <div className="flex flex-col gap-2">
+          <ICD10Picker
+            selected={diagnosisCodes}
+            onChange={setDiagnosisCodes}
+            disabled={isActive}
+          />
+        </div>
+
+        {/* Goals Addressed in This Plan */}
+        <div className="flex flex-col gap-2">
+          <Label className="text-sm font-semibold text-on-surface">Goals Addressed in This Plan</Label>
+          {goals === undefined && (
+            <p className="text-sm text-muted-foreground">Loading goals...</p>
+          )}
+          {goals?.length === 0 && (
+            <p className="text-sm text-muted-foreground">
+              No active goals yet. Add goals to this patient first.
+            </p>
+          )}
+          {goals?.map((goal) => (
+            <div key={goal._id} className="flex items-start gap-3">
+              <Checkbox
+                id={goal._id}
+                checked={selectedGoalIds.includes(goal._id)}
+                disabled={isActive}
+                onCheckedChange={(checked) =>
+                  setSelectedGoalIds((prev) =>
+                    checked
+                      ? [...prev, goal._id]
+                      : prev.filter((id) => id !== goal._id)
+                  )
+                }
+              />
+              <Label htmlFor={goal._id} className="cursor-pointer text-sm leading-snug">
+                {goal.shortDescription}
+                <span className="ml-1 text-xs text-muted-foreground">({goal.domain})</span>
+              </Label>
+            </div>
+          ))}
         </div>
 
         <div className="rounded-xl bg-muted/30 p-4">

@@ -13,6 +13,13 @@ interface PatientRowExpandedProps {
   patient: Doc<"patients">;
 }
 
+function toTitleCase(str: string): string {
+  return str
+    .split(" ")
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+    .join(" ");
+}
+
 export function PatientRowExpanded({ patient }: PatientRowExpandedProps) {
   const activity = useQuery(api.activityLog.listByPatient, {
     patientId: patient._id,
@@ -29,7 +36,7 @@ export function PatientRowExpanded({ patient }: PatientRowExpandedProps) {
         {patient.communicationLevel && (
           <p className="text-xs text-on-surface-variant">
             <span className="font-medium">Level:</span>{" "}
-            {patient.communicationLevel.replace("-", " ")}
+            {toTitleCase(patient.communicationLevel.replace("-", " "))}
           </p>
         )}
         {patient.interests && patient.interests.length > 0 && (

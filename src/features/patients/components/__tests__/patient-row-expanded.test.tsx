@@ -85,7 +85,7 @@ describe("PatientRowExpanded", () => {
   it("renders communication level", () => {
     mockUseQuery.mockReturnValue([]);
     render(<PatientRowExpanded patient={patient as any} />);
-    expect(screen.getByText("single word")).toBeInTheDocument();
+    expect(screen.getByText("Single Word")).toBeInTheDocument();
   });
 
   it("renders interests", () => {

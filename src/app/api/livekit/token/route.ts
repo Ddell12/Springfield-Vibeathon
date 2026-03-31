@@ -44,6 +44,27 @@ export async function POST(req: Request): Promise<Response> {
     );
   }
 
+  // Check 2: SLP ownership
+  const isSlp = userId === appointment.slpId;
+
+  if (!isSlp) {
+    // Check 3: Caregiver link
+    let hasLink: boolean;
+    try {
+      hasLink = await convex.query(api.caregivers.hasAcceptedLinkForPatient, {
+        patientId: appointment.patientId,
+      });
+    } catch (err) {
+      console.error("[livekit/token] Caregiver link check failed", { userId, appointmentId, err });
+      return Response.json({ error: "Not authorized" }, { status: 403 });
+    }
+
+    if (!hasLink) {
+      console.warn("[livekit/token] Unauthorized join attempt", { userId, appointmentId });
+      return Response.json({ error: "Not authorized for this appointment" }, { status: 403 });
+    }
+  }
+
   const apiKey = process.env.LIVEKIT_API_KEY;
   const apiSecret = process.env.LIVEKIT_API_SECRET;
   const serverUrl = process.env.NEXT_PUBLIC_LIVEKIT_URL;
