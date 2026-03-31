@@ -35,13 +35,14 @@ interface StructuredDataFormProps {
   sessionType: SessionType;
   structuredData: StructuredData;
   disabled?: boolean;
+  showHeader?: boolean;
   onSessionDateChange: (date: string) => void;
   onSessionDurationChange: (duration: number) => void;
   onSessionTypeChange: (type: SessionType) => void;
   onStructuredDataChange: (data: StructuredData) => void;
 }
 
-const sessionTypeOptions = [
+export const SESSION_TYPE_OPTIONS = [
   { value: "in-person" as const, label: "In-Person", icon: "person" },
   { value: "teletherapy" as const, label: "Teletherapy", icon: "videocam" },
   {
@@ -58,6 +59,7 @@ export function StructuredDataForm({
   sessionType,
   structuredData,
   disabled,
+  showHeader = true,
   onSessionDateChange,
   onSessionDurationChange,
   onSessionTypeChange,
@@ -113,63 +115,65 @@ export function StructuredDataForm({
       </div>
 
       {/* Session metadata */}
-      <div className="flex flex-col gap-4">
-        <h3 className="text-sm font-semibold text-foreground">
-          Session Details
-        </h3>
+      {showHeader && (
+        <div className="flex flex-col gap-4">
+          <h3 className="text-sm font-semibold text-foreground">
+            Session Details
+          </h3>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          {/* Date picker */}
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="session-date">Date</Label>
-            <Input
-              id="session-date"
-              type="date"
-              value={sessionDate}
-              onChange={(e) => onSessionDateChange(e.target.value)}
-              disabled={disabled}
-            />
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {/* Date picker */}
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="session-date">Date</Label>
+              <Input
+                id="session-date"
+                type="date"
+                value={sessionDate}
+                onChange={(e) => onSessionDateChange(e.target.value)}
+                disabled={disabled}
+              />
+            </div>
+
+            {/* Duration */}
+            <div className="flex flex-col gap-1.5">
+              <Label>Duration (minutes)</Label>
+              <DurationPresetInput
+                value={sessionDuration}
+                onChange={onSessionDurationChange}
+                disabled={disabled}
+              />
+            </div>
           </div>
 
-          {/* Duration */}
+          {/* Session type */}
           <div className="flex flex-col gap-1.5">
-            <Label>Duration (minutes)</Label>
-            <DurationPresetInput
-              value={sessionDuration}
-              onChange={onSessionDurationChange}
+            <Label>Session Type</Label>
+            <RadioGroup
+              value={sessionType}
+              onValueChange={(value) =>
+                onSessionTypeChange(value as SessionType)
+              }
               disabled={disabled}
-            />
+              className="flex flex-wrap gap-3"
+            >
+              {SESSION_TYPE_OPTIONS.map((opt) => (
+                <Label
+                  key={opt.value}
+                  htmlFor={`session-type-${opt.value}`}
+                  className="flex cursor-pointer items-center gap-2 rounded-lg bg-muted/50 px-3 py-2 text-sm transition-colors duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] has-[:checked]:bg-foreground/10 has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-50"
+                >
+                  <RadioGroupItem
+                    value={opt.value}
+                    id={`session-type-${opt.value}`}
+                  />
+                  <MaterialIcon icon={opt.icon} size="sm" />
+                  {opt.label}
+                </Label>
+              ))}
+            </RadioGroup>
           </div>
         </div>
-
-        {/* Session type */}
-        <div className="flex flex-col gap-1.5">
-          <Label>Session Type</Label>
-          <RadioGroup
-            value={sessionType}
-            onValueChange={(value) =>
-              onSessionTypeChange(value as SessionType)
-            }
-            disabled={disabled}
-            className="flex flex-wrap gap-3"
-          >
-            {sessionTypeOptions.map((opt) => (
-              <Label
-                key={opt.value}
-                htmlFor={`session-type-${opt.value}`}
-                className="flex cursor-pointer items-center gap-2 rounded-lg bg-muted/50 px-3 py-2 text-sm transition-colors duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] has-[:checked]:bg-foreground/10 has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-50"
-              >
-                <RadioGroupItem
-                  value={opt.value}
-                  id={`session-type-${opt.value}`}
-                />
-                <MaterialIcon icon={opt.icon} size="sm" />
-                {opt.label}
-              </Label>
-            ))}
-          </RadioGroup>
-        </div>
-      </div>
+      )}
 
       {/* Targets section */}
       <div className="flex flex-col gap-3">

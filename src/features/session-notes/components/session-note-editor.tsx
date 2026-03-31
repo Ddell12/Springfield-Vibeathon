@@ -9,7 +9,19 @@ import { toast } from "sonner";
 import { cn } from "@/core/utils";
 import { usePatient } from "@/shared/clinical";
 import { MaterialIcon } from "@/shared/components/material-icon";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/shared/components/ui/accordion";
 import { Button } from "@/shared/components/ui/button";
+import { Input } from "@/shared/components/ui/input";
+import { Label } from "@/shared/components/ui/label";
+import {
+  RadioGroup,
+  RadioGroupItem,
+} from "@/shared/components/ui/radio-group";
 
 import type { Id } from "../../../../convex/_generated/dataModel";
 import {
@@ -23,9 +35,11 @@ import {
   useUpdateSoap,
 } from "../hooks/use-session-notes";
 import { useSoapGeneration } from "../hooks/use-soap-generation";
+import { DurationPresetInput } from "./duration-preset-input";
 import { GroupPatientPicker } from "./group-patient-picker";
 import { type SoapNote,SoapPreview } from "./soap-preview";
 import {
+  SESSION_TYPE_OPTIONS,
   type SessionType,
   type StructuredData,
   StructuredDataForm,
@@ -346,9 +360,13 @@ export function SessionNoteEditor({
     (displayedSoap !== null) &&
     !isSigned;
 
+  // ── Patient initials for avatar ────────────────────────────────────────────
+  const patientInitials = `${patient.firstName[0] ?? ""}${patient.lastName[0] ?? ""}`.toUpperCase();
+  const patientFullName = `${patient.firstName} ${patient.lastName}`;
+
   return (
-    <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-      {/* Header */}
+    <div className="mx-auto max-w-7xl px-4 pb-24 pt-6 sm:px-6 lg:px-8">
+      {/* Page header */}
       <div className="mb-6 flex flex-col gap-3">
         <Link
           href={`/patients/${patientId}`}
@@ -389,98 +407,211 @@ export function SessionNoteEditor({
       </div>
 
       {/* Two-column layout */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {/* Left column: Structured data form + generate button */}
-        <div className="flex flex-col gap-4">
-          {/* Group/Individual mode toggle — only in create mode */}
-          {!noteId && (
-            <div className="flex flex-col gap-3 rounded-xl bg-surface-container/30 p-4">
-              <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => { setIsGroupMode(false); setGroupPatientIds([]); }}
-                  className={cn(
-                    "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-colors duration-300",
-                    !isGroupMode
-                      ? "bg-primary text-white"
-                      : "bg-muted text-muted-foreground hover:bg-muted/80",
-                  )}
-                >
-                  <MaterialIcon icon="person" size="xs" />
-                  Individual
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setIsGroupMode(true)}
-                  className={cn(
-                    "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-colors duration-300",
-                    isGroupMode
-                      ? "bg-primary text-white"
-                      : "bg-muted text-muted-foreground hover:bg-muted/80",
-                  )}
-                >
-                  <MaterialIcon icon="group" size="xs" />
-                  Group (CPT 92508)
-                </button>
+      <div className="flex flex-col gap-6 lg:flex-row">
+        {/* Left column */}
+        <div className="flex flex-1 flex-col gap-4 lg:max-w-[66%]">
+
+          {/* Card 1: Session header */}
+          <div className="rounded-2xl bg-surface-container p-4">
+            {/* Group/Individual mode toggle — only in create mode */}
+            {!noteId && (
+              <div className="mb-4 flex flex-col gap-3">
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => { setIsGroupMode(false); setGroupPatientIds([]); }}
+                    className={cn(
+                      "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-colors duration-300",
+                      !isGroupMode
+                        ? "bg-primary text-white"
+                        : "bg-muted text-muted-foreground hover:bg-muted/80",
+                    )}
+                  >
+                    <MaterialIcon icon="person" size="xs" />
+                    Individual
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsGroupMode(true)}
+                    className={cn(
+                      "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-colors duration-300",
+                      isGroupMode
+                        ? "bg-primary text-white"
+                        : "bg-muted text-muted-foreground hover:bg-muted/80",
+                    )}
+                  >
+                    <MaterialIcon icon="group" size="xs" />
+                    Group (CPT 92508)
+                  </button>
+                </div>
+
+                {isGroupMode && (
+                  <GroupPatientPicker
+                    selectedIds={groupPatientIds}
+                    excludePatientId={typedPatientId}
+                    onSelectionChange={setGroupPatientIds}
+                    disabled={isSigned}
+                  />
+                )}
+              </div>
+            )}
+
+            {/* Date, duration, and session type — inlined here in Card 1 */}
+            <div className="flex flex-col gap-4">
+              <h3 className="text-sm font-semibold text-foreground">
+                Session Details
+              </h3>
+
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                {/* Date picker */}
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="session-date">Date</Label>
+                  <Input
+                    id="session-date"
+                    type="date"
+                    value={sessionDate}
+                    onChange={(e) => handleSessionDateChange(e.target.value)}
+                    disabled={isSigned}
+                  />
+                </div>
+
+                {/* Duration */}
+                <div className="flex flex-col gap-1.5">
+                  <Label>Duration (minutes)</Label>
+                  <DurationPresetInput
+                    value={sessionDuration}
+                    onChange={handleSessionDurationChange}
+                    disabled={isSigned}
+                  />
+                </div>
               </div>
 
-              {isGroupMode && (
-                <GroupPatientPicker
-                  selectedIds={groupPatientIds}
-                  excludePatientId={typedPatientId}
-                  onSelectionChange={setGroupPatientIds}
+              {/* Session type */}
+              <div className="flex flex-col gap-1.5">
+                <Label>Session Type</Label>
+                <RadioGroup
+                  value={sessionType}
+                  onValueChange={(value) =>
+                    handleSessionTypeChange(value as SessionType)
+                  }
                   disabled={isSigned}
-                />
-              )}
+                  className="flex flex-wrap gap-3"
+                >
+                  {SESSION_TYPE_OPTIONS.map((opt) => (
+                    <Label
+                      key={opt.value}
+                      htmlFor={`session-type-${opt.value}`}
+                      className="flex cursor-pointer items-center gap-2 rounded-lg bg-muted/50 px-3 py-2 text-sm transition-colors duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] has-[:checked]:bg-foreground/10 has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-50"
+                    >
+                      <RadioGroupItem
+                        value={opt.value}
+                        id={`session-type-${opt.value}`}
+                      />
+                      <MaterialIcon icon={opt.icon} size="sm" />
+                      {opt.label}
+                    </Label>
+                  ))}
+                </RadioGroup>
+              </div>
             </div>
-          )}
+          </div>
 
-          <StructuredDataForm
-            patient={patient}
-            sessionDate={sessionDate}
-            sessionDuration={sessionDuration}
-            sessionType={sessionType}
-            structuredData={structuredData}
-            disabled={isSigned}
-            onSessionDateChange={handleSessionDateChange}
-            onSessionDurationChange={handleSessionDurationChange}
-            onSessionTypeChange={handleSessionTypeChange}
-            onStructuredDataChange={handleStructuredDataChange}
-          />
+          {/* Card 2: Targets + Additional Notes (complete StructuredDataForm) */}
+          <div className="rounded-2xl bg-surface-container p-4">
+            <StructuredDataForm
+              patient={patient}
+              sessionDate={sessionDate}
+              sessionDuration={sessionDuration}
+              sessionType={sessionType}
+              structuredData={structuredData}
+              disabled={isSigned}
+              showHeader={false}
+              onSessionDateChange={handleSessionDateChange}
+              onSessionDurationChange={handleSessionDurationChange}
+              onSessionTypeChange={handleSessionTypeChange}
+              onStructuredDataChange={handleStructuredDataChange}
+            />
+          </div>
 
-          <Button
-            onClick={handleGenerateSoap}
-            disabled={
-              !hasTargets ||
-              isSigned ||
-              soap.status === "generating" ||
-              !currentNoteId
-            }
-            className="w-full bg-primary-gradient text-white transition-opacity duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] hover:opacity-90"
-          >
-            <MaterialIcon icon="auto_awesome" size="sm" />
-            {soap.status === "generating"
-              ? "Generating..."
-              : "Generate SOAP Note"}
-          </Button>
+          {/* Card 3: SOAP Note */}
+          <div className="rounded-2xl bg-surface-container p-4">
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-on-surface">
+                SOAP Note
+              </h2>
+              <Button
+                onClick={handleGenerateSoap}
+                disabled={
+                  !hasTargets ||
+                  isSigned ||
+                  soap.status === "generating" ||
+                  !currentNoteId
+                }
+                size="sm"
+                className="bg-primary-gradient text-white transition-opacity duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] hover:opacity-90"
+              >
+                <MaterialIcon icon="auto_awesome" size="xs" />
+                {soap.status === "generating" ? "Generating..." : "Generate with AI"}
+              </Button>
+            </div>
+
+            {/* SOAP section accordion — shows section labels as expandable stubs */}
+            {!hasSoap && soapStatus === "idle" && (
+              <Accordion type="multiple" className="mb-4">
+                {(["Subjective", "Objective", "Assessment", "Plan"] as const).map((label) => (
+                  <AccordionItem key={label} value={label}>
+                    <AccordionTrigger className="text-sm text-muted-foreground">
+                      {label}
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <p className="text-sm italic text-muted-foreground">
+                        Generate a SOAP note to populate this section.
+                      </p>
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+              </Accordion>
+            )}
+
+            <SoapPreview
+              soapNote={displayedSoap}
+              streamedText={soap.streamedText}
+              status={soapStatus}
+              error={soap.error}
+              aiGenerated={existingNote?.aiGenerated ?? false}
+              disabled={isSigned}
+              onEdit={handleSoapEdit}
+              onRegenerate={handleGenerateSoap}
+            />
+          </div>
         </div>
 
-        {/* Right column: SOAP preview + status footer */}
-        <div className="flex flex-col gap-4">
-          <SoapPreview
-            soapNote={displayedSoap}
-            streamedText={soap.streamedText}
-            status={soapStatus}
-            error={soap.error}
-            aiGenerated={existingNote?.aiGenerated ?? false}
-            disabled={isSigned}
-            onEdit={handleSoapEdit}
-            onRegenerate={handleGenerateSoap}
-          />
+        {/* Right column — hidden on mobile */}
+        <div className="hidden lg:flex lg:w-80 shrink-0 flex-col gap-4">
+          {/* Patient card */}
+          <div className="rounded-2xl bg-surface-container p-4">
+            <div className="flex items-center gap-3">
+              {/* Initials avatar */}
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-gradient text-sm font-semibold text-white">
+                {patientInitials}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-semibold text-on-surface">
+                  {patientFullName}
+                </p>
+                <Link
+                  href={`/patients/${patientId}`}
+                  className="text-xs text-primary transition-colors duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] hover:underline"
+                >
+                  View profile →
+                </Link>
+              </div>
+            </div>
+          </div>
 
-          {/* Status footer */}
+          {/* Status card */}
           {currentNoteId && (
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-muted/50 px-4 py-3">
+            <div className="rounded-2xl bg-surface-container p-4">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <MaterialIcon icon="info" size="xs" />
                 <span>
@@ -496,45 +627,77 @@ export function SessionNoteEditor({
                   </span>
                 </span>
               </div>
-
-              <div className="flex items-center gap-2">
-                {isSigned ? (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleUnsign}
-                  >
-                    <MaterialIcon icon="lock_open" size="xs" />
-                    Unsign
-                  </Button>
-                ) : (
-                  <>
-                    {noteStatus !== "complete" && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={handleMarkComplete}
-                        disabled={!hasTargets}
-                      >
-                        <MaterialIcon icon="check_circle" size="xs" />
-                        Mark Complete
-                      </Button>
-                    )}
-
-                    <Button
-                      size="sm"
-                      onClick={handleSign}
-                      disabled={!canSign}
-                      className="bg-primary-gradient text-white transition-opacity duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] hover:opacity-90"
-                    >
-                      <MaterialIcon icon="verified" size="xs" />
-                      Sign Note
-                    </Button>
-                  </>
-                )}
-              </div>
             </div>
           )}
+        </div>
+      </div>
+
+      {/* Sticky signature strip */}
+      <div className="fixed bottom-0 left-0 right-0 z-20 border-t border-border/50 bg-background/95 px-4 py-3 backdrop-blur-sm sm:px-6 lg:px-8">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            {!isSigned && canSign && (
+              <>
+                <MaterialIcon icon="draw" size="xs" />
+                <span>Ready to sign</span>
+              </>
+            )}
+            {!isSigned && !canSign && (
+              <>
+                <MaterialIcon icon="edit_note" size="xs" />
+                <span>
+                  {!hasTargets
+                    ? "Add at least one target to continue"
+                    : !isComplete
+                      ? "Mark complete before signing"
+                      : !hasSoap
+                        ? "Generate a SOAP note before signing"
+                        : "Complete all fields to sign"}
+                </span>
+              </>
+            )}
+            {isSigned && (
+              <>
+                <MaterialIcon icon="verified" size="xs" className="text-success" />
+                <span className="text-success">Note signed</span>
+              </>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2">
+            {currentNoteId && !isSigned && noteStatus !== "complete" && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleMarkComplete}
+                disabled={!hasTargets}
+              >
+                <MaterialIcon icon="check_circle" size="xs" />
+                Mark Complete
+              </Button>
+            )}
+
+            {isSigned ? (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleUnsign}
+              >
+                <MaterialIcon icon="lock_open" size="xs" />
+                Unsign
+              </Button>
+            ) : (
+              <Button
+                size="sm"
+                onClick={handleSign}
+                disabled={!canSign}
+                className="bg-primary-gradient text-white transition-opacity duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] hover:opacity-90"
+              >
+                <MaterialIcon icon="verified" size="xs" />
+                Sign &amp; Save
+              </Button>
+            )}
+          </div>
         </div>
       </div>
     </div>
