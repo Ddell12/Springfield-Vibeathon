@@ -17,8 +17,8 @@ const nextConfig: NextConfig = {
     return [
       { source: "/dashboard", destination: "/builder", permanent: true },
       { source: "/flashcards", destination: "/builder", permanent: true },
-      { source: "/templates", destination: "/library?tab=templates", permanent: true },
-      { source: "/my-tools",   destination: "/library?tab=my-apps", permanent: true },
+      { source: "/templates", destination: "/library?tab=templates", permanent: false },
+      { source: "/my-tools",   destination: "/library?tab=my-apps", permanent: false },
     ];
   },
   async headers() {
