@@ -38,14 +38,19 @@ export function DashboardSidebar() {
   const recentSessions = useQuery(api.sessions.listRecent) ?? [];
 
   // Redirect caregivers away from SLP-only routes
+  const CAREGIVER_ALLOWED_PREFIXES = [
+    "/family",
+    "/settings",
+    "/speech-coach",
+    "/sessions",
+    "/builder",
+    "/flashcards",
+    "/my-tools",
+    "/templates",
+  ];
+
   useEffect(() => {
-    if (
-      isCaregiver &&
-      !pathname.startsWith("/family") &&
-      !pathname.startsWith("/settings") &&
-      !pathname.startsWith("/speech-coach") &&
-      !pathname.startsWith("/sessions")
-    ) {
+    if (isCaregiver && !CAREGIVER_ALLOWED_PREFIXES.some((p) => pathname.startsWith(p))) {
       router.replace("/family");
     }
   }, [isCaregiver, pathname, router]);
