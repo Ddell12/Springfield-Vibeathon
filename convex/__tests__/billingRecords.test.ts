@@ -394,6 +394,80 @@ describe("billingRecords.remove", () => {
   });
 });
 
+describe("billingRecords.create", () => {
+  it("happy path: SLP creates a record for their own patient with status draft", async () => {
+    const t = convexTest(schema, modules).withIdentity(SLP_IDENTITY);
+    const { patientId } = await t.mutation(api.patients.create, VALID_PATIENT);
+
+    const recordId = await t.mutation(api.billingRecords.create, {
+      patientId,
+      dateOfService: today,
+      cptCode: "92507",
+      cptDescription: "individual speech/language/voice treatment",
+      modifiers: ["GP"],
+      diagnosisCodes: [{ code: "F80.0", description: "Phonological disorder" }],
+      placeOfService: "11",
+      units: 1,
+      fee: 15000,
+      notes: "Initial session",
+    });
+
+    expect(recordId).toBeDefined();
+    const record = await t.query(api.billingRecords.get, { recordId });
+    expect(record).toBeDefined();
+    expect(record!.status).toBe("draft");
+    expect(record!.cptCode).toBe("92507");
+    expect(record!.patientId).toBe(patientId);
+    expect(record!.fee).toBe(15000);
+    expect(record!.diagnosisCodes).toHaveLength(1);
+  });
+
+  it("cross-SLP rejection: SLP cannot create a record for a patient belonging to a different SLP", async () => {
+    const t = convexTest(schema, modules);
+    const slp1 = t.withIdentity(SLP_IDENTITY);
+    const slp2 = t.withIdentity({ subject: "other-slp-create-test", issuer: "clerk" });
+
+    const { patientId } = await slp1.mutation(api.patients.create, VALID_PATIENT);
+
+    await expect(
+      slp2.mutation(api.billingRecords.create, {
+        patientId,
+        dateOfService: today,
+      }),
+    ).rejects.toThrow("Patient not found or not authorized");
+  });
+
+  it("non-SLP rejection: unauthenticated caller cannot create a billing record", async () => {
+    const t = convexTest(schema, modules);
+    // withIdentity with a caregiver role — slpMutation checks ctx.slpUserId
+    const caregiver = t.withIdentity({ subject: "caregiver-create-test", issuer: "clerk" });
+
+    // We need a patient to attempt creation; create one via an SLP first
+    const slp = t.withIdentity(SLP_IDENTITY);
+    const { patientId } = await slp.mutation(api.patients.create, VALID_PATIENT);
+
+    // Caregiver attempting to create should be rejected (slpUserId will be null)
+    await expect(
+      caregiver.mutation(api.billingRecords.create, {
+        patientId,
+        dateOfService: today,
+      }),
+    ).rejects.toThrow();
+  });
+
+  it("rejects dateOfService that is not in YYYY-MM-DD format", async () => {
+    const t = convexTest(schema, modules).withIdentity(SLP_IDENTITY);
+    const { patientId } = await t.mutation(api.patients.create, VALID_PATIENT);
+
+    await expect(
+      t.mutation(api.billingRecords.create, {
+        patientId,
+        dateOfService: "03/31/2026",
+      }),
+    ).rejects.toThrow("dateOfService must be in YYYY-MM-DD format");
+  });
+});
+
 describe("sessionNotes.sign billing integration", () => {
   it("signing a note does not throw and sets status to signed", async () => {
     const t = convexTest(schema, modules).withIdentity(SLP_IDENTITY);

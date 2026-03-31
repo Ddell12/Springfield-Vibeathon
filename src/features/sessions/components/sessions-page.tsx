@@ -14,6 +14,7 @@ import { Button } from "@/shared/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/shared/components/ui/toggle-group";
 
 import { AvailabilityEditor } from "./availability-editor";
+import { InviteEmailModal } from "./invite-email-modal";
 const BookingModal = dynamic(
   () => import("./booking-modal").then((m) => ({ default: m.BookingModal })),
   { ssr: false }
@@ -59,6 +60,7 @@ export function SessionsPage() {
   const [bookingOpen, setBookingOpen] = useState(false);
   const [bookingSlot, setBookingSlot] = useState<number | null>(null);
   const [availabilityOpen, setAvailabilityOpen] = useState(false);
+  const [inviteOpen, setInviteOpen] = useState(false);
 
   const appointments: AppointmentListItem[] = (appointmentsRaw ?? []).map(
     (a) => ({
@@ -114,14 +116,24 @@ export function SessionsPage() {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {isSLP && (
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setAvailabilityOpen(true)}
-            >
-              <MaterialIcon icon="schedule" size="sm" />
-              Availability
-            </Button>
+            <>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setInviteOpen(true)}
+              >
+                <MaterialIcon icon="send" size="sm" />
+                Send invite
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setAvailabilityOpen(true)}
+              >
+                <MaterialIcon icon="schedule" size="sm" />
+                Availability
+              </Button>
+            </>
           )}
           <div className="flex items-center gap-1 rounded-full bg-surface-container p-1">
             <Button
@@ -189,6 +201,8 @@ export function SessionsPage() {
         patients={patients}
         onBook={handleBook}
       />
+
+      <InviteEmailModal open={inviteOpen} onOpenChange={setInviteOpen} />
 
       {isSLP && user?.id && (
         <AvailabilityEditor

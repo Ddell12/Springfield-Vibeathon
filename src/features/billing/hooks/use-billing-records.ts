@@ -30,10 +30,11 @@ export function useUnbilledCount() {
 }
 
 export function useBillingMutations() {
+  const createRecord = useMutation(api.billingRecords.create);
   const updateRecord = useMutation(api.billingRecords.update);
   const finalizeRecord = useMutation(api.billingRecords.finalize);
   const markBilled = useMutation(api.billingRecords.markBilled);
   const removeRecord = useMutation(api.billingRecords.remove);
 
-  return { updateRecord, finalizeRecord, markBilled, removeRecord };
+  return { createRecord, updateRecord, finalizeRecord, markBilled, removeRecord };
 }

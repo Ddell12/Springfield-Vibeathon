@@ -137,6 +137,50 @@ export const getUnbilledCount = slpQuery({
 
 // ── Public Mutations ───────────────────────────────────────────────────────
 
+export const create = slpMutation({
+  args: {
+    patientId: v.id("patients"),
+    dateOfService: v.string(),
+    cptCode: v.optional(v.string()),
+    cptDescription: v.optional(v.string()),
+    modifiers: v.optional(v.array(v.string())),
+    diagnosisCodes: v.optional(v.array(v.object({
+      code: v.string(),
+      description: v.string(),
+    }))),
+    placeOfService: v.optional(v.string()),
+    units: v.optional(v.number()),
+    fee: v.optional(v.number()),
+    notes: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(args.dateOfService)) {
+      throw new ConvexError("dateOfService must be in YYYY-MM-DD format");
+    }
+
+    // Verify the patient belongs to this SLP
+    const patient = await ctx.db.get(args.patientId);
+    if (!patient || patient.slpUserId !== ctx.slpUserId) {
+      throw new ConvexError("Patient not found or not authorized");
+    }
+
+    return await ctx.db.insert("billingRecords", {
+      patientId: args.patientId,
+      slpUserId: ctx.slpUserId!,
+      dateOfService: args.dateOfService,
+      cptCode: args.cptCode ?? "92507",
+      cptDescription: args.cptDescription ?? "individual speech/language/voice treatment",
+      modifiers: args.modifiers ?? ["GP"],
+      diagnosisCodes: args.diagnosisCodes ?? [],
+      placeOfService: args.placeOfService ?? "11",
+      units: args.units ?? 1,
+      fee: args.fee,
+      notes: args.notes,
+      status: "draft",
+    });
+  },
+});
+
 export const update = slpMutation({
   args: {
     recordId: v.id("billingRecords"),

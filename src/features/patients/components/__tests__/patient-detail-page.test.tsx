@@ -1,4 +1,5 @@
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { Suspense } from "react";
 
 import { createMockPatient } from "@/test/fixtures/patient-fixtures";
@@ -46,9 +47,6 @@ vi.mock("../home-programs-widget", () => ({
 vi.mock("../quick-notes", () => ({
   QuickNotes: () => <div data-testid="quick-notes">Quick Notes</div>,
 }));
-vi.mock("../create-material-button", () => ({
-  CreateMaterialButton: () => <button>Create Material</button>,
-}));
 vi.mock("@/shared/components/child-apps-section", () => ({
   ChildAppsSection: () => null,
 }));
@@ -78,7 +76,7 @@ describe("PatientDetailPage", () => {
     expect(screen.getByText("Loading...")).toBeInTheDocument();
   });
 
-  it("renders all child widgets when patient exists", () => {
+  it("renders overview tab widgets by default", () => {
     mockUsePatient.mockReturnValue(createMockPatient());
     render(
       <PatientDetailPage
@@ -92,22 +90,60 @@ describe("PatientDetailPage", () => {
       />
     );
 
+    // Overview tab (default) should show profile + caregiver
     expect(screen.getByTestId("profile-widget")).toBeInTheDocument();
-    expect(screen.getByTestId("activity-timeline")).toBeInTheDocument();
-    expect(screen.getByTestId("session-notes")).toBeInTheDocument();
-    expect(screen.getByTestId("goals-list")).toBeInTheDocument();
-    expect(screen.getByTestId("assigned-materials")).toBeInTheDocument();
     expect(screen.getByTestId("caregiver-info")).toBeInTheDocument();
+  });
+
+  it("renders materials tab widgets when tab is clicked", async () => {
+    const user = userEvent.setup();
+    mockUsePatient.mockReturnValue(createMockPatient());
+    render(<PatientDetailPage paramsPromise={paramsPromise} />);
+
+    await user.click(screen.getByRole("tab", { name: "Materials" }));
+
+    expect(screen.getByTestId("assigned-materials")).toBeInTheDocument();
     expect(screen.getByTestId("home-programs")).toBeInTheDocument();
+  });
+
+  it("renders notes tab widgets when tab is clicked", async () => {
+    const user = userEvent.setup();
+    mockUsePatient.mockReturnValue(createMockPatient());
+    render(<PatientDetailPage paramsPromise={paramsPromise} />);
+
+    await user.click(screen.getByRole("tab", { name: "Notes" }));
+
+    expect(screen.getByTestId("activity-timeline")).toBeInTheDocument();
     expect(screen.getByTestId("quick-notes")).toBeInTheDocument();
+  });
+
+  it("renders clinical tab widgets when tab is clicked", async () => {
+    const user = userEvent.setup();
+    mockUsePatient.mockReturnValue(createMockPatient());
+    render(
+      <PatientDetailPage
+        paramsPromise={paramsPromise}
+        clinicalWidgets={() => (
+          <>
+            <div data-testid="goals-list">Goals</div>
+            <div data-testid="session-notes">Notes</div>
+          </>
+        )}
+      />
+    );
+
+    await user.click(screen.getByRole("tab", { name: "Clinical" }));
+
+    expect(screen.getByTestId("goals-list")).toBeInTheDocument();
+    expect(screen.getByTestId("session-notes")).toBeInTheDocument();
   });
 
   it("renders back link to caseload", () => {
     mockUsePatient.mockReturnValue(createMockPatient());
     render(<PatientDetailPage paramsPromise={paramsPromise} />);
 
-    const backLink = screen.getByText("Back to Caseload");
-    expect(backLink.closest("a")).toHaveAttribute("href", "/patients");
+    const backLink = screen.getByRole("link", { name: /back to caseload/i });
+    expect(backLink).toHaveAttribute("href", "/patients");
   });
 
   it("passes patient id to usePatient hook", () => {

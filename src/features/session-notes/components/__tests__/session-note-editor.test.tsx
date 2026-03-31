@@ -78,6 +78,11 @@ vi.mock("../../hooks/use-soap-generation", () => ({
 }));
 
 vi.mock("../structured-data-form", () => ({
+  SESSION_TYPE_OPTIONS: [
+    { value: "in-person", label: "In-Person", icon: "person" },
+    { value: "teletherapy", label: "Teletherapy", icon: "videocam" },
+    { value: "parent-consultation", label: "Parent Consultation", icon: "family_restroom" },
+  ],
   StructuredDataForm: (props: any) => (
     <div data-testid="structured-data-form">StructuredDataForm</div>
   ),
@@ -121,7 +126,7 @@ describe("SessionNoteEditor", () => {
     });
     mockUseSessionNote.mockReturnValue(undefined);
     render(<SessionNoteEditor patientId="patient1" />);
-    expect(screen.getByTestId("structured-data-form")).toBeInTheDocument();
+    expect(screen.getAllByTestId("structured-data-form").length).toBeGreaterThan(0);
     expect(screen.getByTestId("soap-preview")).toBeInTheDocument();
   });
 
@@ -145,7 +150,7 @@ describe("SessionNoteEditor", () => {
     expect(screen.getByText("Edit Session Note")).toBeInTheDocument();
   });
 
-  it("renders Generate SOAP Note button", () => {
+  it("renders Generate with AI button", () => {
     mockUsePatient.mockReturnValue({
       _id: "patient1",
       firstName: "Alex",
@@ -155,7 +160,7 @@ describe("SessionNoteEditor", () => {
     });
     mockUseSessionNote.mockReturnValue(undefined);
     render(<SessionNoteEditor patientId="patient1" />);
-    expect(screen.getByText("Generate SOAP Note")).toBeInTheDocument();
+    expect(screen.getByText("Generate with AI")).toBeInTheDocument();
   });
 
   it("renders Back to patient link with correct href", () => {

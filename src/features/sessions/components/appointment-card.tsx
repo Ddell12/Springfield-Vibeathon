@@ -64,7 +64,7 @@ export function AppointmentCard({
               )}
               <p className="truncate text-sm font-semibold text-on-surface">{name}</p>
             </div>
-            <p className="text-xs text-on-surface-variant tabular-nums">
+            <p className="text-xs text-on-surface-variant tabular-nums truncate">
               {formatDateTime(appointment.scheduledAt)}
             </p>
           </div>

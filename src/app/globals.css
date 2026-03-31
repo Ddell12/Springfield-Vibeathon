@@ -323,11 +323,29 @@ body {
   }
 }
 
+@keyframes accordion-down {
+  from { height: 0; }
+  to { height: var(--radix-accordion-content-height); }
+}
+
+@keyframes accordion-up {
+  from { height: var(--radix-accordion-content-height); }
+  to { height: 0; }
+}
+
 @layer utilities {
   .sidebar-nav-scroll {
     max-height: calc(100vh - 13rem);
     overflow-y: auto;
     overflow-x: hidden;
+  }
+
+  .animate-accordion-down {
+    animation: accordion-down 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .animate-accordion-up {
+    animation: accordion-up 300ms cubic-bezier(0.4, 0, 0.2, 1);
   }
 }
 

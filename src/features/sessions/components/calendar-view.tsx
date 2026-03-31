@@ -68,7 +68,7 @@ export function CalendarView({
             <div
               key={dayStart}
               className={cn(
-                "flex min-h-[200px] flex-col gap-2 rounded-xl p-3",
+                "flex min-h-[200px] flex-col gap-2 rounded-xl p-3 overflow-hidden",
                 isToday ? "bg-primary/5 ring-1 ring-primary/30" : "bg-surface-container",
                 isPast && "opacity-60",
               )}
@@ -96,10 +96,10 @@ export function CalendarView({
                       key={slot.timestamp}
                       type="button"
                       variant="outline"
-                      className="h-auto justify-start border-dashed border-[#3B7A57]/40 bg-[#3B7A57]/10 text-left text-on-surface hover:bg-[#3B7A57]/15"
+                      className="h-auto justify-start border-dashed border-[#3B7A57]/40 bg-[#3B7A57]/10 text-left text-on-surface hover:bg-[#3B7A57]/15 w-full overflow-hidden"
                       onClick={() => onEmptySlotClick?.(slot.timestamp)}
                     >
-                      <span className="text-sm font-medium">
+                      <span className="truncate text-sm font-medium min-w-0">
                         Open · {formatTime(slot.startTime)}
                       </span>
                     </Button>
