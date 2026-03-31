@@ -12,6 +12,8 @@ import {
   accuracyLabel,
   calculateAccuracy,
   formatDuration,
+  getSignatureDelayDays,
+  isLateSignature,
 } from "../lib/session-utils";
 
 interface SessionNoteCardProps {
@@ -64,6 +66,8 @@ export function SessionNoteCard({ note, patientId }: SessionNoteCardProps) {
   const accuracy = firstTarget
     ? calculateAccuracy(firstTarget.correct, firstTarget.trials)
     : null;
+  const isLate = isLateSignature(note.signedAt, note.sessionDate);
+  const delayDays = getSignatureDelayDays(note.signedAt, note.sessionDate);
 
   return (
     <Link
@@ -95,6 +99,14 @@ export function SessionNoteCard({ note, patientId }: SessionNoteCardProps) {
           {formatSessionDate(note.sessionDate)}
         </p>
       </div>
+
+      {/* Late-signature warning badge */}
+      {isLate && delayDays !== null && delayDays > 0 && (
+        <span className="flex shrink-0 items-center gap-1 rounded-full bg-caution-container px-2 py-0.5 text-[10px] font-medium text-on-caution-container">
+          <MaterialIcon icon="schedule" size="xs" />
+          Signed {delayDays}d late
+        </span>
+      )}
 
       {/* Duration badge */}
       <Badge variant="secondary" className="shrink-0 text-[10px]">
