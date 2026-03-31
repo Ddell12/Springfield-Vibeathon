@@ -68,6 +68,8 @@ export function SessionNoteCard({ note, patientId }: SessionNoteCardProps) {
     : null;
   const isLate = isLateSignature(note.signedAt, note.sessionDate);
   const delayDays = getSignatureDelayDays(note.signedAt, note.sessionDate);
+  const isGroup = !!note.groupSessionId;
+  const groupSize = note.groupPatientIds?.length ?? 0;
 
   return (
     <Link
@@ -89,6 +91,12 @@ export function SessionNoteCard({ note, patientId }: SessionNoteCardProps) {
           <p className="truncate text-sm font-medium text-foreground">
             {firstTarget?.target ?? "No targets recorded"}
           </p>
+          {isGroup && (
+            <span className="flex shrink-0 items-center gap-0.5 rounded-full bg-info-container px-1.5 py-0.5 text-[10px] font-medium text-on-info-container">
+              <MaterialIcon icon="group" size="xs" />
+              {groupSize}
+            </span>
+          )}
           {accuracy !== null && (
             <span className={cn("text-xs font-medium", accuracyColor(accuracy))}>
               {accuracyLabel(accuracy)}
