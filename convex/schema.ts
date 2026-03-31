@@ -605,6 +605,30 @@ export default defineSchema({
   })
     .index("by_patientId", ["patientId"])
     .index("by_appId", ["appId"]),
+
+  sessionTrials: defineTable({
+    sessionNoteId: v.optional(v.id("sessionNotes")),
+    patientId: v.id("patients"),
+    slpUserId: v.string(),
+    goalId: v.id("goals"),
+    targetDescription: v.string(),
+    trials: v.array(v.object({
+      correct: v.boolean(),
+      cueLevel: v.union(
+        v.literal("independent"),
+        v.literal("min-cue"),
+        v.literal("mod-cue"),
+        v.literal("max-cue")
+      ),
+      timestamp: v.number(),
+    })),
+    sessionDate: v.string(),
+    startedAt: v.number(),
+    endedAt: v.optional(v.number()),
+  })
+    .index("by_patientId_sessionDate", ["patientId", "sessionDate"])
+    .index("by_sessionNoteId", ["sessionNoteId"])
+    .index("by_goalId", ["goalId"]),
 });
 
 /** Active session states used by current code. Legacy states are read-only. */
