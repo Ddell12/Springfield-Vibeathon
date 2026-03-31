@@ -39,6 +39,7 @@ export function useReportGeneration() {
       reportType: "weekly-summary" | "monthly-summary" | "iep-progress-report";
       periodStart: string;
       periodEnd: string;
+      audience?: "clinical" | "parent" | "iep-team";
     }) => {
       if (abortControllerRef.current) abortControllerRef.current.abort();
       const controller = new AbortController();
