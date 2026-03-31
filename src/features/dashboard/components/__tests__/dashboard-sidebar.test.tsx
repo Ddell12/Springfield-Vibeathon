@@ -1,85 +1,68 @@
-import { render, screen } from "@testing-library/react";
-
+import { render, screen, fireEvent } from "@testing-library/react";
+import { describe, it, expect, vi } from "vitest";
 import { DashboardSidebar } from "../dashboard-sidebar";
 
+vi.mock("convex/react", () => ({
+  useQuery: () => [],
+}));
 vi.mock("@clerk/nextjs", () => ({
-  UserButton: () => <div data-testid="user-button" />,
-  Show: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-  useUser: () => ({ user: { publicMetadata: {} } }),
+  useUser: () => ({ user: { firstName: "Jane", lastName: "SLP", email: "jane@test.com", publicMetadata: { role: "slp" } } }),
+  useClerk: () => ({ signOut: vi.fn() }),
+  Show: ({ when, children }: any) => (when === "signed-in" ? <>{children}</> : null),
 }));
-
-vi.mock("next/link", () => ({
-  default: ({ href, children, ...props }: any) => (
-    <a href={href} {...props}>
-      {children}
-    </a>
-  ),
-}));
-
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/",
+  usePathname: () => "/builder",
   useSearchParams: () => ({ get: () => null }),
-  useRouter: () => ({ replace: vi.fn() }),
+  useRouter: () => ({ replace: vi.fn(), push: vi.fn() }),
+}));
+vi.mock("next/link", () => ({
+  default: ({ href, children, ...props }: any) => <a href={href} {...props}>{children}</a>,
+}));
+vi.mock("@/shared/components/ui/popover", () => ({
+  Popover: ({ children }: any) => <div>{children}</div>,
+  PopoverTrigger: ({ children }: any) => <div>{children}</div>,
+  PopoverContent: ({ children }: any) => <div>{children}</div>,
 }));
 
-vi.mock("@/shared/components/material-icon", () => ({
-  MaterialIcon: ({ icon }: { icon: string }) => (
-    <span data-testid="icon">{icon}</span>
-  ),
-}));
+beforeEach(() => {
+  localStorage.clear();
+});
 
-vi.mock("@/core/utils", () => ({
-  cn: (...classes: any[]) => classes.filter(Boolean).join(" "),
-}));
-
-vi.mock("@/features/sessions/components/notification-bell", () => ({
-  NotificationBell: () => <div data-testid="notification-bell" />,
-}));
-
-vi.mock("@/shared/lib/navigation", () => ({
-  NAV_ITEMS: [
-    { icon: "home", label: "Home", href: "/dashboard" },
-    { icon: "auto_awesome", label: "Builder", href: "/builder" },
-  ],
-  CAREGIVER_NAV_ITEMS: [
-    { icon: "home", label: "Home", href: "/family" },
-    { icon: "settings", label: "Settings", href: "/settings" },
-  ],
-  isNavActive: vi.fn((href: string) => href === "/dashboard"),
-}));
-
-describe("DashboardSidebar", () => {
-  it("renders nav links from NAV_ITEMS", () => {
+describe("DashboardSidebar (SLP)", () => {
+  it("renders New App button linking to /builder?new=1", () => {
     render(<DashboardSidebar />);
-    // 2 nav item links + 1 logo link = 3 total
-    const links = screen.getAllByRole("link");
-    const hrefs = links.map((l) => l.getAttribute("href"));
-    expect(hrefs).toContain("/dashboard");
-    expect(hrefs).toContain("/builder");
+    expect(screen.getByRole("link", { name: /new app/i })).toHaveAttribute("href", "/builder?new=1");
   });
-
-  it("logo 'B' links to /dashboard", () => {
+  it("renders Builder, Patients, Sessions, Billing, Speech Coach, Library nav items", () => {
     render(<DashboardSidebar />);
-    const logoLink = screen.getByText("B").closest("a");
-    expect(logoLink).toHaveAttribute("href", "/dashboard");
+    ["Builder", "Patients", "Sessions", "Billing", "Speech Coach", "Library"].forEach((label) => {
+      expect(screen.getByText(label)).toBeInTheDocument();
+    });
   });
-
-  it("shows user button", () => {
+  it("does not render Home, Flashcards, Settings as nav items", () => {
     render(<DashboardSidebar />);
-    expect(screen.getByTestId("user-button")).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /^home$/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /flashcards/i })).not.toBeInTheDocument();
+    // Settings exists in user menu, but not as a top-level nav item
+    const settingsLinks = screen.queryAllByText("Settings");
+    // Should only appear in user menu, not in nav
+    expect(settingsLinks.length).toBeLessThanOrEqual(1);
   });
-
-  it("shows tooltip labels for nav items", () => {
+  it("toggles collapsed state when hamburger is clicked", () => {
     render(<DashboardSidebar />);
-    expect(screen.getByText("Home")).toBeInTheDocument();
-    expect(screen.getByText("Builder")).toBeInTheDocument();
+    const toggle = screen.getByRole("button", { name: /toggle sidebar/i });
+    fireEvent.click(toggle);
+    // After collapse, nav labels should be removed from the DOM
+    expect(screen.queryByText("Patients")).not.toBeInTheDocument();
   });
-
-  it("renders icons for each nav item", () => {
+  it("shows Recents section when expanded", () => {
     render(<DashboardSidebar />);
-    const icons = screen.getAllByTestId("icon");
-    const iconValues = icons.map((el) => el.textContent);
-    expect(iconValues).toContain("home");
-    expect(iconValues).toContain("auto_awesome");
+    expect(screen.getByText(/recents/i)).toBeInTheDocument();
+  });
+  it("shows user name in user menu trigger when expanded", () => {
+    render(<DashboardSidebar />);
+    // firstName and lastName are in separate text nodes; use a function matcher
+    const nameElements = screen.getAllByText((_, el) => el?.textContent === "Jane SLP" && el?.tagName === "P");
+    expect(nameElements.length).toBeGreaterThanOrEqual(1);
   });
 });
