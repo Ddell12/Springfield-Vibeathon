@@ -25,6 +25,7 @@ import {
 import { Textarea } from "@/shared/components/ui/textarea";
 
 import type { Id } from "../../../../convex/_generated/dataModel";
+import { ICD10Picker } from "@/features/evaluations/components/icd10-picker";
 import { useBillingMutations, useBillingRecord } from "../hooks/use-billing-records";
 import { MODIFIERS } from "../lib/modifiers";
 import { PLACES_OF_SERVICE } from "../lib/place-of-service";
@@ -44,6 +45,9 @@ export function BillingRecordEditor({ recordId, open, onOpenChange }: BillingRec
   const [cptCode, setCptCode] = useState("");
   const [cptDescription, setCptDescription] = useState("");
   const [modifiers, setModifiers] = useState<string[]>([]);
+  const [diagnosisCodes, setDiagnosisCodes] = useState<
+    { code: string; description: string }[]
+  >([]);
   const [placeOfService, setPlaceOfService] = useState("");
   const [units, setUnits] = useState(1);
   const [fee, setFee] = useState("");
@@ -53,7 +57,11 @@ export function BillingRecordEditor({ recordId, open, onOpenChange }: BillingRec
   if (record && !initialized) {
     setCptCode(record.cptCode);
     setCptDescription(record.cptDescription);
-    setModifiers([...record.modifiers]);
+    const initialModifiers = record.modifiers.includes("GP")
+      ? [...record.modifiers]
+      : ["GP", ...record.modifiers];
+    setModifiers(initialModifiers);
+    setDiagnosisCodes(record.diagnosisCodes ?? []);
     setPlaceOfService(record.placeOfService);
     setUnits(record.units);
     setFee(record.fee ? (record.fee / 100).toFixed(2) : "");
@@ -81,6 +89,7 @@ export function BillingRecordEditor({ recordId, open, onOpenChange }: BillingRec
         cptCode,
         cptDescription,
         modifiers,
+        diagnosisCodes,
         placeOfService,
         units,
         fee: feeInCents,
@@ -104,6 +113,7 @@ export function BillingRecordEditor({ recordId, open, onOpenChange }: BillingRec
         cptCode,
         cptDescription,
         modifiers,
+        diagnosisCodes,
         placeOfService,
         units,
         fee: feeInCents,
@@ -161,6 +171,15 @@ export function BillingRecordEditor({ recordId, open, onOpenChange }: BillingRec
                   </Badge>
                 ))}
               </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-sm font-semibold">Diagnosis Codes</Label>
+              <ICD10Picker
+                selected={diagnosisCodes}
+                onChange={setDiagnosisCodes}
+                disabled={!isDraft}
+              />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
