@@ -54,7 +54,7 @@ export default function RootLayout({
       {/* eslint-enable @next/next/no-page-custom-font */}
       <body className="min-h-full flex flex-col antialiased">
         <SkipToContent />
-        <ClerkProvider>
+        <ClerkProvider signInForceRedirectUrl="/builder" signUpForceRedirectUrl="/builder">
           <ConvexClientProvider>
             {children}
             <Toaster />
