@@ -21,6 +21,8 @@ interface BillingRecordRowProps {
   onEdit: (recordId: Id<"billingRecords">) => void;
   onGenerateSuperbill?: (recordId: Id<"billingRecords">) => void;
   onMarkBilled?: (recordId: Id<"billingRecords">) => void;
+  onToggle?: (id: Id<"billingRecords">) => void;
+  isSelected?: boolean;
 }
 
 export function BillingRecordRow({
@@ -28,6 +30,8 @@ export function BillingRecordRow({
   onEdit,
   onGenerateSuperbill,
   onMarkBilled,
+  onToggle,
+  isSelected,
 }: BillingRecordRowProps) {
   const patient = useQuery(api.patients.get, { patientId: record.patientId });
   const patientName = patient
@@ -37,6 +41,17 @@ export function BillingRecordRow({
 
   return (
     <tr className="border-b border-surface-container-high hover:bg-surface-container-lowest/50 transition-colors duration-300">
+      {onToggle && (
+        <td className="px-4 py-3">
+          <input
+            type="checkbox"
+            checked={isSelected ?? false}
+            onChange={() => onToggle(record._id)}
+            aria-label={`Select record for ${patientName}`}
+            className="h-4 w-4 rounded border-on-surface-variant accent-primary cursor-pointer"
+          />
+        </td>
+      )}
       <td className="px-4 py-3 text-sm text-on-surface">{patientName}</td>
       <td className="px-4 py-3 text-sm text-on-surface-variant">{record.dateOfService}</td>
       <td className="px-4 py-3 text-sm font-mono text-on-surface">{record.cptCode}</td>

@@ -28,6 +28,15 @@ export function ClinicalBillingDashboard() {
   const [editingId, setEditingId] = useState<Id<"billingRecords"> | null>(null);
   const [superbillId, setSuperbillId] = useState<Id<"billingRecords"> | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<Id<"billingRecords">>>(new Set());
+  const [batchLoading, setBatchLoading] = useState(false);
+
+  const toggleSelected = (id: Id<"billingRecords">) =>
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
 
   const draftRecords = useBillingRecords("draft");
   const finalizedRecords = useBillingRecords("finalized");
@@ -62,17 +71,20 @@ export function ClinicalBillingDashboard() {
     }
   }
 
-  const TABLE_HEADERS = (
-    <tr className="border-b border-surface-container-high">
-      <th className="px-4 py-2 text-left text-xs font-medium text-on-surface-variant uppercase tracking-wider">Patient</th>
-      <th className="px-4 py-2 text-left text-xs font-medium text-on-surface-variant uppercase tracking-wider">Date</th>
-      <th className="px-4 py-2 text-left text-xs font-medium text-on-surface-variant uppercase tracking-wider">CPT</th>
-      <th className="px-4 py-2 text-left text-xs font-medium text-on-surface-variant uppercase tracking-wider">Modifiers</th>
-      <th className="px-4 py-2 text-left text-xs font-medium text-on-surface-variant uppercase tracking-wider">Fee</th>
-      <th className="px-4 py-2 text-left text-xs font-medium text-on-surface-variant uppercase tracking-wider">Status</th>
-      <th className="px-4 py-2 text-left text-xs font-medium text-on-surface-variant uppercase tracking-wider">Actions</th>
-    </tr>
-  );
+  function renderTableHeaders(showCheckbox = false) {
+    return (
+      <tr className="border-b border-surface-container-high">
+        {showCheckbox && <th className="px-4 py-2 w-10" />}
+        <th className="px-4 py-2 text-left text-xs font-medium text-on-surface-variant uppercase tracking-wider">Patient</th>
+        <th className="px-4 py-2 text-left text-xs font-medium text-on-surface-variant uppercase tracking-wider">Date</th>
+        <th className="px-4 py-2 text-left text-xs font-medium text-on-surface-variant uppercase tracking-wider">CPT</th>
+        <th className="px-4 py-2 text-left text-xs font-medium text-on-surface-variant uppercase tracking-wider">Modifiers</th>
+        <th className="px-4 py-2 text-left text-xs font-medium text-on-surface-variant uppercase tracking-wider">Fee</th>
+        <th className="px-4 py-2 text-left text-xs font-medium text-on-surface-variant uppercase tracking-wider">Status</th>
+        <th className="px-4 py-2 text-left text-xs font-medium text-on-surface-variant uppercase tracking-wider">Actions</th>
+      </tr>
+    );
+  }
 
   function renderEmpty(message: string) {
     return (
@@ -117,7 +129,7 @@ export function ClinicalBillingDashboard() {
         </div>
       </div>
 
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as Tab)}>
+      <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v as Tab); setSelectedIds(new Set()); }}>
         <TabsList>
           <TabsTrigger value="unbilled">
             Unbilled
@@ -144,7 +156,7 @@ export function ClinicalBillingDashboard() {
           ) : (
             <div className="overflow-x-auto rounded-xl border border-surface-container-high">
               <table className="w-full">
-                <thead>{TABLE_HEADERS}</thead>
+                <thead>{renderTableHeaders()}</thead>
                 <tbody>
                   {draftRecords.map((record) => (
                     <BillingRecordRow
@@ -163,21 +175,59 @@ export function ClinicalBillingDashboard() {
           {!finalizedRecords || finalizedRecords.length === 0 ? (
             renderEmpty("No finalized records. Edit and finalize draft records to prepare them for billing.")
           ) : (
-            <div className="overflow-x-auto rounded-xl border border-surface-container-high">
-              <table className="w-full">
-                <thead>{TABLE_HEADERS}</thead>
-                <tbody>
-                  {finalizedRecords.map((record) => (
-                    <BillingRecordRow
-                      key={record._id}
-                      record={record}
-                      onEdit={setEditingId}
-                      onGenerateSuperbill={setSuperbillId}
-                      onMarkBilled={handleMarkBilled}
-                    />
-                  ))}
-                </tbody>
-              </table>
+            <div className="relative flex flex-col gap-3">
+              <div className="overflow-x-auto rounded-xl border border-surface-container-high">
+                <table className="w-full">
+                  <thead>{renderTableHeaders(true)}</thead>
+                  <tbody>
+                    {finalizedRecords.map((record) => (
+                      <BillingRecordRow
+                        key={record._id}
+                        record={record}
+                        onEdit={setEditingId}
+                        onGenerateSuperbill={setSuperbillId}
+                        onMarkBilled={handleMarkBilled}
+                        onToggle={toggleSelected}
+                        isSelected={selectedIds.has(record._id)}
+                      />
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {selectedIds.size > 0 && (
+                <div className="sticky bottom-0 flex items-center justify-between rounded-xl border border-outline-variant/20 bg-background p-3 shadow-lg">
+                  <p className="text-sm text-on-surface-variant">
+                    {selectedIds.size} record{selectedIds.size !== 1 ? "s" : ""} selected
+                  </p>
+                  <Button
+                    type="button"
+                    disabled={batchLoading}
+                    onClick={async () => {
+                      setBatchLoading(true);
+                      try {
+                        const results = await Promise.allSettled(
+                          [...selectedIds].map((id) =>
+                            handleMarkBilled(id).then(() => id)
+                          )
+                        );
+                        const succeededIds = results
+                          .filter((r): r is PromiseFulfilledResult<Id<"billingRecords">> => r.status === "fulfilled")
+                          .map((r) => r.value);
+                        setSelectedIds((prev) => {
+                          const next = new Set(prev);
+                          succeededIds.forEach((id) => next.delete(id));
+                          return next;
+                        });
+                      } finally {
+                        setBatchLoading(false);
+                      }
+                    }}
+                    className="bg-gradient-to-br from-primary to-primary-container text-white hover:opacity-90"
+                  >
+                    {batchLoading ? "Billing…" : `Mark ${selectedIds.size} as billed`}
+                  </Button>
+                </div>
+              )}
             </div>
           )}
         </TabsContent>
@@ -188,7 +238,7 @@ export function ClinicalBillingDashboard() {
           ) : (
             <div className="overflow-x-auto rounded-xl border border-surface-container-high">
               <table className="w-full">
-                <thead>{TABLE_HEADERS}</thead>
+                <thead>{renderTableHeaders()}</thead>
                 <tbody>
                   {billedRecords.map((record) => (
                     <BillingRecordRow
