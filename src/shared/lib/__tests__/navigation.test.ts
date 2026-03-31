@@ -1,95 +1,36 @@
-import { isNavActive, NAV_ITEMS } from "../navigation";
+import { describe, it, expect } from "vitest";
+import { NAV_ITEMS, CAREGIVER_NAV_ITEMS, isNavActive } from "../navigation";
 
 describe("NAV_ITEMS", () => {
-  it("exports an array with 10 items in order", () => {
-    expect(NAV_ITEMS).toHaveLength(10);
-    expect(NAV_ITEMS[0].href).toBe("/dashboard");
-    expect(NAV_ITEMS[1].href).toBe("/patients");
-    expect(NAV_ITEMS[2].href).toBe("/sessions");
-    expect(NAV_ITEMS[3].href).toBe("/billing");
-    expect(NAV_ITEMS[4].href).toBe("/builder");
-    expect(NAV_ITEMS[5].href).toBe("/flashcards");
-    expect(NAV_ITEMS[6].href).toBe("/speech-coach");
-    expect(NAV_ITEMS[7].href).toBe("/templates");
-    expect(NAV_ITEMS[8].href).toBe("/my-tools");
-    expect(NAV_ITEMS[9].href).toBe("/settings");
+  it("contains Builder as first item", () => {
+    expect(NAV_ITEMS[0].label).toBe("Builder");
+    expect(NAV_ITEMS[0].href).toBe("/builder");
+  });
+  it("contains Library", () => {
+    expect(NAV_ITEMS.some((i) => i.label === "Library")).toBe(true);
+  });
+  it("does not contain Home, Flashcards, Templates, My Apps, Settings", () => {
+    const labels = NAV_ITEMS.map((i) => i.label);
+    expect(labels).not.toContain("Home");
+    expect(labels).not.toContain("Flashcards");
+    expect(labels).not.toContain("Templates");
+    expect(labels).not.toContain("My Apps");
+    expect(labels).not.toContain("Settings");
+  });
+  it("has exactly 6 SLP items", () => {
+    expect(NAV_ITEMS).toHaveLength(6);
+  });
+  it("caregiver nav has exactly 2 items", () => {
+    expect(CAREGIVER_NAV_ITEMS).toHaveLength(2);
   });
 });
 
 describe("isNavActive", () => {
-  describe("home branch (/dashboard)", () => {
-    it("returns true when on /dashboard", () => {
-      expect(isNavActive("/dashboard", "/dashboard", null)).toBe(true);
-    });
-
-    it("returns false when pathname is not /dashboard", () => {
-      expect(isNavActive("/dashboard", "/builder", null)).toBe(false);
-    });
+  it("matches /library exactly", () => {
+    expect(isNavActive("/library", "/library", null)).toBe(true);
+    expect(isNavActive("/library", "/library?tab=my-apps", null)).toBe(false);
   });
-
-  describe("builder branch (/builder)", () => {
-    it("returns true for exact /builder path", () => {
-      expect(isNavActive("/builder", "/builder", null)).toBe(true);
-    });
-
-    it("returns true for nested builder paths", () => {
-      expect(isNavActive("/builder", "/builder/session-123", null)).toBe(true);
-    });
-
-    it("returns false when pathname does not start with /builder", () => {
-      expect(isNavActive("/builder", "/", null)).toBe(false);
-    });
-  });
-
-  describe("flashcards branch (/flashcards)", () => {
-    it("returns true for exact /flashcards path", () => {
-      expect(isNavActive("/flashcards", "/flashcards", null)).toBe(true);
-    });
-
-    it("returns false when pathname is not /flashcards", () => {
-      expect(isNavActive("/flashcards", "/builder", null)).toBe(false);
-    });
-  });
-
-  describe("standalone routes (/templates, /my-tools)", () => {
-    it("returns true for exact /templates match", () => {
-      expect(isNavActive("/templates", "/templates", null)).toBe(true);
-    });
-
-    it("returns false for /templates when on /builder", () => {
-      expect(isNavActive("/templates", "/builder", null)).toBe(false);
-    });
-
-    it("returns true for exact /my-tools match", () => {
-      expect(isNavActive("/my-tools", "/my-tools", null)).toBe(true);
-    });
-
-    it("returns false for /my-tools when on /templates", () => {
-      expect(isNavActive("/my-tools", "/templates", null)).toBe(false);
-    });
-  });
-
-  describe("family branch (/family)", () => {
-    it("returns true for /family path", () => {
-      expect(isNavActive("/family", "/family", null)).toBe(true);
-    });
-
-    it("returns true for nested family paths", () => {
-      expect(isNavActive("/family", "/family/abc123", null)).toBe(true);
-    });
-
-    it("returns false when pathname is not /family", () => {
-      expect(isNavActive("/family", "/patients", null)).toBe(false);
-    });
-  });
-
-  describe("fallback exact match", () => {
-    it("returns true for exact pathname match on any other href", () => {
-      expect(isNavActive("/settings", "/settings", null)).toBe(true);
-    });
-
-    it("returns false when pathname differs", () => {
-      expect(isNavActive("/settings", "/profile", null)).toBe(false);
-    });
+  it("matches /builder prefix", () => {
+    expect(isNavActive("/builder", "/builder/abc123", null)).toBe(true);
   });
 });

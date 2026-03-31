@@ -1,25 +1,19 @@
 import { ROUTES } from "@/core/routes";
 
 export const NAV_ITEMS = [
-  { icon: "home", label: "Home", href: ROUTES.DASHBOARD },
-  { icon: "group", label: "Patients", href: ROUTES.PATIENTS },
-  { icon: "video_call", label: "Sessions", href: ROUTES.SESSIONS },
-  { icon: "receipt_long", label: "Billing", href: ROUTES.BILLING },
-  { icon: "auto_awesome", label: "Builder", href: ROUTES.BUILDER },
-  { icon: "collections_bookmark", label: "Flashcards", href: ROUTES.FLASHCARDS },
-  { icon: "record_voice_over", label: "Speech Coach", href: ROUTES.SPEECH_COACH },
-  { icon: "grid_view", label: "Templates", href: ROUTES.TEMPLATES },
-  { icon: "folder_open", label: "My Apps", href: ROUTES.MY_TOOLS },
-  { icon: "settings", label: "Settings", href: ROUTES.SETTINGS },
+  { icon: "auto_awesome",          label: "Builder",      href: ROUTES.BUILDER },
+  { icon: "group",                 label: "Patients",     href: ROUTES.PATIENTS },
+  { icon: "video_call",            label: "Sessions",     href: ROUTES.SESSIONS },
+  { icon: "receipt_long",          label: "Billing",      href: ROUTES.BILLING },
+  { icon: "record_voice_over",     label: "Speech Coach", href: ROUTES.SPEECH_COACH },
+  { icon: "collections_bookmark",  label: "Library",      href: ROUTES.LIBRARY },
 ] as const;
 
 // Caregiver nav: Messages is accessed from dashboard, not sidebar,
 // because the href requires a patientId which varies by active child.
 export const CAREGIVER_NAV_ITEMS = [
-  { icon: "home", label: "Home", href: ROUTES.FAMILY },
-  { icon: "video_call", label: "Sessions", href: ROUTES.SESSIONS },
+  { icon: "video_call",        label: "Sessions",     href: ROUTES.SESSIONS },
   { icon: "record_voice_over", label: "Speech Coach", href: ROUTES.SPEECH_COACH },
-  { icon: "settings", label: "Settings", href: ROUTES.SETTINGS },
 ] as const;
 
 export function isNavActive(
@@ -27,13 +21,12 @@ export function isNavActive(
   pathname: string,
   _tab: string | null
 ): boolean {
-  if (href === "/dashboard") return pathname === "/dashboard";
-  if (href === "/patients") return pathname.startsWith("/patients");
-  if (href === "/sessions") return pathname.startsWith("/sessions");
-  if (href === "/billing") return pathname.startsWith("/billing");
-  if (href === "/builder") return pathname.startsWith("/builder");
-  if (href === "/flashcards") return pathname.startsWith("/flashcards");
-  if (href === "/family")    return pathname.startsWith("/family");
+  if (href === "/builder")      return pathname.startsWith("/builder");
+  if (href === "/patients")     return pathname.startsWith("/patients");
+  if (href === "/sessions")     return pathname.startsWith("/sessions");
+  if (href === "/billing")      return pathname.startsWith("/billing");
   if (href === "/speech-coach") return pathname.startsWith("/speech-coach");
+  if (href === "/family")       return pathname.startsWith("/family");
+  if (href === "/library")      return pathname === "/library";
   return pathname === href;
 }
