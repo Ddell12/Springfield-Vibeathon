@@ -52,7 +52,7 @@ export function SessionSummary({ collections, patientId, onStartNew }: SessionSu
 
       <div className="flex flex-col gap-2">
         <Button asChild>
-          <Link href={`/patients/${patientId}/session-notes/new`}>
+          <Link href={`/patients/${patientId}/sessions/new`}>
             Start Session Note
           </Link>
         </Button>
