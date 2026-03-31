@@ -63,8 +63,7 @@ export function InputBar({
         disabled={isGenerating}
         rows={1}
         aria-label={placeholder}
-        className="w-full resize-none overflow-hidden bg-transparent text-sm outline-none placeholder:text-on-surface-variant/40 disabled:opacity-60"
-        style={{ minHeight: "24px", maxHeight: "200px" }}
+        className="w-full resize-none overflow-hidden border-0 bg-transparent text-sm outline-none placeholder:text-on-surface-variant/40 disabled:opacity-60 min-h-[24px] max-h-[200px]"
       />
       <div className="mt-2 flex items-center gap-2 border-t border-outline-variant/10 pt-2">
         <VoiceInput
