@@ -23,8 +23,13 @@ import { MatchingGameConfigSchema, type MatchingGameConfig } from "./templates/m
 
 export interface RuntimeProps<TConfig = unknown> {
   config: TConfig;
-  shareToken: string;
+  mode: "preview" | "published";
   onEvent: (type: string, payloadJson?: string) => void;
+  voice: {
+    speak: (args: { text: string; voice?: string }) => Promise<void>;
+    stop: () => void;
+    status: "idle" | "loading" | "ready" | "error";
+  };
 }
 
 export interface EditorProps<TConfig = unknown> {

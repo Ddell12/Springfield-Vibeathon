@@ -1,9 +1,7 @@
 "use client";
 
-import { useMutation } from "convex/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { api } from "@convex/_generated/api";
 import { cn } from "@/core/utils";
 
 import type { RuntimeProps } from "../../registry";
@@ -20,10 +18,10 @@ function shuffleArray<T>(arr: T[]): T[] {
 
 export function MatchingGameRuntime({
   config,
-  shareToken,
+  mode,
   onEvent,
+  voice,
 }: RuntimeProps<MatchingGameConfig>) {
-  const logEvent = useMutation(api.tools.logEvent);
   const [selectedPromptId, setSelectedPromptId] = useState<string | null>(null);
   const [matchedPairIds, setMatchedPairIds] = useState<Set<string>>(new Set());
   const [incorrectAnswerId, setIncorrectAnswerId] = useState<string | null>(null);
@@ -36,11 +34,8 @@ export function MatchingGameRuntime({
   );
 
   useEffect(() => {
-    if (shareToken !== "preview") {
-      void logEvent({ shareToken, eventType: "app_opened" });
-    }
     onEvent("app_opened");
-  }, [shareToken]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     return () => {
@@ -66,9 +61,6 @@ export function MatchingGameRuntime({
       const payloadJson = JSON.stringify({ promptId: selectedPromptId, answerId });
 
       if (isCorrect) {
-        if (shareToken !== "preview") {
-          void logEvent({ shareToken, eventType: "answer_correct", eventPayloadJson: payloadJson });
-        }
         onEvent("answer_correct", payloadJson);
         const newMatched = new Set(matchedPairIds);
         newMatched.add(answerId);
@@ -77,15 +69,9 @@ export function MatchingGameRuntime({
 
         if (newMatched.size === config.pairs.length) {
           const completedPayload = JSON.stringify({ pairsMatched: config.pairs.length });
-          if (shareToken !== "preview") {
-            void logEvent({ shareToken, eventType: "activity_completed", eventPayloadJson: completedPayload });
-          }
           onEvent("activity_completed", completedPayload);
         }
       } else {
-        if (shareToken !== "preview") {
-          void logEvent({ shareToken, eventType: "answer_incorrect", eventPayloadJson: payloadJson });
-        }
         onEvent("answer_incorrect", payloadJson);
         setIncorrectAnswerId(answerId);
         // Clear incorrect highlight after short delay
@@ -96,7 +82,7 @@ export function MatchingGameRuntime({
         }, 800);
       }
     },
-    [selectedPromptId, matchedPairIds, config.pairs.length, logEvent, shareToken, onEvent]
+    [selectedPromptId, matchedPairIds, config.pairs.length, onEvent]
   );
 
   const allDone = matchedPairIds.size === config.pairs.length;

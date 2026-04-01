@@ -1,9 +1,7 @@
 "use client";
 
-import { useMutation } from "convex/react";
 import { useCallback, useEffect, useState } from "react";
 
-import { api } from "@convex/_generated/api";
 import { cn } from "@/core/utils";
 
 import type { RuntimeProps } from "../../registry";
@@ -23,51 +21,39 @@ const EMPTY_EMOJI: Record<string, string> = {
 
 export function TokenBoardRuntime({
   config,
-  shareToken,
+  mode,
   onEvent,
+  voice,
 }: RuntimeProps<TokenBoardConfig>) {
-  const logEvent = useMutation(api.tools.logEvent);
   const [earned, setEarned] = useState(0);
   const [completed, setCompleted] = useState(false);
 
   useEffect(() => {
-    if (shareToken !== "preview") {
-      void logEvent({ shareToken, eventType: "app_opened" });
-    }
     onEvent("app_opened");
-  }, [shareToken]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleTokenTap = useCallback(
     (tokenIndex: number) => {
       if (completed || tokenIndex !== earned) return;
       const newEarned = earned + 1;
       const payloadJson = JSON.stringify({ tokenIndex, earned: newEarned });
-      if (shareToken !== "preview") {
-        void logEvent({ shareToken, eventType: "token_added", eventPayloadJson: payloadJson });
-      }
       onEvent("token_added", payloadJson);
       setEarned(newEarned);
 
       if (newEarned === config.tokenCount) {
         const completedPayload = JSON.stringify({ tokensEarned: newEarned });
-        if (shareToken !== "preview") {
-          void logEvent({ shareToken, eventType: "activity_completed", eventPayloadJson: completedPayload });
-        }
         onEvent("activity_completed", completedPayload);
         setCompleted(true);
       }
     },
-    [completed, earned, config.tokenCount, logEvent, shareToken, onEvent]
+    [completed, earned, config.tokenCount, onEvent]
   );
 
   const handleReset = useCallback(() => {
     setEarned(0);
     setCompleted(false);
-    if (shareToken !== "preview") {
-      void logEvent({ shareToken, eventType: "app_opened" });
-    }
     onEvent("app_opened");
-  }, [logEvent, shareToken, onEvent]);
+  }, [onEvent]);
 
   return (
     <div

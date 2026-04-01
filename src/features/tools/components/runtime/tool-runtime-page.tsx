@@ -3,6 +3,8 @@
 import { useMutation } from "convex/react";
 
 import { api } from "@convex/_generated/api";
+import { RuntimeShell } from "../../lib/runtime/runtime-shell";
+import { useVoiceController } from "../../lib/runtime/runtime-voice-controller";
 import { templateRegistry } from "../../lib/registry";
 
 interface ToolRuntimePageProps {
@@ -13,6 +15,7 @@ interface ToolRuntimePageProps {
 
 export function ToolRuntimePage({ shareToken, templateType, configJson }: ToolRuntimePageProps) {
   const logEvent = useMutation(api.tools.logEvent);
+  const voice = useVoiceController();
 
   const registration = templateRegistry[templateType];
   if (!registration) {
@@ -34,5 +37,19 @@ export function ToolRuntimePage({ shareToken, templateType, configJson }: ToolRu
     });
   };
 
-  return <Runtime config={config} shareToken={shareToken} onEvent={handleEvent} />;
+  const handleExit = () => {
+    if (window.history.length > 1) window.history.back();
+    else window.location.assign("/");
+  };
+
+  return (
+    <RuntimeShell mode="published" onExit={handleExit}>
+      <Runtime
+        config={config}
+        mode="published"
+        onEvent={handleEvent}
+        voice={voice}
+      />
+    </RuntimeShell>
+  );
 }

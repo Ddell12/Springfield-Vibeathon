@@ -1,9 +1,7 @@
 "use client";
 
-import { useMutation } from "convex/react";
 import { useCallback, useEffect, useState } from "react";
 
-import { api } from "@convex/_generated/api";
 import { cn } from "@/core/utils";
 
 import type { RuntimeProps } from "../../registry";
@@ -11,52 +9,40 @@ import type { VisualScheduleConfig } from "./schema";
 
 export function VisualScheduleRuntime({
   config,
-  shareToken,
+  mode,
   onEvent,
+  voice,
 }: RuntimeProps<VisualScheduleConfig>) {
-  const logEvent = useMutation(api.tools.logEvent);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [completed, setCompleted] = useState(false);
 
   useEffect(() => {
-    if (shareToken !== "preview") {
-      void logEvent({ shareToken, eventType: "app_opened" });
-    }
     onEvent("app_opened");
-  }, [shareToken]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleReset = useCallback(() => {
     setCurrentIndex(0);
     setCompleted(false);
-    if (shareToken !== "preview") {
-      void logEvent({ shareToken, eventType: "app_opened" });
-    }
     onEvent("app_opened");
-  }, [logEvent, shareToken, onEvent]);
+  }, [onEvent]);
 
   const handleItemTap = useCallback(
     (index: number) => {
       if (completed || index !== currentIndex) return;
       const item = config.items[index];
       const payloadJson = JSON.stringify({ itemId: item.id, label: item.label, index });
-      if (shareToken !== "preview") {
-        void logEvent({ shareToken, eventType: "item_tapped", eventPayloadJson: payloadJson });
-      }
       onEvent("item_tapped", payloadJson);
 
       const nextIndex = currentIndex + 1;
       if (nextIndex >= config.items.length) {
         setCompleted(true);
         const completedPayload = JSON.stringify({ itemsCompleted: config.items.length });
-        if (shareToken !== "preview") {
-          void logEvent({ shareToken, eventType: "activity_completed", eventPayloadJson: completedPayload });
-        }
         onEvent("activity_completed", completedPayload);
       } else {
         setCurrentIndex(nextIndex);
       }
     },
-    [completed, currentIndex, config.items, logEvent, shareToken, onEvent]
+    [completed, currentIndex, config.items, onEvent]
   );
 
   return (

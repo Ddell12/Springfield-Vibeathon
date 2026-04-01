@@ -1,9 +1,7 @@
 "use client";
 
-import { useMutation } from "convex/react";
 import { useCallback, useEffect, useState } from "react";
 
-import { api } from "@convex/_generated/api";
 import { cn } from "@/core/utils";
 
 import type { RuntimeProps } from "../../registry";
@@ -11,45 +9,33 @@ import type { FirstThenBoardConfig } from "./schema";
 
 export function FirstThenBoardRuntime({
   config,
-  shareToken,
+  mode,
   onEvent,
+  voice,
 }: RuntimeProps<FirstThenBoardConfig>) {
-  const logEvent = useMutation(api.tools.logEvent);
   const [firstDone, setFirstDone] = useState(false);
 
   useEffect(() => {
-    if (shareToken !== "preview") {
-      void logEvent({ shareToken, eventType: "app_opened" });
-    }
     onEvent("app_opened");
-  }, [shareToken]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleFirstTap = useCallback(() => {
     if (firstDone) return;
     const payloadJson = JSON.stringify({ slot: "first" });
-    if (shareToken !== "preview") {
-      void logEvent({ shareToken, eventType: "item_tapped", eventPayloadJson: payloadJson });
-    }
     onEvent("item_tapped", payloadJson);
     setFirstDone(true);
-  }, [firstDone, logEvent, shareToken, onEvent]);
+  }, [firstDone, onEvent]);
 
   const handleThenTap = useCallback(() => {
     if (!firstDone) return;
     const payloadJson = JSON.stringify({ slot: "then" });
-    if (shareToken !== "preview") {
-      void logEvent({ shareToken, eventType: "activity_completed", eventPayloadJson: payloadJson });
-    }
     onEvent("activity_completed", payloadJson);
-  }, [firstDone, logEvent, shareToken, onEvent]);
+  }, [firstDone, onEvent]);
 
   const handleReset = useCallback(() => {
     setFirstDone(false);
-    if (shareToken !== "preview") {
-      void logEvent({ shareToken, eventType: "app_opened" });
-    }
     onEvent("app_opened");
-  }, [logEvent, shareToken, onEvent]);
+  }, [onEvent]);
 
   return (
     <div

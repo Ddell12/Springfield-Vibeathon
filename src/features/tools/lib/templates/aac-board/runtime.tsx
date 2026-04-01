@@ -1,9 +1,7 @@
 "use client";
 
-import { useMutation } from "convex/react";
 import { useCallback, useEffect } from "react";
 
-import { api } from "@convex/_generated/api";
 import { cn } from "@/core/utils";
 
 import type { RuntimeProps } from "../../registry";
@@ -11,33 +9,24 @@ import type { AACBoardConfig } from "./schema";
 
 export function AACBoardRuntime({
   config,
-  shareToken,
+  mode,
   onEvent,
+  voice,
 }: RuntimeProps<AACBoardConfig>) {
-  const logEvent = useMutation(api.tools.logEvent);
-
   useEffect(() => {
-    if (shareToken !== "preview") {
-      void logEvent({ shareToken, eventType: "app_opened" });
-    }
     onEvent("app_opened");
-  }, [shareToken]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleButtonPress = useCallback(
     (buttonId: string, label: string, speakText: string) => {
       const payloadJson = JSON.stringify({ buttonId, label });
-      if (shareToken !== "preview") {
-        void logEvent({ shareToken, eventType: "item_tapped", eventPayloadJson: payloadJson });
-      }
       onEvent("item_tapped", payloadJson);
 
-      if (config.autoSpeak && typeof window !== "undefined") {
-        const utterance = new SpeechSynthesisUtterance(speakText);
-        utterance.rate = 0.9;
-        window.speechSynthesis.speak(utterance);
+      if (config.autoSpeak) {
+        void voice.speak({ text: speakText, voice: config.voice });
       }
     },
-    [config.autoSpeak, logEvent, shareToken, onEvent]
+    [config.autoSpeak, config.voice, onEvent, voice]
   );
 
   return (
