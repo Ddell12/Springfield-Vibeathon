@@ -7,8 +7,8 @@ import { ConvexClientProvider } from "@/core/providers";
 import { SkipToContent } from "@/shared/components/skip-to-content";
 import { Toaster } from "@/shared/components/ui/sonner";
 
-const PRODUCT_NAME = "Bridges";
-const PRODUCT_TAGLINE = "AI Therapy App Builder";
+const PRODUCT_NAME = "Vocali";
+const PRODUCT_TAGLINE = "Modern speech therapy for growing voices.";
 
 export const metadata: Metadata = {
   title: `${PRODUCT_NAME} — ${PRODUCT_TAGLINE}`,

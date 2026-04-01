@@ -6,7 +6,7 @@ describe("Testimonials", () => {
   it("renders the section heading", () => {
     render(<Testimonials />);
     expect(
-      screen.getByText(/Families & Therapists Love Bridges/i)
+      screen.getByText(/Families & Therapists Love Vocali/i)
     ).toBeInTheDocument();
   });
 

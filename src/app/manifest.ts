@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Bridges — AI Therapy App Builder",
-    short_name: "Bridges",
+    name: "Vocali — AI Therapy App Builder",
+    short_name: "Vocali",
     start_url: "/",
     scope: "/",
     display: "standalone",

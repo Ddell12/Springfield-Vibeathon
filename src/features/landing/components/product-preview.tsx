@@ -36,7 +36,7 @@ export function ProductPreview() {
           Every tool, built around your child.
         </h2>
         <p className="text-center text-on-surface-variant text-lg mb-12 max-w-2xl mx-auto">
-          Bridges creates personalized therapy apps from a plain-language description — no two tools look the same, because no two kids are alike.
+          Vocali creates personalized therapy apps from a plain-language description — no two tools look the same, because no two kids are alike.
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {FEATURES.map((feature) => (

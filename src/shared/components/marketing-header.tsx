@@ -17,7 +17,7 @@ import {
 } from "@/shared/components/ui/sheet";
 
 const navLinks = [
-  { href: "/meet-bridges", label: "Meet Bridges" },
+  { href: "/meet-vocali", label: "Meet Vocali" },
   { href: "/platform", label: "Platform" },
   { href: "/solutions", label: "Solutions" },
   { href: "/pricing", label: "Pricing" },
@@ -46,7 +46,7 @@ function MarketingHeaderContent() {
             href="/"
             className="font-headline text-[2rem] tracking-[-0.04em] text-on-surface"
           >
-            Bridges
+            Vocali
           </Link>
           <div className="hidden md:flex items-center gap-1">
             {navLinks.map(({ href, label }) => (
@@ -69,7 +69,7 @@ function MarketingHeaderContent() {
         <div className="flex items-center gap-3">
           <Show when="signed-out">
             <Link
-              href="mailto:hello@bridges.ai"
+              href="mailto:hello@vocali.ai"
               className="hidden min-h-[44px] items-center rounded-xl border border-border bg-surface px-4 text-sm font-medium text-on-surface transition-colors hover:bg-surface-container-low md:flex"
             >
               Contact sales
@@ -79,7 +79,7 @@ function MarketingHeaderContent() {
             href="/sign-in?role=slp"
             className="hidden min-h-[44px] items-center gap-2 rounded-xl bg-on-surface px-5 py-2.5 text-sm font-semibold text-background transition-opacity hover:opacity-92 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 md:flex"
           >
-            Try Bridges
+            Try Vocali
           </Link>
           <Show when="signed-in">
             <div className="hidden md:flex">
@@ -114,7 +114,7 @@ function MarketingHeaderContent() {
                     </Link>
                   ))}
                   <Link
-                    href="mailto:hello@bridges.ai"
+                    href="mailto:hello@vocali.ai"
                     className="mt-4 rounded-lg border border-border px-6 py-3 text-center text-sm font-medium text-on-surface"
                   >
                     Contact sales
@@ -124,7 +124,7 @@ function MarketingHeaderContent() {
                       href="/sign-in?role=slp"
                       className="mt-2 rounded-lg bg-on-surface px-6 py-3 text-center text-sm font-semibold text-background"
                     >
-                      Try Bridges
+                      Try Vocali
                     </Link>
                   </Show>
                   <Show when="signed-in">

@@ -155,7 +155,7 @@ function getCancellationPolicy(practice: PracticeInfo): FormTemplate {
       },
       {
         heading: "How to Cancel",
-        body: `To cancel or reschedule, please contact us at ${practice.practicePhone} or through the Bridges app messaging feature.`,
+        body: `To cancel or reschedule, please contact us at ${practice.practicePhone} or through the Vocali app messaging feature.`,
       },
     ],
     disclaimer: DEFAULT_DISCLAIMER,
@@ -205,7 +205,7 @@ function getTelehealthConsent(practice: PracticeInfo, patientName: string): Form
       },
       {
         heading: "Technology Requirements",
-        body: "You will need a device with a camera, microphone, and speaker, plus a stable internet connection. Sessions will be conducted through the Bridges platform, which uses encrypted video conferencing.",
+        body: "You will need a device with a camera, microphone, and speaker, plus a stable internet connection. Sessions will be conducted through the Vocali platform, which uses encrypted video conferencing.",
       },
       {
         heading: "Emergency Protocols",

@@ -46,9 +46,9 @@ vi.mock("@/shared/components/ui/sheet", () => ({
 
 
 describe("MarketingHeader", () => {
-  it("renders the Bridges logo as a link to home", () => {
+  it("renders the Vocali logo as a link to home", () => {
     render(<MarketingHeader />);
-    const logo = screen.getByText("Bridges");
+    const logo = screen.getByText("Vocali");
     expect(logo).toBeInTheDocument();
     expect(logo.closest("a")).toHaveAttribute("href", "/");
   });
@@ -60,9 +60,9 @@ describe("MarketingHeader", () => {
     expect(screen.getAllByText("Learn").length).toBeGreaterThanOrEqual(1);
   });
 
-  it("renders the Try Bridges CTA button", () => {
+  it("renders the Try Vocali CTA button", () => {
     render(<MarketingHeader />);
-    const ctaLinks = screen.getAllByText("Try Bridges");
+    const ctaLinks = screen.getAllByText("Try Vocali");
     expect(ctaLinks.length).toBeGreaterThanOrEqual(1);
     // Desktop CTA links to the sign-in flow
     const desktopCta = ctaLinks.find(

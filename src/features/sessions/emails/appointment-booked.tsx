@@ -136,7 +136,7 @@ export function AppointmentBooked({
               lineHeight: "1.5",
             }}
           >
-            You received this email because a session was scheduled on Bridges.
+            You received this email because a session was scheduled on Vocali.
             If you have questions, reply to this email.
           </Text>
         </Container>

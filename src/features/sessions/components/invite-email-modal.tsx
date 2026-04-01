@@ -252,7 +252,7 @@ export function InviteEmailModal({ open, onOpenChange }: InviteEmailModalProps) 
             <div className="rounded-lg bg-surface-container p-4 text-sm flex flex-col gap-1">
               <p className="text-on-surface-variant">
                 <span className="font-medium text-on-surface">From:</span>{" "}
-                Bridges &lt;onboarding@resend.dev&gt;
+                Vocali &lt;onboarding@resend.dev&gt;
               </p>
               <p className="text-on-surface-variant">
                 <span className="font-medium text-on-surface">To:</span>{" "}

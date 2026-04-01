@@ -3,9 +3,9 @@ import type { Metadata } from "next";
 import { RoleTabs } from "./_components/role-tabs";
 
 export const metadata: Metadata = {
-  title: "Solutions — Bridges",
+  title: "Solutions — Vocali",
   description:
-    "Bridges adapts to how you work — whether you're a clinician, a parent, or both. See how Bridges fits each role in the therapy room.",
+    "Vocali adapts to how you work — whether you're a clinician, a parent, or both. See how Vocali fits each role in the therapy room.",
 };
 
 export default function SolutionsPage() {
@@ -17,7 +17,7 @@ export default function SolutionsPage() {
           The right tool for every role in the therapy room.
         </h1>
         <p className="mt-6 text-lg leading-7 text-on-surface-variant">
-          Bridges adapts to how you work — whether you&apos;re a clinician, a parent, or both.
+          Vocali adapts to how you work — whether you&apos;re a clinician, a parent, or both.
         </p>
       </div>
 

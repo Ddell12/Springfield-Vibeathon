@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { HomeProgramPrint } from "@/features/patients/components/home-program-print";
 
 export const metadata: Metadata = {
-  title: "Print Home Program — Bridges",
+  title: "Print Home Program — Vocali",
 };
 
 interface PrintPageProps {

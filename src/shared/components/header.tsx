@@ -75,7 +75,7 @@ export function Header() {
               <SheetHeader className="sr-only">
                 <SheetTitle>Navigation menu</SheetTitle>
                 <SheetDescription>
-                  Open the builder or library sections of Bridges.
+                  Open the builder or library sections of Vocali.
                 </SheetDescription>
               </SheetHeader>
               <nav className="flex flex-col gap-2 mt-8">

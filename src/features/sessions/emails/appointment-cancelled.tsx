@@ -108,7 +108,7 @@ export function AppointmentCancelled({
               margin: "0 0 8px",
             }}
           >
-            To rebook, log in to Bridges and schedule a new session at a time
+            To rebook, log in to Vocali and schedule a new session at a time
             that works for everyone.
           </Text>
 
@@ -127,7 +127,7 @@ export function AppointmentCancelled({
               lineHeight: "1.5",
             }}
           >
-            You received this email because a session was cancelled on Bridges.
+            You received this email because a session was cancelled on Vocali.
             If you have questions, reply to this email.
           </Text>
         </Container>

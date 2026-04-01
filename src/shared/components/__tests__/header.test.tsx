@@ -39,7 +39,7 @@ vi.mock("@/shared/components/material-icon", () => ({
 describe("Header", () => {
   it("renders the brand name as a link to home", () => {
     render(<Header />);
-    const brand = screen.getByText("Bridges");
+    const brand = screen.getByText("Vocali");
     expect(brand).toBeInTheDocument();
     expect(brand.closest("a")).toHaveAttribute("href", "/");
   });

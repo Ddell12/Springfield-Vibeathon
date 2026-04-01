@@ -20,7 +20,7 @@ describe("CtaSection", () => {
   it("renders the section heading", () => {
     render(<CtaSection />);
     expect(
-      screen.getByText(/Ready to bridge the gap\?/i)
+      screen.getByText(/Your child's tools are waiting/i)
     ).toBeInTheDocument();
   });
 

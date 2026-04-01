@@ -59,7 +59,7 @@ export function UpgradeConfirmationDialog({
             Upgrade to Premium
           </DialogTitle>
           <DialogDescription>
-            Get the most out of Bridges with unlimited access to all features.
+            Get the most out of Vocali with unlimited access to all features.
           </DialogDescription>
         </DialogHeader>
 

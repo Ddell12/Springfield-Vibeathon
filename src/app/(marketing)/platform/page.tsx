@@ -5,9 +5,9 @@ import Link from "next/link";
 import { Button } from "@/shared/components/ui/button";
 
 export const metadata: Metadata = {
-  title: "Platform — Bridges",
+  title: "Platform — Vocali",
   description:
-    "Bridges uses Claude to generate complete, interactive therapy apps from plain-language descriptions. No code required. No templates to fight with.",
+    "Vocali uses Claude to generate complete, interactive therapy apps from plain-language descriptions. No code required. No templates to fight with.",
 };
 
 const PIPELINE_STEPS = [
@@ -15,7 +15,7 @@ const PIPELINE_STEPS = [
     number: "01",
     icon: MessageSquare,
     title: "Describe",
-    description: "Tell Bridges what you need in plain language.",
+    description: "Tell Vocali what you need in plain language.",
   },
   {
     number: "02",
@@ -79,7 +79,7 @@ export default function PlatformPage() {
           From description to working app — in seconds.
         </h1>
         <p className="mt-6 text-lg leading-7 text-on-surface-variant">
-          Bridges uses Claude to generate complete, interactive therapy apps from plain-language
+          Vocali uses Claude to generate complete, interactive therapy apps from plain-language
           descriptions. No code required. No templates to fight with.
         </p>
       </div>

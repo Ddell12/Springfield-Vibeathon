@@ -168,7 +168,7 @@ export function MyToolsPage({ embedded = false }: MyToolsPageProps) {
             </h1>
           )}
           <p className="text-on-surface-variant text-lg mb-8">
-            Describe a therapy activity and Bridges will build a visual app for you.
+            Describe a therapy activity and Vocali will build a visual app for you.
           </p>
           <Link
             href="/builder"
@@ -369,7 +369,7 @@ export function MyToolsPage({ embedded = false }: MyToolsPageProps) {
             Need a custom app?
           </h2>
           <p className="text-on-surface-variant text-lg max-w-xl">
-            Tell Bridges what your child is working on, and we&apos;ll help you
+            Tell Vocali what your child is working on, and we&apos;ll help you
             generate a tailored visual aid or communication board in seconds.
           </p>
           <div className="mt-8 flex gap-4">

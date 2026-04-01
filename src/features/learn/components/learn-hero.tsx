@@ -12,7 +12,7 @@ export function LearnHero() {
         </h1>
         <p className="text-lg md:text-xl text-on-surface-variant leading-relaxed mb-10 max-w-[560px] mx-auto">
           Speech therapy changes lives — but the day-to-day work is hard. Learn
-          how evidence-based approaches work, and how Bridges helps SLPs do more
+          how evidence-based approaches work, and how Vocali helps SLPs do more
           of what matters.
         </p>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -20,7 +20,7 @@ export function LearnHero() {
             href="/sign-in?role=slp"
             className="bg-primary-gradient text-on-primary px-7 py-3.5 rounded-xl font-semibold shadow-lg shadow-primary/10 hover:shadow-primary/20 transition-all duration-300 active:scale-95"
           >
-            Try Bridges Free
+            Try Vocali Free
           </Link>
           <Link
             href="/explore"

@@ -10,14 +10,14 @@ describe("ProductPreview", () => {
   it("renders the section heading", () => {
     render(<ProductPreview />);
     expect(
-      screen.getByRole("heading", { name: /Everything you need, all in one place/ })
+      screen.getByRole("heading", { name: /Every tool, built around your child/ })
     ).toBeInTheDocument();
   });
 
   it("renders the subtitle", () => {
     render(<ProductPreview />);
     expect(
-      screen.getByText(/Bridges combines AI-powered tools with therapy expertise/)
+      screen.getByText(/Vocali creates personalized therapy apps/)
     ).toBeInTheDocument();
   });
 

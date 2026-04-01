@@ -14,7 +14,7 @@ export function CtaSection() {
             Your child&apos;s tools are waiting.
           </h2>
           <p className="text-white/80 text-lg max-w-lg leading-relaxed">
-            Whether you&apos;re an SLP building for your caseload or a family supporting your child at home — Bridges is free to start. Describe what you need and have it running in under a minute.
+            Whether you&apos;re an SLP building for your caseload or a family supporting your child at home — Vocali is free to start. Describe what you need and have it running in under a minute.
           </p>
           <Link
             href="/builder"

@@ -16,7 +16,7 @@ export function AuthHeroContent({
         It&apos;s built.
       </h1>
       <p className="mt-5 max-w-md text-xl leading-8 text-on-surface-variant">
-        Custom therapy tools for SLPs and families — just tell Bridges what your child needs. Ready in under a minute.
+        Custom therapy tools for SLPs and families — just tell Vocali what your child needs. Ready in under a minute.
       </p>
       <div className="mt-10 w-full">
         <ClaudeSignInCard role={role} />

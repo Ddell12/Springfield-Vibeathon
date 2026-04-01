@@ -8,7 +8,7 @@ export function LearnCta() {
           Ready to build something?
         </h2>
         <p className="text-on-surface-variant text-lg leading-relaxed mb-10 max-w-[500px] mx-auto">
-          Bridges is free to start. Describe a therapy tool and have it running
+          Vocali is free to start. Describe a therapy tool and have it running
           in your browser in under a minute.
         </p>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">

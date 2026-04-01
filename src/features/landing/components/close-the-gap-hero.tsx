@@ -34,7 +34,7 @@ export function CloseTheGapHero() {
         </h1>
 
         <p className="mt-6 text-lg md:text-xl text-on-surface-variant max-w-2xl mx-auto leading-relaxed">
-          Bridges helps ABA therapists, speech therapists, and parents of autistic
+          Vocali helps ABA therapists, speech therapists, and parents of autistic
           children build personalized interactive therapy apps — just by describing
           what they need. No coding. No waiting. No gap.
         </p>

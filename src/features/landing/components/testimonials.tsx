@@ -1,7 +1,7 @@
 const testimonials = [
   {
     quote:
-      "I described our morning routine in plain language and Bridges built a complete visual schedule in under a minute. My son now gets ready independently for the first time.",
+      "I described our morning routine in plain language and Vocali built a complete visual schedule in under a minute. My son now gets ready independently for the first time.",
     name: "Sarah M.",
     role: "Parent of a 7-year-old",
     avatar: "SM",
@@ -30,7 +30,7 @@ export function Testimonials() {
     <section className="py-20 md:py-28 px-6 max-w-7xl mx-auto">
       <div className="mb-16 text-center md:text-left">
         <h2 className="font-headline text-3xl md:text-[2rem] font-normal text-on-surface mb-4">
-          Families &amp; Therapists Love Bridges
+          Families &amp; Therapists Love Vocali
         </h2>
         <div className="h-1.5 w-24 bg-primary rounded-full mx-auto md:mx-0" />
       </div>

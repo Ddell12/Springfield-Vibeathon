@@ -418,7 +418,7 @@ export function ClaudeSignInCard({
       <div id="clerk-captcha" className={cn(step === "collect" ? "mt-2" : "sr-only")} />
 
       <p className="mt-4 text-center text-[12px] leading-5 text-on-surface-variant">
-        By continuing, you acknowledge Bridges&apos;{" "}
+        By continuing, you acknowledge Vocali&apos;{" "}
         <Link href="/" className="underline underline-offset-4">
           Privacy Policy
         </Link>{" "}

@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 
 import { ClinicalBillingDashboard } from "@/features/billing/components/clinical-billing-dashboard";
 
-export const metadata = { title: "Clinical Billing — Bridges" };
+export const metadata = { title: "Clinical Billing — Vocali" };
 
 export default async function BillingPage() {
   const user = await currentUser();

@@ -34,7 +34,7 @@ export function accuracyLabel(accuracy: number | null): string {
  *
  * Assumes all timestamps are UTC epoch milliseconds and sessionDate is
  * a YYYY-MM-DD string representing a UTC calendar day — which is true
- * throughout the Bridges data model (Convex stores timestamps as Date.now()).
+ * throughout the Vocali data model (Convex stores timestamps as Date.now()).
  */
 export function isLateSignature(
   signedAt: number | undefined,

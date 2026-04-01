@@ -8,7 +8,7 @@ export function LandingFooter() {
       <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-4">
         <div className="flex flex-col items-center md:items-start gap-2">
           <span className="text-lg font-medium text-primary font-headline">
-            Bridges
+            Vocali
           </span>
           <span className="text-xs text-on-surface-variant">
             &copy; {new Date().getFullYear()} {APP_BRAND}. All rights reserved.

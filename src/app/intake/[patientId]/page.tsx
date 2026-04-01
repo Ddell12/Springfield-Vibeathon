@@ -5,7 +5,7 @@ import { IntakeFlow } from "@/features/intake/components/intake-flow";
 import type { Id } from "../../../../convex/_generated/dataModel";
 
 export const metadata: Metadata = {
-  title: "Complete Intake Forms — Bridges",
+  title: "Complete Intake Forms — Vocali",
 };
 
 export default async function IntakePage({

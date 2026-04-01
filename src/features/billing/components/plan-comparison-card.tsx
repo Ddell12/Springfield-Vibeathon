@@ -88,7 +88,7 @@ export function PlanComparisonCard() {
             )}
           </div>
           <p className="text-sm text-muted-foreground">
-            Unlock the full power of Bridges
+            Unlock the full power of Vocali
           </p>
         </CardHeader>
         <CardContent>

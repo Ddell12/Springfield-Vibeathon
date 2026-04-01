@@ -14,9 +14,6 @@ vi.mock("../appearance-section", () => ({
   AppearanceSection: () => <div data-testid="appearance-section" />,
 }));
 
-vi.mock("../../../billing/components/billing-section", () => ({
-  BillingSection: () => <div data-testid="billing-section" />,
-}));
 
 describe("SettingsPage", () => {
   it("defaults to profile section visible", () => {
@@ -58,12 +55,6 @@ describe("SettingsPage", () => {
     expect(screen.queryByTestId("profile-section")).not.toBeInTheDocument();
   });
 
-  it("clicking sidebar option switches to billing section", () => {
-    render(<SettingsPage />);
-    fireEvent.click(screen.getByRole("button", { name: "Billing" }));
-    expect(screen.getByTestId("billing-section")).toBeInTheDocument();
-    expect(screen.queryByTestId("profile-section")).not.toBeInTheDocument();
-  });
 
   it("does not render a main element (layout provides the landmark)", () => {
     render(<SettingsPage />);

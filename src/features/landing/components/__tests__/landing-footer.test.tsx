@@ -3,16 +3,16 @@ import { render, screen } from "@testing-library/react";
 import { LandingFooter } from "../landing-footer";
 
 describe("LandingFooter", () => {
-  it("renders the Bridges brand name", () => {
+  it("renders the Vocali brand name", () => {
     render(<LandingFooter />);
-    expect(screen.getByText("Bridges")).toBeInTheDocument();
+    expect(screen.getByText("Vocali")).toBeInTheDocument();
   });
 
   it("renders copyright text with the current year", () => {
     render(<LandingFooter />);
     const year = new Date().getFullYear().toString();
     expect(
-      screen.getByText(new RegExp(`${year} Bridges AI. All rights reserved`))
+      screen.getByText(new RegExp(`${year} Vocali. All rights reserved`))
     ).toBeInTheDocument();
   });
 

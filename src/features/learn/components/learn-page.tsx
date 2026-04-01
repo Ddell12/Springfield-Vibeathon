@@ -1,5 +1,5 @@
 import { ForParents } from "./for-parents";
-import { HowBridgesHelps } from "./how-bridges-helps";
+import { HowVocaliHelps } from "./how-vocali-helps";
 import { LearnCta } from "./learn-cta";
 import { LearnHero } from "./learn-hero";
 import { TherapyApproaches } from "./therapy-approaches";
@@ -10,7 +10,7 @@ export function LearnPage() {
     <div className="bg-canvas font-body text-on-surface min-h-screen">
       <LearnHero />
       <WhatIsSpeechTherapy />
-      <HowBridgesHelps />
+      <HowVocaliHelps />
       <TherapyApproaches />
       <ForParents />
       <LearnCta />

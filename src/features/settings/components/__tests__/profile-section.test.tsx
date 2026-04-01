@@ -10,7 +10,7 @@ vi.mock("@clerk/nextjs", () => ({
     user: {
       firstName: "Desha",
       fullName: "Desha Dell",
-      primaryEmailAddress: { emailAddress: "desha@bridges.ai" },
+      primaryEmailAddress: { emailAddress: "desha@vocali.ai" },
       update: mockUpdate,
     },
   }),
@@ -61,7 +61,7 @@ describe("ProfileSection", () => {
 
   it("renders the email input as disabled with Clerk email", () => {
     render(<ProfileSection />);
-    const emailInput = screen.getByDisplayValue("desha@bridges.ai");
+    const emailInput = screen.getByDisplayValue("desha@vocali.ai");
     expect(emailInput).toBeDisabled();
   });
 

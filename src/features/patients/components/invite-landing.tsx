@@ -121,7 +121,7 @@ export function InviteLanding({ paramsPromise }: InviteLandingProps) {
           <span className="font-medium text-foreground">
             {inviteInfo.patientFirstName}&apos;s
           </span>{" "}
-          speech therapy on Bridges.
+          speech therapy on Vocali.
         </p>
 
         <div className="flex flex-col gap-3">

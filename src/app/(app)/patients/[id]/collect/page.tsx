@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Data Collection — Bridges",
+  title: "Data Collection — Vocali",
 };
 
 // Dynamic import to defer to client — data-collection-screen uses hooks

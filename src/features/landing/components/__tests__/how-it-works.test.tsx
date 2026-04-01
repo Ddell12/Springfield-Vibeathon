@@ -18,7 +18,7 @@ describe("HowItWorks", () => {
   it("renders the section heading", () => {
     render(<HowItWorks />);
     expect(
-      screen.getByRole("heading", { name: /Built for the people who matter most/ })
+      screen.getByRole("heading", { name: /From a description to a working therapy app/ })
     ).toBeInTheDocument();
   });
 

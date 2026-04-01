@@ -144,7 +144,7 @@ export function SessionReminder({
               lineHeight: "1.5",
             }}
           >
-            You received this reminder from Bridges. If you need to cancel or
+            You received this reminder from Vocali. If you need to cancel or
             reschedule, please do so in the app as soon as possible.
           </Text>
         </Container>

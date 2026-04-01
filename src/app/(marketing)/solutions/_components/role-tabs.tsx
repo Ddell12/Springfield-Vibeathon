@@ -30,7 +30,7 @@ const CONTENT: Record<
   slp: {
     pain: "Your caseload is full. Creating custom materials takes hours you don't have.",
     solution:
-      "Describe the exercise, the AAC layout, or the data sheet — Bridges builds it in under a minute. Share it instantly with families and co-therapists.",
+      "Describe the exercise, the AAC layout, or the data sheet — Vocali builds it in under a minute. Share it instantly with families and co-therapists.",
     apps: [
       { icon: Grid2x2, label: "AAC core boards" },
       { icon: BookOpen, label: "Articulation drills" },

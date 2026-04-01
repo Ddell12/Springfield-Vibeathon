@@ -6,7 +6,7 @@ import { cn } from "@/core/utils";
 import { Button } from "@/shared/components/ui/button";
 
 export const metadata: Metadata = {
-  title: "Pricing — Bridges",
+  title: "Pricing — Vocali",
   description: "Simple, transparent pricing for speech therapists and caregivers.",
 };
 
@@ -70,7 +70,7 @@ export default function PricingPage() {
         <div className={cn("rounded-3xl bg-surface p-8 ring-2 ring-primary")}>
           <h2 className="text-lg font-semibold text-on-surface">Premium</h2>
           <p className="mt-1 text-sm text-on-surface-variant">
-            Unlock the full power of Bridges
+            Unlock the full power of Vocali
           </p>
           <p className="mt-6 text-3xl font-bold text-on-surface">
             $9.99

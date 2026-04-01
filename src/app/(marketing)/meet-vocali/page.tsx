@@ -5,9 +5,9 @@ import Link from "next/link";
 import { Button } from "@/shared/components/ui/button";
 
 export const metadata: Metadata = {
-  title: "Meet Bridges — AI Therapy App Builder",
+  title: "Meet Vocali — AI Therapy App Builder",
   description:
-    "Bridges is an AI-powered app builder made for speech therapists, ABA therapists, and parents of autistic children. Describe the therapy tool you need — Bridges builds it in seconds.",
+    "Vocali is an AI-powered app builder made for speech therapists, ABA therapists, and parents of autistic children. Describe the therapy tool you need — Vocali builds it in seconds.",
 };
 
 const ROLES = [
@@ -49,7 +49,7 @@ const APP_TYPES = [
   },
 ];
 
-export default function MeetBridgesPage() {
+export default function MeetVocaliPage() {
   return (
     <main className="mx-auto w-full max-w-[1180px] px-6 py-20 lg:px-10">
       {/* Hero */}
@@ -58,9 +58,9 @@ export default function MeetBridgesPage() {
           Every child deserves a bridge to communication.
         </h1>
         <p className="mt-6 text-lg leading-7 text-on-surface-variant">
-          Bridges is an AI-powered app builder made for speech therapists, ABA therapists, and
+          Vocali is an AI-powered app builder made for speech therapists, ABA therapists, and
           parents of autistic children. Describe the therapy tool you need in plain language —
-          Bridges builds it in seconds.
+          Vocali builds it in seconds.
         </p>
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
           <Button asChild variant="gradient" className="rounded-xl px-6 font-semibold">

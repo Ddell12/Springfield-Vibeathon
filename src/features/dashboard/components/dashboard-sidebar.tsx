@@ -40,12 +40,12 @@ export function DashboardSidebar() {
   const [collapsed, setCollapsed] = useState(false);
 
   useEffect(() => {
-    setCollapsed(localStorage.getItem("bridges_sidebar_collapsed") === "true");
+    setCollapsed(localStorage.getItem("vocali_sidebar_collapsed") === "true");
   }, []);
 
   const toggleCollapsed = () => {
     setCollapsed((prev) => {
-      localStorage.setItem("bridges_sidebar_collapsed", String(!prev));
+      localStorage.setItem("vocali_sidebar_collapsed", String(!prev));
       return !prev;
     });
   };
@@ -84,7 +84,7 @@ export function DashboardSidebar() {
           <MaterialIcon icon="menu" size="sm" />
         </button>
         {!collapsed && (
-          <span className="text-sm font-bold text-on-surface tracking-tight">Bridges</span>
+          <span className="text-sm font-bold text-on-surface tracking-tight">Vocali</span>
         )}
       </div>
 

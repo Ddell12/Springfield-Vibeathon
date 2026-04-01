@@ -51,7 +51,7 @@ export function SharedToolPage() {
       <header className="flex justify-center items-center w-full px-6 py-4 bg-surface">
         <div className="max-w-7xl w-full flex justify-between items-center">
           <Link href="/" className="text-primary-container font-medium tracking-tight text-lg">
-            Bridges
+            Vocali
           </Link>
           <span className="hidden md:block text-on-surface-variant font-label text-sm">
             {app.title}
@@ -84,7 +84,7 @@ export function SharedToolPage() {
         <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
           <span className="text-sm font-medium text-on-surface-variant">
             Build your own — powered by{" "}
-            <span className="text-primary-container font-bold">Bridges</span>
+            <span className="text-primary-container font-bold">Vocali</span>
           </span>
           <Link
             href="/builder"

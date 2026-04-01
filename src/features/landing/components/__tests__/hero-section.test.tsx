@@ -49,15 +49,15 @@ vi.mock("next/navigation", () => ({
 describe("HeroSection", () => {
   it("renders the headline text", () => {
     render(<HeroSection />);
-    expect(screen.getByText(/Overwhelmed\?/)).toBeInTheDocument();
-    expect(screen.getByText(/Organized\./)).toBeInTheDocument();
+    expect(screen.getByText(/Describe it/)).toBeInTheDocument();
+    expect(screen.getByText(/It's built/)).toBeInTheDocument();
   });
 
   it("renders the description paragraph", () => {
     render(<HeroSection />);
     expect(
       screen.getByText(
-        /The AI for therapy teams, caregivers, and the everyday work between sessions/
+        /Custom therapy tools for SLPs and families/
       )
     ).toBeInTheDocument();
   });

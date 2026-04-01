@@ -39,7 +39,7 @@ export function buildSessionGuidance(
   const avoidThemes = coachSetup.avoidThemes.join(", ");
 
   const lines = [
-    "Session guidance for Bridges Speech Coach.",
+    "Session guidance for Vocali Speech Coach.",
     `Child age range: ${sessionConfig.ageRange}.`,
     `Practice sounds: ${sessionConfig.targetSounds.join(", ")}.`,
     `Target positions: ${targetPositions}.`,

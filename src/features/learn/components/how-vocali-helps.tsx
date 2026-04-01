@@ -2,12 +2,12 @@ const benefits = [
   {
     number: "01",
     heading: "Describe it in plain language",
-    body: 'Skip the coding. Tell Bridges what you need: "An AAC board for food requests with 20 core words and Fitzgerald colors." The AI speaks therapy.',
+    body: 'Skip the coding. Tell Vocali what you need: "An AAC board for food requests with 20 core words and Fitzgerald colors." The AI speaks therapy.',
   },
   {
     number: "02",
     heading: "Get a working app in seconds",
-    body: "Bridges builds a fully interactive React app with your custom vocabulary, symbols, TTS voices, and layout — ready to use in session or send home.",
+    body: "Vocali builds a fully interactive React app with your custom vocabulary, symbols, TTS voices, and layout — ready to use in session or send home.",
   },
   {
     number: "03",
@@ -21,7 +21,7 @@ const benefits = [
   },
 ];
 
-export function HowBridgesHelps() {
+export function HowVocaliHelps() {
   return (
     <section className="bg-surface px-6 py-20">
       <div className="mx-auto max-w-[1120px]">
@@ -35,7 +35,7 @@ export function HowBridgesHelps() {
             </h2>
             <p className="text-on-surface-variant text-lg leading-relaxed">
               SLPs spend hours building materials — picture boards, social
-              stories, drill apps. Bridges turns a plain-language description
+              stories, drill apps. Vocali turns a plain-language description
               into a working interactive app. No design skills needed. No
               subscription per tool.
             </p>

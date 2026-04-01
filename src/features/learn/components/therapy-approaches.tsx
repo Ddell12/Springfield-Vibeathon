@@ -3,37 +3,37 @@ const approaches = [
     badge: "AAC",
     heading: "Augmentative & Alternative Communication",
     body: "AAC encompasses any tool that helps someone communicate beyond speech — from picture boards and PECS books to high-tech speech-generating devices. It supplements or replaces spoken language for children who struggle to communicate verbally.",
-    detail: "Bridges generates custom AAC apps with Fitzgerald color coding, motor-planning grids, and text-to-speech built in.",
+    detail: "Vocali generates custom AAC apps with Fitzgerald color coding, motor-planning grids, and text-to-speech built in.",
   },
   {
     badge: "Core Vocabulary",
     heading: "Core + Fringe Vocabulary",
     body: "Core words (like 'more', 'go', 'want', 'stop') make up 80% of everything we say. Fringe words are topic-specific. Effective AAC teaches core words first, then expands into fringe.",
-    detail: "Bridges apps can be built around core vocabulary grids, with fringe categories accessible from a single tap.",
+    detail: "Vocali apps can be built around core vocabulary grids, with fringe categories accessible from a single tap.",
   },
   {
     badge: "PECS",
     heading: "Picture Exchange Communication System",
     body: "PECS teaches children to initiate communication by exchanging a picture card for a desired item. It progresses through six phases from basic exchange to using sentence strips with attributes.",
-    detail: "Bridges can generate PECS-style visual boards with custom photos and printable sentence strip layouts.",
+    detail: "Vocali can generate PECS-style visual boards with custom photos and printable sentence strip layouts.",
   },
   {
     badge: "Social Narratives",
     heading: "Social Stories & Visual Supports",
     body: "Social stories describe social situations in a reassuring way to help children understand expectations and appropriate behavior. Visual schedules reduce anxiety by making routines predictable.",
-    detail: "Bridges generates illustrated social stories and visual schedule apps in minutes — personalized to the child.",
+    detail: "Vocali generates illustrated social stories and visual schedule apps in minutes — personalized to the child.",
   },
   {
     badge: "DTT",
     heading: "Discrete Trial Training",
     body: "DTT breaks skills into small, teachable components with clear antecedents, responses, and consequences. It uses structured repetition with data collection to track mastery.",
-    detail: "Bridges can build interactive drill apps that present stimuli, record responses, and track progress across trials.",
+    detail: "Vocali can build interactive drill apps that present stimuli, record responses, and track progress across trials.",
   },
   {
     badge: "NLP",
     heading: "Naturalistic Language Paradigm",
     body: "NLP embeds language targets into natural routines and play. Instead of structured drills, the child leads the interaction and the therapist follows their interest to model language.",
-    detail: "Bridges supports naturalistic practice with play-based interactive apps that embed language targets in activities children enjoy.",
+    detail: "Vocali supports naturalistic practice with play-based interactive apps that embed language targets in activities children enjoy.",
   },
 ];
 
@@ -50,7 +50,7 @@ export function TherapyApproaches() {
           </h2>
           <p className="mt-4 text-on-surface-variant text-lg max-w-2xl">
             These are the methods SLPs use every day. Each has decades of
-            research behind it — and Bridges can help you build tools that bring
+            research behind it — and Vocali can help you build tools that bring
             them to life.
           </p>
         </div>
