@@ -50,6 +50,7 @@ import type * as lib_customFunctions from "../lib/customFunctions.js";
 import type * as lib_goalBankSeed from "../lib/goalBankSeed.js";
 import type * as lib_progress from "../lib/progress.js";
 import type * as lib_session_states from "../lib/session_states.js";
+import type * as lib_speechCoachValidators from "../lib/speechCoachValidators.js";
 import type * as lib_template_schema_descriptions from "../lib/template_schema_descriptions.js";
 import type * as meetingRecords from "../meetingRecords.js";
 import type * as messages from "../messages.js";
@@ -74,6 +75,8 @@ import type * as sessionTrials from "../sessionTrials.js";
 import type * as sessions from "../sessions.js";
 import type * as speechCoach from "../speechCoach.js";
 import type * as speechCoachActions from "../speechCoachActions.js";
+import type * as speechCoachRuntimeActions from "../speechCoachRuntimeActions.js";
+import type * as speechCoachTemplates from "../speechCoachTemplates.js";
 import type * as stt from "../stt.js";
 import type * as subscriptions from "../subscriptions.js";
 import type * as templates_queries from "../templates/queries.js";
@@ -81,7 +84,6 @@ import type * as templates_seed from "../templates/seed.js";
 import type * as templates_therapy_seeds from "../templates/therapy_seeds.js";
 import type * as therapy_templates from "../therapy_templates.js";
 import type * as tools from "../tools.js";
-import type * as tools_ai from "../tools_ai.js";
 import type * as usage from "../usage.js";
 
 import type {
@@ -133,6 +135,7 @@ declare const fullApi: ApiFromModules<{
   "lib/goalBankSeed": typeof lib_goalBankSeed;
   "lib/progress": typeof lib_progress;
   "lib/session_states": typeof lib_session_states;
+  "lib/speechCoachValidators": typeof lib_speechCoachValidators;
   "lib/template_schema_descriptions": typeof lib_template_schema_descriptions;
   meetingRecords: typeof meetingRecords;
   messages: typeof messages;
@@ -157,6 +160,8 @@ declare const fullApi: ApiFromModules<{
   sessions: typeof sessions;
   speechCoach: typeof speechCoach;
   speechCoachActions: typeof speechCoachActions;
+  speechCoachRuntimeActions: typeof speechCoachRuntimeActions;
+  speechCoachTemplates: typeof speechCoachTemplates;
   stt: typeof stt;
   subscriptions: typeof subscriptions;
   "templates/queries": typeof templates_queries;
@@ -164,7 +169,6 @@ declare const fullApi: ApiFromModules<{
   "templates/therapy_seeds": typeof templates_therapy_seeds;
   therapy_templates: typeof therapy_templates;
   tools: typeof tools;
-  tools_ai: typeof tools_ai;
   usage: typeof usage;
 }>;
 
