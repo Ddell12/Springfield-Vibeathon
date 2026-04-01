@@ -1,14 +1,11 @@
 import { renderHook, act } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-vi.mock("convex/react", () => ({
-  useAction: vi.fn(() =>
-    vi.fn().mockResolvedValue({ configJson: '{"title":"Generated"}', error: undefined })
-  ),
-}));
-vi.mock("@convex/_generated/api", () => ({
-  api: { tools_ai: { generateToolConfig: "tools_ai:generateToolConfig" } },
-}));
+const mockFetch = vi.fn().mockResolvedValue({
+  ok: true,
+  json: async () => ({ configJson: '{"title":"Generated"}' }),
+});
+vi.stubGlobal("fetch", mockFetch);
 
 import { useAIConfigAssist } from "../use-ai-config-assist";
 

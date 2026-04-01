@@ -1,9 +1,8 @@
 "use client";
 
-import { useAction } from "convex/react";
 import { useCallback, useState } from "react";
 
-import { api } from "@convex/_generated/api";
+import type { GenerationProfile } from "@/features/tools/lib/ai/generation-profile";
 
 export type AIAssistStatus = "idle" | "loading" | "success" | "error";
 
@@ -16,27 +15,42 @@ interface ChildProfile {
 export function useAIConfigAssist({
   templateType,
   childProfile,
+  generationProfile,
 }: {
   templateType: string;
   childProfile: ChildProfile;
+  generationProfile?: GenerationProfile;
 }) {
   const [status, setStatus] = useState<AIAssistStatus>("idle");
   const [error, setError] = useState<string | null>(null);
-  const generateAction = useAction(api.tools_ai.generateToolConfig);
 
   const generate = useCallback(
     async (description: string): Promise<string | null> => {
       setStatus("loading");
       setError(null);
       try {
-        const result = await generateAction({ templateType, description, childProfile });
-        if (result.error || !result.configJson) {
-          setError(result.error ?? "No config returned");
+        const res = await fetch("/api/tools/generate-config", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            templateType,
+            description,
+            childProfile,
+            generationProfile,
+          }),
+        });
+
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          const message = (data as { error?: string }).error ?? "Generation failed";
+          setError(message);
           setStatus("error");
           return null;
         }
+
+        const data = await res.json() as { configJson: string };
         setStatus("success");
-        return result.configJson;
+        return data.configJson;
       } catch (err) {
         const message = err instanceof Error ? err.message : "Unknown error";
         setError(message);
@@ -44,7 +58,7 @@ export function useAIConfigAssist({
         return null;
       }
     },
-    [generateAction, templateType, childProfile]
+    [templateType, childProfile, generationProfile]
   );
 
   const reset = useCallback(() => {

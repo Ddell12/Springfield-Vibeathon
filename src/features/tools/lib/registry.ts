@@ -1,4 +1,5 @@
 import type { ComponentType } from "react";
+import { z } from "zod";
 
 import { AACBoardEditor } from "./templates/aac-board/editor";
 import { AACBoardRuntime } from "./templates/aac-board/runtime";
@@ -47,6 +48,9 @@ export interface TemplateRegistration {
   Runtime: ComponentType<RuntimeProps<any>>;
   defaultConfig: unknown;
   parseConfig: (json: string) => unknown;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  aiConfigSchema: z.ZodTypeAny;
+  schemaPrompt: string;
 }
 
 const DEFAULT_AAC_CONFIG: AACBoardConfig = {
@@ -125,6 +129,8 @@ export const templateRegistry: Record<string, TemplateRegistration> = {
     Runtime: AACBoardRuntime,
     defaultConfig: DEFAULT_AAC_CONFIG,
     parseConfig: (json: string) => AACBoardConfigSchema.parse(JSON.parse(json)),
+    aiConfigSchema: z.object({}).passthrough(),
+    schemaPrompt: "Return a config object matching the template defaults.",
   },
   first_then_board: {
     meta: {
@@ -138,6 +144,8 @@ export const templateRegistry: Record<string, TemplateRegistration> = {
     Runtime: FirstThenBoardRuntime,
     defaultConfig: DEFAULT_FIRST_THEN_CONFIG,
     parseConfig: (json: string) => FirstThenBoardConfigSchema.parse(JSON.parse(json)),
+    aiConfigSchema: z.object({}).passthrough(),
+    schemaPrompt: "Return a config object matching the template defaults.",
   },
   token_board: {
     meta: {
@@ -151,6 +159,8 @@ export const templateRegistry: Record<string, TemplateRegistration> = {
     Runtime: TokenBoardRuntime,
     defaultConfig: DEFAULT_TOKEN_BOARD_CONFIG,
     parseConfig: (json: string) => TokenBoardConfigSchema.parse(JSON.parse(json)),
+    aiConfigSchema: z.object({}).passthrough(),
+    schemaPrompt: "Return a config object matching the template defaults.",
   },
   visual_schedule: {
     meta: {
@@ -164,6 +174,8 @@ export const templateRegistry: Record<string, TemplateRegistration> = {
     Runtime: VisualScheduleRuntime,
     defaultConfig: DEFAULT_VISUAL_SCHEDULE_CONFIG,
     parseConfig: (json: string) => VisualScheduleConfigSchema.parse(JSON.parse(json)),
+    aiConfigSchema: z.object({}).passthrough(),
+    schemaPrompt: "Return a config object matching the template defaults.",
   },
   matching_game: {
     meta: {
@@ -177,5 +189,7 @@ export const templateRegistry: Record<string, TemplateRegistration> = {
     Runtime: MatchingGameRuntime,
     defaultConfig: DEFAULT_MATCHING_GAME_CONFIG,
     parseConfig: (json: string) => MatchingGameConfigSchema.parse(JSON.parse(json)),
+    aiConfigSchema: z.object({}).passthrough(),
+    schemaPrompt: "Return a config object matching the template defaults.",
   },
 };

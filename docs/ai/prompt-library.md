@@ -255,8 +255,11 @@ Content about: sample expressive language goals ("Student will use 2-word combin
 | Use Case | Model | Why |
 |----------|-------|-----|
 | Tool generation chat | `claude-sonnet-4-20250514` | Best balance of speed, quality, and cost for streaming config generation |
+| Tool generation config | `claude-sonnet-4-6` via Vercel AI SDK `generateText()` + `Output.object()` | Structured config generation for premium template defaults |
 | Text embeddings | `gemini-embedding-001` (Google) via `@ai-sdk/google` | 768-dim, high quality, free tier generous |
 | TTS | `eleven_multilingual_v2` (ElevenLabs) | Natural child-appropriate speech |
+
+> **Note:** Tools config generation runs in a Next.js API route (`/api/tools/generate-config`) with Zod schema validation. Uses `generateText` with `Output.object({ schema })` — `generateObject` is deprecated in AI SDK v6.
 
 **Embedding upgrade path:** When `gemini-embedding-2` reaches GA, swap the model ID in the Convex RAG config (one-line change). V2 offers multimodal embeddings, 8K token context, and MTEB #1 ranking. At 768-dim via MRL, no schema change needed — just add L2 normalization. See `~/.agent/diagrams/gemini-embedding-2-analysis.html` for full analysis.
 
