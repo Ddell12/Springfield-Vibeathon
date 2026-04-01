@@ -23,6 +23,7 @@ const PinSetupModal = dynamic(
   () => import("./pin-setup-modal").then((m) => ({ default: m.PinSetupModal })),
   { ssr: false }
 );
+import { PublishedToolsSection } from "./published-tools-section";
 import { StreakTracker } from "./streak-tracker";
 import { TodayActivities } from "./today-activities";
 import { WeeklyProgress } from "./weekly-progress";
@@ -179,6 +180,9 @@ export function FamilyDashboard({ paramsPromise }: FamilyDashboardProps) {
 
       {/* Today's Activities */}
       <TodayActivities patientId={patientId as Id<"patients">} />
+
+      {/* Published apps */}
+      <PublishedToolsSection patientId={patientId as Id<"patients">} />
 
       {/* Speech Coach programs */}
       <SpeechCoachCards patientId={patientId as Id<"patients">} />
