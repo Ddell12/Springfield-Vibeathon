@@ -18,6 +18,11 @@ vi.mock("next/link", () => ({
   ),
 }));
 
+vi.mock("next/navigation", () => ({
+  useSearchParams: () => new URLSearchParams(),
+  useRouter: () => ({ replace: vi.fn() }),
+}));
+
 vi.mock("@/core/utils", () => ({
   cn: (...args: (string | boolean | undefined)[]) =>
     args.filter(Boolean).join(" "),
@@ -54,22 +59,11 @@ describe("TemplatesPage", () => {
     expect(screen.getByText("Going to the Dentist")).toBeInTheDocument();
   });
 
-  test("template cards link to /builder with encoded prompt", () => {
+  test("template cards link to /tools/new", () => {
     render(<TemplatesPage />);
     const links = screen.getAllByRole("link");
-    const builderLinks = links.filter((l) =>
-      l.getAttribute("href")?.startsWith("/builder"),
-    );
-    expect(builderLinks.length).toBeGreaterThanOrEqual(4);
-  });
-
-  test("template card links use prompt query param encoding", () => {
-    render(<TemplatesPage />);
-    const links = screen.getAllByRole("link");
-    const templateLinks = links.filter((l) =>
-      l.getAttribute("href")?.startsWith("/builder?prompt="),
-    );
-    expect(templateLinks.length).toBe(4);
+    const toolsLinks = links.filter((l) => l.getAttribute("href") === "/tools/new");
+    expect(toolsLinks.length).toBeGreaterThanOrEqual(4);
   });
 
   test("renders 'Have something else in mind?' CTA section", () => {
@@ -79,10 +73,10 @@ describe("TemplatesPage", () => {
     ).toBeInTheDocument();
   });
 
-  test("renders 'Build a Custom App' CTA link to /builder", () => {
+  test("renders 'Create a Tool' CTA link to /tools/new", () => {
     render(<TemplatesPage />);
-    const ctaLink = screen.getByRole("link", { name: /build a custom app/i });
-    expect(ctaLink).toHaveAttribute("href", "/builder");
+    const ctaLink = screen.getByRole("link", { name: /create a tool/i });
+    expect(ctaLink).toHaveAttribute("href", "/tools/new");
   });
 
   test("renders 'Click to build' sub-text on each card", () => {

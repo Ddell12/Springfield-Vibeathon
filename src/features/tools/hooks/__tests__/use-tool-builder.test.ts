@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 
 vi.mock("convex/react", () => ({
   useMutation: vi.fn(() => vi.fn().mockResolvedValue({ id: "inst-1", shareToken: "tok-abc" })),
+  useQuery: vi.fn(() => undefined),
 }));
 vi.mock("@convex/_generated/api", () => ({
   api: {
@@ -10,6 +11,7 @@ vi.mock("@convex/_generated/api", () => ({
       create: "tools:create",
       update: "tools:update",
       publish: "tools:publish",
+      get: "tools:get",
     },
   },
 }));

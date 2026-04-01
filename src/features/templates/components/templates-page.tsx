@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
 import { cn } from "@/core/utils";
@@ -46,6 +46,7 @@ interface TemplatesPageProps {
 
 export function TemplatesPage({ embedded = false }: TemplatesPageProps) {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -186,7 +187,7 @@ export function TemplatesPage({ embedded = false }: TemplatesPageProps) {
             return (
               <Link
                 key={template.id}
-                href={`/builder?prompt=${encodeURIComponent(template.prompt)}`}
+                href="/tools/new"
                 className="group relative overflow-hidden rounded-2xl bg-surface-container-lowest transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
                 data-testid="template-card"
               >
@@ -234,6 +235,31 @@ export function TemplatesPage({ embedded = false }: TemplatesPageProps) {
         </div>
       )}
 
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-3 mt-8 mb-8">
+          <button
+            type="button"
+            className="px-4 py-2 text-sm font-medium rounded-lg border border-outline-variant/40 text-on-surface-variant hover:bg-surface-container-high disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            disabled={safePage <= 1}
+            onClick={() => router.replace(`/library?tab=templates&page=${safePage - 1}`, { scroll: false })}
+          >
+            Previous
+          </button>
+          <span className="text-sm text-on-surface-variant">
+            Page {safePage} of {totalPages}
+          </span>
+          <button
+            type="button"
+            className="px-4 py-2 text-sm font-medium rounded-lg border border-outline-variant/40 text-on-surface-variant hover:bg-surface-container-high disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            disabled={safePage >= totalPages}
+            onClick={() => router.replace(`/library?tab=templates&page=${safePage + 1}`, { scroll: false })}
+          >
+            Next
+          </button>
+        </div>
+      )}
+
       {/* CTA Section */}
       <section className="p-12 bg-surface-container-low rounded-2xl relative overflow-hidden">
         <div className="relative z-10 max-w-xl">
@@ -241,16 +267,16 @@ export function TemplatesPage({ embedded = false }: TemplatesPageProps) {
             Have something else in mind?
           </h2>
           <p className="text-on-surface-variant text-lg mb-8">
-            Describe any therapy app and our AI builder will create it for you.
+            Pick a tool type and let AI fill in the details for you.
           </p>
           <Link
-            href="/builder"
+            href="/tools/new"
             className={cn(
               "inline-flex items-center gap-2 bg-gradient-to-r text-white font-bold px-6 py-3 rounded-xl hover:opacity-90 transition-opacity",
               PRIMARY_GRADIENT,
             )}
           >
-            Build a Custom App
+            Create a Tool
           </Link>
         </div>
         <div className="absolute -right-16 -bottom-16 w-64 h-64 bg-primary/5 rounded-full blur-3xl" />

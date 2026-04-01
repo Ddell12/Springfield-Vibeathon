@@ -192,6 +192,18 @@ export const duplicate = mutation({
   },
 });
 
+export const archive = mutation({
+  args: { id: v.id("app_instances") },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Unauthenticated");
+    const instance = await ctx.db.get(args.id);
+    if (!instance) throw new Error("Not found");
+    if (instance.slpUserId !== identity.subject) throw new Error("Forbidden");
+    await ctx.db.patch(args.id, { status: "archived" });
+  },
+});
+
 export const logEvent = mutation({
   args: {
     shareToken: v.string(),

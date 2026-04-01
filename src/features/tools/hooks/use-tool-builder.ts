@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { api } from "@convex/_generated/api";
@@ -20,7 +20,12 @@ interface BuilderState {
   isSaving: boolean;
 }
 
-export function useToolBuilder() {
+export function useToolBuilder(initialId?: Id<"app_instances"> | null) {
+  const existingInstance = useQuery(
+    api.tools.get,
+    initialId ? { id: initialId } : "skip"
+  );
+
   const [state, setState] = useState<BuilderState>({
     step: 1,
     patientId: null,
@@ -30,6 +35,23 @@ export function useToolBuilder() {
     publishedShareToken: null,
     isSaving: false,
   });
+
+  const seeded = useRef(false);
+
+  useEffect(() => {
+    if (existingInstance && !seeded.current) {
+      seeded.current = true;
+      setState({
+        step: 3,
+        patientId: existingInstance.patientId,
+        templateType: existingInstance.templateType,
+        config: JSON.parse(existingInstance.configJson),
+        instanceId: existingInstance._id,
+        publishedShareToken: existingInstance.shareToken ?? null,
+        isSaving: false,
+      });
+    }
+  }, [existingInstance]);
 
   const createInstance = useMutation(api.tools.create);
   const updateInstance = useMutation(api.tools.update);

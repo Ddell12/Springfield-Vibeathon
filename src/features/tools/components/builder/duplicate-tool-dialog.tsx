@@ -52,7 +52,7 @@ export function DuplicateToolDialog({
       });
       toast.success("App duplicated");
       onOpenChange(false);
-      router.push(`/tools/new?from=${newId}`);
+      router.push(`/tools/${newId}`);
     } catch {
       toast.error("Failed to duplicate app");
     } finally {

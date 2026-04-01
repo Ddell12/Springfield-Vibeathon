@@ -1,6 +1,6 @@
 import { act,fireEvent, render, screen } from "@testing-library/react";
 import type { Id } from "convex/_generated/dataModel";
-import { beforeEach, describe, expect, test, vi } from "vitest";
+import { beforeEach, describe, expect, it, test, vi } from "vitest";
 
 import { MyToolsPage } from "../my-tools-page";
 
@@ -25,7 +25,7 @@ vi.mock("next/link", () => ({
 
 // Mock next/navigation router
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ push: vi.fn() }),
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
   useSearchParams: () => searchParams,
 }));
 
@@ -41,6 +41,12 @@ vi.mock("@/core/utils", () => ({
     args.filter(Boolean).join(" "),
 }));
 
+vi.mock("@/core/routes", () => ({
+  ROUTES: {
+    TOOLS_EDIT: (id: string) => `/tools/${id}`,
+  },
+}));
+
 vi.mock("@/shared/components/ui/input", () => ({
   Input: (props: React.InputHTMLAttributes<HTMLInputElement> & { ref?: React.Ref<HTMLInputElement> }) => {
     const { ref, ...rest } = props;
@@ -48,15 +54,14 @@ vi.mock("@/shared/components/ui/input", () => ({
   },
 }));
 
-// Mock ProjectCard (used after refactor to reusable card component)
+// Mock ProjectCard — accept and render href prop
 vi.mock("@/shared/components/project-card", () => ({
-  ProjectCard: ({ project, onDelete, onRename, onDuplicate }: any) => (
+  ProjectCard: ({ project, href, onDelete, onRename, onDuplicate }: any) => (
     <div data-testid="project-card" data-id={project.id}>
-      <span>{project.title}</span>
+      <a href={href ?? `/tools/${project.id}`}>{project.title}</a>
       {onDelete && <button onClick={onDelete}>Delete</button>}
       {onRename && <button onClick={onRename}>Rename</button>}
       {onDuplicate && <button onClick={onDuplicate}>Duplicate</button>}
-      <a href={`/builder/${project.id}`}>Open</a>
     </div>
   ),
 }));
@@ -92,24 +97,38 @@ vi.mock("@/shared/components/delete-confirmation-dialog", () => ({
     ) : null,
 }));
 
+// Mock DuplicateToolDialog
+vi.mock("@/features/tools/components/builder/duplicate-tool-dialog", () => ({
+  DuplicateToolDialog: ({ open }: any) =>
+    open ? <div data-testid="duplicate-dialog" /> : null,
+}));
+
 import * as convexReact from "convex/react";
 
 const mockUseQuery = vi.mocked(convexReact.useQuery);
 
-const mockSession = {
-  _id: "session1" as Id<"sessions">,
+const mockTool = {
+  _id: "inst-1" as Id<"app_instances">,
   _creationTime: Date.now(),
   title: "My Schedule",
-  query: "Build a visual schedule",
-  state: "complete" as const,
+  templateType: "visual_schedule",
+  patientId: "patient-1" as Id<"patients">,
+  slpUserId: "user-1",
+  configJson: "{}",
+  status: "draft" as const,
+  version: 1,
 };
 
-const mockSession2 = {
-  _id: "session2" as Id<"sessions">,
+const mockTool2 = {
+  _id: "inst-2" as Id<"app_instances">,
   _creationTime: Date.now() - 10000,
   title: "Token Board",
-  query: "Build a token board",
-  state: "complete" as const,
+  templateType: "token_board",
+  patientId: "patient-1" as Id<"patients">,
+  slpUserId: "user-1",
+  configJson: "{}",
+  status: "draft" as const,
+  version: 1,
 };
 
 describe("MyToolsPage", () => {
@@ -142,36 +161,36 @@ describe("MyToolsPage", () => {
     ).toBeInTheDocument();
   });
 
-  test("empty state has link to builder", () => {
+  test("empty state has link to /tools/new", () => {
     vi.mocked(convexReact.useQuery).mockReturnValue([]);
 
     render(<MyToolsPage />);
 
-    const buildLink = screen.getByRole("link", { name: /start building/i });
-    expect(buildLink).toHaveAttribute("href", "/builder");
+    const buildLink = screen.getByRole("link", { name: /create a tool/i });
+    expect(buildLink).toHaveAttribute("href", "/tools/new");
   });
 
-  test("renders session cards from the sessions table", () => {
-    vi.mocked(convexReact.useQuery).mockReturnValue([mockSession]);
+  test("renders tool cards from app_instances", () => {
+    vi.mocked(convexReact.useQuery).mockReturnValue([mockTool]);
 
     render(<MyToolsPage />);
 
     expect(screen.getByText("My Schedule")).toBeInTheDocument();
   });
 
-  test("renders ProjectCard with Open link for each session", () => {
-    vi.mocked(convexReact.useQuery).mockReturnValue([mockSession]);
+  test("renders ProjectCard linking to /tools/[id] for editing", () => {
+    vi.mocked(convexReact.useQuery).mockReturnValue([mockTool]);
 
     render(<MyToolsPage />);
 
     const card = screen.getByTestId("project-card");
     expect(card).toBeInTheDocument();
-    const openLink = screen.getByRole("link", { name: /open/i });
-    expect(openLink).toHaveAttribute("href", `/builder/${mockSession._id}`);
+    const editLink = screen.getByRole("link", { name: "My Schedule" });
+    expect(editLink).toHaveAttribute("href", `/tools/${mockTool._id}`);
   });
 
   test("renders ProjectCard with delete button", () => {
-    vi.mocked(convexReact.useQuery).mockReturnValue([mockSession]);
+    vi.mocked(convexReact.useQuery).mockReturnValue([mockTool]);
 
     render(<MyToolsPage />);
 
@@ -179,7 +198,7 @@ describe("MyToolsPage", () => {
   });
 
   test("renders ProjectCard with rename button", () => {
-    vi.mocked(convexReact.useQuery).mockReturnValue([mockSession]);
+    vi.mocked(convexReact.useQuery).mockReturnValue([mockTool]);
 
     render(<MyToolsPage />);
 
@@ -187,15 +206,15 @@ describe("MyToolsPage", () => {
   });
 
   test("renders ProjectCard with duplicate button", () => {
-    vi.mocked(convexReact.useQuery).mockReturnValue([mockSession]);
+    vi.mocked(convexReact.useQuery).mockReturnValue([mockTool]);
 
     render(<MyToolsPage />);
 
     expect(screen.getByRole("button", { name: /duplicate/i })).toBeInTheDocument();
   });
 
-  test("renders multiple session cards", () => {
-    vi.mocked(convexReact.useQuery).mockReturnValue([mockSession, mockSession2]);
+  test("renders multiple tool cards", () => {
+    vi.mocked(convexReact.useQuery).mockReturnValue([mockTool, mockTool2]);
 
     render(<MyToolsPage />);
 
@@ -203,16 +222,30 @@ describe("MyToolsPage", () => {
     expect(screen.getByText("Token Board")).toBeInTheDocument();
   });
 
-  test("slices session cards by the page query param", () => {
+  test("filters out archived tools", () => {
+    const archivedTool = { ...mockTool, _id: "inst-3" as Id<"app_instances">, title: "Archived", status: "archived" as const };
+    vi.mocked(convexReact.useQuery).mockReturnValue([mockTool, archivedTool]);
+
+    render(<MyToolsPage />);
+
+    expect(screen.getByText("My Schedule")).toBeInTheDocument();
+    expect(screen.queryByText("Archived")).not.toBeInTheDocument();
+  });
+
+  test("slices tool cards by the page query param", () => {
     searchParams = new URLSearchParams("page=2");
-    const pagedSessions = Array.from({ length: 13 }, (_, i) => ({
-      _id: `session-${i + 1}` as Id<"sessions">,
+    const pagedTools = Array.from({ length: 13 }, (_, i) => ({
+      _id: `inst-${i + 1}` as Id<"app_instances">,
       _creationTime: Date.now() - i * 1000,
       title: `App ${i + 1}`,
-      query: `Query ${i + 1}`,
-      state: "complete" as const,
+      templateType: "aac_board",
+      patientId: "patient-1" as Id<"patients">,
+      slpUserId: "user-1",
+      configJson: "{}",
+      status: "draft" as const,
+      version: 1,
     }));
-    vi.mocked(convexReact.useQuery).mockReturnValue(pagedSessions);
+    vi.mocked(convexReact.useQuery).mockReturnValue(pagedTools);
 
     render(<MyToolsPage />);
 
@@ -222,7 +255,7 @@ describe("MyToolsPage", () => {
 
   test("search filters apps by title", async () => {
     vi.useFakeTimers();
-    vi.mocked(convexReact.useQuery).mockReturnValue([mockSession, mockSession2]);
+    vi.mocked(convexReact.useQuery).mockReturnValue([mockTool, mockTool2]);
 
     render(<MyToolsPage />);
 
@@ -241,7 +274,7 @@ describe("MyToolsPage", () => {
 
   test("shows no search results message", async () => {
     vi.useFakeTimers();
-    vi.mocked(convexReact.useQuery).mockReturnValue([mockSession]);
+    vi.mocked(convexReact.useQuery).mockReturnValue([mockTool]);
 
     render(<MyToolsPage />);
 
@@ -258,7 +291,7 @@ describe("MyToolsPage", () => {
   });
 
   test("delete button opens confirmation dialog", () => {
-    vi.mocked(convexReact.useQuery).mockReturnValue([mockSession]);
+    vi.mocked(convexReact.useQuery).mockReturnValue([mockTool]);
 
     render(<MyToolsPage />);
 
@@ -269,7 +302,7 @@ describe("MyToolsPage", () => {
   });
 
   test("renders search input", () => {
-    vi.mocked(convexReact.useQuery).mockReturnValue([mockSession]);
+    vi.mocked(convexReact.useQuery).mockReturnValue([mockTool]);
 
     render(<MyToolsPage />);
 
@@ -277,7 +310,7 @@ describe("MyToolsPage", () => {
   });
 
   test("renders sort toggle buttons", () => {
-    vi.mocked(convexReact.useQuery).mockReturnValue([mockSession]);
+    vi.mocked(convexReact.useQuery).mockReturnValue([mockTool]);
 
     render(<MyToolsPage />);
 
@@ -286,7 +319,7 @@ describe("MyToolsPage", () => {
   });
 
   test("sort by alphabetical changes order", () => {
-    vi.mocked(convexReact.useQuery).mockReturnValue([mockSession, mockSession2]);
+    vi.mocked(convexReact.useQuery).mockReturnValue([mockTool, mockTool2]);
 
     render(<MyToolsPage />);
 
@@ -299,28 +332,8 @@ describe("MyToolsPage", () => {
     expect(cards[1]).toHaveTextContent("Token Board");
   });
 
-  it("shows Building badge for sessions in generating state", () => {
-    mockUseQuery.mockReturnValue([
-      {
-        _id: "session1",
-        title: "My Token Board",
-        state: "generating",
-        _creationTime: Date.now(),
-      },
-    ]);
-    render(<MyToolsPage />);
-    expect(screen.getByText("Building...")).toBeInTheDocument();
-  });
-
-  it("does not show Building badge for live sessions", () => {
-    mockUseQuery.mockReturnValue([
-      {
-        _id: "session1",
-        title: "My Token Board",
-        state: "live",
-        _creationTime: Date.now(),
-      },
-    ]);
+  it("does not show Building badge (app_instances have no generating state)", () => {
+    mockUseQuery.mockReturnValue([mockTool]);
     render(<MyToolsPage />);
     expect(screen.queryByText("Building...")).not.toBeInTheDocument();
   });

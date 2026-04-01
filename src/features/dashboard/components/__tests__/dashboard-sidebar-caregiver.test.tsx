@@ -52,12 +52,12 @@ describe("DashboardSidebar (caregiver)", () => {
     expect(nav).not.toHaveTextContent("Library");
   });
 
-  it("does not redirect caregiver on /tools/new", async () => {
+  it("redirects caregiver away from /tools/new (SLP builder is restricted)", async () => {
     mockPathname("/tools/new");
     mockCaregiver();
     render(<DashboardSidebar />);
     await waitFor(() => {
-      expect(mockReplace).not.toHaveBeenCalled();
+      expect(mockReplace).toHaveBeenCalledWith("/family");
     });
   });
 

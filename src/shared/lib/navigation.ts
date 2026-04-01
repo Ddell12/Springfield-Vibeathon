@@ -12,7 +12,7 @@ export const CAREGIVER_NAV_ITEMS = [
   { icon: "home",              label: "Home",         href: ROUTES.FAMILY },
   { icon: "video_call",        label: "Sessions",     href: ROUTES.SESSIONS },
   { icon: "record_voice_over", label: "Speech Coach", href: ROUTES.SPEECH_COACH },
-  { icon: "auto_awesome",      label: "Tools",        href: ROUTES.BUILDER },
+  { icon: "auto_awesome",      label: "Tools",        href: ROUTES.FAMILY },
   { icon: "settings",          label: "Settings",     href: ROUTES.SETTINGS },
 ] as const;
 

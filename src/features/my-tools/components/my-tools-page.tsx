@@ -7,12 +7,18 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
+import { ROUTES } from "@/core/routes";
 import { cn } from "@/core/utils";
+
 const DeleteConfirmationDialog = dynamic(
   () => import("@/shared/components/delete-confirmation-dialog").then((m) => ({ default: m.DeleteConfirmationDialog })),
   { ssr: false }
 );
-import { FullscreenAppView } from "@/shared/components/fullscreen-app-view";
+const DuplicateToolDialog = dynamic(
+  () => import("@/features/tools/components/builder/duplicate-tool-dialog").then((m) => ({ default: m.DuplicateToolDialog })),
+  { ssr: false }
+);
+
 import { MaterialIcon } from "@/shared/components/material-icon";
 import { ProjectCard } from "@/shared/components/project-card";
 import { Button } from "@/shared/components/ui/button";
@@ -36,38 +42,19 @@ interface MyToolsPageProps {
 }
 
 export function MyToolsPage({ embedded = false }: MyToolsPageProps) {
-  const sessions = useQuery(api.sessions.list);
-  const archiveSession = useMutation(api.sessions.archive);
-  const duplicateSession = useMutation(api.sessions.duplicateSession);
-  const updateTitle = useMutation(api.sessions.updateTitle);
+  const allTools = useQuery(api.tools.listBySLP);
+  const archiveTool = useMutation(api.tools.archive);
+  const updateTool = useMutation(api.tools.update);
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const [deleteTarget, setDeleteTarget] = useState<{ id: Id<"sessions">; title: string } | null>(null);
-  const [renamingId, setRenamingId] = useState<Id<"sessions"> | null>(null);
-  const [fullscreenSessionId, setFullscreenSessionId] = useState<Id<"sessions"> | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: Id<"app_instances">; title: string } | null>(null);
+  const [duplicateTarget, setDuplicateTarget] = useState<Id<"app_instances"> | null>(null);
+  const [renamingId, setRenamingId] = useState<Id<"app_instances"> | null>(null);
   const [renameValue, setRenameValue] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("recent");
-  const [selectionMode, setSelectionMode] = useState(false);
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const toggleSelection = useCallback((id: string) => {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  }, []);
-  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
-
-  const fullscreenBundle = useQuery(
-    api.generated_files.getByPath,
-    fullscreenSessionId
-      ? { sessionId: fullscreenSessionId, path: "_bundle.html" }
-      : "skip"
-  );
 
   const pageParam = searchParams.get("page");
   const parsedPage = Number.parseInt(pageParam ?? "", 10);
@@ -89,57 +76,47 @@ export function MyToolsPage({ embedded = false }: MyToolsPageProps) {
     }
   }, [renamingId]);
 
-  // Handle play button feedback — show toast when bundle doesn't exist
-  useEffect(() => {
-    if (fullscreenSessionId && fullscreenBundle === null) {
-      toast.error("No preview available yet. Try opening it in the builder.");
-      setFullscreenSessionId(null); // eslint-disable-line react-hooks/set-state-in-effect -- clear on missing bundle
-    }
-  }, [fullscreenSessionId, fullscreenBundle]);
+  const tools = useMemo(() => {
+    if (!allTools) return undefined;
 
-  const filteredSessions = useMemo(() => {
-    if (!sessions) return undefined;
+    let results = allTools.filter((t) => t.status !== "archived");
 
-    let results = [...sessions];
-
-    // Filter by search
     if (debouncedSearch.trim()) {
       const q = debouncedSearch.toLowerCase();
-      results = results.filter((s) => s.title.toLowerCase().includes(q));
+      results = results.filter((t) => t.title.toLowerCase().includes(q));
     }
 
-    // Sort
     switch (sortBy) {
       case "alphabetical":
-        results.sort((a, b) => a.title.localeCompare(b.title));
+        results = [...results].sort((a, b) => a.title.localeCompare(b.title));
         break;
       case "recent":
       default:
-        // Already sorted desc by _creationTime from query
+        results = [...results].sort((a, b) => b._creationTime - a._creationTime);
         break;
     }
 
     return results;
-  }, [sessions, debouncedSearch, sortBy]);
+  }, [allTools, debouncedSearch, sortBy]);
 
-  const totalPages = filteredSessions ? Math.max(1, Math.ceil(filteredSessions.length / PAGE_SIZE)) : 1;
+  const totalPages = tools ? Math.max(1, Math.ceil(tools.length / PAGE_SIZE)) : 1;
   const safePage = Math.min(page, totalPages);
-  const pageItems = filteredSessions?.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+  const pageItems = tools?.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
-  const handleRenameSubmit = (sessionId: Id<"sessions">) => {
+  const handleRenameSubmit = useCallback((toolId: Id<"app_instances">) => {
     const trimmed = renameValue.trim();
-    if (trimmed && trimmed.length > 0) {
-      updateTitle({ sessionId, title: trimmed });
+    if (trimmed) {
+      const existing = allTools?.find((t) => t._id === toolId);
+      if (existing) {
+        updateTool({ id: toolId, configJson: existing.configJson, title: trimmed }).catch(() => {
+          toast.error("Failed to rename tool");
+        });
+      }
     }
     setRenamingId(null);
-  };
+  }, [renameValue, updateTool, allTools]);
 
-  const handleDuplicate = async (sessionId: Id<"sessions">) => {
-    const newId = await duplicateSession({ sessionId });
-    router.push(`/builder/${newId}`);
-  };
-
-  if (filteredSessions === undefined) {
+  if (tools === undefined) {
     return (
       <div className={!embedded ? "max-w-7xl mx-auto px-8 pt-12 pb-24" : "py-4"}>
         <div data-testid="loading-skeleton" className="animate-pulse space-y-6">
@@ -154,7 +131,7 @@ export function MyToolsPage({ embedded = false }: MyToolsPageProps) {
     );
   }
 
-  if (sessions && sessions.length === 0) {
+  if (allTools && allTools.filter((t) => t.status !== "archived").length === 0) {
     return (
       <div className={cn(
         "flex flex-col items-center justify-center gap-6",
@@ -168,14 +145,14 @@ export function MyToolsPage({ embedded = false }: MyToolsPageProps) {
             </h1>
           )}
           <p className="text-on-surface-variant text-lg mb-8">
-            Describe a therapy activity and Vocali will build a visual app for you.
+            Create a therapy tool and it will appear here.
           </p>
           <Link
-            href="/builder"
+            href="/tools/new"
             className="bg-primary-gradient text-white px-8 py-4 rounded-lg font-semibold flex items-center gap-2 shadow-lg shadow-primary/10 hover:shadow-primary/20 transition-all active:scale-95 inline-flex"
           >
             <MaterialIcon icon="add_circle" />
-            Start Building
+            Create a Tool
           </Link>
         </div>
       </div>
@@ -191,29 +168,16 @@ export function MyToolsPage({ embedded = false }: MyToolsPageProps) {
               My Apps
             </h1>
             <p className="text-on-surface-variant text-lg">
-              {sessions!.length} app{sessions!.length !== 1 ? "s" : ""} created
+              {tools?.length ?? 0} app{(tools?.length ?? 0) !== 1 ? "s" : ""} created
             </p>
           </div>
-          <div className="flex items-center gap-3">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                setSelectionMode(!selectionMode);
-                setSelectedIds(new Set());
-              }}
-              className="text-on-surface-variant hover:text-on-surface"
-            >
-              {selectionMode ? "Cancel" : "Select"}
-            </Button>
-            <Link
-              href="/builder"
-              className="bg-primary-gradient text-white px-8 py-4 rounded-lg font-semibold flex items-center gap-2 shadow-lg shadow-primary/10 hover:shadow-primary/20 transition-all active:scale-95"
-            >
-              <MaterialIcon icon="add_circle" />
-              Create New App
-            </Link>
-          </div>
+          <Link
+            href="/tools/new"
+            className="bg-primary-gradient text-white px-8 py-4 rounded-lg font-semibold flex items-center gap-2 shadow-lg shadow-primary/10 hover:shadow-primary/20 transition-all active:scale-95"
+          >
+            <MaterialIcon icon="add_circle" />
+            Create New Tool
+          </Link>
         </div>
       )}
 
@@ -227,7 +191,7 @@ export function MyToolsPage({ embedded = false }: MyToolsPageProps) {
           />
           <Input
             type="text"
-            placeholder="Search your apps..."
+            placeholder="Search apps"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10 bg-surface-container-low"
@@ -259,35 +223,25 @@ export function MyToolsPage({ embedded = false }: MyToolsPageProps) {
       </div>
 
       {/* Results */}
-      {filteredSessions.length === 0 ? (
+      {tools.length === 0 ? (
         <div className="py-20 text-center" data-testid="no-search-results">
           <MaterialIcon icon="search_off" className="text-5xl text-on-surface-variant/40 mb-4" />
-          <p className="text-on-surface-variant text-lg">
-            No apps match your search.
-          </p>
+          <p className="text-on-surface-variant text-lg">No apps match your search.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {pageItems?.map((session, i) => (
-            <div
-              key={session._id}
-              className="relative"
-              onClick={selectionMode ? (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                toggleSelection(session._id);
-              } : undefined}
-            >
-              {renamingId === session._id ? (
+          {pageItems?.map((tool, i) => (
+            <div key={tool._id} className="relative">
+              {renamingId === tool._id ? (
                 <div className="rounded-2xl bg-surface-container-lowest p-5 shadow-[0_12px_32px_rgba(25,28,32,0.06)]">
                   <div className="h-48 w-full rounded-xl bg-surface-container-low mb-5" />
                   <Input
                     ref={renameInputRef}
                     value={renameValue}
                     onChange={(e) => setRenameValue(e.target.value)}
-                    onBlur={() => handleRenameSubmit(session._id)}
+                    onBlur={() => handleRenameSubmit(tool._id)}
                     onKeyDown={(e) => {
-                      if (e.key === "Enter") handleRenameSubmit(session._id);
+                      if (e.key === "Enter") handleRenameSubmit(tool._id);
                       if (e.key === "Escape") setRenamingId(null);
                     }}
                     className="text-lg font-semibold"
@@ -297,62 +251,37 @@ export function MyToolsPage({ embedded = false }: MyToolsPageProps) {
                 </div>
               ) : (
                 <>
-                  {selectionMode && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleSelection(session._id);
-                      }}
-                      className={cn(
-                        "absolute left-3 top-3 z-20 flex h-6 w-6 items-center justify-center rounded-md border-2 shadow-sm transition-all",
-                        selectedIds.has(session._id)
-                          ? "border-primary bg-primary"
-                          : "border-primary bg-white"
-                      )}
-                      aria-label={selectedIds.has(session._id) ? "Deselect app" : "Select app"}
-                    >
-                      {selectedIds.has(session._id) && (
-                        <MaterialIcon icon="check" size="xs" className="text-white" />
-                      )}
-                    </button>
-                  )}
                   <ProjectCard
                     project={{
-                      id: session._id,
-                      title: session.title,
-                      thumbnail: session.previewUrl ?? null,
-                      updatedAt: session._creationTime,
-                      userInitial: session.title.charAt(0).toUpperCase(),
+                      id: tool._id,
+                      title: tool.title,
+                      thumbnail: null,
+                      updatedAt: tool._creationTime,
+                      userInitial: tool.title.charAt(0).toUpperCase(),
                       userColor: "bg-tertiary-fixed text-on-surface",
                     }}
                     index={i}
-                    onDelete={() => setDeleteTarget({ id: session._id, title: session.title })}
+                    href={ROUTES.TOOLS_EDIT(tool._id)}
+                    onDelete={() => setDeleteTarget({ id: tool._id, title: tool.title })}
                     onRename={() => {
-                      setRenamingId(session._id);
-                      setRenameValue(session.title);
+                      setRenamingId(tool._id);
+                      setRenameValue(tool.title);
                     }}
-                    onDuplicate={() => handleDuplicate(session._id)}
+                    onDuplicate={() => setDuplicateTarget(tool._id)}
                   />
-                  {session.state === "generating" && (
-                    <div className="absolute left-4 top-4 z-10 flex items-center gap-1.5 rounded-full bg-primary/90 px-3 py-1.5 text-xs font-semibold text-white shadow-md">
-                      <span className="relative flex h-2 w-2">
-                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white/60" />
-                        <span className="relative inline-flex h-2 w-2 rounded-full bg-white" />
-                      </span>
-                      Building...
-                    </div>
-                  )}
-                  {!renamingId && !selectionMode && session.state !== "generating" && (
+                  {tool.status === "published" && tool.shareToken && (
                     <Button
                       variant="gradient"
                       size="sm"
-                      onClick={() => setFullscreenSessionId(session._id)}
-                      className="absolute bottom-4 right-4 rounded-full px-4 text-xs font-semibold shadow-lg hover:shadow-xl active:scale-95"
-                      aria-label="Play app fullscreen"
-                      title="Play fullscreen"
+                      className="absolute bottom-4 right-4 z-10 rounded-full px-4 text-xs font-semibold shadow-lg hover:shadow-xl active:scale-95"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        window.open(`/apps/${tool.shareToken}`, "_blank", "noopener,noreferrer");
+                      }}
+                      aria-label="Open tool"
                     >
-                      <MaterialIcon icon="play_arrow" size="sm" />
-                      Play
+                      <MaterialIcon icon="open_in_new" size="sm" />
+                      Open Tool
                     </Button>
                   )}
                 </>
@@ -362,22 +291,47 @@ export function MyToolsPage({ embedded = false }: MyToolsPageProps) {
         </div>
       )}
 
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-3 mt-8">
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={safePage <= 1}
+            onClick={() => router.replace(`/library?tab=my-apps&page=${safePage - 1}`, { scroll: false })}
+          >
+            Previous
+          </Button>
+          <span className="text-sm text-on-surface-variant">
+            Page {safePage} of {totalPages}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={safePage >= totalPages}
+            onClick={() => router.replace(`/library?tab=my-apps&page=${safePage + 1}`, { scroll: false })}
+          >
+            Next
+          </Button>
+        </div>
+      )}
+
+      {/* CTA Section */}
       <section className="mt-20 p-10 rounded-xl bg-surface-container-lowest ring-1 ring-outline-variant/10 relative overflow-hidden flex flex-col md:flex-row items-center gap-10">
         <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -mr-20 -mt-20" />
         <div className="relative z-10 md:w-2/3">
           <h2 className="font-headline font-normal text-3xl text-on-surface mb-4">
-            Need a custom app?
+            Need a new therapy tool?
           </h2>
           <p className="text-on-surface-variant text-lg max-w-xl">
-            Tell Vocali what your child is working on, and we&apos;ll help you
-            generate a tailored visual aid or communication board in seconds.
+            Pick a template, describe what you need, and Vocali will fill in the details.
           </p>
           <div className="mt-8 flex gap-4">
             <Link
-              href="/builder"
+              href="/tools/new"
               className="bg-primary text-on-primary px-6 py-3 rounded-lg font-semibold hover:bg-primary-container transition-colors"
             >
-              Start Building
+              Create a Tool
             </Link>
             <Link
               href="/library?tab=templates"
@@ -394,66 +348,24 @@ export function MyToolsPage({ embedded = false }: MyToolsPageProps) {
         </div>
       </section>
 
-      {fullscreenSessionId && fullscreenBundle?.contents && (
-        <FullscreenAppView
-          bundleHtml={fullscreenBundle.contents}
-          onExit={() => setFullscreenSessionId(null)}
-        />
-      )}
-
       <DeleteConfirmationDialog
         open={deleteTarget !== null}
         onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
         projectName={deleteTarget?.title ?? ""}
         onConfirmDelete={() => {
           if (deleteTarget) {
-            archiveSession({ sessionId: deleteTarget.id });
+            archiveTool({ id: deleteTarget.id });
             setDeleteTarget(null);
           }
         }}
       />
 
-      <DeleteConfirmationDialog
-        open={bulkDeleteOpen}
-        onOpenChange={(open) => { if (!open) setBulkDeleteOpen(false); }}
-        projectName={`${selectedIds.size} app${selectedIds.size !== 1 ? "s" : ""}`}
-        onConfirmDelete={() => {
-          const count = selectedIds.size;
-          selectedIds.forEach((id) => {
-            archiveSession({ sessionId: id as Id<"sessions"> });
-          });
-          setSelectedIds(new Set());
-          setSelectionMode(false);
-          setBulkDeleteOpen(false);
-          toast.success(`Deleted ${count} app${count !== 1 ? "s" : ""}`);
-        }}
-      />
-
-      {selectionMode && selectedIds.size > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-between bg-surface-container-lowest px-6 py-4 shadow-[0_-4px_16px_rgba(0,0,0,0.1)]">
-          <span className="text-sm font-medium text-on-surface">
-            {selectedIds.size} selected
-          </span>
-          <div className="flex items-center gap-3">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                setSelectionMode(false);
-                setSelectedIds(new Set());
-              }}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={() => setBulkDeleteOpen(true)}
-            >
-              Delete ({selectedIds.size})
-            </Button>
-          </div>
-        </div>
+      {duplicateTarget && (
+        <DuplicateToolDialog
+          appInstanceId={duplicateTarget}
+          open={!!duplicateTarget}
+          onOpenChange={(open) => { if (!open) setDuplicateTarget(null); }}
+        />
       )}
     </div>
   );

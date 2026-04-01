@@ -41,9 +41,9 @@ describe("CAREGIVER_NAV_ITEMS", () => {
     expect(labels).toContain("Tools");
     expect(labels).toContain("Settings");
   });
-  it("Tools links to /builder", () => {
+  it("Tools links to /family (caregiver sees family dashboard, not SLP builder)", () => {
     const tools = CAREGIVER_NAV_ITEMS.find((i) => i.label === "Tools");
-    expect(tools?.href).toBe("/builder");
+    expect(tools?.href).toBe("/family");
   });
   it("does not contain Patients or Billing", () => {
     const labels = CAREGIVER_NAV_ITEMS.map((i) => i.label);

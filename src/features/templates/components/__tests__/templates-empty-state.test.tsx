@@ -20,6 +20,11 @@ vi.mock("next/link", () => ({
   ),
 }));
 
+vi.mock("next/navigation", () => ({
+  useSearchParams: () => new URLSearchParams(),
+  useRouter: () => ({ replace: vi.fn() }),
+}));
+
 vi.mock("@/core/utils", () => ({
   cn: (...args: (string | boolean | undefined)[]) =>
     args.filter(Boolean).join(" "),
@@ -40,15 +45,20 @@ describe("TemplatesPage — static seed grid", () => {
     expect(screen.getByText("Going to the Dentist")).toBeInTheDocument();
   });
 
-  test("CTA section links to /builder", () => {
+  test("CTA section links to /tools/new", () => {
     render(<TemplatesPage />);
-    const ctaLink = screen.getByRole("link", { name: /build a custom app/i });
-    expect(ctaLink).toHaveAttribute("href", "/builder");
+    const ctaLink = screen.getByRole("link", { name: /create a tool/i });
+    expect(ctaLink).toHaveAttribute("href", "/tools/new");
   });
 
-  test("does not use Convex useQuery — page is fully static", () => {
-    // This test simply verifies no runtime error occurs without a ConvexProvider.
-    // The previous design called useQuery; the new design imports static seed data.
-    expect(() => render(<TemplatesPage />)).not.toThrow();
+  test("template cards link to /tools/new (not legacy /builder)", () => {
+    render(<TemplatesPage />);
+    // All template card links should point to /tools/new
+    const links = screen.getAllByRole("link");
+    const toolsLinks = links.filter((l) => l.getAttribute("href") === "/tools/new");
+    expect(toolsLinks.length).toBeGreaterThanOrEqual(4);
+    // No links should use the retired /builder route
+    const builderLinks = links.filter((l) => l.getAttribute("href")?.startsWith("/builder"));
+    expect(builderLinks.length).toBe(0);
   });
 });
