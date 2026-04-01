@@ -33,12 +33,13 @@ test.describe("Mobile — authenticated", () => {
     await authedPage.getByLabel("Open navigation").click();
     // Wait for Sheet animation to complete
     await authedPage.waitForTimeout(300);
+    await expect(authedPage.locator('nav[aria-label="Primary"] a')).toHaveCount(5);
     await expect(authedPage.getByText(/builder/i)).toBeVisible();
     await expect(authedPage.getByText(/patients/i)).toBeVisible();
     await expect(authedPage.getByText(/sessions/i)).toBeVisible();
-    await expect(authedPage.getByText(/billing/i)).toBeVisible();
     await expect(authedPage.getByText(/speech coach/i)).toBeVisible();
     await expect(authedPage.getByText(/library/i)).toBeVisible();
+    await expect(authedPage.getByText(/billing/i)).toHaveCount(0);
   });
 
   test("mobile header still shows notifications and user menu", async ({ authedPage }) => {

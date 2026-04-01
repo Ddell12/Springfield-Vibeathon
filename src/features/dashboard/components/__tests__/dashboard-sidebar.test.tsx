@@ -1,4 +1,4 @@
-import { fireEvent,render, screen } from "@testing-library/react";
+import { fireEvent,render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import { DashboardSidebar } from "../dashboard-sidebar";
@@ -34,11 +34,14 @@ describe("DashboardSidebar (SLP)", () => {
     render(<DashboardSidebar />);
     expect(screen.getByRole("link", { name: /new app/i })).toHaveAttribute("href", "/builder?new=1");
   });
-  it("renders Builder, Patients, Sessions, Billing, Speech Coach, Library nav items", () => {
+  it("renders Builder, Patients, Sessions, Speech Coach, Library nav items", () => {
     render(<DashboardSidebar />);
-    ["Builder", "Patients", "Sessions", "Billing", "Speech Coach", "Library"].forEach((label) => {
+    const primaryNav = screen.getByRole("navigation", { name: /primary/i });
+    expect(within(primaryNav).getAllByRole("link")).toHaveLength(5);
+    ["Builder", "Patients", "Sessions", "Speech Coach", "Library"].forEach((label) => {
       expect(screen.getByText(label)).toBeInTheDocument();
     });
+    expect(screen.queryByText("Billing")).not.toBeInTheDocument();
   });
   it("does not render Home, Flashcards, Settings as nav items", () => {
     render(<DashboardSidebar />);

@@ -14,12 +14,14 @@ test.describe("Navigation — authenticated", () => {
   test("sidebar contains all nav items", async ({ authedPage }) => {
     await authedPage.goto("/builder");
     const sidebar = authedPage.locator("aside");
+    const primaryNav = sidebar.locator('nav[aria-label="Primary"]');
+    await expect(primaryNav.locator("a")).toHaveCount(5);
     await expect(sidebar.locator('a[href="/builder"]')).toBeVisible();
     await expect(sidebar.locator('a[href="/patients"]')).toBeVisible();
     await expect(sidebar.locator('a[href="/sessions"]')).toBeVisible();
-    await expect(sidebar.locator('a[href="/billing"]')).toBeVisible();
     await expect(sidebar.locator('a[href="/speech-coach"]')).toBeVisible();
     await expect(sidebar.locator('a[href="/library"]')).toBeVisible();
+    await expect(sidebar.locator('a[href="/billing"]')).toHaveCount(0);
   });
 
   test("clicking Builder nav link navigates to /builder", async ({
