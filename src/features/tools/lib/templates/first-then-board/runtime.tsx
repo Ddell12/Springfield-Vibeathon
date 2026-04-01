@@ -72,6 +72,7 @@ export function FirstThenBoardRuntime({
         <button
           onClick={handleFirstTap}
           disabled={firstDone}
+          aria-label={config.firstLabel}
           className={cn(
             "flex-1 flex flex-col items-center justify-center gap-4 rounded-2xl p-8",
             "min-h-[200px] touch-manipulation select-none relative",
@@ -80,11 +81,7 @@ export function FirstThenBoardRuntime({
               ? "bg-blue-500 text-white border-4 border-white"
               : "text-white"
           )}
-          style={
-            config.highContrast
-              ? {}
-              : { backgroundColor: config.firstColor }
-          }
+          style={config.highContrast ? undefined : { backgroundColor: config.firstColor }}
         >
           <span className="text-sm font-bold uppercase tracking-widest opacity-70">First</span>
           {config.firstImageUrl && (
@@ -106,6 +103,8 @@ export function FirstThenBoardRuntime({
         {/* THEN card */}
         <button
           onClick={handleThenTap}
+          disabled={!firstDone}
+          aria-label={config.thenLabel}
           className={cn(
             "flex-1 flex flex-col items-center justify-center gap-4 rounded-2xl p-8",
             "min-h-[200px] touch-manipulation select-none",
@@ -115,11 +114,7 @@ export function FirstThenBoardRuntime({
               ? "bg-green-500 text-white border-4 border-white"
               : "text-white"
           )}
-          style={
-            config.highContrast
-              ? {}
-              : { backgroundColor: config.thenColor }
-          }
+          style={config.highContrast ? undefined : { backgroundColor: config.thenColor }}
         >
           <span className="text-sm font-bold uppercase tracking-widest opacity-70">Then</span>
           {config.thenImageUrl && (

@@ -25,6 +25,15 @@ export function VisualScheduleRuntime({
     onEvent("app_opened");
   }, [shareToken]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const handleReset = useCallback(() => {
+    setCurrentIndex(0);
+    setCompleted(false);
+    if (shareToken !== "preview") {
+      void logEvent({ shareToken, eventType: "app_opened" });
+    }
+    onEvent("app_opened");
+  }, [logEvent, shareToken, onEvent]);
+
   const handleItemTap = useCallback(
     (index: number) => {
       if (completed || index !== currentIndex) return;
@@ -77,6 +86,12 @@ export function VisualScheduleRuntime({
           >
             All done! Great work!
           </p>
+          <button
+            onClick={handleReset}
+            className="mt-4 px-6 py-3 rounded-xl bg-surface-container text-sm font-medium"
+          >
+            Start again
+          </button>
         </div>
       ) : (
         <div className="flex flex-col gap-3">
@@ -123,7 +138,7 @@ export function VisualScheduleRuntime({
                   <span className="text-2xl flex-shrink-0">✓</span>
                 )}
                 {isActive && (
-                  <span className="text-2xl flex-shrink-0 animate-pulse">→</span>
+                  <span className="text-2xl flex-shrink-0">→</span>
                 )}
               </button>
             );

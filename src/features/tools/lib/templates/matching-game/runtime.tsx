@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation } from "convex/react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { api } from "@convex/_generated/api";
 import { cn } from "@/core/utils";
@@ -27,6 +27,7 @@ export function MatchingGameRuntime({
   const [selectedPromptId, setSelectedPromptId] = useState<string | null>(null);
   const [matchedPairIds, setMatchedPairIds] = useState<Set<string>>(new Set());
   const [incorrectAnswerId, setIncorrectAnswerId] = useState<string | null>(null);
+  const incorrectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const shuffledAnswers = useMemo(
     () => shuffleArray(config.pairs),
@@ -40,6 +41,12 @@ export function MatchingGameRuntime({
     }
     onEvent("app_opened");
   }, [shareToken]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    return () => {
+      if (incorrectTimeoutRef.current) clearTimeout(incorrectTimeoutRef.current);
+    };
+  }, []);
 
   const handlePromptTap = useCallback(
     (pairId: string) => {
@@ -82,8 +89,10 @@ export function MatchingGameRuntime({
         onEvent("answer_incorrect", payloadJson);
         setIncorrectAnswerId(answerId);
         // Clear incorrect highlight after short delay
-        setTimeout(() => {
+        if (incorrectTimeoutRef.current) clearTimeout(incorrectTimeoutRef.current);
+        incorrectTimeoutRef.current = setTimeout(() => {
           setIncorrectAnswerId(null);
+          incorrectTimeoutRef.current = null;
         }, 800);
       }
     },
@@ -197,6 +206,7 @@ export function MatchingGameRuntime({
                   )}
                 >
                   {config.showAnswerImages && pair.imageUrl && (
+                    // eslint-disable-next-line @next/next/no-img-element
                     <img src={pair.imageUrl} alt={pair.answer} className="w-12 h-12 object-cover rounded-lg mb-1" />
                   )}
                   {pair.answer}
