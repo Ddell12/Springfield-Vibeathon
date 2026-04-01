@@ -245,7 +245,7 @@ export function ClaudeSignInCard({
 
   if (step === "requirements") {
     return (
-      <div className="w-full max-w-[360px] rounded-[2rem] bg-surface px-6 py-6 shadow-[0_18px_55px_rgba(26,25,23,0.1)] ring-1 ring-border/70">
+      <div className="w-full max-w-[360px] rounded-xl bg-surface px-6 py-6 shadow-[0_18px_55px_rgba(26,25,23,0.1)] ring-1 ring-border/70">
         <h2 className="text-lg font-semibold text-on-surface">Complete your account</h2>
         <p className="mt-2 text-sm leading-6 text-on-surface-variant">
           Your email is verified. We just need the last few details before opening your workspace.
@@ -267,7 +267,7 @@ export function ClaudeSignInCard({
             />
           )}
           {missingFields.includes("legal_accepted") && (
-            <label className="flex items-start gap-3 rounded-2xl bg-background px-4 py-3 text-sm leading-6 text-on-surface">
+            <label className="flex items-start gap-3 rounded-lg bg-background px-4 py-3 text-sm leading-6 text-on-surface">
               <input
                 type="checkbox"
                 checked={legalAccepted}
@@ -279,7 +279,7 @@ export function ClaudeSignInCard({
           )}
 
           {formError ? (
-            <p className="rounded-2xl bg-error-container px-4 py-3 text-sm text-error">
+            <p className="rounded-lg bg-error-container px-4 py-3 text-sm text-error">
               {formError}
             </p>
           ) : null}
@@ -293,7 +293,7 @@ export function ClaudeSignInCard({
   }
 
   return (
-    <div className="w-full max-w-[360px] rounded-[2rem] bg-surface px-5 py-5 shadow-[0_18px_55px_rgba(26,25,23,0.1)] ring-1 ring-border/70">
+    <div className="w-full max-w-[360px] rounded-xl bg-surface px-5 py-5 shadow-[0_18px_55px_rgba(26,25,23,0.1)] ring-1 ring-border/70">
       {step === "collect" ? (
         <form onSubmit={handleContinue} className="space-y-3">
           <button
@@ -324,7 +324,7 @@ export function ClaudeSignInCard({
           />
 
           {(formError ?? errors.fields.identifier?.message) ? (
-            <p className="rounded-2xl bg-error-container px-4 py-3 text-sm text-error">
+            <p className="rounded-lg bg-error-container px-4 py-3 text-sm text-error">
               {formError ?? errors.fields.identifier?.message}
             </p>
           ) : null}
@@ -344,8 +344,8 @@ export function ClaudeSignInCard({
         </form>
       ) : (
         <div className="space-y-4 px-2 py-3 text-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary-fixed text-2xl text-primary">
-            ✦
+          <div className="mx-auto inline-flex items-center rounded-full bg-primary-fixed px-3 py-1 font-mono text-[11px] uppercase tracking-[0.14em] text-primary">
+            Verify email
           </div>
           <div className="space-y-2">
             <p className="text-sm leading-6 text-on-surface-variant">
@@ -370,7 +370,7 @@ export function ClaudeSignInCard({
               />
 
               {formError ? (
-                <p className="rounded-2xl bg-error-container px-4 py-3 text-sm text-error">
+                <p className="rounded-lg bg-error-container px-4 py-3 text-sm text-error">
                   {formError}
                 </p>
               ) : null}

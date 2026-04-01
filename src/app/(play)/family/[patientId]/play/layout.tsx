@@ -6,7 +6,7 @@ export default function KidModeLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="fixed inset-0 overflow-y-auto bg-gradient-to-b from-blue-50 to-purple-50 dark:from-zinc-900 dark:to-zinc-950">
+    <div className="fixed inset-0 overflow-y-auto bg-background">
       {children}
     </div>
   );

@@ -22,7 +22,7 @@ export function SettingsSidebar({
   onSectionChange: (section: SettingsSection) => void;
 }) {
   return (
-    <aside className="rounded-3xl bg-surface-container-low p-3">
+    <aside className="rounded-xl bg-surface-container-low p-3">
       <nav className="flex gap-2 overflow-x-auto lg:flex-col">
         {SECTIONS.map((item) => {
           const isActive = activeSection === item.id;
@@ -32,9 +32,9 @@ export function SettingsSidebar({
               variant="ghost"
               onClick={() => onSectionChange(item.id)}
               className={cn(
-                "flex h-auto items-center justify-start gap-3 rounded-2xl px-4 py-3 text-left text-sm font-semibold tracking-wide transition-all duration-200 lg:w-full",
+                "flex h-auto items-center justify-start gap-3 rounded-lg px-4 py-3 text-left text-sm font-semibold transition-all duration-200 lg:w-full",
                 isActive
-                  ? "bg-white text-on-surface shadow-sm"
+                  ? "bg-surface text-on-surface shadow-sm ring-1 ring-outline-variant/60"
                   : "text-on-surface-variant hover:bg-surface-container-high"
               )}
             >
