@@ -52,8 +52,8 @@ describe("DashboardSidebar (caregiver)", () => {
     expect(nav).not.toHaveTextContent("Library");
   });
 
-  it("does not redirect caregiver on /builder", async () => {
-    mockPathname("/builder");
+  it("does not redirect caregiver on /tools/new", async () => {
+    mockPathname("/tools/new");
     mockCaregiver();
     render(<DashboardSidebar />);
     await waitFor(() => {

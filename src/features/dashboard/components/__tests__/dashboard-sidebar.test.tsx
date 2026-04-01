@@ -30,9 +30,9 @@ beforeEach(() => {
 });
 
 describe("DashboardSidebar (SLP)", () => {
-  it("renders New App button linking to /builder?new=1", () => {
+  it("renders New App button linking to /tools/new", () => {
     render(<DashboardSidebar />);
-    expect(screen.getByRole("link", { name: /new app/i })).toHaveAttribute("href", "/builder?new=1");
+    expect(screen.getByRole("link", { name: /create tool/i })).toHaveAttribute("href", "/tools/new");
   });
   it("renders Builder, Patients, Sessions, Speech Coach, Library nav items", () => {
     render(<DashboardSidebar />);

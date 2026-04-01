@@ -20,7 +20,7 @@ const CAREGIVER_ALLOWED_PREFIXES = [
   "/settings",
   "/speech-coach",
   "/sessions",
-  "/builder",
+  "/tools/new",
   "/flashcards",
   "/my-tools",
   "/templates",
@@ -91,15 +91,15 @@ export function DashboardSidebar() {
       {/* New App button */}
       <div className="shrink-0 px-2 py-3">
         <Link
-          href="/builder?new=1"
-          aria-label="New App"
+          href="/tools/new"
+          aria-label="Create tool"
           className={cn(
             "flex items-center gap-2 rounded-xl border border-outline-variant/60 bg-surface text-on-surface shadow-sm transition-colors hover:bg-surface-container-high active:scale-95",
             collapsed ? "h-10 w-10 justify-center" : "px-3 py-2",
           )}
         >
           <MaterialIcon icon="add" size="sm" />
-          {!collapsed && <span className="text-sm font-semibold">New App</span>}
+          {!collapsed && <span className="text-sm font-semibold">Create tool</span>}
         </Link>
       </div>
 
