@@ -3,7 +3,7 @@ import { beforeEach,describe, expect, it, vi } from "vitest";
 // Mock the authenticate helper (used by the route instead of calling Clerk directly)
 const mockQuery = vi.fn();
 const mockAuthenticate = vi.fn();
-vi.mock("@/app/api/generate/lib/authenticate", () => ({
+vi.mock("@/app/api/lib/authenticate", () => ({
   authenticate: () => mockAuthenticate(),
 }));
 

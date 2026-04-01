@@ -91,9 +91,6 @@ artifacts/wab-scaffold/bundle.html
 # Stitch exports (raw output — design captured in .stitch/)
 stitch_*/
 
-# Prototype directories
-aac-board/
-
 # Misspelled worktree dir
 .claire/
 

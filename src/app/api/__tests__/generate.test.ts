@@ -1,7 +1,7 @@
 // src/app/api/__tests__/generate.test.ts
 import { describe, expect, it } from "vitest";
 
-import { sseEncode } from "../generate/sse";
+import { sseEncode } from "../sse";
 
 describe("sseEncode — Server-Sent Events encoding", () => {
   it("produces correct SSE format: event line, data line, blank line", () => {

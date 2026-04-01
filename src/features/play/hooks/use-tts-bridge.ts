@@ -6,7 +6,7 @@ import { useCallback, useEffect, useRef } from "react";
 import { api } from "../../../../convex/_generated/api";
 
 /**
- * Listens for `bridges:tts-request` postMessages from the preview iframe,
+ * Listens for `vocali:tts-request` postMessages from the preview iframe,
  * calls ElevenLabs via Convex, and plays audio in the parent window.
  *
  * The iframe can't make network requests (CSP `connect-src 'none'`),
@@ -30,13 +30,13 @@ export function useTtsBridge(iframeRef: React.RefObject<HTMLIFrameElement | null
   useEffect(() => {
     async function handleMessage(e: MessageEvent) {
       const data = e.data;
-      if (!data || typeof data !== "object" || data.type !== "bridges:tts-request") return;
+      if (!data || typeof data !== "object" || data.type !== "vocali:tts-request") return;
 
       const { text, id } = data as { text: string; id: number };
       if (!text || typeof text !== "string") return;
 
       // Immediately acknowledge so the iframe cancels its browser-TTS fallback
-      postToIframe({ type: "bridges:tts-ack", id });
+      postToIframe({ type: "vocali:tts-ack", id });
 
       // Stop any currently playing audio
       if (currentAudioRef.current) {
@@ -50,19 +50,19 @@ export function useTtsBridge(iframeRef: React.RefObject<HTMLIFrameElement | null
         const audio = new Audio(result.audioUrl);
         currentAudioRef.current = audio;
 
-        audio.onplay = () => postToIframe({ type: "bridges:tts-playing", id });
+        audio.onplay = () => postToIframe({ type: "vocali:tts-playing", id });
         audio.onended = () => {
           currentAudioRef.current = null;
-          postToIframe({ type: "bridges:tts-done", id });
+          postToIframe({ type: "vocali:tts-done", id });
         };
         audio.onerror = () => {
           currentAudioRef.current = null;
-          postToIframe({ type: "bridges:tts-error", id });
+          postToIframe({ type: "vocali:tts-error", id });
         };
 
         await audio.play();
       } catch {
-        postToIframe({ type: "bridges:tts-error", id });
+        postToIframe({ type: "vocali:tts-error", id });
       }
     }
 

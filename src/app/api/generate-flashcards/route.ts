@@ -4,7 +4,7 @@ import { GenerateFlashcardsInputSchema } from "@/features/flashcards/lib/schemas
 
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
-import { authenticate } from "../generate/lib/authenticate";
+import { authenticate } from "../lib/authenticate";
 import {
   completeSession,
   createOrReuseSession,
@@ -12,9 +12,9 @@ import {
   persistAssistantMessage,
   persistUserMessage,
   startGeneration,
-} from "../generate/lib/session-lifecycle";
-import { streamGeneration } from "../generate/lib/stream-generation";
-import { sseEncode } from "../generate/sse";
+} from "../lib/session-lifecycle";
+import { streamFlashcardGeneration } from "../lib/stream-generation-flashcards";
+import { sseEncode } from "../sse";
 
 export const runtime = "nodejs";
 
@@ -88,12 +88,11 @@ export async function POST(request: Request): Promise<Response> {
         send("status", { status: "generating" });
         send("activity", { type: "thinking", message: "Planning your flashcard set..." });
 
-        const result = await streamGeneration({
+        const result = await streamFlashcardGeneration({
           anthropic,
           convex,
           sessionId,
           query,
-          isFlashcardMode: true,
           send,
           isAborted,
         });

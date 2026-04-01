@@ -9,7 +9,7 @@ import { toast } from "sonner";
 
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
-import { useTtsBridge } from "../../builder/hooks/use-tts-bridge";
+import { useTtsBridge } from "../hooks/use-tts-bridge";
 import { PlayAuthGuard } from "./play-auth-guard";
 
 interface AppViewerProps {

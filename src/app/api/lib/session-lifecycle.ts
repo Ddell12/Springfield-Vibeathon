@@ -2,8 +2,8 @@ import type { ConvexHttpClient } from "convex/browser";
 
 import { extractErrorMessage } from "@/core/utils";
 
-import { api } from "../../../../../convex/_generated/api";
-import type { Id } from "../../../../../convex/_generated/dataModel";
+import { api } from "../../../../convex/_generated/api";
+import type { Id } from "../../../../convex/_generated/dataModel";
 
 export interface CreateSessionOpts {
   convex: ConvexHttpClient;

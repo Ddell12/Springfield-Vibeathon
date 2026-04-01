@@ -19,7 +19,7 @@ vi.mock("../../../../convex/_generated/api", () => ({
     aiActions: { generateSpeech: "aiActions.generateSpeech" },
   },
 }));
-vi.mock("../../builder/hooks/use-tts-bridge", () => ({
+vi.mock("../../hooks/use-tts-bridge", () => ({
   useTtsBridge: vi.fn(),
 }));
 vi.mock("../play-auth-guard", () => ({
