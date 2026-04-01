@@ -1,6 +1,6 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
-import { speechCoachToolKeyValidator, speechCoachSkillKeyValidator } from "./lib/speechCoachValidators";
+import { speechCoachToolKeyValidator, speechCoachSkillKeyValidator, speechCoachTemplateValidator } from "./lib/speechCoachValidators";
 
 export default defineSchema({
   sessions: defineTable({
@@ -960,42 +960,12 @@ export default defineSchema({
 
   speechCoachTemplates: defineTable({
     slpUserId: v.string(),
-    name: v.string(),
-    description: v.string(),
-    clinicalFocus: v.optional(v.string()),
-    status: v.union(v.literal("draft"), v.literal("active"), v.literal("archived")),
-    voice: v.object({
-      provider: v.union(v.literal("elevenlabs"), v.literal("gemini-native")),
-      voiceKey: v.string(),
-    }),
-    prompt: v.object({
-      baseExtension: v.optional(v.string()),
-      coachingStyle: v.optional(v.string()),
-      toolInstructions: v.optional(v.string()),
-      knowledgeInstructions: v.optional(v.string()),
-    }),
-    tools: v.array(v.object({
-      key: speechCoachToolKeyValidator,
-      enabled: v.boolean(),
-      instructions: v.optional(v.string()),
-    })),
-    skills: v.array(v.object({
-      key: speechCoachSkillKeyValidator,
-      enabled: v.boolean(),
-      instructions: v.optional(v.string()),
-    })),
-    knowledgePackIds: v.array(v.string()),
-    customKnowledgeSnippets: v.array(v.string()),
-    sessionDefaults: v.object({
-      ageRange: v.union(v.literal("2-4"), v.literal("5-7")),
-      defaultDurationMinutes: v.number(),
-    }),
-    version: v.number(),
+    ...speechCoachTemplateValidator.fields,
     createdAt: v.number(),
     updatedAt: v.number(),
   })
-    .index("by_slpUserId_and_status", ["slpUserId", "status"])
-    .index("by_slpUserId_and_updatedAt", ["slpUserId", "updatedAt"]),
+    .index("by_slpUserId_status", ["slpUserId", "status"])
+    .index("by_slpUserId_updatedAt", ["slpUserId", "updatedAt"]),
 });
 
 /** Active session states used by current code. Legacy states are read-only. */

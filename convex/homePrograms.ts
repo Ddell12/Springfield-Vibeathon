@@ -7,6 +7,7 @@ import { slpMutation } from "./lib/customFunctions";
 
 // ── Validators ──────────────────────────────────────────────────────────────
 
+// Used by assignSpeechCoachTemplate (added in Task 2) and future homePrograms schema extension.
 export const childSpeechCoachOverrideValidator = v.object({
   assignedTemplateId: v.optional(v.id("speechCoachTemplates")),
   lastSyncedTemplateVersion: v.optional(v.number()),
