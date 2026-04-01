@@ -1,6 +1,8 @@
 // src/features/builder/components/__tests__/builder-page.test.tsx
-import { render, screen } from "@testing-library/react";
-import { beforeAll, describe, expect, it, vi } from "vitest";
+import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { useMutation } from "convex/react";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 beforeAll(() => {
   Element.prototype.scrollIntoView = vi.fn();
@@ -9,6 +11,9 @@ beforeAll(() => {
 const mockGet = vi.fn().mockReturnValue(null);
 const mockReplace = vi.fn();
 const mockPush = vi.fn();
+const mockToastError = vi.fn();
+const mockToastSuccess = vi.fn();
+const mockToastInfo = vi.fn();
 const mockStreamingState = {
   status: "idle" as const,
   files: [],
@@ -25,6 +30,14 @@ const mockStreamingState = {
   notableMessage: null,
   reset: vi.fn(),
 };
+
+vi.mock("sonner", () => ({
+  toast: {
+    error: mockToastError,
+    success: mockToastSuccess,
+    info: mockToastInfo,
+  },
+}));
 
 vi.mock("next/navigation", () => ({
   useSearchParams: () => ({ get: mockGet }),
@@ -43,6 +56,15 @@ vi.mock("@clerk/nextjs", () => ({
 
 vi.mock("@/core/hooks/use-mobile", () => ({
   useIsMobile: vi.fn().mockReturnValue(false),
+}));
+
+vi.mock("../../hooks/use-session-resume", () => ({
+  useSessionResume: vi.fn(() => ({
+    activeSessionId: "session_123",
+    currentSession: null,
+    appRecord: { shareSlug: "existing-share" },
+    handlePromptFromUrl: vi.fn(),
+  })),
 }));
 
 const mockResumeSession = vi.fn();
@@ -66,7 +88,11 @@ vi.mock("../chat-column", () => ({
 }));
 
 vi.mock("../preview-column", () => ({
-  PreviewColumn: () => <div data-testid="preview-column" />,
+  PreviewColumn: ({ onPublish }: { onPublish?: () => void }) => (
+    <button type="button" onClick={onPublish}>
+      Share & Publish
+    </button>
+  ),
 }));
 
 vi.mock("@/shared/components/share-dialog", () => ({
@@ -82,7 +108,8 @@ import { BuilderPage } from "../builder-page";
 describe("BuilderPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockStreamingState.status = "idle";
+    mockStreamingState.status = "live";
+    vi.mocked(useMutation).mockReturnValue(vi.fn().mockResolvedValue(null) as never);
   });
 
   it("renders without crashing", () => {
@@ -90,6 +117,7 @@ describe("BuilderPage", () => {
   });
 
   it("shows HomeScreen when status is idle and no session", () => {
+    mockStreamingState.status = "idle";
     render(<BuilderPage initialSessionId={null} />);
     expect(screen.getByTestId("home-screen")).toBeInTheDocument();
   });
@@ -97,5 +125,21 @@ describe("BuilderPage", () => {
   it("does NOT render a BuilderToolbar", () => {
     render(<BuilderPage initialSessionId={null} />);
     expect(screen.queryByRole("link", { name: /back to dashboard/i })).not.toBeInTheDocument();
+  });
+
+  it("opens upgrade flow instead of generic share failure when free-tier save is blocked", async () => {
+    const ensureApp = vi.fn().mockRejectedValue(
+      new Error("Free plan limit reached. Upgrade to Premium for unlimited apps."),
+    );
+    vi.mocked(useMutation).mockReturnValue(ensureApp as never);
+
+    render(<BuilderPage initialSessionId={null} />);
+
+    await userEvent.click(screen.getByRole("button", { name: /share/i }));
+
+    await waitFor(() => {
+      expect(screen.getByRole("dialog", { name: /upgrade to premium/i })).toBeInTheDocument();
+    });
+    expect(mockToastError).not.toHaveBeenCalled();
   });
 });

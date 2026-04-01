@@ -313,8 +313,12 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
         title: appName,
       });
     } catch (err) {
-      console.error("Failed to create share link:", err);
-      toast.error("Could not create share link");
+      if (err instanceof Error && err.message.includes("Free plan limit reached")) {
+        setUpgradeOpen(true);
+      } else {
+        console.error("Failed to create share link:", err);
+        toast.error("Could not create share link");
+      }
       return;
     }
     setShareDialogOpen(true);

@@ -84,7 +84,7 @@ export function ShareDialog({
           <div className="w-40 h-40 border border-surface-container-low rounded-xl p-2 flex items-center justify-center">
             {isLoading && timedOut ? (
               <p className="text-sm text-on-surface-variant text-center px-2">
-                Unable to create share link.
+                Still preparing your share link.
                 <br />Please close and try again.
               </p>
             ) : isLoading ? (
@@ -99,7 +99,7 @@ export function ShareDialog({
         <div className="flex gap-2">
           <div className="flex-1 bg-surface-container-low px-4 py-2.5 rounded-lg flex items-center">
             <span className="text-sm text-on-surface truncate">
-              {isLoading && timedOut ? "Share link unavailable" : isLoading ? "Creating share link..." : shareUrl}
+              {isLoading && timedOut ? "Preparing share link..." : isLoading ? "Creating share link..." : shareUrl}
             </span>
           </div>
           <button
