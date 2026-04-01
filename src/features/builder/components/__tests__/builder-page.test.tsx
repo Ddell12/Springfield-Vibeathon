@@ -11,9 +11,11 @@ beforeAll(() => {
 const mockGet = vi.fn().mockReturnValue(null);
 const mockReplace = vi.fn();
 const mockPush = vi.fn();
-const mockToastError = vi.fn();
-const mockToastSuccess = vi.fn();
-const mockToastInfo = vi.fn();
+const mockToast = vi.hoisted(() => ({
+  error: vi.fn(),
+  success: vi.fn(),
+  info: vi.fn(),
+}));
 const mockStreamingState = {
   status: "idle" as const,
   files: [],
@@ -32,11 +34,7 @@ const mockStreamingState = {
 };
 
 vi.mock("sonner", () => ({
-  toast: {
-    error: mockToastError,
-    success: mockToastSuccess,
-    info: mockToastInfo,
-  },
+  toast: mockToast,
 }));
 
 vi.mock("next/navigation", () => ({
@@ -140,6 +138,20 @@ describe("BuilderPage", () => {
     await waitFor(() => {
       expect(screen.getByRole("dialog", { name: /upgrade to premium/i })).toBeInTheDocument();
     });
-    expect(mockToastError).not.toHaveBeenCalled();
+    expect(mockToast.error).not.toHaveBeenCalled();
+  });
+
+  it("keeps the generic share error path for non-limit failures", async () => {
+    const ensureApp = vi.fn().mockRejectedValue(new Error("Network request failed"));
+    vi.mocked(useMutation).mockReturnValue(ensureApp as never);
+
+    render(<BuilderPage initialSessionId={null} />);
+
+    await userEvent.click(screen.getByRole("button", { name: /share/i }));
+
+    await waitFor(() => {
+      expect(mockToast.error).toHaveBeenCalledWith("Could not create share link");
+    });
+    expect(screen.queryByRole("dialog", { name: /upgrade to premium/i })).not.toBeInTheDocument();
   });
 });

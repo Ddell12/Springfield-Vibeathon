@@ -29,6 +29,10 @@ interface BuilderPageProps {
   initialSessionId: string | null;
 }
 
+function isFreePlanLimitError(err: unknown): err is Error {
+  return err instanceof Error && err.message.includes("Free plan limit reached");
+}
+
 export function BuilderPage({ initialSessionId }: BuilderPageProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -277,7 +281,7 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
       ensureApp({ sessionId: activeSessionId as Id<"sessions">, title: appName })
         .then(() => toast.success("Saved to My Apps!"))
         .catch((err) => {
-          if (err instanceof Error && err.message.includes("Free plan limit reached")) {
+          if (isFreePlanLimitError(err)) {
             setUpgradeOpen(true);
           } else {
             console.warn("[builder] Auto-save failed:", err);
@@ -296,7 +300,7 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
       });
       toast.success("Saved to My Apps!");
     } catch (err) {
-      if (err instanceof Error && err.message.includes("Free plan limit reached")) {
+      if (isFreePlanLimitError(err)) {
         setUpgradeOpen(true);
       } else {
         console.error("Failed to save:", err);
@@ -313,7 +317,7 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
         title: appName,
       });
     } catch (err) {
-      if (err instanceof Error && err.message.includes("Free plan limit reached")) {
+      if (isFreePlanLimitError(err)) {
         setUpgradeOpen(true);
       } else {
         console.error("Failed to create share link:", err);
