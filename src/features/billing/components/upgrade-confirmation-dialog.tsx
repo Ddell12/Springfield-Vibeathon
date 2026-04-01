@@ -27,12 +27,18 @@ const PREMIUM_BENEFITS = [
 
 export function UpgradeConfirmationDialog({
   children,
+  open: controlledOpen,
+  onOpenChange: controlledOnOpenChange,
 }: {
-  children: React.ReactNode;
+  children?: React.ReactNode;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }) {
   const createCheckout = useAction(api.subscriptions.createCheckoutSession);
   const [loading, setLoading] = useState(false);
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = controlledOpen ?? internalOpen;
+  const setOpen = controlledOnOpenChange ?? setInternalOpen;
 
   async function handleConfirm() {
     setLoading(true);
@@ -46,7 +52,7 @@ export function UpgradeConfirmationDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{children}</DialogTrigger>
+      {children && <DialogTrigger asChild>{children}</DialogTrigger>}
       <DialogContent>
         <DialogHeader>
           <DialogTitle>

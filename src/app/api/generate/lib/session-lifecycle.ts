@@ -29,7 +29,15 @@ export async function startGeneration(
   convex: ConvexHttpClient,
   sessionId: Id<"sessions">,
 ): Promise<void> {
-  await convex.mutation(api.sessions.startGeneration, { sessionId });
+  try {
+    await convex.mutation(api.sessions.startGeneration, { sessionId });
+  } catch (err) {
+    if (err instanceof Error && err.message.includes("Cannot start generation from state")) {
+      console.warn("[session] startGeneration: session already generating, continuing");
+      return;
+    }
+    throw err;
+  }
 }
 
 export async function persistUserMessage(
