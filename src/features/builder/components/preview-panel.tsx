@@ -116,7 +116,7 @@ export function PreviewPanel({ bundleHtml, state, error, deviceSize = "desktop",
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-background/90 px-4 py-2 shadow-lg backdrop-blur-sm">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" />
-            Updating...
+            {activityMessage ?? "Updating..."}
           </div>
         </div>
       )}

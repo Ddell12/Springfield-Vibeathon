@@ -49,15 +49,22 @@ describe("PreviewPanel — blob URL iframe", () => {
       />
     );
 
-    expect(screen.getByText(/updating/i)).toBeInTheDocument();
+    expect(screen.getByText("Checking the preview...")).toBeInTheDocument();
     expect(screen.getByTitle(/app preview/i)).toBeInTheDocument();
   });
 
-  it("shows 'Updating...' overlay when generating with existing preview", () => {
-    render(<PreviewPanel bundleHtml="<html><body>v1</body></html>" state="generating" />);
-    expect(screen.getByText(/updating/i)).toBeTruthy();
+  it("shows the busy activity message when generating with existing preview", () => {
+    render(
+      <PreviewPanel
+        bundleHtml="<html><body>v1</body></html>"
+        state="generating"
+        activityMessage="Checking the preview..."
+      />
+    );
+
+    expect(screen.getByText("Checking the preview...")).toBeInTheDocument();
     // iframe is still rendered
-    expect(screen.getByTitle(/app preview/i)).toBeTruthy();
+    expect(screen.getByTitle(/app preview/i)).toBeInTheDocument();
   });
 
   it("shows soft error message when state is failed", () => {
