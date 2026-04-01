@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation } from "convex/react";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
@@ -35,6 +35,13 @@ export function useToolBuilder() {
   const updateInstance = useMutation(api.tools.update);
   const publishInstance = useMutation(api.tools.publish);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const latestConfigRef = useRef<unknown>(null);
+
+  useEffect(() => {
+    return () => {
+      if (saveTimer.current) clearTimeout(saveTimer.current);
+    };
+  }, []);
 
   const selectPatient = useCallback(
     (patientId: Id<"patients">) => setState((s) => ({ ...s, patientId })),
@@ -63,13 +70,14 @@ export function useToolBuilder() {
   const updateConfig = useCallback(
     (config: unknown) => {
       setState((s) => ({ ...s, config }));
+      latestConfigRef.current = config; // always track latest
 
       // Debounced autosave — fires 1.5s after last edit if instance already exists
       if (saveTimer.current) clearTimeout(saveTimer.current);
       saveTimer.current = setTimeout(() => {
         setState((s) => {
           if (!s.instanceId) return s;
-          void updateInstance({ id: s.instanceId, configJson: JSON.stringify(config) });
+          void updateInstance({ id: s.instanceId, configJson: JSON.stringify(latestConfigRef.current) });
           return s;
         });
       }, 1500);
