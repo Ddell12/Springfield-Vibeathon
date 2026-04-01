@@ -8,6 +8,7 @@ import { Textarea } from "@/shared/components/ui/textarea";
 
 import { useAIConfigAssist } from "../../hooks/use-ai-config-assist";
 import { templateRegistry } from "../../lib/registry";
+import { DEFAULT_GENERATION_PROFILE } from "../../lib/ai/generation-profile";
 
 interface AIAssistPanelProps {
   templateType: string;
@@ -21,7 +22,11 @@ interface AIAssistPanelProps {
 
 export function AIAssistPanel({ templateType, childProfile, onApply }: AIAssistPanelProps) {
   const [description, setDescription] = useState("");
-  const { status, error, generate } = useAIConfigAssist({ templateType, childProfile });
+  const { status, error, generate } = useAIConfigAssist({
+    templateType,
+    childProfile,
+    generationProfile: DEFAULT_GENERATION_PROFILE,
+  });
   const registration = templateRegistry[templateType];
 
   const handleGenerate = async () => {
@@ -38,8 +43,7 @@ export function AIAssistPanel({ templateType, childProfile, onApply }: AIAssistP
         <span className="text-xs text-muted-foreground">— optional</span>
       </div>
       <p className="text-xs text-muted-foreground">
-        Describe what you want for this {registration?.meta.name ?? "tool"} and AI will
-        fill in the form for you to review.
+        Describe the app you want and AI will draft a richer, session-ready setup for you to review.
       </p>
       <Textarea
         value={description}

@@ -38,4 +38,30 @@ describe("useAIConfigAssist", () => {
     });
     expect(returned).toBe('{"title":"Generated"}');
   });
+
+  it("passes premium defaults to the route", async () => {
+    const { result } = renderHook(() =>
+      useAIConfigAssist({
+        templateType: "aac_board",
+        childProfile: {},
+        generationProfile: {
+          targetSetting: "both",
+          interactionRichness: "high",
+          voicePreference: "elevenlabs-first",
+          sensoryMode: "calm",
+        },
+      })
+    );
+
+    await act(async () => {
+      await result.current.generate("Make a premium snack board");
+    });
+
+    expect(fetch).toHaveBeenCalledWith(
+      "/api/tools/generate-config",
+      expect.objectContaining({
+        method: "POST",
+      })
+    );
+  });
 });
