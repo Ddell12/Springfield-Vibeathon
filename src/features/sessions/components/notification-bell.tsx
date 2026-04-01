@@ -1,7 +1,7 @@
 "use client";
 
 import { api } from "@convex/_generated/api";
-import type { Id } from "@convex/_generated/dataModel";
+import type { Doc, Id } from "@convex/_generated/dataModel";
 import { useMutation, useQuery } from "convex/react";
 import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
@@ -28,6 +28,19 @@ const TYPE_ICONS: Record<NotificationType, string> = {
   "session-reminder": "alarm",
   "session-starting": "videocam",
   "notes-ready": "description",
+};
+
+const FALLBACK_ROUTES: Partial<Record<NotificationType, (notification: Doc<"notifications">) => string | undefined>> = {
+  "session-booked": (notification) =>
+    notification.appointmentId ? `/sessions/${notification.appointmentId}` : undefined,
+  "session-cancelled": (notification) =>
+    notification.appointmentId ? `/sessions/${notification.appointmentId}` : undefined,
+  "session-reminder": (notification) =>
+    notification.appointmentId ? `/sessions/${notification.appointmentId}/call` : undefined,
+  "session-starting": (notification) =>
+    notification.appointmentId ? `/sessions/${notification.appointmentId}/call` : undefined,
+  "notes-ready": (notification) =>
+    notification.appointmentId ? `/sessions/${notification.appointmentId}/notes` : undefined,
 };
 
 function timeAgo(timestamp: number): string {
@@ -58,6 +71,9 @@ export function NotificationBell() {
     void markRead({ notificationId: id });
     if (link) router.push(link);
   }, [markRead, router]);
+
+  const resolveNotificationLink = (notification: Doc<"notifications">) =>
+    notification.link ?? FALLBACK_ROUTES[notification.type]?.(notification);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -131,7 +147,10 @@ export function NotificationBell() {
                   <li key={notification._id}>
                     <button
                       onClick={() =>
-                        void handleNotificationClick(notification._id, notification.link)
+                        void handleNotificationClick(
+                          notification._id,
+                          resolveNotificationLink(notification),
+                        )
                       }
                       className={cn(
                         "flex w-full items-start gap-3 px-4 py-3 text-left transition-colors duration-200",
