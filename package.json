@@ -16,7 +16,7 @@
     "postinstall": "cd artifacts/wab-scaffold && npm install --omit=dev --legacy-peer-deps --no-audit --no-fund 2>/dev/null || true",
     "seed:demo": "npx tsx scripts/seed-demo.ts",
     "seed:demo:reset": "npx tsx scripts/seed-demo.ts --reset",
-    "speech-coach:agent": "tsx src/features/speech-coach/livekit/entrypoint.ts"
+    "speech-coach:agent": "node --env-file=.env.local -e 'process.env.LIVEKIT_URL=process.env.LIVEKIT_URL||process.env.NEXT_PUBLIC_LIVEKIT_URL' --import tsx/esm src/features/speech-coach/livekit/entrypoint.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.0",
