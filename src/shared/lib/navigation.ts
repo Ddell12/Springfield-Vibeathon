@@ -4,7 +4,6 @@ export const NAV_ITEMS = [
   { icon: "auto_awesome",         label: "Builder",      href: ROUTES.BUILDER },
   { icon: "group",                label: "Patients",     href: ROUTES.PATIENTS },
   { icon: "video_call",           label: "Sessions",     href: ROUTES.SESSIONS },
-  { icon: "receipt_long",         label: "Billing",      href: ROUTES.BILLING },
   { icon: "record_voice_over",    label: "Speech Coach", href: ROUTES.SPEECH_COACH },
   { icon: "collections_bookmark", label: "Library",      href: ROUTES.LIBRARY },
 ] as const;

@@ -7,6 +7,9 @@ describe("NAV_ITEMS", () => {
     expect(NAV_ITEMS[0].label).toBe("Builder");
     expect(NAV_ITEMS[0].href).toBe("/builder");
   });
+  it("does not expose Billing in the primary SLP nav", () => {
+    expect(NAV_ITEMS.map((item) => item.label)).not.toContain("Billing");
+  });
   it("contains Library", () => {
     expect(NAV_ITEMS.some((i) => i.label === "Library")).toBe(true);
   });
@@ -18,8 +21,8 @@ describe("NAV_ITEMS", () => {
     expect(labels).not.toContain("My Apps");
     expect(labels).not.toContain("Settings");
   });
-  it("has exactly 6 SLP items", () => {
-    expect(NAV_ITEMS).toHaveLength(6);
+  it("has exactly 5 SLP items", () => {
+    expect(NAV_ITEMS).toHaveLength(5);
   });
 });
 
