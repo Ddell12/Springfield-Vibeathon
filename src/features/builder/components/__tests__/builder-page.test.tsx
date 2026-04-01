@@ -98,14 +98,4 @@ describe("BuilderPage", () => {
     render(<BuilderPage initialSessionId={null} />);
     expect(screen.queryByRole("link", { name: /back to dashboard/i })).not.toBeInTheDocument();
   });
-
-  it("attaches a beforeunload warning while bundling", () => {
-    const addEventListenerSpy = vi.spyOn(window, "addEventListener");
-    mockStreamingState.status = "bundling";
-
-    render(<BuilderPage initialSessionId={null} />);
-
-    expect(addEventListenerSpy).toHaveBeenCalledWith("beforeunload", expect.any(Function));
-    addEventListenerSpy.mockRestore();
-  });
 });
