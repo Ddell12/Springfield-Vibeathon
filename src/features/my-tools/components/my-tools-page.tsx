@@ -3,7 +3,7 @@
 import { useMutation, useQuery } from "convex/react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -24,6 +24,8 @@ import type { Id } from "../../../../convex/_generated/dataModel";
 
 type SortOption = "recent" | "alphabetical";
 
+const PAGE_SIZE = 12;
+
 const SORT_OPTIONS: { label: string; value: SortOption }[] = [
   { label: "Last Edited", value: "recent" },
   { label: "A–Z", value: "alphabetical" },
@@ -39,6 +41,7 @@ export function MyToolsPage({ embedded = false }: MyToolsPageProps) {
   const duplicateSession = useMutation(api.sessions.duplicateSession);
   const updateTitle = useMutation(api.sessions.updateTitle);
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const [deleteTarget, setDeleteTarget] = useState<{ id: Id<"sessions">; title: string } | null>(null);
   const [renamingId, setRenamingId] = useState<Id<"sessions"> | null>(null);
@@ -65,6 +68,10 @@ export function MyToolsPage({ embedded = false }: MyToolsPageProps) {
       ? { sessionId: fullscreenSessionId, path: "_bundle.html" }
       : "skip"
   );
+
+  const pageParam = searchParams.get("page");
+  const parsedPage = Number.parseInt(pageParam ?? "", 10);
+  const page = Number.isFinite(parsedPage) && parsedPage > 0 ? parsedPage : 1;
 
   const renameInputRef = useRef<HTMLInputElement>(null);
 
@@ -114,6 +121,10 @@ export function MyToolsPage({ embedded = false }: MyToolsPageProps) {
 
     return results;
   }, [sessions, debouncedSearch, sortBy]);
+
+  const totalPages = filteredSessions ? Math.max(1, Math.ceil(filteredSessions.length / PAGE_SIZE)) : 1;
+  const safePage = Math.min(page, totalPages);
+  const pageItems = filteredSessions?.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   const handleRenameSubmit = (sessionId: Id<"sessions">) => {
     const trimmed = renameValue.trim();
@@ -257,7 +268,7 @@ export function MyToolsPage({ embedded = false }: MyToolsPageProps) {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {filteredSessions.map((session, i) => (
+          {pageItems?.map((session, i) => (
             <div
               key={session._id}
               className="relative"

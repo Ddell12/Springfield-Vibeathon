@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
 import { cn } from "@/core/utils";
@@ -36,15 +37,22 @@ const SORT_OPTIONS: { label: string; value: SortOption }[] = [
   { label: "A–Z", value: "alphabetical" },
 ];
 
+const PAGE_SIZE = 12;
+
 interface TemplatesPageProps {
   embedded?: boolean;
 }
 
 export function TemplatesPage({ embedded = false }: TemplatesPageProps) {
+  const searchParams = useSearchParams();
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("popular");
+
+  const pageParam = searchParams.get("page");
+  const parsedPage = Number.parseInt(pageParam ?? "", 10);
+  const page = Number.isFinite(parsedPage) && parsedPage > 0 ? parsedPage : 1;
 
   // Debounce search input by 300ms
   useEffect(() => {
@@ -87,6 +95,10 @@ export function TemplatesPage({ embedded = false }: TemplatesPageProps) {
 
     return results;
   }, [selectedCategory, debouncedSearch, sortBy]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredTemplates.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const pageItems = filteredTemplates.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   return (
     <div className="max-w-5xl mx-auto px-6 py-12">
@@ -159,7 +171,7 @@ export function TemplatesPage({ embedded = false }: TemplatesPageProps) {
       </div>
 
       {/* Template Grid */}
-      {filteredTemplates.length === 0 ? (
+      {pageItems.length === 0 ? (
         <div className="py-20 text-center" data-testid="no-results">
           <MaterialIcon icon="search_off" className="text-5xl text-on-surface-variant/40 mb-4" />
           <p className="text-on-surface-variant text-lg">
@@ -168,7 +180,7 @@ export function TemplatesPage({ embedded = false }: TemplatesPageProps) {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-16">
-          {filteredTemplates.map((template, i) => {
+          {pageItems.map((template, i) => {
             const style = TEMPLATE_STYLES[i % TEMPLATE_STYLES.length];
             return (
               <Link

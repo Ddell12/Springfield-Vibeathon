@@ -1,3 +1,4 @@
+import userEvent from "@testing-library/user-event";
 import { render, screen } from "@testing-library/react";
 
 import { LibraryPage } from "../library-page";
@@ -18,6 +19,10 @@ vi.mock("@/features/templates/components/templates-page", () => ({
 }));
 
 describe("LibraryPage", () => {
+  beforeEach(() => {
+    replace.mockClear();
+  });
+
   it("defaults to My Apps and renders that tab first", () => {
     render(<LibraryPage />);
 
@@ -25,5 +30,14 @@ describe("LibraryPage", () => {
     expect(tabs[0]).toHaveTextContent("My Apps");
     expect(tabs[1]).toHaveTextContent("Templates");
     expect(tabs[0]).toHaveAttribute("data-state", "active");
+  });
+
+  it("writes the selected tab into the library URL", async () => {
+    const user = userEvent.setup();
+
+    render(<LibraryPage />);
+    await user.click(screen.getByRole("tab", { name: /templates/i }));
+
+    expect(replace).toHaveBeenCalledWith("/library?tab=templates&page=1", { scroll: false });
   });
 });

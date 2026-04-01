@@ -20,7 +20,7 @@ export function LibraryPage() {
 
       <Tabs
         value={tab}
-        onValueChange={(v) => router.replace(`/library?tab=${v}`, { scroll: false })}
+        onValueChange={(v) => router.replace(`/library?tab=${v}&page=1`, { scroll: false })}
       >
         <TabsList>
           <TabsTrigger value="my-apps">My Apps</TabsTrigger>

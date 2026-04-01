@@ -4,6 +4,8 @@ import { beforeEach, describe, expect, test, vi } from "vitest";
 
 import { MyToolsPage } from "../my-tools-page";
 
+let searchParams = new URLSearchParams();
+
 // Mock convex/react — useQuery returns undefined (loading) by default
 vi.mock("convex/react", () => ({
   useQuery: vi.fn(),
@@ -24,6 +26,7 @@ vi.mock("next/link", () => ({
 // Mock next/navigation router
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn() }),
+  useSearchParams: () => searchParams,
 }));
 
 // Mock material-icon to avoid font-loading issues
@@ -113,6 +116,7 @@ describe("MyToolsPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(convexReact.useMutation).mockReturnValue(vi.fn());
+    searchParams = new URLSearchParams();
   });
 
   test("shows loading skeleton when useQuery returns undefined", () => {
@@ -197,6 +201,23 @@ describe("MyToolsPage", () => {
 
     expect(screen.getByText("My Schedule")).toBeInTheDocument();
     expect(screen.getByText("Token Board")).toBeInTheDocument();
+  });
+
+  test("slices session cards by the page query param", () => {
+    searchParams = new URLSearchParams("page=2");
+    const pagedSessions = Array.from({ length: 13 }, (_, i) => ({
+      _id: `session-${i + 1}` as Id<"sessions">,
+      _creationTime: Date.now() - i * 1000,
+      title: `App ${i + 1}`,
+      query: `Query ${i + 1}`,
+      state: "complete" as const,
+    }));
+    vi.mocked(convexReact.useQuery).mockReturnValue(pagedSessions);
+
+    render(<MyToolsPage />);
+
+    expect(screen.getAllByTestId("project-card")).toHaveLength(1);
+    expect(screen.getByText("App 13")).toBeInTheDocument();
   });
 
   test("search filters apps by title", async () => {
