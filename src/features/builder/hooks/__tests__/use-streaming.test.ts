@@ -3,7 +3,7 @@ import { act,renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { TherapyBlueprint } from "../../lib/schemas";
-import { useStreaming } from "../use-streaming";
+import { initialState, streamingReducer, useStreaming } from "../use-streaming";
 
 // Mock fetch for SSE stream tests
 const mockFetch = vi.fn();
@@ -641,6 +641,18 @@ describe("useStreaming — streaming hook contract", () => {
     });
 
     expect(result.current.bundleHtml).toBeNull();
+  });
+
+  it("preserves bundleHtml during follow-up generation", () => {
+    const prev = {
+      ...initialState,
+      status: "live" as const,
+      bundleHtml: "<html>ok</html>",
+    };
+
+    const next = streamingReducer(prev, { type: "START_FOLLOW_UP" });
+    expect(next.bundleHtml).toBe("<html>ok</html>");
+    expect(next.status).toBe("generating");
   });
 
   it("onBundle callback is called when bundle event received", async () => {

@@ -102,7 +102,7 @@ type StreamingAction =
   | { type: "RESUME_SESSION"; args: ResumeSessionArgs }
   | { type: "ERROR_RESPONSE"; error: string };
 
-const initialState: StreamingState = {
+export const initialState: StreamingState = {
   status: "idle",
   files: [],
   blueprint: null,
@@ -116,7 +116,7 @@ const initialState: StreamingState = {
   notableMessage: null,
 };
 
-function streamingReducer(state: StreamingState, action: StreamingAction): StreamingState {
+export function streamingReducer(state: StreamingState, action: StreamingAction): StreamingState {
   switch (action.type) {
     case "RESET":
       return { ...initialState };
