@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { cn } from "@/core/utils";
+import { PremiumScreen } from "../../runtime/premium-primitives";
 
 import type { RuntimeProps } from "../../registry";
 import type { FirstThenBoardConfig } from "./schema";
@@ -40,19 +41,11 @@ export function FirstThenBoardRuntime({
   return (
     <div
       className={cn(
-        "min-h-screen bg-background p-4 flex flex-col gap-6",
+        "min-h-screen bg-background p-4",
         config.highContrast && "high-contrast bg-black"
       )}
     >
-      <h1
-        className={cn(
-          "text-center font-display text-2xl font-semibold",
-          config.highContrast ? "text-white" : "text-foreground"
-        )}
-      >
-        {config.title}
-      </h1>
-
+      <PremiumScreen title={config.title}>
       <div className="flex flex-col md:flex-row gap-4 flex-1">
         {/* FIRST card */}
         <button
@@ -120,14 +113,15 @@ export function FirstThenBoardRuntime({
         aria-label="Reset"
         className={cn(
           "mx-auto px-6 py-2 rounded-full text-sm font-medium",
-          "transition-colors duration-200",
+          "transition-colors duration-300",
           config.highContrast
             ? "bg-white text-black hover:bg-gray-200"
-            : "bg-muted text-muted-foreground hover:bg-muted/80"
+            : "bg-surface-container text-muted-foreground hover:bg-surface-container-high"
         )}
       >
         Reset
       </button>
+      </PremiumScreen>
     </div>
   );
 }

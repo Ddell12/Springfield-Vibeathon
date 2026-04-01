@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { cn } from "@/core/utils";
+import { PremiumScreen, ProgressRail, ReinforcementBanner } from "../../runtime/premium-primitives";
 
 import type { RuntimeProps } from "../../registry";
 import type { VisualScheduleConfig } from "./schema";
@@ -48,40 +49,33 @@ export function VisualScheduleRuntime({
   return (
     <div
       className={cn(
-        "min-h-screen bg-background p-4 flex flex-col gap-4",
+        "min-h-screen bg-background p-4",
         config.highContrast && "high-contrast bg-black"
       )}
     >
-      <h1
-        className={cn(
-          "text-center font-display text-2xl font-semibold",
-          config.highContrast ? "text-white" : "text-foreground"
-        )}
-      >
-        {config.title}
-      </h1>
+      <PremiumScreen title={config.title}>
+        <ProgressRail
+          current={completed ? config.items.length : currentIndex}
+          total={config.items.length}
+          label={completed ? "All done!" : `Step ${currentIndex + 1} of ${config.items.length}`}
+        />
 
-      {completed ? (
-        <div className="flex flex-col items-center gap-4 py-8">
-          <span className="text-6xl">🌟</span>
-          <p
-            className={cn(
-              "text-xl font-bold text-center",
-              config.highContrast ? "text-white" : "text-foreground"
-            )}
-          >
-            All done! Great work!
-          </p>
-          <button
-            onClick={handleReset}
-            className="mt-4 px-6 py-3 rounded-xl bg-surface-container text-sm font-medium"
-          >
-            Start again
-          </button>
-        </div>
-      ) : (
-        <div className="flex flex-col gap-3">
-          {config.items.map((item, index) => {
+        {completed ? (
+          <div className="flex flex-col items-center gap-4">
+            <ReinforcementBanner
+              title="All done! Great work!"
+              className="w-full"
+            />
+            <button
+              onClick={handleReset}
+              className="px-6 py-3 rounded-xl bg-surface-container text-sm font-medium"
+            >
+              Start again
+            </button>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-3">
+            {config.items.map((item, index) => {
             const isDone = index < currentIndex;
             const isActive = index === currentIndex;
             return (
@@ -129,8 +123,9 @@ export function VisualScheduleRuntime({
               </button>
             );
           })}
-        </div>
-      )}
+          </div>
+        )}
+      </PremiumScreen>
     </div>
   );
 }

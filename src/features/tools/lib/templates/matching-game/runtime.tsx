@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { cn } from "@/core/utils";
+import { PremiumScreen, ReinforcementBanner } from "../../runtime/premium-primitives";
 
 import type { RuntimeProps } from "../../registry";
 import type { MatchingGameConfig } from "./schema";
@@ -90,31 +91,15 @@ export function MatchingGameRuntime({
   return (
     <div
       className={cn(
-        "min-h-screen bg-background p-4 flex flex-col gap-6",
+        "min-h-screen bg-background p-4",
         config.highContrast && "high-contrast bg-black"
       )}
     >
-      <h1
-        className={cn(
-          "text-center font-display text-2xl font-semibold",
-          config.highContrast ? "text-white" : "text-foreground"
-        )}
-      >
-        {config.title}
-      </h1>
-
+      <PremiumScreen title={config.title}>
       {allDone ? (
-        <div className="flex flex-col items-center gap-4 py-8">
-          <span className="text-6xl">🎉</span>
-          <p
-            className={cn(
-              "text-xl font-bold text-center",
-              config.highContrast ? "text-white" : "text-foreground"
-            )}
-          >
-            {config.celebrateCorrect ? "Amazing! All matched!" : "Complete!"}
-          </p>
-        </div>
+        <ReinforcementBanner
+          title={config.celebrateCorrect ? "Amazing! All matched!" : "Complete!"}
+        />
       ) : (
         <div className="grid grid-cols-2 gap-4">
           {/* Prompts column */}
@@ -137,7 +122,7 @@ export function MatchingGameRuntime({
                   className={cn(
                     "rounded-2xl p-4 text-center font-semibold text-base",
                     "min-h-[64px] touch-manipulation select-none",
-                    "transition-all duration-200 active:scale-95",
+                    "transition-all duration-300 active:scale-95",
                     isMatched
                       ? config.highContrast
                         ? "bg-green-700 text-white"
@@ -177,7 +162,7 @@ export function MatchingGameRuntime({
                   className={cn(
                     "rounded-2xl p-4 text-center font-semibold text-base",
                     "min-h-[64px] touch-manipulation select-none",
-                    "transition-all duration-200 active:scale-95",
+                    "transition-all duration-300 active:scale-95",
                     isMatched
                       ? config.highContrast
                         ? "bg-green-700 text-white"
@@ -202,6 +187,7 @@ export function MatchingGameRuntime({
           </div>
         </div>
       )}
+      </PremiumScreen>
     </div>
   );
 }
