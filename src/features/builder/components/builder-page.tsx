@@ -24,13 +24,14 @@ import { UpgradeConfirmationDialog } from "../../billing/components/upgrade-conf
 import { ChatColumn } from "./chat-column";
 import { HomeScreen } from "./home-screen";
 import { type DeviceSize, PreviewColumn, type ViewMode } from "./preview-column";
+import { FREE_PLAN_LIMIT_REACHED_MESSAGE } from "../../../../shared/app-limits";
 
 interface BuilderPageProps {
   initialSessionId: string | null;
 }
 
 function isFreePlanLimitError(err: unknown): err is Error {
-  return err instanceof Error && err.message.includes("Free plan limit reached");
+  return err instanceof Error && err.message === FREE_PLAN_LIMIT_REACHED_MESSAGE;
 }
 
 export function BuilderPage({ initialSessionId }: BuilderPageProps) {

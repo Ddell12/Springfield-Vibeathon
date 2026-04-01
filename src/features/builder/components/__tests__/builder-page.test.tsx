@@ -4,6 +4,8 @@ import userEvent from "@testing-library/user-event";
 import { useMutation } from "convex/react";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { FREE_PLAN_LIMIT_REACHED_MESSAGE } from "../../../../../shared/app-limits";
+
 beforeAll(() => {
   Element.prototype.scrollIntoView = vi.fn();
 });
@@ -127,7 +129,7 @@ describe("BuilderPage", () => {
 
   it("opens upgrade flow instead of generic share failure when free-tier save is blocked", async () => {
     const ensureApp = vi.fn().mockRejectedValue(
-      new Error("Free plan limit reached. Upgrade to Premium for unlimited apps."),
+      new Error(FREE_PLAN_LIMIT_REACHED_MESSAGE),
     );
     vi.mocked(useMutation).mockReturnValue(ensureApp as never);
 

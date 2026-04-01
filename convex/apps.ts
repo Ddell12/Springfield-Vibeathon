@@ -4,6 +4,7 @@ import { mutation, query } from "./_generated/server";
 import { assertSessionOwner } from "./lib/auth";
 import { checkPremiumStatus, FREE_LIMITS } from "./lib/billing";
 import { authedQuery } from "./lib/customFunctions";
+import { FREE_PLAN_LIMIT_REACHED_MESSAGE } from "../shared/app-limits";
 
 export const create = mutation({
   args: {
@@ -25,9 +26,7 @@ export const create = mutation({
         .withIndex("by_user", (q) => q.eq("userId", identity.subject))
         .take(FREE_LIMITS.maxApps);
       if (userApps.length >= FREE_LIMITS.maxApps) {
-        throw new Error(
-          "Free plan limit reached. Upgrade to Premium for unlimited apps.",
-        );
+        throw new Error(FREE_PLAN_LIMIT_REACHED_MESSAGE);
       }
     }
 
@@ -128,9 +127,7 @@ export const ensureForSession = mutation({
           .withIndex("by_user", (q) => q.eq("userId", identity.subject))
           .take(FREE_LIMITS.maxApps);
         if (userApps.length >= FREE_LIMITS.maxApps) {
-          throw new Error(
-            "Free plan limit reached. Upgrade to Premium for unlimited apps.",
-          );
+          throw new Error(FREE_PLAN_LIMIT_REACHED_MESSAGE);
         }
       }
     }
