@@ -7,22 +7,25 @@ import { ConvexClientProvider } from "@/core/providers";
 import { SkipToContent } from "@/shared/components/skip-to-content";
 import { Toaster } from "@/shared/components/ui/sonner";
 
+const PRODUCT_NAME = "Bridges";
+const PRODUCT_TAGLINE = "AI Therapy App Builder";
+
 export const metadata: Metadata = {
-  title: "Bridges — AI Therapy App Builder",
+  title: `${PRODUCT_NAME} — ${PRODUCT_TAGLINE}`,
   description: "Build interactive therapy apps with AI. Designed for ABA therapists, speech therapists, and parents of autistic children.",
   manifest: "/manifest.webmanifest",
   icons: {
     icon: "/favicon.svg",
   },
   openGraph: {
-    title: "Bridges — AI Therapy App Builder",
+    title: `${PRODUCT_NAME} — ${PRODUCT_TAGLINE}`,
     description: "Describe therapy tools in plain language and get working, interactive apps built by AI.",
     type: "website",
-    siteName: "Bridges",
+    siteName: PRODUCT_NAME,
   },
   twitter: {
     card: "summary_large_image",
-    title: "Bridges — AI Therapy App Builder",
+    title: `${PRODUCT_NAME} — ${PRODUCT_TAGLINE}`,
     description: "Build interactive therapy apps with AI.",
   },
 };
