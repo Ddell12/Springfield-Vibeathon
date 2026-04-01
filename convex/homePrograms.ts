@@ -207,6 +207,32 @@ export const create = slpMutation({
   },
 });
 
+export const assignSpeechCoachTemplate = slpMutation({
+  args: {
+    id: v.id("homePrograms"),
+    assignedTemplateId: v.id("speechCoachTemplates"),
+    childOverrides: childSpeechCoachOverrideValidator,
+  },
+  handler: async (ctx, args) => {
+    const program = await ctx.db.get(args.id);
+    if (!program) throw new ConvexError("Home program not found");
+
+    const template = await ctx.db.get(args.assignedTemplateId);
+    if (!template || template.slpUserId !== ctx.slpUserId) {
+      throw new ConvexError("Template not found");
+    }
+
+    await ctx.db.patch(args.id, {
+      speechCoachConfig: {
+        ...program.speechCoachConfig,
+        assignedTemplateId: args.assignedTemplateId,
+        lastSyncedTemplateVersion: template.version,
+        childOverrides: args.childOverrides,
+      },
+    });
+  },
+});
+
 export const update = slpMutation({
   args: {
     id: v.id("homePrograms"),
