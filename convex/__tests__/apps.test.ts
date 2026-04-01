@@ -171,18 +171,25 @@ describe("apps", () => {
     });
 
     it("allows share provisioning for an existing session even when the user is at the free saved-app cap", async () => {
-      const t = convexTest(schema, modules).withIdentity(TEST_IDENTITY);
+      const base = convexTest(schema, modules);
+      const t = base.withIdentity(TEST_IDENTITY);
+      const other = base.withIdentity(OTHER_IDENTITY);
       const sessionId = await t.mutation(api.sessions.create, {
         title: "Shareable app",
         query: "test",
+      });
+      const existingAppId = await other.mutation(api.apps.create, {
+        title: "Shareable app",
+        description: "pre-existing session app",
+        shareSlug: "shareable-app-existing",
+        sessionId,
       });
 
       for (let i = 0; i < FREE_LIMITS.maxApps; i++) {
         await t.mutation(api.apps.create, {
           title: `App ${i}`,
           description: "seed",
-          shareSlug: `slug-${i}`,
-          sessionId,
+          shareSlug: `cap-slug-${i}`,
         });
       }
 
@@ -191,7 +198,8 @@ describe("apps", () => {
         title: "Shareable app",
       });
 
-      expect(app).toBeTruthy();
+      expect(app?._id).toBe(existingAppId);
+      expect(app?.shareSlug).toBe("shareable-app-existing");
     });
   });
 });
