@@ -15,13 +15,92 @@ import { ActiveSession } from "./active-session";
 import { CoachSetupTab } from "./coach-setup-tab";
 import { SessionConfig } from "./session-config";
 import { SessionHistory } from "./session-history";
+import { TemplateAssignmentCard } from "./template-assignment-card";
 
-type Tab = "new" | "history" | "coach-setup";
+type Tab = "new" | "history" | "coach-setup" | "assigned-template";
 
 type Props = {
   patientId: Id<"patients">;
   homeProgramId: Id<"homePrograms">;
 };
+
+type PanelProps = {
+  patientId: Id<"patients">;
+  homeProgramId: Id<"homePrograms">;
+};
+
+function TemplateAssignmentPanel({ patientId: _patientId, homeProgramId }: PanelProps) {
+  const { isAuthenticated } = useConvexAuth();
+  const assignTemplate = useMutation(api.homePrograms.assignSpeechCoachTemplate);
+  const programs = useQuery(
+    api.homePrograms.listByPatient,
+    isAuthenticated ? { patientId: _patientId } : "skip"
+  );
+  const program = programs?.find((p) => p._id === homeProgramId);
+  const templates = useQuery(
+    api.speechCoachTemplates.listMine,
+    isAuthenticated ? {} : "skip"
+  );
+
+  async function handleAssign(assignment: {
+    templateId: Id<"speechCoachTemplates">;
+    templateVersion: number;
+    childNotes: string;
+  }) {
+    if (!program?.speechCoachConfig) return;
+    try {
+      await assignTemplate({
+        id: homeProgramId,
+        assignedTemplateId: assignment.templateId,
+        childOverrides: {
+          targetSounds: program.speechCoachConfig.targetSounds,
+          ageRange: program.speechCoachConfig.ageRange,
+          defaultDurationMinutes: program.speechCoachConfig.defaultDurationMinutes,
+          preferredThemes: program.speechCoachConfig.preferredThemes ?? [],
+          avoidThemes: program.speechCoachConfig.avoidThemes ?? [],
+          childNotes: assignment.childNotes || undefined,
+        },
+      });
+      toast.success("Template assigned");
+    } catch (err) {
+      console.error("[SpeechCoach] Failed to assign template:", err);
+      toast.error("Could not assign template");
+    }
+  }
+
+  if (!templates) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+      </div>
+    );
+  }
+
+  const currentAssignment = program?.speechCoachConfig
+    ? {
+        templateId: (program.speechCoachConfig as { assignedTemplateId?: Id<"speechCoachTemplates"> }).assignedTemplateId ?? null,
+        childNotes: (program.speechCoachConfig as { childNotes?: string }).childNotes ?? "",
+      }
+    : null;
+
+  return (
+    <div className="mx-auto max-w-lg">
+      <TemplateAssignmentCard
+        templates={templates}
+        value={
+          currentAssignment?.templateId
+            ? {
+                templateId: currentAssignment.templateId,
+                templateVersion: 0,
+                childNotes: currentAssignment.childNotes,
+              }
+            : null
+        }
+        onSave={handleAssign}
+      />
+    </div>
+  );
+}
 
 export function SpeechCoachPage({ patientId, homeProgramId }: Props) {
   const { user } = useUser();
@@ -124,6 +203,7 @@ export function SpeechCoachPage({ patientId, homeProgramId }: Props) {
     { id: "new", label: "New Session" },
     { id: "history", label: "History" },
     ...(isSLP ? [{ id: "coach-setup" as const, label: "Coach Setup" }] : []),
+    ...(isSLP ? [{ id: "assigned-template" as const, label: "Template" }] : []),
   ];
 
   async function handleSaveCoachSetup(config: SpeechCoachConfig) {
@@ -188,6 +268,9 @@ export function SpeechCoachPage({ patientId, homeProgramId }: Props) {
             onSave={handleSaveCoachSetup}
             isSaving={isSavingSetup}
           />
+        ) : null}
+        {activeTab === "assigned-template" ? (
+          <TemplateAssignmentPanel patientId={patientId} homeProgramId={homeProgramId} />
         ) : null}
       </div>
     </div>

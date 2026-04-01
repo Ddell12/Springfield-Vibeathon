@@ -160,7 +160,7 @@ export function SessionConfig({ speechCoachConfig, onStart, lastRecommended, isL
       {/* Tip */}
       <div className="rounded-lg bg-surface-container-high p-4">
         <p className="text-sm text-muted-foreground">
-          Sit with your child in a quiet space. The coach will guide the session with fun word games and lots of encouragement!
+          Your child&apos;s coach setup is already prepared. Choose the sounds for today&apos;s session and start when ready.
         </p>
       </div>
 
