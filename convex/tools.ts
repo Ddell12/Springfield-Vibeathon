@@ -7,7 +7,7 @@ export const create = mutation({
   args: {
     templateType: v.string(),
     title: v.string(),
-    patientId: v.id("patients"),
+    patientId: v.optional(v.id("patients")),
     configJson: v.string(),
   },
   handler: async (ctx, args) => {
@@ -17,7 +17,7 @@ export const create = mutation({
     return ctx.db.insert("app_instances", {
       templateType: args.templateType,
       title: args.title,
-      patientId: args.patientId,
+      ...(args.patientId !== undefined ? { patientId: args.patientId } : {}),
       slpUserId: identity.subject,
       configJson: args.configJson,
       status: "draft",
@@ -228,7 +228,7 @@ export const logEvent = mutation({
 
     await ctx.db.insert("tool_events", {
       appInstanceId: instance._id,
-      patientId: instance.patientId,
+      ...(instance.patientId !== undefined ? { patientId: instance.patientId } : {}),
       eventType: args.eventType,
       eventPayloadJson: args.eventPayloadJson,
     });

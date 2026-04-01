@@ -225,7 +225,7 @@ export default defineSchema({
   app_instances: defineTable({
     templateType: v.string(),
     title: v.string(),
-    patientId: v.id("patients"),
+    patientId: v.optional(v.id("patients")),
     slpUserId: v.string(),
     configJson: v.string(),
     status: v.union(
@@ -251,7 +251,7 @@ export default defineSchema({
 
   tool_events: defineTable({
     appInstanceId: v.id("app_instances"),
-    patientId: v.id("patients"),
+    patientId: v.optional(v.id("patients")),
     eventType: v.union(
       v.literal("app_opened"),
       v.literal("item_tapped"),

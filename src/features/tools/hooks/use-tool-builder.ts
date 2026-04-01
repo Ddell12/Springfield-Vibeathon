@@ -109,17 +109,18 @@ export function useToolBuilder(initialId?: Id<"app_instances"> | null) {
 
   const saveAndAdvance = useCallback(async () => {
     const { patientId, templateType, config, instanceId } = state;
-    if (!patientId || !templateType || !config) return;
+    if (!templateType || !config) return;
 
     setState((s) => ({ ...s, isSaving: true }));
     try {
       if (!instanceId) {
-        const id = await createInstance({
+        const payload = {
           templateType,
           title: (config as { title?: string }).title ?? "Untitled",
-          patientId,
           configJson: JSON.stringify(config),
-        });
+          ...(patientId ? { patientId } : {}),
+        };
+        const id = await createInstance(payload);
         setState((s) => ({ ...s, instanceId: id as Id<"app_instances">, isSaving: false }));
       } else {
         await updateInstance({

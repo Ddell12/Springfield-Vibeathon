@@ -130,6 +130,19 @@ describe("tools", () => {
     const list = await t.query(api.tools.listByPatient, { patientId });
     expect(list.length).toBe(1);
   });
+
+  it("creates a draft app instance without a patient", async () => {
+    const t = convexTest(schema, modules).withIdentity(SLP_IDENTITY);
+
+    const id = await t.mutation(api.tools.create, {
+      templateType: "aac_board",
+      title: "Portable Snack Board",
+      configJson: '{"title":"Snack Board"}',
+    });
+
+    const instance = await t.query(api.tools.get, { id });
+    expect(instance?.patientId).toBeUndefined();
+  });
 });
 
 describe("duplicate", () => {

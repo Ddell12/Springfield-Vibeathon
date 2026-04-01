@@ -31,7 +31,7 @@ interface ToolBuilderWizardProps {
   patients: Patient[];
 }
 
-const STEP_LABELS = ["Choose child", "Choose template", "Customize", "Publish"];
+const STEP_LABELS = ["Choose context", "Choose template", "Customize", "Publish"];
 
 export function ToolBuilderWizard({ builder, patients }: ToolBuilderWizardProps) {
   return (
@@ -65,15 +65,15 @@ export function ToolBuilderWizard({ builder, patients }: ToolBuilderWizardProps)
         </div>
       </div>
 
-      {/* Step 1: Choose child */}
+      {/* Step 1: Choose context */}
       {builder.step === 1 && (
         <div className="flex flex-col gap-6 p-6 max-w-md mx-auto w-full mt-8">
           <div>
             <h1 className="text-2xl font-display font-semibold">Who is this tool for?</h1>
-            <p className="text-muted-foreground mt-1">Choose a child from your caseload.</p>
+            <p className="text-muted-foreground mt-1">Optionally assign this tool to a child from your caseload, or skip to build a general tool.</p>
           </div>
           <div className="flex flex-col gap-2">
-            <Label htmlFor="patient-select">Child</Label>
+            <Label htmlFor="patient-select">Child (optional)</Label>
             <Select
               value={builder.patientId ?? ""}
               onValueChange={(v) => builder.selectPatient(v as never)}
@@ -90,9 +90,12 @@ export function ToolBuilderWizard({ builder, patients }: ToolBuilderWizardProps)
               </SelectContent>
             </Select>
           </div>
-          <Button disabled={!builder.patientId} onClick={builder.nextStep}>
-            Continue
-          </Button>
+          <div className="flex items-center gap-3">
+            <Button onClick={builder.nextStep}>Continue without child</Button>
+            <Button variant="outline" disabled={!builder.patientId} onClick={builder.nextStep}>
+              Continue with selected child
+            </Button>
+          </div>
         </div>
       )}
 

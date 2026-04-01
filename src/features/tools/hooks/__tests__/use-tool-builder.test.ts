@@ -62,4 +62,15 @@ describe("useToolBuilder", () => {
     act(() => result.current.updateConfig(newConfig));
     expect(result.current.config).toEqual(newConfig);
   });
+
+  it("allows saveAndAdvance without patientId", async () => {
+    const { result } = renderHook(() => useToolBuilder());
+    act(() => result.current.selectTemplate("aac_board"));
+
+    await act(async () => {
+      await result.current.saveAndAdvance();
+    });
+
+    expect(result.current.instanceId).not.toBeNull();
+  });
 });
