@@ -15,8 +15,8 @@ export default async function AppRuntimePage({ params }: Props) {
     return (
       <div className="flex items-center justify-center min-h-screen text-muted-foreground p-8 text-center">
         <div>
-          <p className="text-lg font-medium">Tool not found</p>
-          <p className="text-sm mt-1">This link may have expired or been removed.</p>
+          <p className="text-lg font-medium">App not found</p>
+          <p className="text-sm mt-1">This app link may have expired or been removed.</p>
         </div>
       </div>
     );

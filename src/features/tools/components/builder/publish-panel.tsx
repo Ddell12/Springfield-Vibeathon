@@ -35,7 +35,7 @@ export function PublishPanel({ isSaving, publishedShareToken, onPublish }: Publi
             No login required to use it.
           </p>
           <Button size="lg" disabled={isSaving} onClick={() => void onPublish()}>
-            {isSaving ? "Publishing…" : "Publish tool"}
+            {isSaving ? "Publishing…" : "Publish app"}
           </Button>
         </>
       ) : (
@@ -43,8 +43,8 @@ export function PublishPanel({ isSaving, publishedShareToken, onPublish }: Publi
           <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
             <Check className="w-6 h-6 text-primary" />
           </div>
-          <h2 className="text-2xl font-display font-semibold">Tool published!</h2>
-          <p className="text-muted-foreground">Share this link with the parent or caregiver.</p>
+          <h2 className="text-2xl font-headline font-semibold">App published</h2>
+          <p className="text-muted-foreground">Share this link with a parent, caregiver, or use it yourself in session.</p>
           <div className="w-full bg-muted rounded-lg p-3 flex items-center gap-2">
             <span className="flex-1 text-sm truncate font-mono text-left">{shareUrl}</span>
             <Button variant="ghost" size="sm" onClick={handleCopy}>
