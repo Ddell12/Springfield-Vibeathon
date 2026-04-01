@@ -1,6 +1,16 @@
 import { AccessToken } from "livekit-server-sdk";
 
+import { authenticate } from "@/app/api/lib/authenticate";
+
 export async function POST(req: Request): Promise<Response> {
+  const { userId } = await authenticate();
+  if (!userId) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
   const body = (await req.json()) as {
     roomName?: string;
     participantName?: string;
@@ -36,6 +46,14 @@ export async function POST(req: Request): Promise<Response> {
     ttl: "30m",
   });
 
+  const serverUrl = process.env.NEXT_PUBLIC_LIVEKIT_URL;
+  if (!serverUrl) {
+    return new Response(JSON.stringify({ error: "LiveKit server URL not configured" }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
   at.addGrant({
     roomJoin: true,
     room: roomName,
@@ -44,8 +62,5 @@ export async function POST(req: Request): Promise<Response> {
     canPublishData: true,
   });
 
-  return Response.json({
-    token: await at.toJwt(),
-    serverUrl: process.env.NEXT_PUBLIC_LIVEKIT_URL,
-  });
+  return Response.json({ token: await at.toJwt(), serverUrl });
 }

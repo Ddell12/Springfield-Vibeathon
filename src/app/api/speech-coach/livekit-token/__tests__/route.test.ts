@@ -1,5 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 
+// Mock authenticate so tests don't need a Convex deployment URL
+vi.mock("@/app/api/lib/authenticate", () => ({
+  authenticate: vi.fn().mockResolvedValue({ userId: "test-user-123", convex: {} }),
+}));
+
 // Mock livekit-server-sdk before importing the route handler
 vi.mock("livekit-server-sdk", () => {
   return {

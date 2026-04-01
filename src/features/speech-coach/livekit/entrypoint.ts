@@ -11,9 +11,14 @@ export default defineAgent({
   entry: async (ctx: JobContext) => {
     await ctx.connect();
 
-    const metadata = ctx.room.metadata
-      ? (JSON.parse(ctx.room.metadata) as { instructions?: string; tools?: string[] })
-      : {};
+    let metadata: { instructions?: string; tools?: string[] } = {};
+    try {
+      if (ctx.room.metadata) {
+        metadata = JSON.parse(ctx.room.metadata) as { instructions?: string; tools?: string[] };
+      }
+    } catch {
+      // Use defaults if metadata is malformed
+    }
 
     const realtimeModelOptions: ConstructorParameters<typeof google.beta.realtime.RealtimeModel>[0] =
       {

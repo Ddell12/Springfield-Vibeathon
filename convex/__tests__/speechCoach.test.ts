@@ -1,5 +1,5 @@
 import { convexTest } from "convex-test";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { api } from "../_generated/api";
 import schema from "../schema";
@@ -180,6 +180,10 @@ describe("speechCoach session lifecycle", () => {
 // ── createLiveSession runtime action ────────────────────────────────────────
 
 describe("speechCoachRuntimeActions.createLiveSession", () => {
+  beforeEach(() => {
+    vi.stubEnv("LIVEKIT_URL", "wss://test.livekit.cloud");
+  });
+
   it("returns a runtime session payload instead of a fixed elevenlabs signed url", async () => {
     const t = convexTest(schema, modules);
     const { programId } = await setupSpeechCoachProgram(t);
@@ -191,8 +195,8 @@ describe("speechCoachRuntimeActions.createLiveSession", () => {
       config: { targetSounds: ["/s/"], ageRange: "2-4" as const, durationMinutes: 5 },
     });
 
-    // Call the runtime action
-    const result = await t.action(api.speechCoachRuntimeActions.createLiveSession, { sessionId });
+    // Call the runtime action as the caregiver who owns the session
+    const result = await caregiver.action(api.speechCoachRuntimeActions.createLiveSession, { sessionId });
 
     expect(result.roomName).toContain("speech-coach-");
     expect(result.tokenPath).toBe("/api/speech-coach/livekit-token");
