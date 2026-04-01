@@ -222,6 +222,51 @@ export default defineSchema({
     .index("by_inviteToken", ["inviteToken"])
     .index("by_email", ["email"]),
 
+  app_instances: defineTable({
+    templateType: v.string(),
+    title: v.string(),
+    patientId: v.id("patients"),
+    slpUserId: v.string(),
+    configJson: v.string(),
+    status: v.union(
+      v.literal("draft"),
+      v.literal("published"),
+      v.literal("archived")
+    ),
+    version: v.number(),
+    shareToken: v.optional(v.string()),
+    publishedAt: v.optional(v.number()),
+  })
+    .index("by_slpUserId", ["slpUserId"])
+    .index("by_patientId", ["patientId"])
+    .index("by_shareToken", ["shareToken"]),
+
+  published_app_versions: defineTable({
+    appInstanceId: v.id("app_instances"),
+    version: v.number(),
+    configJson: v.string(),
+    publishedAt: v.number(),
+  })
+    .index("by_appInstanceId", ["appInstanceId"]),
+
+  tool_events: defineTable({
+    appInstanceId: v.id("app_instances"),
+    patientId: v.id("patients"),
+    eventType: v.union(
+      v.literal("app_opened"),
+      v.literal("item_tapped"),
+      v.literal("answer_correct"),
+      v.literal("answer_incorrect"),
+      v.literal("activity_completed"),
+      v.literal("token_added"),
+      v.literal("audio_played"),
+      v.literal("app_closed")
+    ),
+    eventPayloadJson: v.optional(v.string()),
+  })
+    .index("by_appInstanceId", ["appInstanceId"])
+    .index("by_patientId", ["patientId"]),
+
   patientMaterials: defineTable({
     patientId: v.id("patients"),
     sessionId: v.optional(v.id("sessions")),
