@@ -13,12 +13,19 @@ export type SessionConfig = {
   focusArea?: string;
 };
 
+export type LiveKitRuntimeSession = {
+  runtime: "livekit-agent";
+  roomName: string;
+  serverUrl: string;
+  tokenPath: string;
+};
+
 type SessionPhase = "idle" | "connecting" | "active" | "ending" | "done" | "error";
 
 export function useSpeechSession(homeProgramId: Id<"homePrograms">) {
   const [phase, setPhase] = useState<SessionPhase>("idle");
   const [sessionId, setSessionId] = useState<Id<"speechCoachSessions"> | null>(null);
-  const [signedUrl, setSignedUrl] = useState<string | null>(null);
+  const [runtimeSession, setRuntimeSession] = useState<LiveKitRuntimeSession | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [durationMinutes, setDurationMinutes] = useState<number>(5);
   const [sessionConfig, setCurrentSessionConfig] = useState<SessionConfig | null>(null);
@@ -27,7 +34,7 @@ export function useSpeechSession(homeProgramId: Id<"homePrograms">) {
   const startSession = useMutation(api.speechCoach.startSession);
   const endSessionMutation = useMutation(api.speechCoach.endSession);
   const failSessionMutation = useMutation(api.speechCoach.failSession);
-  const getSignedUrl = useAction(api.speechCoachActions.getSignedUrl);
+  const createLiveSession = useAction(api.speechCoachRuntimeActions.createLiveSession);
 
   const begin = useCallback(async (config: SessionConfig) => {
     let id: Id<"speechCoachSessions"> | undefined;
@@ -51,12 +58,12 @@ export function useSpeechSession(homeProgramId: Id<"homePrograms">) {
       setDurationMinutes(config.durationMinutes);
       setCurrentSessionConfig(config);
 
-      // Get signed URL
-      const { signedUrl: url } = await getSignedUrl({});
-      setSignedUrl(url);
+      // Get LiveKit room metadata
+      const liveSession = await createLiveSession({ sessionId: id! });
+      setRuntimeSession(liveSession);
       setPhase("active");
 
-      return { sessionId: id, signedUrl: url };
+      return { sessionId: id, runtimeSession: liveSession };
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Failed to start session";
       setError(msg);
@@ -65,7 +72,7 @@ export function useSpeechSession(homeProgramId: Id<"homePrograms">) {
         await failSessionMutation({ sessionId: id, errorMessage: msg }).catch(() => {});
       }
     }
-  }, [createSession, getSignedUrl, failSessionMutation, homeProgramId]);
+  }, [createSession, createLiveSession, failSessionMutation, homeProgramId]);
 
   const markActive = useCallback(async (conversationId: string) => {
     if (!sessionId) return;
@@ -87,10 +94,10 @@ export function useSpeechSession(homeProgramId: Id<"homePrograms">) {
   const reset = useCallback(() => {
     setPhase("idle");
     setSessionId(null);
-    setSignedUrl(null);
+    setRuntimeSession(null);
     setError(null);
     setCurrentSessionConfig(null);
   }, []);
 
-  return { phase, sessionId, signedUrl, error, durationMinutes, sessionConfig, begin, markActive, endSession, reset };
+  return { phase, sessionId, runtimeSession, error, durationMinutes, sessionConfig, begin, markActive, endSession, reset };
 }

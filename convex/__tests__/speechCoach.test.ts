@@ -177,6 +177,29 @@ describe("speechCoach session lifecycle", () => {
   });
 });
 
+// ── createLiveSession runtime action ────────────────────────────────────────
+
+describe("speechCoachRuntimeActions.createLiveSession", () => {
+  it("returns a runtime session payload instead of a fixed elevenlabs signed url", async () => {
+    const t = convexTest(schema, modules);
+    const { programId } = await setupSpeechCoachProgram(t);
+    const caregiver = t.withIdentity(CAREGIVER_IDENTITY);
+
+    // Create a session to get a sessionId
+    const sessionId = await caregiver.mutation(api.speechCoach.createSession, {
+      homeProgramId: programId,
+      config: { targetSounds: ["/s/"], ageRange: "2-4" as const, durationMinutes: 5 },
+    });
+
+    // Call the runtime action
+    const result = await t.action(api.speechCoachRuntimeActions.createLiveSession, { sessionId });
+
+    expect(result.roomName).toContain("speech-coach-");
+    expect(result.tokenPath).toBe("/api/speech-coach/livekit-token");
+    expect(result.runtime).toBe("livekit-agent");
+  });
+});
+
 // ── queries ─────────────────────────────────────────────────────────────────
 
 describe("speechCoach queries", () => {
