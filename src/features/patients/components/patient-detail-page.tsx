@@ -141,6 +141,7 @@ export function PatientDetailPage({ paramsPromise, clinicalWidgets }: PatientDet
           <TabsTrigger value="clinical">Clinical</TabsTrigger>
           <TabsTrigger value="materials">Materials</TabsTrigger>
           <TabsTrigger value="notes">Notes</TabsTrigger>
+          <TabsTrigger value="billing">Billing</TabsTrigger>
         </TabsList>
 
         {/* Overview */}
@@ -179,6 +180,14 @@ export function PatientDetailPage({ paramsPromise, clinicalWidgets }: PatientDet
           <div className="flex flex-col gap-6">
             <ActivityTimeline patientId={patient._id} />
             <QuickNotes patient={patient} />
+          </div>
+        </TabsContent>
+
+        {/* Billing */}
+        <TabsContent value="billing" className="p-4 sm:p-6 lg:p-8">
+          <div className="flex flex-col items-center justify-center py-16 text-on-surface-variant rounded-2xl border border-surface-container-high bg-surface-container-lowest">
+            <MaterialIcon icon="receipt_long" size="lg" className="mb-2 opacity-40" />
+            <p className="text-sm">Billing history and insurance context will appear here.</p>
           </div>
         </TabsContent>
       </Tabs>

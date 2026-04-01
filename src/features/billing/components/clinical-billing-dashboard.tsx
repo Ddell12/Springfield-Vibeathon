@@ -101,7 +101,7 @@ export function ClinicalBillingDashboard() {
         <div>
           <h1 className="font-display text-2xl font-semibold text-on-surface">Clinical Billing</h1>
           <p className="text-sm text-on-surface-variant mt-1">
-            Manage billing records and generate superbills
+            Review billing work created from signed notes and session workflow
           </p>
         </div>
         <Button type="button" onClick={() => setCreateOpen(true)}>

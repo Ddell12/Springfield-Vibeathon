@@ -296,7 +296,7 @@ export function SessionNoteEditor({
     if (!currentNoteId) return;
     try {
       await signNote({ noteId: currentNoteId });
-      toast.success("Note signed successfully");
+      toast.success("Session note signed. Billing record is ready for review.");
     } catch (err) {
       toast.error(
         err instanceof Error ? err.message : "Failed to sign note"

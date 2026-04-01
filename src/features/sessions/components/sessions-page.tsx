@@ -111,7 +111,7 @@ export function SessionsPage() {
           <p className="text-sm text-on-surface-variant">
             {isCaregiver
               ? "Upcoming sessions for your family"
-              : "Schedule and run teletherapy sessions"}
+              : "Schedule, run, document, and manage billing for sessions"}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
