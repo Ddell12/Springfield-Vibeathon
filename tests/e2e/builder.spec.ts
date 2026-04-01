@@ -1,5 +1,5 @@
 import { expect,test } from "./fixtures";
-import { TIMEOUTS } from "./helpers";
+import { expectPreviewReady, TIMEOUTS } from "./helpers";
 
 const TEST_PROMPT =
   "Create a simple visual timer that counts down from 30 seconds with a big number display";
@@ -67,21 +67,13 @@ test.describe("Builder — authenticated", () => {
     await input.fill(TEST_PROMPT);
     await input.press("Enter");
 
-    const preview = authedPage.locator("iframe[title='App preview']");
-    const previewFrame = authedPage.frameLocator("iframe[title='App preview']");
     const readyText = authedPage.getByText(/app is live and ready/i);
-    const failureCopy = authedPage.getByText(/Something didn't look right/i);
 
     await expect(readyText).toBeVisible({ timeout: 90_000 });
 
     await authedPage.screenshot({ path: "test-results/builder-complete.png" });
 
-    await expect(preview).toBeVisible({ timeout: 60_000 });
-    await expect(previewFrame.locator("body")).toBeVisible({ timeout: 30_000 });
-    await expect.poll(async () =>
-      previewFrame.locator("body").evaluate((body) => body.ownerDocument.readyState)
-    ).toBe("complete");
-    await expect(failureCopy).toHaveCount(0);
+    await expectPreviewReady(authedPage);
   });
 
   test.fixme(

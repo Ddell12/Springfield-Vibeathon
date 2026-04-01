@@ -1,5 +1,6 @@
 import { clerk } from "@clerk/testing/playwright";
 import { expect, test } from "@playwright/test";
+import { expectPreviewReady } from "./helpers";
 
 // Requires env vars: E2E_CLERK_USER_EMAIL + E2E_CLERK_USER_PASSWORD
 // Test user must have a unique password NOT in any breach database (Clerk HIBP check).
@@ -57,13 +58,6 @@ test.describe("Builder preview (authenticated)", () => {
     // Wait for "App is live and ready!" success state
     await expect(page.getByText(/app is live and ready/i)).toBeVisible({ timeout: 90_000 });
 
-    const preview = page.locator("iframe[title='App preview']");
-    const previewFrame = page.frameLocator("iframe[title='App preview']");
-    await expect(preview).toBeVisible({ timeout: 60_000 });
-    await expect(previewFrame.locator("body")).toBeVisible({ timeout: 30_000 });
-    await expect.poll(async () =>
-      previewFrame.locator("body").evaluate((body) => body.ownerDocument.readyState)
-    ).toBe("complete");
-    await expect(page.getByText(/Something didn't look right/i)).toHaveCount(0);
+    await expectPreviewReady(page);
   });
 });
