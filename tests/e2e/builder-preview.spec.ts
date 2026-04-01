@@ -57,20 +57,8 @@ test.describe("Builder preview (authenticated)", () => {
     // Wait for "App is live and ready!" success state
     await expect(page.getByText(/app is live and ready/i)).toBeVisible({ timeout: 90_000 });
 
-    // The preview iframe should exist and have content (not the "Build could not produce" error)
-    const previewIframe = page.locator("iframe[title='App preview']");
-    const buildError = page.getByText(/build could not produce/i);
-
-    // Either iframe is visible (success) or build error shows (failure)
-    const hasPreview = await previewIframe.isVisible().catch(() => false);
-    const hasBuildError = await buildError.isVisible().catch(() => false);
-
-    if (hasBuildError) {
-      // Capture the error state for debugging
-      await page.screenshot({ path: "test-results/builder-preview-failed.png" });
-      test.fail(true, "Preview build failed — 'Build could not produce a preview' shown");
-    }
-
-    expect(hasPreview).toBe(true);
+    const preview = page.locator("iframe[title='App preview']");
+    await expect(preview).toBeVisible({ timeout: 60_000 });
+    await expect(page.getByText(/Something didn't look right/i)).toHaveCount(0);
   });
 });

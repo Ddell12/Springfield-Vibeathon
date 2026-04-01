@@ -79,10 +79,8 @@ test.describe("Builder — authenticated", () => {
 
     await authedPage.screenshot({ path: "test-results/builder-complete.png" });
 
-    // Either preview iframe OR build error must be present
-    const hasPreview = await preview.isVisible().catch(() => false);
-    const hasError = await buildError.isVisible().catch(() => false);
-    expect(hasPreview || hasError).toBe(true);
+    await expect(preview).toBeVisible({ timeout: 60_000 });
+    await expect(authedPage.getByText(/Something didn't look right/i)).toHaveCount(0);
   });
 
   test.fixme(
