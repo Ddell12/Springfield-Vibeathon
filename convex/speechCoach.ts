@@ -13,6 +13,15 @@ const configValidator = v.object({
   ageRange: v.union(v.literal("2-4"), v.literal("5-7")),
   durationMinutes: v.number(),
   focusArea: v.optional(v.string()),
+  runtimeSnapshot: v.optional(v.object({
+    templateId: v.optional(v.id("speechCoachTemplates")),
+    templateVersion: v.optional(v.number()),
+    voiceProvider: v.string(),
+    voiceKey: v.string(),
+    tools: v.array(v.string()),
+    skills: v.array(v.string()),
+    knowledgePackIds: v.array(v.string()),
+  })),
 });
 
 // ── Mutations ────────────────────────────────────────────────────────────────
