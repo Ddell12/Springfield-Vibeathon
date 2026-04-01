@@ -1,4 +1,4 @@
-import { GraduationCap, Heart, ClipboardList, Grid2x2, Calendar, BarChart2 } from "lucide-react";
+import { BarChart2,Calendar, ClipboardList, GraduationCap, Grid2x2, Heart } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 
@@ -73,41 +73,53 @@ export default function MeetVocaliPage() {
       </div>
 
       {/* Who it's for */}
-      <div className="mt-20">
-        <h2 className="font-headline text-center text-3xl text-on-surface">Who it&apos;s for</h2>
-        <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-3">
-          {ROLES.map(({ icon: Icon, title, description }) => (
-            <div key={title} className="rounded-3xl bg-surface p-8">
-              <div className="flex size-12 items-center justify-center rounded-2xl bg-accent">
-                <Icon className="size-6 text-primary" />
+      <section className="mt-20 rounded-xl bg-surface px-6 py-8 sm:px-8">
+        <div className="grid gap-10 lg:grid-cols-[220px_minmax(0,1fr)]">
+          <div>
+            <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-on-surface-variant">
+              Who it&apos;s for
+            </p>
+            <h2 className="mt-3 font-headline text-3xl text-on-surface">
+              Built for the people carrying therapy forward every day.
+            </h2>
+          </div>
+          <div className="grid gap-4">
+            {ROLES.map(({ icon: Icon, title, description }) => (
+              <div key={title} className="grid gap-3 rounded-lg bg-surface-container-low px-5 py-5 sm:grid-cols-[auto_minmax(0,1fr)] sm:items-start">
+                <Icon className="mt-1 size-5 text-primary" />
+                <div>
+                  <h3 className="text-base font-semibold text-on-surface">{title}</h3>
+                  <p className="mt-1 text-sm leading-6 text-on-surface-variant">{description}</p>
+                </div>
               </div>
-              <h3 className="mt-4 text-base font-semibold text-on-surface">{title}</h3>
-              <p className="mt-2 text-sm leading-6 text-on-surface-variant">{description}</p>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-      </div>
+      </section>
 
       {/* What you can build */}
-      <div className="mt-20">
-        <h2 className="font-headline text-center text-3xl text-on-surface">
-          What you can build
-        </h2>
-        <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-3">
+      <section className="mt-20">
+        <div className="max-w-2xl">
+          <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-on-surface-variant">
+            What you can build
+          </p>
+          <h2 className="mt-3 font-headline text-3xl text-on-surface">
+            Start with the therapy app you needed yesterday.
+          </h2>
+        </div>
+        <div className="mt-10 grid gap-4 md:grid-cols-3">
           {APP_TYPES.map(({ icon: Icon, title, description }) => (
-            <div key={title} className="rounded-3xl bg-surface p-8">
-              <div className="flex size-12 items-center justify-center rounded-2xl bg-accent">
-                <Icon className="size-6 text-primary" />
-              </div>
+            <div key={title} className="rounded-lg bg-surface-container-low px-5 py-6">
+              <Icon className="size-5 text-primary" />
               <h3 className="mt-4 text-base font-semibold text-on-surface">{title}</h3>
               <p className="mt-2 text-sm leading-6 text-on-surface-variant">{description}</p>
             </div>
           ))}
         </div>
-      </div>
+      </section>
 
       {/* CTA strip */}
-      <div className="mt-20 rounded-3xl bg-surface px-8 py-12 text-center">
+      <div className="mt-20 rounded-xl bg-surface px-8 py-12 text-center">
         <h2 className="font-headline text-2xl text-on-surface">
           Ready to build your first app?
         </h2>

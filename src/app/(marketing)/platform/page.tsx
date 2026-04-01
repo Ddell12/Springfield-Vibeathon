@@ -1,4 +1,4 @@
-import { MessageSquare, Wand2, Eye, Globe, Bot, Layout, Volume2, Mic, Shield, ExternalLink } from "lucide-react";
+import { Bot, ExternalLink,Eye, Globe, Layout, MessageSquare, Mic, Shield, Volume2, Wand2 } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 
@@ -85,44 +85,56 @@ export default function PlatformPage() {
       </div>
 
       {/* 4-step pipeline */}
-      <div className="mt-20">
-        <h2 className="font-headline text-center text-3xl text-on-surface">How it works</h2>
-        <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {PIPELINE_STEPS.map(({ number, icon: Icon, title, description }) => (
-            <div key={title} className="rounded-3xl bg-surface p-8">
-              <span className="font-mono text-xs tracking-widest text-on-surface-variant">
-                {number}
-              </span>
-              <div className="mt-3 flex size-12 items-center justify-center rounded-2xl bg-accent">
-                <Icon className="size-6 text-primary" />
+      <section className="mt-20 rounded-xl bg-surface px-6 py-8 sm:px-8">
+        <div className="grid gap-10 lg:grid-cols-[220px_minmax(0,1fr)]">
+          <div>
+            <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-on-surface-variant">
+              How it works
+            </p>
+            <h2 className="mt-3 font-headline text-3xl text-on-surface">
+              A builder flow that stays readable from prompt to publish.
+            </h2>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            {PIPELINE_STEPS.map(({ number, icon: Icon, title, description }) => (
+              <div key={title} className="rounded-lg bg-surface-container-low px-5 py-5">
+                <div className="flex items-center gap-3">
+                  <span className="font-mono text-[11px] uppercase tracking-[0.16em] text-on-surface-variant">
+                    {number}
+                  </span>
+                  <Icon className="size-4 text-primary" />
+                </div>
+                <h3 className="mt-4 text-base font-semibold text-on-surface">{title}</h3>
+                <p className="mt-2 text-sm leading-6 text-on-surface-variant">{description}</p>
               </div>
-              <h3 className="mt-4 text-base font-semibold text-on-surface">{title}</h3>
-              <p className="mt-2 text-sm leading-6 text-on-surface-variant">{description}</p>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-      </div>
+      </section>
 
       {/* Capability grid */}
-      <div className="mt-20">
-        <h2 className="font-headline text-center text-3xl text-on-surface">
-          Built for therapy, from the ground up
-        </h2>
-        <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      <section className="mt-20">
+        <div className="max-w-2xl">
+          <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-on-surface-variant">
+            Capability set
+          </p>
+          <h2 className="mt-3 font-headline text-3xl text-on-surface">
+            Purpose-built for therapy sessions, not a generic app studio.
+          </h2>
+        </div>
+        <div className="mt-10 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {CAPABILITIES.map(({ icon: Icon, title, description }) => (
-            <div key={title} className="rounded-3xl bg-surface p-8">
-              <div className="flex size-12 items-center justify-center rounded-2xl bg-accent">
-                <Icon className="size-6 text-primary" />
-              </div>
+            <div key={title} className="rounded-lg bg-surface-container-low px-5 py-6">
+              <Icon className="size-5 text-primary" />
               <h3 className="mt-4 text-base font-semibold text-on-surface">{title}</h3>
               <p className="mt-2 text-sm leading-6 text-on-surface-variant">{description}</p>
             </div>
           ))}
         </div>
-      </div>
+      </section>
 
       {/* Trust callout */}
-      <div className="mt-14 rounded-3xl bg-accent px-8 py-10 text-center">
+      <div className="mt-14 rounded-xl bg-surface-container-low px-8 py-10 text-center">
         <p className="text-base leading-7 text-on-surface">
           Every app is sandboxed, accessible, and runs entirely in your browser —
           no installs, no downloads, no data leaves your session.
