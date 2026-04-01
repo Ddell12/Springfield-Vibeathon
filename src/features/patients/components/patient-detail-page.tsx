@@ -24,6 +24,7 @@ import { CaregiverInfo } from "./caregiver-info";
 import { HomeProgramsWidget } from "./home-programs-widget";
 import { PatientProfileWidget } from "./patient-profile-widget";
 import { QuickNotes } from "./quick-notes";
+import { ToolActivitySummary } from "./tool-activity-summary";
 
 interface PatientDetailPageProps {
   paramsPromise: Promise<{ id: string }>;
@@ -172,6 +173,7 @@ export function PatientDetailPage({ paramsPromise, clinicalWidgets }: PatientDet
             <AssignedMaterials patientId={patient._id} />
             <HomeProgramsWidget patientId={patient._id} />
             <ChildAppsSection patientId={patient._id} />
+            <ToolActivitySummary patientId={patient._id} />
           </div>
         </TabsContent>
 

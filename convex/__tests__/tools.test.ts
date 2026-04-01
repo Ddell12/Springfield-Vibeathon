@@ -131,3 +131,59 @@ describe("tools", () => {
     expect(list.length).toBe(1);
   });
 });
+
+describe("getEventSummaryByPatient", () => {
+  it("returns empty array when no app instances", async () => {
+    const t = convexTest(schema, modules).withIdentity(SLP_IDENTITY);
+    const { patientId } = await createPatient(t);
+    const summary = await t.query(api.tools.getEventSummaryByPatient, { patientId });
+    expect(summary).toEqual([]);
+  });
+
+  it("returns summary for published instance with no events", async () => {
+    const t = convexTest(schema, modules).withIdentity(SLP_IDENTITY);
+    const { patientId } = await createPatient(t);
+    const id = await t.mutation(api.tools.create, {
+      templateType: "aac_board",
+      title: "Snack Board",
+      patientId,
+      configJson: SAMPLE_CONFIG,
+    });
+    await t.mutation(api.tools.publish, { id });
+
+    const summary = await t.query(api.tools.getEventSummaryByPatient, { patientId });
+    expect(summary.length).toBe(1);
+    expect(summary[0].title).toBe("Snack Board");
+    expect(summary[0].status).toBe("published");
+    expect(summary[0].totalEvents).toBe(0);
+    expect(summary[0].completions).toBe(0);
+    expect(summary[0].interactions).toBe(0);
+  });
+
+  it("counts completions and interactions correctly", async () => {
+    const t = convexTest(schema, modules).withIdentity(SLP_IDENTITY);
+    const { patientId } = await createPatient(t);
+    const id = await t.mutation(api.tools.create, {
+      templateType: "aac_board",
+      title: "Snack Board",
+      patientId,
+      configJson: SAMPLE_CONFIG,
+    });
+    const { shareToken } = await t.mutation(api.tools.publish, { id });
+
+    // Log 2 completions, 3 interactions, 1 other event
+    await t.mutation(api.tools.logEvent, { shareToken, eventType: "activity_completed" });
+    await t.mutation(api.tools.logEvent, { shareToken, eventType: "activity_completed" });
+    await t.mutation(api.tools.logEvent, { shareToken, eventType: "item_tapped" });
+    await t.mutation(api.tools.logEvent, { shareToken, eventType: "answer_correct" });
+    await t.mutation(api.tools.logEvent, { shareToken, eventType: "token_added" });
+    await t.mutation(api.tools.logEvent, { shareToken, eventType: "app_opened" });
+
+    const summary = await t.query(api.tools.getEventSummaryByPatient, { patientId });
+    expect(summary.length).toBe(1);
+    expect(summary[0].totalEvents).toBe(6);
+    expect(summary[0].completions).toBe(2);
+    expect(summary[0].interactions).toBe(3);
+    expect(summary[0].lastActivityAt).not.toBeNull();
+  });
+});

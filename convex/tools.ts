@@ -121,6 +121,52 @@ export const listByPatient = query({
       .collect(),
 });
 
+export const getEventSummaryByPatient = query({
+  args: { patientId: v.id("patients") },
+  handler: async (ctx, args) => {
+    const instances = await ctx.db
+      .query("app_instances")
+      .withIndex("by_patientId", (q) => q.eq("patientId", args.patientId))
+      .collect();
+
+    const summaries = await Promise.all(
+      instances.map(async (instance) => {
+        const events = await ctx.db
+          .query("tool_events")
+          .withIndex("by_appInstanceId", (q) =>
+            q.eq("appInstanceId", instance._id)
+          )
+          .collect();
+
+        const completions = events.filter(
+          (e) => e.eventType === "activity_completed"
+        ).length;
+        const interactions = events.filter(
+          (e) =>
+            e.eventType === "item_tapped" ||
+            e.eventType === "answer_correct" ||
+            e.eventType === "token_added"
+        ).length;
+        const lastEvent = events.at(-1);
+
+        return {
+          appInstanceId: instance._id,
+          title: instance.title,
+          templateType: instance.templateType,
+          status: instance.status,
+          shareToken: instance.shareToken,
+          totalEvents: events.length,
+          completions,
+          interactions,
+          lastActivityAt: lastEvent?._creationTime ?? null,
+        };
+      })
+    );
+
+    return summaries.filter((s) => s.totalEvents > 0 || s.status === "published");
+  },
+});
+
 export const logEvent = mutation({
   args: {
     shareToken: v.string(),
