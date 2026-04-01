@@ -1,13 +1,16 @@
-// Node.js LiveKit Agents entrypoint MUST use defineAgent({ entry }) as the
-// default export — this is the hook LiveKit Cloud uses to dispatch jobs.
-// A named export or plain function will not be registered as a worker.
-import { defineAgent, JobContext, voice } from "@livekit/agents";
+import { fileURLToPath } from "url";
+import { cli, defineAgent, JobContext, voice, WorkerOptions } from "@livekit/agents";
+
+// .env.local uses NEXT_PUBLIC_LIVEKIT_URL; the LiveKit worker needs LIVEKIT_URL.
+if (!process.env.LIVEKIT_URL && process.env.NEXT_PUBLIC_LIVEKIT_URL) {
+  process.env.LIVEKIT_URL = process.env.NEXT_PUBLIC_LIVEKIT_URL;
+}
 import * as google from "@livekit/agents-plugin-google";
 
 import { createSpeechCoachAgent } from "./agent";
 import { SPEECH_COACH_REALTIME_MODEL, SPEECH_COACH_VOICE_MODE } from "./model-config";
 
-export default defineAgent({
+const agent = defineAgent({
   entry: async (ctx: JobContext) => {
     await ctx.connect();
 
@@ -43,3 +46,8 @@ export default defineAgent({
     });
   },
 });
+
+export default agent;
+
+// Bootstrap the worker — connects to LiveKit Cloud and listens for speech-coach-* jobs.
+cli.runApp(new WorkerOptions({ agent: fileURLToPath(import.meta.url) }));
