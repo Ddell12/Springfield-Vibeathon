@@ -59,7 +59,7 @@ export function PreviewPanel({ bundleHtml, state, error, deviceSize = "desktop",
   }, []);
 
   const hasPreview = !!blobUrl;
-  const isGenerating = state === "generating";
+  const isGenerating = state === "generating" || state === "bundling" || state === "validating";
   const isFailed = state === "failed";
 
   return (
@@ -94,7 +94,7 @@ export function PreviewPanel({ bundleHtml, state, error, deviceSize = "desktop",
           <div>
             <p className="text-sm font-medium">Creating your app...</p>
             {activityMessage && (
-              <p className="mt-1.5 text-xs text-muted-foreground/60 animate-pulse">
+              <p className="mt-1.5 text-xs text-muted-foreground/60">
                 {activityMessage}
               </p>
             )}

@@ -27,6 +27,19 @@ describe("PreviewPanel — blob URL iframe", () => {
     expect(screen.getByText(/creating your app/i)).toBeTruthy();
   });
 
+  it("shows bundling state before a live preview is ready", () => {
+    render(
+      <PreviewPanel
+        bundleHtml={null}
+        state="generating"
+        activityMessage="Bundling preview..."
+      />
+    );
+
+    expect(screen.getByText("Creating your app...")).toBeInTheDocument();
+    expect(screen.getByText("Bundling preview...")).toBeInTheDocument();
+  });
+
   it("shows 'Updating...' overlay when generating with existing preview", () => {
     render(<PreviewPanel bundleHtml="<html><body>v1</body></html>" state="generating" />);
     expect(screen.getByText(/updating/i)).toBeTruthy();

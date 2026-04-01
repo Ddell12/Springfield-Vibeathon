@@ -12,7 +12,13 @@ const GENERATION_TIMEOUT_MS = 5 * 60 * 1000; // 5 min
 /** If no SSE events arrive within this window, treat the stream as dead. */
 const INACTIVITY_TIMEOUT_MS = 60 * 1000; // 60s
 
-export type StreamingStatus = "idle" | "generating" | "live" | "failed";
+export type StreamingStatus =
+  | "idle"
+  | "generating"
+  | "bundling"
+  | "validating"
+  | "live"
+  | "failed";
 
 export interface StreamingFile {
   path: string;
@@ -274,7 +280,7 @@ export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn 
 
         case "status":
           if (sseEvent.status === "bundling") {
-            dispatch({ type: "SET_STATUS", status: "generating" });
+            dispatch({ type: "SET_STATUS", status: "bundling" });
             dispatch({ type: "SET_NOTABLE_MESSAGE", message: "Putting everything together..." });
           } else if (sseEvent.status === "live") {
             dispatch({ type: "SET_STATUS", status: "live" });
@@ -346,6 +352,7 @@ export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn 
 
         case "bundle":
           dispatch({ type: "SET_BUNDLE", html: sseEvent.html });
+          dispatch({ type: "SET_STATUS", status: "validating" });
           onBundleRef.current?.(sseEvent.html);
           break;
 
