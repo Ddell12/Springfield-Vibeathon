@@ -64,4 +64,13 @@ describe("MatchingGameEditor", () => {
     expect(screen.getByLabelText(/celebrate correct/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/high contrast/i)).toBeInTheDocument();
   });
+
+  it("calls onChange with updated showAnswerImages when toggle is clicked", () => {
+    mockOnChange.mockClear();
+    render(<MatchingGameEditor config={baseConfig} onChange={mockOnChange} />);
+    fireEvent.click(screen.getByLabelText(/show answer images/i));
+    expect(mockOnChange).toHaveBeenCalledWith(
+      expect.objectContaining({ showAnswerImages: true })
+    );
+  });
 });

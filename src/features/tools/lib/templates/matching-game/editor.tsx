@@ -58,6 +58,14 @@ export function MatchingGameEditor({ config, onChange }: EditorProps<MatchingGam
             onCheckedChange={(v) => set("highContrast", v)}
           />
         </div>
+        <div className="flex items-center justify-between">
+          <Label htmlFor="mg-show-answer-images">Show answer images</Label>
+          <Switch
+            id="mg-show-answer-images"
+            checked={config.showAnswerImages}
+            onCheckedChange={(v) => set("showAnswerImages", v)}
+          />
+        </div>
       </div>
 
       <div className="flex flex-col gap-3">

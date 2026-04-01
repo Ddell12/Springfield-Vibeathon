@@ -196,6 +196,9 @@ export function MatchingGameRuntime({
                           : "bg-muted text-foreground border-2 border-border"
                   )}
                 >
+                  {config.showAnswerImages && pair.imageUrl && (
+                    <img src={pair.imageUrl} alt={pair.answer} className="w-12 h-12 object-cover rounded-lg mb-1" />
+                  )}
                   {pair.answer}
                 </button>
               );
