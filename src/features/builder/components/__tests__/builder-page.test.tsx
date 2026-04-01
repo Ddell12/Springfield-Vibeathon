@@ -9,6 +9,22 @@ beforeAll(() => {
 const mockGet = vi.fn().mockReturnValue(null);
 const mockReplace = vi.fn();
 const mockPush = vi.fn();
+const mockStreamingState = {
+  status: "idle" as const,
+  files: [],
+  generate: vi.fn(),
+  resumeSession: vi.fn(),
+  blueprint: null,
+  appName: null,
+  error: null,
+  sessionId: null,
+  streamingText: "",
+  activities: [],
+  bundleHtml: null,
+  buildFailed: false,
+  notableMessage: null,
+  reset: vi.fn(),
+};
 
 vi.mock("next/navigation", () => ({
   useSearchParams: () => ({ get: mockGet }),
@@ -30,26 +46,16 @@ vi.mock("@/core/hooks/use-mobile", () => ({
 }));
 
 const mockResumeSession = vi.fn();
-vi.mock("../../hooks/use-streaming", () => ({
-  isBusyStreamingStatus: (status: string) =>
-    status === "generating" || status === "bundling" || status === "validating",
-  useStreaming: vi.fn().mockReturnValue({
-    status: "idle",
-    files: [],
-    generate: vi.fn(),
-    resumeSession: mockResumeSession,
-    blueprint: null,
-    appName: null,
-    error: null,
-    sessionId: null,
-    streamingText: "",
-    activities: [],
-    bundleHtml: null,
-    buildFailed: false,
-    notableMessage: null,
-    reset: vi.fn(),
-  }),
-}));
+vi.mock("../../hooks/use-streaming", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../../hooks/use-streaming")>();
+  return {
+    ...actual,
+    useStreaming: vi.fn(() => ({
+      ...mockStreamingState,
+      resumeSession: mockResumeSession,
+    })),
+  };
+});
 
 vi.mock("../home-screen", () => ({
   HomeScreen: () => <div data-testid="home-screen" />,
@@ -74,7 +80,10 @@ vi.mock("@/shared/components/fullscreen-app-view", () => ({
 import { BuilderPage } from "../builder-page";
 
 describe("BuilderPage", () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockStreamingState.status = "idle";
+  });
 
   it("renders without crashing", () => {
     render(<BuilderPage initialSessionId={null} />);
@@ -88,5 +97,15 @@ describe("BuilderPage", () => {
   it("does NOT render a BuilderToolbar", () => {
     render(<BuilderPage initialSessionId={null} />);
     expect(screen.queryByRole("link", { name: /back to dashboard/i })).not.toBeInTheDocument();
+  });
+
+  it("attaches a beforeunload warning while bundling", () => {
+    const addEventListenerSpy = vi.spyOn(window, "addEventListener");
+    mockStreamingState.status = "bundling";
+
+    render(<BuilderPage initialSessionId={null} />);
+
+    expect(addEventListenerSpy).toHaveBeenCalledWith("beforeunload", expect.any(Function));
+    addEventListenerSpy.mockRestore();
   });
 });

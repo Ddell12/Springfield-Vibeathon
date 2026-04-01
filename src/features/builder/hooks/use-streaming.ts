@@ -357,6 +357,7 @@ export function useStreaming(options?: UseStreamingOptions): UseStreamingReturn 
         case "bundle":
           dispatch({ type: "SET_BUNDLE", html: sseEvent.html });
           dispatch({ type: "SET_STATUS", status: "validating" });
+          dispatch({ type: "SET_NOTABLE_MESSAGE", message: "Checking the preview..." });
           onBundleRef.current?.(sseEvent.html);
           break;
 

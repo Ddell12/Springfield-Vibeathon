@@ -729,6 +729,7 @@ describe("useStreaming — streaming hook contract", () => {
 
     expect(result.current.bundleHtml).toBe(html);
     expect(result.current.status).toBe("validating");
+    expect(result.current.notableMessage).toBe("Checking the preview...");
   });
 
   it("file_complete updates existing file by path", async () => {

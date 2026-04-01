@@ -17,18 +17,20 @@ vi.mock("@clerk/nextjs", () => ({
   useUser: () => ({ user: { firstName: "Sam", lastName: "Lee" } }),
 }));
 
-vi.mock("../../hooks/use-streaming", () => ({
-  isBusyStreamingStatus: (status: string) =>
-    status === "generating" || status === "bundling" || status === "validating",
-  useStreaming: vi.fn().mockReturnValue({
-    status: "idle",
-    files: [],
-    generate: vi.fn(),
-    blueprint: null,
-    error: null,
-    sessionId: null,
-  }),
-}));
+vi.mock("../../hooks/use-streaming", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../../hooks/use-streaming")>();
+  return {
+    ...actual,
+    useStreaming: vi.fn().mockReturnValue({
+      status: "idle",
+      files: [],
+      generate: vi.fn(),
+      blueprint: null,
+      error: null,
+      sessionId: null,
+    }),
+  };
+});
 
 vi.mock("@/shared/components/material-icon", () => ({
   MaterialIcon: ({ icon }: { icon: string }) => <span data-testid="icon">{icon}</span>,
