@@ -43,11 +43,11 @@ export const generateSpeech = action({
       const client = new ElevenLabsClient({ apiKey: elevenLabsApiKey });
       const audioStream = await client.textToSpeech.convert(resolvedVoiceId, {
         text: args.text,
-        modelId: "eleven_flash_v2_5",
-        voiceSettings: { stability: 0.5, similarityBoost: 0.75 },
+        model_id: "eleven_flash_v2_5",
+        voice_settings: { stability: 0.5, similarity_boost: 0.75 },
       });
 
-      const audioBuffer = await new Response(audioStream).arrayBuffer();
+      const audioBuffer = await new Response(audioStream as unknown as BodyInit).arrayBuffer();
       const blob = new Blob([audioBuffer], { type: "audio/mpeg" });
 
       const storageId = await ctx.storage.store(blob);
