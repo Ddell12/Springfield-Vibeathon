@@ -31,7 +31,7 @@ export function ToolActivitySummary({ patientId }: ToolActivitySummaryProps) {
 
   if (summary === undefined) {
     return (
-      <div className="bg-card border rounded-xl p-4 flex flex-col gap-3">
+      <div className="bg-surface-container-lowest rounded-xl p-4 flex flex-col gap-3">
         <Skeleton className="h-5 w-32" />
         <Skeleton className="h-14 w-full" />
         <Skeleton className="h-14 w-full" />
@@ -45,7 +45,7 @@ export function ToolActivitySummary({ patientId }: ToolActivitySummaryProps) {
   }
 
   return (
-    <div className="bg-card border rounded-xl p-4 flex flex-col gap-3">
+    <div className="bg-surface-container-lowest rounded-xl p-4 flex flex-col gap-3">
       <h2 className="font-headline text-lg font-semibold">Tool Activity</h2>
       <ul className="flex flex-col gap-2">
         {summary.map((item) => (
