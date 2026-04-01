@@ -1,13 +1,16 @@
 "use client";
 
-import { ExternalLink } from "lucide-react";
+import { useState } from "react";
+import { Copy, ExternalLink } from "lucide-react";
 import Link from "next/link";
 
 import { useQuery } from "convex/react";
 
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
+import { Button } from "@/shared/components/ui/button";
 import { Skeleton } from "@/shared/components/ui/skeleton";
+import { DuplicateToolDialog } from "@/features/tools/components/builder/duplicate-tool-dialog";
 
 interface ToolActivitySummaryProps {
   patientId: Id<"patients">;
@@ -28,6 +31,10 @@ function formatDate(timestamp: number): string {
 
 export function ToolActivitySummary({ patientId }: ToolActivitySummaryProps) {
   const summary = useQuery(api.tools.getEventSummaryByPatient, { patientId });
+  const [duplicateState, setDuplicateState] = useState<{
+    open: boolean;
+    appInstanceId: string | null;
+  }>({ open: false, appInstanceId: null });
 
   if (summary === undefined) {
     return (
@@ -69,20 +76,42 @@ export function ToolActivitySummary({ patientId }: ToolActivitySummaryProps) {
                 )}
               </p>
             </div>
-            {item.shareToken && (
-              <Link
-                href={`/apps/${item.shareToken}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="shrink-0 text-muted-foreground hover:text-foreground transition-colors"
-                aria-label={`Open ${item.title} in new tab`}
+            <div className="flex items-center gap-1 shrink-0">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7"
+                aria-label={`Duplicate ${item.title}`}
+                onClick={() =>
+                  setDuplicateState({ open: true, appInstanceId: item.appInstanceId })
+                }
               >
-                <ExternalLink className="h-4 w-4" />
-              </Link>
-            )}
+                <Copy className="h-3.5 w-3.5" />
+              </Button>
+              {item.shareToken && (
+                <Link
+                  href={`/apps/${item.shareToken}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-foreground transition-colors hover:bg-accent"
+                  aria-label={`Open ${item.title} in new tab`}
+                >
+                  <ExternalLink className="h-3.5 w-3.5" />
+                </Link>
+              )}
+            </div>
           </li>
         ))}
       </ul>
+      {duplicateState.appInstanceId && (
+        <DuplicateToolDialog
+          appInstanceId={duplicateState.appInstanceId as Id<"app_instances">}
+          open={duplicateState.open}
+          onOpenChange={(open) =>
+            setDuplicateState((prev) => ({ ...prev, open }))
+          }
+        />
+      )}
     </div>
   );
 }

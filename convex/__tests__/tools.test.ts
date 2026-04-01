@@ -132,6 +132,88 @@ describe("tools", () => {
   });
 });
 
+describe("duplicate", () => {
+  it("creates a draft copy", async () => {
+    const t = convexTest(schema, modules).withIdentity(SLP_IDENTITY);
+    const { patientId } = await createPatient(t);
+    const originalId = await t.mutation(api.tools.create, {
+      templateType: "aac_board",
+      title: "Snack Board",
+      patientId,
+      configJson: SAMPLE_CONFIG,
+    });
+
+    const copyId = await t.mutation(api.tools.duplicate, {
+      id: originalId,
+      patientId,
+    });
+
+    const copy = await t.query(api.tools.get, { id: copyId });
+    expect(copy).not.toBeNull();
+    expect(copy?.status).toBe("draft");
+    expect(copy?.version).toBe(1);
+    expect(copy?.configJson).toBe(SAMPLE_CONFIG);
+    expect(copy?.title).toBe("Copy of Snack Board");
+  });
+
+  it("respects custom title", async () => {
+    const t = convexTest(schema, modules).withIdentity(SLP_IDENTITY);
+    const { patientId } = await createPatient(t);
+    const originalId = await t.mutation(api.tools.create, {
+      templateType: "aac_board",
+      title: "Snack Board",
+      patientId,
+      configJson: SAMPLE_CONFIG,
+    });
+
+    const copyId = await t.mutation(api.tools.duplicate, {
+      id: originalId,
+      patientId,
+      title: "Custom Name",
+    });
+
+    const copy = await t.query(api.tools.get, { id: copyId });
+    expect(copy?.title).toBe("Custom Name");
+  });
+
+  it("does not copy shareToken", async () => {
+    const t = convexTest(schema, modules).withIdentity(SLP_IDENTITY);
+    const { patientId } = await createPatient(t);
+    const originalId = await t.mutation(api.tools.create, {
+      templateType: "aac_board",
+      title: "Snack Board",
+      patientId,
+      configJson: SAMPLE_CONFIG,
+    });
+    await t.mutation(api.tools.publish, { id: originalId });
+
+    const copyId = await t.mutation(api.tools.duplicate, {
+      id: originalId,
+      patientId,
+    });
+
+    const copy = await t.query(api.tools.get, { id: copyId });
+    expect(copy?.shareToken).toBeUndefined();
+  });
+
+  it("throws Forbidden for wrong SLP", async () => {
+    const t = convexTest(schema, modules);
+    const slp = t.withIdentity(SLP_IDENTITY);
+    const { patientId } = await slp.mutation(api.patients.create, PATIENT_FIELDS);
+    const originalId = await slp.mutation(api.tools.create, {
+      templateType: "aac_board",
+      title: "Snack Board",
+      patientId,
+      configJson: SAMPLE_CONFIG,
+    });
+
+    const otherSlp = t.withIdentity({ subject: "other-slp", issuer: "clerk" });
+    await expect(
+      otherSlp.mutation(api.tools.duplicate, { id: originalId, patientId })
+    ).rejects.toThrow("Forbidden");
+  });
+});
+
 describe("getEventSummaryByPatient", () => {
   it("returns empty array when no app instances", async () => {
     const t = convexTest(schema, modules).withIdentity(SLP_IDENTITY);

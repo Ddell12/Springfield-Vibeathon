@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 
+import type { Id } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
 
 export const create = mutation({
@@ -164,6 +165,30 @@ export const getEventSummaryByPatient = query({
     );
 
     return summaries.filter((s) => s.totalEvents > 0 || s.status === "published");
+  },
+});
+
+export const duplicate = mutation({
+  args: {
+    id: v.id("app_instances"),
+    patientId: v.id("patients"),
+    title: v.optional(v.string()),
+  },
+  handler: async (ctx, args): Promise<Id<"app_instances">> => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Unauthenticated");
+    const original = await ctx.db.get(args.id);
+    if (!original) throw new Error("Not found");
+    if (original.slpUserId !== identity.subject) throw new Error("Forbidden");
+    return ctx.db.insert("app_instances", {
+      templateType: original.templateType,
+      title: args.title ?? `Copy of ${original.title}`,
+      patientId: args.patientId,
+      slpUserId: identity.subject,
+      configJson: original.configJson,
+      status: "draft",
+      version: 1,
+    });
   },
 });
 
