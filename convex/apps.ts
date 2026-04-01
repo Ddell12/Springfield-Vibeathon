@@ -113,7 +113,13 @@ export const ensureForSession = mutation({
     await assertSessionOwner(ctx, args.sessionId);
     const identity = await ctx.auth.getUserIdentity();
 
-    // Free-tier limit enforcement — premium users bypass
+    const existing = await ctx.db
+      .query("apps")
+      .withIndex("by_session", (q) => q.eq("sessionId", args.sessionId))
+      .first();
+    if (existing) return existing;
+
+    // Free-tier limit enforcement applies only when creating a new saved app record.
     if (identity) {
       const isPremium = await checkPremiumStatus(ctx, identity.subject);
       if (!isPremium) {
@@ -128,12 +134,6 @@ export const ensureForSession = mutation({
         }
       }
     }
-
-    const existing = await ctx.db
-      .query("apps")
-      .withIndex("by_session", (q) => q.eq("sessionId", args.sessionId))
-      .first();
-    if (existing) return existing;
 
     const slug = Array.from({ length: 12 }, () =>
       "abcdefghijklmnopqrstuvwxyz0123456789"[Math.floor(Math.random() * 36)]

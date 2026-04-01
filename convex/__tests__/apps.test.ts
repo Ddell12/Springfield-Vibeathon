@@ -3,6 +3,7 @@ import { convexTest } from "convex-test";
 import { describe, expect, it } from "vitest";
 
 import { api } from "../_generated/api";
+import { FREE_LIMITS } from "../lib/billing";
 import schema from "../schema";
 
 const modules = import.meta.glob("../**/*.*s"); // REQUIRED for convex-test
@@ -167,6 +168,30 @@ describe("apps", () => {
       });
       const app = await t.mutation(api.apps.ensureForSession, { sessionId, title: "Test App" });
       expect(app?.shareSlug).toHaveLength(12);
+    });
+
+    it("allows share provisioning for an existing session even when the user is at the free saved-app cap", async () => {
+      const t = convexTest(schema, modules).withIdentity(TEST_IDENTITY);
+      const sessionId = await t.mutation(api.sessions.create, {
+        title: "Shareable app",
+        query: "test",
+      });
+
+      for (let i = 0; i < FREE_LIMITS.maxApps; i++) {
+        await t.mutation(api.apps.create, {
+          title: `App ${i}`,
+          description: "seed",
+          shareSlug: `slug-${i}`,
+          sessionId,
+        });
+      }
+
+      const app = await t.mutation(api.apps.ensureForSession, {
+        sessionId,
+        title: "Shareable app",
+      });
+
+      expect(app).toBeTruthy();
     });
   });
 });
