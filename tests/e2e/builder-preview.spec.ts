@@ -58,7 +58,12 @@ test.describe("Builder preview (authenticated)", () => {
     await expect(page.getByText(/app is live and ready/i)).toBeVisible({ timeout: 90_000 });
 
     const preview = page.locator("iframe[title='App preview']");
+    const previewFrame = page.frameLocator("iframe[title='App preview']");
     await expect(preview).toBeVisible({ timeout: 60_000 });
+    await expect(previewFrame.locator("body")).toBeVisible({ timeout: 30_000 });
+    await expect.poll(async () =>
+      previewFrame.locator("body").evaluate((body) => body.ownerDocument.readyState)
+    ).toBe("complete");
     await expect(page.getByText(/Something didn't look right/i)).toHaveCount(0);
   });
 });

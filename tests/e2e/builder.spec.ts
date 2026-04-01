@@ -68,19 +68,20 @@ test.describe("Builder — authenticated", () => {
     await input.press("Enter");
 
     const preview = authedPage.locator("iframe[title='App preview']");
-    const buildError = authedPage.getByText(/error|failed/i);
+    const previewFrame = authedPage.frameLocator("iframe[title='App preview']");
     const readyText = authedPage.getByText(/app is live and ready/i);
+    const failureCopy = authedPage.getByText(/Something didn't look right/i);
 
-    // Wait for completion or error
-    await Promise.race([
-      readyText.waitFor({ timeout: 90_000 }),
-      buildError.waitFor({ timeout: 90_000 }),
-    ]).catch(() => {});
+    await expect(readyText).toBeVisible({ timeout: 90_000 });
 
     await authedPage.screenshot({ path: "test-results/builder-complete.png" });
 
     await expect(preview).toBeVisible({ timeout: 60_000 });
-    await expect(authedPage.getByText(/Something didn't look right/i)).toHaveCount(0);
+    await expect(previewFrame.locator("body")).toBeVisible({ timeout: 30_000 });
+    await expect.poll(async () =>
+      previewFrame.locator("body").evaluate((body) => body.ownerDocument.readyState)
+    ).toBe("complete");
+    await expect(failureCopy).toHaveCount(0);
   });
 
   test.fixme(
