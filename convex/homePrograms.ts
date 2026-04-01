@@ -7,6 +7,18 @@ import { slpMutation } from "./lib/customFunctions";
 
 // ── Validators ──────────────────────────────────────────────────────────────
 
+export const childSpeechCoachOverrideValidator = v.object({
+  assignedTemplateId: v.optional(v.id("speechCoachTemplates")),
+  lastSyncedTemplateVersion: v.optional(v.number()),
+  targetSounds: v.array(v.string()),
+  ageRange: v.union(v.literal("2-4"), v.literal("5-7")),
+  defaultDurationMinutes: v.number(),
+  preferredThemes: v.array(v.string()),
+  avoidThemes: v.array(v.string()),
+  childNotes: v.optional(v.string()),
+  promptAddendum: v.optional(v.string()),
+});
+
 const frequencyValidator = v.union(
   v.literal("daily"),
   v.literal("3x-week"),
