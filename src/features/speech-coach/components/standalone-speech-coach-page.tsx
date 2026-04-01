@@ -45,10 +45,10 @@ export function StandaloneSpeechCoachPage() {
   }
 
   // Active session takes over the whole screen
-  if (session.phase === "active" && session.signedUrl) {
+  if (session.phase === "active" && session.runtimeSession) {
     return (
       <ActiveSession
-        signedUrl={session.signedUrl}
+        runtimeSession={session.runtimeSession}
         onConversationStarted={(id) => session.markActive(id)}
         onEnd={() => session.endSession()}
         durationMinutes={session.durationMinutes}

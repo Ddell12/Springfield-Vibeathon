@@ -43,7 +43,7 @@ export function useToolBuilder(initialId?: Id<"app_instances"> | null) {
       seeded.current = true;
       setState({
         step: 3,
-        patientId: existingInstance.patientId,
+        patientId: existingInstance.patientId ?? null,
         templateType: existingInstance.templateType,
         config: JSON.parse(existingInstance.configJson),
         instanceId: existingInstance._id,

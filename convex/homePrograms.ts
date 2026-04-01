@@ -222,9 +222,12 @@ export const assignSpeechCoachTemplate = slpMutation({
       throw new ConvexError("Template not found");
     }
 
+    const existingConfig = program.speechCoachConfig;
+    if (!existingConfig) throw new ConvexError("Cannot assign template: speech coach config not set up");
+
     await ctx.db.patch(args.id, {
       speechCoachConfig: {
-        ...(program.speechCoachConfig ?? {}),
+        ...existingConfig,
         assignedTemplateId: args.assignedTemplateId,
         lastSyncedTemplateVersion: template.version,
         childOverrides: args.childOverrides,

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 
 import { api } from "@convex/_generated/api";
+import type { Doc } from "@convex/_generated/dataModel";
 import { Button } from "@/shared/components/ui/button";
 
 import { TemplateEditor, type SpeechCoachTemplateForm } from "./template-editor";
@@ -68,7 +69,7 @@ export function TemplateLibraryPage() {
 
       {templates && templates.length > 0 && (
         <ul className="flex flex-col gap-3">
-          {templates.map((t) => (
+          {templates.map((t: Doc<"speechCoachTemplates">) => (
             <li key={t._id} className="rounded-xl bg-card p-4">
               <div className="flex items-start justify-between gap-4">
                 <div>

@@ -56,8 +56,8 @@ function TemplateAssignmentPanel({ patientId: _patientId, homeProgramId }: Panel
           targetSounds: program.speechCoachConfig.targetSounds,
           ageRange: program.speechCoachConfig.ageRange,
           defaultDurationMinutes: program.speechCoachConfig.defaultDurationMinutes,
-          preferredThemes: program.speechCoachConfig.preferredThemes ?? [],
-          avoidThemes: program.speechCoachConfig.avoidThemes ?? [],
+          preferredThemes: program.speechCoachConfig.coachSetup?.preferredThemes ?? [],
+          avoidThemes: program.speechCoachConfig.coachSetup?.avoidThemes ?? [],
           childNotes: assignment.childNotes || undefined,
         },
       });
@@ -144,10 +144,10 @@ export function SpeechCoachPage({ patientId, homeProgramId }: Props) {
   }
 
   // Active session takes over the whole screen
-  if (session.phase === "active" && session.signedUrl) {
+  if (session.phase === "active" && session.runtimeSession) {
     return (
       <ActiveSession
-        signedUrl={session.signedUrl}
+        runtimeSession={session.runtimeSession}
         onConversationStarted={(id) => session.markActive(id)}
         onEnd={() => session.endSession()}
         durationMinutes={session.durationMinutes}
