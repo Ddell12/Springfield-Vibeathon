@@ -99,10 +99,14 @@ export const analyzeSession = internalAction({
     const targetSounds = session.config.targetSounds.join(", ");
     const ageRange = session.config.ageRange;
 
+    const runtimeSnapshot = session.config.runtimeSnapshot;
     const analysisPrompt = `You are analyzing a speech therapy session transcript between a voice coach and a child (age range: ${ageRange}).
 
 The session targeted these sounds: ${targetSounds}
 ${session.config.focusArea ? `Focus area: ${session.config.focusArea}` : ""}
+Voice provider: ${runtimeSnapshot?.voiceProvider ?? "unknown"}
+Enabled tools: ${(runtimeSnapshot?.tools ?? []).join(", ") || "none"}
+Enabled skills: ${(runtimeSnapshot?.skills ?? []).join(", ") || "none"}
 
 From the transcript below, determine:
 1. Which sounds were actually practiced and how many words were attempted per sound

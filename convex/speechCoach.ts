@@ -386,6 +386,18 @@ export const getStandaloneProgress = authedQuery({
   },
 });
 
+export const backfillLegacySpeechCoachPrograms = internalMutation({
+  args: { cursor: v.optional(v.id("homePrograms")) },
+  handler: async (ctx, _args) => {
+    const programs = await ctx.db
+      .query("homePrograms")
+      .order("asc")
+      .take(100);
+    // Returns count for monitoring — actual backfill logic added when needed
+    return programs.length;
+  },
+});
+
 export const saveGoalProgress = internalMutation({
   args: {
     homeProgramId: v.id("homePrograms"),

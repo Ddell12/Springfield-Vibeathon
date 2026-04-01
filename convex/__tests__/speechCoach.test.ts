@@ -236,4 +236,58 @@ describe("speechCoach queries", () => {
       stranger.query(api.speechCoach.getSessionHistory, { patientId })
     ).rejects.toThrow();
   });
+
+  it("keeps session history readable after template-backed runtime changes", async () => {
+    const t = convexTest(schema, modules);
+    const { patientId, programId } = await setupSpeechCoachProgram(t);
+    const caregiver = t.withIdentity(CAREGIVER_IDENTITY);
+
+    // Create a session that includes a runtimeSnapshot (simulates template-backed runtime)
+    const sessionId = await caregiver.mutation(api.speechCoach.createSession, {
+      homeProgramId: programId,
+      config: {
+        targetSounds: ["/s/", "/r/"],
+        ageRange: "2-4" as const,
+        durationMinutes: 5,
+        runtimeSnapshot: {
+          templateVersion: 2,
+          voiceProvider: "elevenlabs",
+          voiceKey: "eleven_flash_v2_5",
+          tools: ["pronunciation-check", "encouragement"],
+          skills: ["articulation"],
+          knowledgePackIds: ["kp_abc123"],
+        },
+      },
+    });
+
+    // getSessionDetail should return both session and progress (null progress is fine)
+    const detail = await caregiver.query(api.speechCoach.getSessionDetail, { sessionId });
+
+    expect(detail).not.toBeNull();
+    expect(detail.session).toBeDefined();
+    expect(detail.session._id).toBe(sessionId);
+    // runtimeSnapshot fields should be accessible via optional chaining
+    expect(detail.session.config.runtimeSnapshot?.templateVersion).toBe(2);
+    expect(detail.session.config.runtimeSnapshot?.voiceProvider).toBe("elevenlabs");
+    expect(detail.session.config.runtimeSnapshot?.voiceKey).toBe("eleven_flash_v2_5");
+    expect(detail.session.config.runtimeSnapshot?.tools).toEqual(["pronunciation-check", "encouragement"]);
+    expect(detail.session.config.runtimeSnapshot?.skills).toEqual(["articulation"]);
+    // progress is null until session is analyzed — that's expected
+    expect(detail.progress).toBeNull();
+
+    // Also verify a legacy session (no runtimeSnapshot) still returns cleanly
+    const legacySessionId = await caregiver.mutation(api.speechCoach.createSession, {
+      homeProgramId: programId,
+      config: {
+        targetSounds: ["/l/"],
+        ageRange: "5-7" as const,
+        durationMinutes: 10,
+        // no runtimeSnapshot — legacy session
+      },
+    });
+
+    const legacyDetail = await caregiver.query(api.speechCoach.getSessionDetail, { sessionId: legacySessionId });
+    expect(legacyDetail.session).toBeDefined();
+    expect(legacyDetail.session.config.runtimeSnapshot).toBeUndefined();
+  });
 });

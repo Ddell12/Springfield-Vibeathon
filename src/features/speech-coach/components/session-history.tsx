@@ -118,18 +118,30 @@ function ExpandedDetail({ sessionId }: { sessionId: Id<"speechCoachSessions"> })
   const detail = useQuery(api.speechCoach.getSessionDetail, { sessionId });
 
   if (!detail) return <div className="px-4 pb-4 text-sm text-muted-foreground">Loading...</div>;
+  const snapshot = detail.session?.config.runtimeSnapshot;
+
   if (!detail.progress) {
     return (
       <div className="px-4 pb-4 text-sm text-muted-foreground">
         {detail.session?.status === "failed"
           ? detail.session.errorMessage ?? "Session did not complete."
           : "Session is still being reviewed."}
+        {snapshot ? (
+          <p className="mt-1 text-xs text-muted-foreground">
+            Template v{snapshot.templateVersion} · {snapshot.voiceKey}
+          </p>
+        ) : null}
       </div>
     );
   }
 
   return (
     <div className="px-4 pb-4">
+      {snapshot ? (
+        <p className="mb-2 text-xs text-muted-foreground">
+          Template v{snapshot.templateVersion} · {snapshot.voiceKey}
+        </p>
+      ) : null}
       <ProgressCard progress={detail.progress} />
     </div>
   );
