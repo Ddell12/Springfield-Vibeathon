@@ -224,7 +224,7 @@ export const assignSpeechCoachTemplate = slpMutation({
 
     await ctx.db.patch(args.id, {
       speechCoachConfig: {
-        ...program.speechCoachConfig,
+        ...(program.speechCoachConfig ?? {}),
         assignedTemplateId: args.assignedTemplateId,
         lastSyncedTemplateVersion: template.version,
         childOverrides: args.childOverrides,
