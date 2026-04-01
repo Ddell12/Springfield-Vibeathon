@@ -18,7 +18,7 @@ import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 import { useProgressNarration } from "../hooks/use-progress-narration";
 import { useSessionResume } from "../hooks/use-session-resume";
-import { useStreaming } from "../hooks/use-streaming";
+import { isBusyStreamingStatus, useStreaming } from "../hooks/use-streaming";
 import type { TherapyBlueprint } from "../lib/schemas";
 import { UpgradeConfirmationDialog } from "../../billing/components/upgrade-confirmation-dialog";
 import { ChatColumn } from "./chat-column";
@@ -90,6 +90,7 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
     reset,
   } = useStreaming();
 
+  const isBusy = isBusyStreamingStatus(status);
   const narrationMessage = useProgressNarration(status, notableMessage ?? undefined);
 
   // Fallback: recover bundle from Convex if SSE event was lost
@@ -122,10 +123,10 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
 
   // Reset recovery guard when generation restarts
   useEffect(() => {
-    if (status === "generating") {
+    if (isBusy) {
       bundleRecoveredRef.current = false;
     }
-  }, [status]);
+  }, [isBusy]);
 
   // Auto-switch to preview when bundle first arrives (perceived speed boost)
   // Only triggers on bundleHtml changes — not on viewMode changes, which would
@@ -192,27 +193,33 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
 
   // Warn before leaving during active generation
   useEffect(() => {
-    if (status !== "generating") return;
+    if (!isBusy) return;
     const handler = (e: BeforeUnloadEvent) => {
       e.preventDefault();
     };
     window.addEventListener("beforeunload", handler);
     return () => window.removeEventListener("beforeunload", handler);
-  }, [status]);
+  }, [isBusy]);
 
   // Toast when navigating away during active generation (in-app navigation)
   const hasShownNavToastRef = useRef(false);
+  const isBusyRef = useRef(false);
   useEffect(() => {
-    if (status === "generating") {
+    isBusyRef.current = isBusy;
+  }, [isBusy]);
+  useEffect(() => {
+    if (isBusy) {
       hasShownNavToastRef.current = false;
     }
+  }, [isBusy]);
+  useEffect(() => {
     return () => {
-      if (status === "generating" && !hasShownNavToastRef.current) {
+      if (isBusyRef.current && !hasShownNavToastRef.current) {
         hasShownNavToastRef.current = true;
         toast.info("Building continues in the background — find it in Recents when it's ready.", { duration: 6000 });
       }
     };
-  }, [status]);
+  }, []);
 
   // Keyboard shortcut: Cmd/Ctrl + Shift + S toggles source/preview
   useEffect(() => {
@@ -277,8 +284,8 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
           }
         });
     }
-    if (status === "generating") autoSavedRef.current = false;
-  }, [status, activeSessionId, appRecord, appName, ensureApp]);
+    if (isBusy) autoSavedRef.current = false;
+  }, [isBusy, activeSessionId, appRecord, appName, ensureApp]);
 
   async function handleSave() {
     if (!activeSessionId) return;

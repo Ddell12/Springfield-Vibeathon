@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
-import type { StreamingStatus } from "./use-streaming";
+import { isBusyStreamingStatus, type StreamingStatus } from "./use-streaming";
 
 const NARRATION_STAGES = [
   "Reading your description...",
@@ -25,7 +25,7 @@ export function useProgressNarration(
   const overrideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const prevOverrideRef = useRef<string | undefined>(undefined);
 
-  const isGenerating = status === "generating";
+  const isGenerating = isBusyStreamingStatus(status);
 
   useEffect(() => {
     if (isGenerating) {

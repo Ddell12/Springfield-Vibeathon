@@ -20,6 +20,10 @@ export type StreamingStatus =
   | "live"
   | "failed";
 
+export function isBusyStreamingStatus(status: StreamingStatus): boolean {
+  return status === "generating" || status === "bundling" || status === "validating";
+}
+
 export interface StreamingFile {
   path: string;
   contents: string;

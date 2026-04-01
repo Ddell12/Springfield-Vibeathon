@@ -31,6 +31,8 @@ vi.mock("@/core/hooks/use-mobile", () => ({
 
 const mockResumeSession = vi.fn();
 vi.mock("../../hooks/use-streaming", () => ({
+  isBusyStreamingStatus: (status: string) =>
+    status === "generating" || status === "bundling" || status === "validating",
   useStreaming: vi.fn().mockReturnValue({
     status: "idle",
     files: [],

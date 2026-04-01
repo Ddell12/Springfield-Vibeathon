@@ -689,7 +689,7 @@ describe("useStreaming — streaming hook contract", () => {
     expect(onBundle).not.toHaveBeenCalled();
   });
 
-  it("bundling status keeps displaying as 'generating'", async () => {
+  it("bundling status is preserved as bundling", async () => {
     const stream = new ReadableStream({
       start(controller) {
         const encoder = new TextEncoder();
@@ -706,8 +706,29 @@ describe("useStreaming — streaming hook contract", () => {
       await result.current.generate("Build a token board");
     });
 
-    // "bundling" should map to "generating" in the UI
-    expect(result.current.status).toBe("generating");
+    expect(result.current.status).toBe("bundling");
+  });
+
+  it("bundle event transitions status to validating while the preview loads", async () => {
+    const html = "<!DOCTYPE html><html><body></body></html>";
+    const stream = new ReadableStream({
+      start(controller) {
+        const encoder = new TextEncoder();
+        controller.enqueue(
+          encoder.encode(`event: bundle\ndata: ${JSON.stringify({ html })}\n\n`)
+        );
+        controller.close();
+      },
+    });
+    mockFetch.mockResolvedValueOnce({ ok: true, body: stream });
+
+    const { result } = renderHook(() => useStreaming());
+    await act(async () => {
+      await result.current.generate("Build a token board");
+    });
+
+    expect(result.current.bundleHtml).toBe(html);
+    expect(result.current.status).toBe("validating");
   });
 
   it("file_complete updates existing file by path", async () => {

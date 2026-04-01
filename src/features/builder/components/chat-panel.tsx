@@ -12,7 +12,11 @@ import { Button } from "@/shared/components/ui/button";
 
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
-import type { Activity, StreamingStatus } from "../hooks/use-streaming";
+import {
+  isBusyStreamingStatus,
+  type Activity,
+  type StreamingStatus,
+} from "../hooks/use-streaming";
 import type { TherapyBlueprint } from "../lib/schemas";
 import { ArtifactCard } from "./artifact-card";
 import { BlueprintCard } from "./blueprint-card";
@@ -103,7 +107,7 @@ export function ChatPanel({
     sessionId ? { sessionId: sessionId as Id<"sessions"> } : "skip",
   );
 
-  const isGenerating = status === "generating";
+  const isGenerating = isBusyStreamingStatus(status);
   const isLive = status === "live";
 
   useEffect(() => {

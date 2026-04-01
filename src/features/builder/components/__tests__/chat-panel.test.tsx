@@ -18,6 +18,8 @@ vi.mock("@clerk/nextjs", () => ({
 }));
 
 vi.mock("../../hooks/use-streaming", () => ({
+  isBusyStreamingStatus: (status: string) =>
+    status === "generating" || status === "bundling" || status === "validating",
   useStreaming: vi.fn().mockReturnValue({
     status: "idle",
     files: [],
@@ -86,6 +88,12 @@ describe("ChatPanel — message rendering", () => {
 
   it("shows ArtifactCard with app title when status is generating", () => {
     render(<ChatPanel {...defaultProps} status="generating" appTitle="AAC Board" />);
+    expect(screen.getByText("AAC Board")).toBeInTheDocument();
+    expect(screen.getByRole("status")).toBeInTheDocument();
+  });
+
+  it("shows ArtifactCard while bundling", () => {
+    render(<ChatPanel {...defaultProps} status="bundling" appTitle="AAC Board" />);
     expect(screen.getByText("AAC Board")).toBeInTheDocument();
     expect(screen.getByRole("status")).toBeInTheDocument();
   });

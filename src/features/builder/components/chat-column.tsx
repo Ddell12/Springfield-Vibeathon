@@ -11,7 +11,11 @@ import {
 } from "@/shared/components/ui/toggle-group";
 
 import type { Id } from "../../../../convex/_generated/dataModel";
-import type { Activity, StreamingStatus } from "../hooks/use-streaming";
+import {
+  isBusyStreamingStatus,
+  type Activity,
+  type StreamingStatus,
+} from "../hooks/use-streaming";
 import type { TherapyBlueprint } from "../lib/schemas";
 import { ChatPanel } from "./chat-panel";
 import { InputBar } from "./input-bar";
@@ -179,7 +183,7 @@ export function ChatColumn({
               ? "Reply to Bridges AI\u2026"
               : "What would you like to build\u2026"
           }
-          isGenerating={status === "generating"}
+          isGenerating={isBusyStreamingStatus(status)}
           mode={mode}
           onModeChange={onModeChange}
         />

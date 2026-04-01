@@ -7,7 +7,11 @@ import { cn } from "@/core/utils";
 import { MaterialIcon } from "@/shared/components/material-icon";
 import { ScrollArea } from "@/shared/components/ui/scroll-area";
 
-import type { StreamingFile, StreamingStatus } from "../hooks/use-streaming";
+import {
+  isBusyStreamingStatus,
+  type StreamingFile,
+  type StreamingStatus,
+} from "../hooks/use-streaming";
 
 interface CodePanelProps {
   files: StreamingFile[];
@@ -21,7 +25,7 @@ export function CodePanel({ files, status }: CodePanelProps) {
   const selectedFile =
     files.find((f) => f.path === selectedPath) ?? files[0] ?? null;
 
-  const isGenerating = status === "generating";
+  const isGenerating = isBusyStreamingStatus(status);
 
   // Compute line numbers for gutter (memoized to avoid re-splitting during streaming)
   // Must be above early returns to satisfy React's rules of hooks

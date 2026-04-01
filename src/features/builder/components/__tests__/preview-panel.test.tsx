@@ -31,13 +31,26 @@ describe("PreviewPanel — blob URL iframe", () => {
     render(
       <PreviewPanel
         bundleHtml={null}
-        state="generating"
+        state="bundling"
         activityMessage="Bundling preview..."
       />
     );
 
     expect(screen.getByText("Creating your app...")).toBeInTheDocument();
     expect(screen.getByText("Bundling preview...")).toBeInTheDocument();
+  });
+
+  it("keeps the preview busy while validating a bundled app", () => {
+    render(
+      <PreviewPanel
+        bundleHtml="<html><body>v1</body></html>"
+        state="validating"
+        activityMessage="Checking the preview..."
+      />
+    );
+
+    expect(screen.getByText(/updating/i)).toBeInTheDocument();
+    expect(screen.getByTitle(/app preview/i)).toBeInTheDocument();
   });
 
   it("shows 'Updating...' overlay when generating with existing preview", () => {

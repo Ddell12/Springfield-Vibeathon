@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { cn } from "@/core/utils";
 
-import type { StreamingStatus } from "../hooks/use-streaming";
+import { isBusyStreamingStatus, type StreamingStatus } from "../hooks/use-streaming";
 import { useTtsBridge } from "../hooks/use-tts-bridge";
 
 type DeviceSize = "desktop" | "mobile";
@@ -59,7 +59,7 @@ export function PreviewPanel({ bundleHtml, state, error, deviceSize = "desktop",
   }, []);
 
   const hasPreview = !!blobUrl;
-  const isGenerating = state === "generating" || state === "bundling" || state === "validating";
+  const isGenerating = isBusyStreamingStatus(state);
   const isFailed = state === "failed";
 
   return (

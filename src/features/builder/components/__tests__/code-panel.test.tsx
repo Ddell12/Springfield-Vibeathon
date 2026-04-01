@@ -48,6 +48,14 @@ describe("CodePanel — streaming builder contract", () => {
     expect(indicator).toBeTruthy();
   });
 
+  it("shows generating indicator when status is validating and no files yet", () => {
+    render(<CodePanel files={[]} status="validating" />);
+    const indicator =
+      screen.queryByText(/building/i) ??
+      document.querySelector(".animate-pulse, .animate-spin");
+    expect(indicator).toBeTruthy();
+  });
+
   it("renders file tabs when files are provided", () => {
     render(<CodePanel files={sampleFiles} status="live" />);
     // Each file should have a tab with its filename
