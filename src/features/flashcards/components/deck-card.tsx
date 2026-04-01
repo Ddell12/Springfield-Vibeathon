@@ -34,7 +34,7 @@ export function DeckCard({
       className={cn(
         "group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors duration-300",
         isActive
-          ? "border-l-4 border-primary bg-surface-container-lowest text-primary shadow-sm"
+          ? "bg-primary-fixed/60 text-on-surface shadow-sm ring-1 ring-primary/15"
           : "text-on-surface hover:bg-surface-container-low",
       )}
     >
@@ -42,7 +42,7 @@ export function DeckCard({
         className={cn(
           "flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg",
           isActive
-            ? "bg-primary-container/10 text-primary"
+            ? "bg-primary text-primary-foreground"
             : "bg-surface-container-highest text-on-surface-variant",
         )}
       >
@@ -59,7 +59,7 @@ export function DeckCard({
       </div>
 
       <div className="min-w-0 flex-1">
-        <p className={cn("truncate", isActive ? "font-bold text-primary" : "font-medium")}>
+        <p className={cn("truncate", isActive ? "font-semibold text-on-surface" : "font-medium")}>
           {title}
         </p>
         <p className="text-xs text-on-surface-variant">

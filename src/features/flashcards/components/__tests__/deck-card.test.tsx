@@ -28,13 +28,14 @@ describe("DeckCard", () => {
   it("applies active styling when selected", () => {
     const { container } = render(<DeckCard {...baseProps} isActive={true} />);
     const button = container.querySelector("button");
-    expect(button?.className).toContain("border-primary");
+    expect(button?.className).toContain("bg-primary-fixed/60");
+    expect(button?.className).toContain("ring-primary/15");
   });
 
   it("does not apply active styling when not selected", () => {
     const { container } = render(<DeckCard {...baseProps} isActive={false} />);
     const button = container.querySelector("button");
-    expect(button?.className).not.toContain("border-primary");
+    expect(button?.className).not.toContain("bg-primary-fixed/60");
   });
 
   it("fires onClick when clicked", () => {

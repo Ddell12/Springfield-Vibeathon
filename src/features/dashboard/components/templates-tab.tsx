@@ -3,60 +3,52 @@
 import Link from "next/link";
 
 import { cn } from "@/core/utils";
+import { MaterialIcon } from "@/shared/components/material-icon";
 
 const TEMPLATES = [
   {
     id: "token-board",
     title: "Token Board",
     subtitle: "Reward system with customizable tokens and goals",
-    gradient: "from-amber-400/30 to-orange-300/20",
-    emoji: "star",
+    previewTone: "bg-caution-container text-caution",
+    icon: "stars",
   },
   {
     id: "visual-schedule",
     title: "Visual Schedule",
     subtitle: "Step-by-step daily routine with drag-to-reorder",
-    gradient: "from-sky-400/30 to-blue-300/20",
-    emoji: "calendar",
+    previewTone: "bg-primary-fixed text-primary",
+    icon: "calendar_month",
   },
   {
     id: "communication-board",
     title: "Communication Board",
     subtitle: "AAC grid with picture cards and text-to-speech",
-    gradient: "from-emerald-400/30 to-teal-300/20",
-    emoji: "chat",
+    previewTone: "bg-success-container text-success",
+    icon: "chat",
   },
   {
     id: "social-story",
     title: "Social Story",
     subtitle: "Illustrated narrative for social situations",
-    gradient: "from-violet-400/30 to-purple-300/20",
-    emoji: "book",
+    previewTone: "bg-surface-container-high text-on-surface",
+    icon: "book_2",
   },
   {
     id: "feelings-check-in",
     title: "Feelings Check-In",
     subtitle: "Emotion identification with visual supports",
-    gradient: "from-rose-400/30 to-pink-300/20",
-    emoji: "heart",
+    previewTone: "bg-error-container text-error",
+    icon: "favorite",
   },
   {
     id: "first-then-board",
     title: "First-Then Board",
     subtitle: "Simple contingency board for transitions",
-    gradient: "from-lime-400/30 to-green-300/20",
-    emoji: "arrow",
+    previewTone: "bg-secondary-container text-on-surface",
+    icon: "arrow_forward",
   },
 ];
-
-const EMOJI_MAP: Record<string, string> = {
-  star: "\u2B50",
-  calendar: "\uD83D\uDCC5",
-  chat: "\uD83D\uDCAC",
-  book: "\uD83D\uDCD6",
-  heart: "\u2764\uFE0F",
-  arrow: "\u27A1\uFE0F",
-};
 
 export function TemplatesTab() {
   return (
@@ -65,17 +57,20 @@ export function TemplatesTab() {
         <Link
           key={template.id}
           href={`/builder?prompt=${encodeURIComponent(`Build me a ${template.title}: ${template.subtitle}`)}`}
-          className="group flex flex-col rounded-xl bg-surface-container-lowest overflow-hidden transition-shadow duration-200 hover:shadow-[0_4px_20px_rgba(0,0,0,0.08)]"
+          className="group flex flex-col overflow-hidden rounded-xl bg-surface-container-lowest ring-1 ring-outline-variant/20 transition-shadow duration-200 hover:shadow-[0_4px_20px_rgba(0,0,0,0.08)]"
         >
           <div
             className={cn(
-              "aspect-[16/10] w-full bg-gradient-to-br flex items-center justify-center",
-              template.gradient
+              "flex aspect-[16/10] w-full items-end justify-between p-4",
+              template.previewTone
             )}
           >
-            <span className="text-5xl opacity-60 group-hover:opacity-80 transition-opacity group-hover:scale-110 transition-transform duration-300">
-              {EMOJI_MAP[template.emoji] ?? ""}
-            </span>
+            <div className="rounded-lg bg-surface/80 px-2 py-1 font-mono text-[11px] uppercase tracking-[0.14em] text-on-surface shadow-sm">
+              Template
+            </div>
+            <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-surface/80 text-on-surface shadow-sm transition-transform duration-300 group-hover:-translate-y-0.5">
+              <MaterialIcon icon={template.icon} size="sm" />
+            </div>
           </div>
           <div className="flex flex-col gap-1 p-4">
             <h3 className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors duration-300">
