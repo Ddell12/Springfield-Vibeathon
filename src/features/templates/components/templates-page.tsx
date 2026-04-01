@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
@@ -50,7 +51,7 @@ export function TemplatesPage({ embedded = false }: TemplatesPageProps) {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("popular");
 
-  const pageParam = searchParams.get("page");
+  const pageParam = searchParams?.get("page");
   const parsedPage = Number.parseInt(pageParam ?? "", 10);
   const page = Number.isFinite(parsedPage) && parsedPage > 0 ? parsedPage : 1;
 
@@ -189,17 +190,26 @@ export function TemplatesPage({ embedded = false }: TemplatesPageProps) {
                 className="group relative overflow-hidden rounded-2xl bg-surface-container-lowest transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
                 data-testid="template-card"
               >
-                {/* Gradient thumbnail */}
+                {/* Gradient or Image thumbnail */}
                 <div
                   className={cn(
                     "relative h-48 bg-gradient-to-br flex items-center justify-center",
-                    style.gradient,
+                    !("imageUrl" in template) && style.gradient,
                   )}
                 >
-                  <MaterialIcon icon={style.icon} size="2xl" className="text-white/30" />
+                  {"imageUrl" in template && template.imageUrl ? (
+                    <Image
+                      src={template.imageUrl as string}
+                      alt={template.title}
+                      fill
+                      className="object-cover"
+                    />
+                  ) : (
+                    <MaterialIcon icon={style.icon} size="2xl" className="text-white/30" />
+                  )}
 
                   {/* Hover overlay */}
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-300 flex items-center justify-center p-6">
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-300 flex items-center justify-center p-6 z-10">
                     <p className="text-white text-sm leading-relaxed opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-center">
                       {template.description}
                     </p>

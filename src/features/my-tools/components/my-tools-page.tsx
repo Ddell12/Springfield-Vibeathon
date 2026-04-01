@@ -320,7 +320,7 @@ export function MyToolsPage({ embedded = false }: MyToolsPageProps) {
                     project={{
                       id: session._id,
                       title: session.title,
-                      thumbnail: null,
+                      thumbnail: session.previewUrl ?? null,
                       updatedAt: session._creationTime,
                       userInitial: session.title.charAt(0).toUpperCase(),
                       userColor: "bg-tertiary-fixed text-on-surface",
