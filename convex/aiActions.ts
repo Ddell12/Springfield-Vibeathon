@@ -1,6 +1,7 @@
 "use node";
 
 import { v } from "convex/values";
+import { ElevenLabsClient } from "elevenlabs";
 
 import { action } from "./_generated/server";
 import { internal } from "./_generated/api";
@@ -39,29 +40,14 @@ export const generateSpeech = action({
     }
 
     try {
-      const response = await fetch(
-        `https://api.elevenlabs.io/v1/text-to-speech/${resolvedVoiceId}`,
-        {
-          method: "POST",
-          headers: {
-            "xi-api-key": elevenLabsApiKey,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            text: args.text,
-            model_id: "eleven_flash_v2_5",
-            voice_settings: { stability: 0.5, similarity_boost: 0.75 },
-          }),
-        },
-      );
+      const client = new ElevenLabsClient({ apiKey: elevenLabsApiKey });
+      const audioStream = await client.textToSpeech.convert(resolvedVoiceId, {
+        text: args.text,
+        modelId: "eleven_flash_v2_5",
+        voiceSettings: { stability: 0.5, similarityBoost: 0.75 },
+      });
 
-      if (!response.ok) {
-        const body = await response.text().catch(() => "");
-        console.error(`[TTS] ElevenLabs error ${response.status}:`, body);
-        throw new Error("Speech generation failed. Please try again.");
-      }
-
-      const audioBuffer = await response.arrayBuffer();
+      const audioBuffer = await new Response(audioStream).arrayBuffer();
       const blob = new Blob([audioBuffer], { type: "audio/mpeg" });
 
       const storageId = await ctx.storage.store(blob);
