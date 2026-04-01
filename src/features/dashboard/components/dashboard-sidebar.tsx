@@ -37,10 +37,11 @@ export function DashboardSidebar() {
   const isCaregiver = role === "caregiver";
   const navItems = isCaregiver ? CAREGIVER_NAV_ITEMS : NAV_ITEMS;
 
-  const [collapsed, setCollapsed] = useState(() => {
-    if (typeof window === "undefined") return false;
-    return localStorage.getItem("bridges_sidebar_collapsed") === "true";
-  });
+  const [collapsed, setCollapsed] = useState(false);
+
+  useEffect(() => {
+    setCollapsed(localStorage.getItem("bridges_sidebar_collapsed") === "true");
+  }, []);
 
   const toggleCollapsed = () => {
     setCollapsed((prev) => {

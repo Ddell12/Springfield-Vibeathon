@@ -20,6 +20,7 @@ import { useProgressNarration } from "../hooks/use-progress-narration";
 import { useSessionResume } from "../hooks/use-session-resume";
 import { useStreaming } from "../hooks/use-streaming";
 import type { TherapyBlueprint } from "../lib/schemas";
+import { UpgradeConfirmationDialog } from "../../billing/components/upgrade-confirmation-dialog";
 import { ChatColumn } from "./chat-column";
 import { HomeScreen } from "./home-screen";
 import { type DeviceSize, PreviewColumn, type ViewMode } from "./preview-column";
@@ -55,6 +56,7 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
   }, []);
   const [mobilePanel, setMobilePanel] = useState<"chat" | "preview">("chat");
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [upgradeOpen, setUpgradeOpen] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [previewVisible, setPreviewVisible] = useState(true);
   const updateTitle = useMutation(api.sessions.updateTitle);
@@ -268,7 +270,11 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
       ensureApp({ sessionId: activeSessionId as Id<"sessions">, title: appName })
         .then(() => toast.success("Saved to My Apps!"))
         .catch((err) => {
-          console.warn("[builder] Auto-save failed:", err);
+          if (err instanceof Error && err.message.includes("Free plan limit reached")) {
+            setUpgradeOpen(true);
+          } else {
+            console.warn("[builder] Auto-save failed:", err);
+          }
         });
     }
     if (status === "generating") autoSavedRef.current = false;
@@ -283,8 +289,12 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
       });
       toast.success("Saved to My Apps!");
     } catch (err) {
-      console.error("Failed to save:", err);
-      toast.error("Could not save — please try again");
+      if (err instanceof Error && err.message.includes("Free plan limit reached")) {
+        setUpgradeOpen(true);
+      } else {
+        console.error("Failed to save:", err);
+        toast.error("Could not save — please try again");
+      }
     }
   }
 
@@ -307,6 +317,7 @@ export function BuilderPage({ initialSessionId }: BuilderPageProps) {
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
+      <UpgradeConfirmationDialog open={upgradeOpen} onOpenChange={setUpgradeOpen} />
       {showPromptScreen ? (
         <HomeScreen
           onGenerate={handleGenerate}
