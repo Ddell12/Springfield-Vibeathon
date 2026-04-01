@@ -8,6 +8,7 @@ import { NotificationBell } from "../notification-bell";
 const mockPush = vi.fn();
 const mockMarkRead = vi.fn(() => Promise.resolve());
 const mockMarkAllRead = vi.fn(() => Promise.resolve());
+const mockNotifications = vi.fn();
 
 vi.mock("@convex/_generated/api", () => ({
   api: {
@@ -20,19 +21,7 @@ vi.mock("@convex/_generated/api", () => ({
 }));
 
 vi.mock("convex/react", () => ({
-  useQuery: () => [
-    {
-      _id: "notif1",
-      _creationTime: Date.now(),
-      type: "session-booked",
-      title: "Session Booked",
-      body: "Session with Ace Rivera has been booked",
-      link: "/sessions/appt123",
-      read: false,
-      appointmentId: "appt123",
-      userId: "user1",
-    },
-  ],
+  useQuery: () => mockNotifications(),
   useMutation: (ref: string) =>
     ref === "notifications.markRead" ? mockMarkRead : mockMarkAllRead,
 }));
@@ -110,6 +99,22 @@ beforeEach(() => {
 });
 
 describe("NotificationBell", () => {
+  beforeEach(() => {
+    mockNotifications.mockReturnValue([
+      {
+        _id: "notif1",
+        _creationTime: Date.now(),
+        type: "session-booked",
+        title: "Session Booked",
+        body: "Session with Ace Rivera has been booked",
+        link: "/sessions/appt123",
+        read: false,
+        appointmentId: "appt123",
+        userId: "user1",
+      },
+    ]);
+  });
+
   it("routes to the notification link and marks the item read", async () => {
     const user = userEvent.setup();
 
@@ -119,5 +124,29 @@ describe("NotificationBell", () => {
 
     expect(mockMarkRead).toHaveBeenCalledWith({ notificationId: "notif1" });
     expect(mockPush).toHaveBeenCalledWith("/sessions/appt123");
+  });
+
+  it("falls back to a known session route when no explicit link is present", async () => {
+    mockNotifications.mockReturnValue([
+      {
+        _id: "notif2",
+        _creationTime: Date.now(),
+        type: "session-reminder",
+        title: "Session Reminder",
+        body: "Session with Ace Rivera starts soon",
+        read: false,
+        appointmentId: "appt123",
+        userId: "user1",
+      },
+    ]);
+
+    const user = userEvent.setup();
+
+    render(<NotificationBell />);
+    await user.click(screen.getByRole("button", { name: /notifications/i }));
+    await user.click(screen.getByRole("button", { name: /session reminder/i }));
+
+    expect(mockMarkRead).toHaveBeenCalledWith({ notificationId: "notif2" });
+    expect(mockPush).toHaveBeenCalledWith("/sessions/appt123/call");
   });
 });
