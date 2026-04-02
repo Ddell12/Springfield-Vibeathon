@@ -122,19 +122,21 @@ export const getUnbilledCount = slpQuery({
   handler: async (ctx) => {
     if (!ctx.slpUserId) return 0;
 
-    const drafts = await ctx.db
+    const drafts = (await ctx.db
       .query("billingRecords")
       .withIndex("by_slpUserId_status", (q) =>
         q.eq("slpUserId", ctx.slpUserId!).eq("status", "draft")
       )
-      .collect();
+      .collect()
+    ).filter((r) => !r.testMetadata);
 
-    const finalized = await ctx.db
+    const finalized = (await ctx.db
       .query("billingRecords")
       .withIndex("by_slpUserId_status", (q) =>
         q.eq("slpUserId", ctx.slpUserId!).eq("status", "finalized")
       )
-      .collect();
+      .collect()
+    ).filter((r) => !r.testMetadata);
 
     return drafts.length + finalized.length;
   },
