@@ -289,9 +289,9 @@ export function MyToolsPage({ embedded = false }: MyToolsPageProps) {
                   {(() => {
                     const badge = getActivityBadge((tool as Record<string, unknown>).lastActivityAt as number | undefined);
                     return badge ? (
-                      <div className="absolute top-4 left-4 z-10 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 dark:bg-emerald-950">
-                        <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                        <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                      <div className="absolute top-4 left-4 z-10 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-success-container">
+                        <span className="w-2 h-2 rounded-full bg-success" />
+                        <span className="text-xs font-medium text-on-success-container">
                           {badge}
                         </span>
                       </div>
