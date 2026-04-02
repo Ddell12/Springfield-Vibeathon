@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useMutation, useQuery } from "convex/react";
+import Link from "next/link";
 
 import { api } from "@convex/_generated/api";
 import type { Doc } from "@convex/_generated/dataModel";
@@ -78,9 +79,16 @@ export function TemplateLibraryPage() {
                     <p className="mt-0.5 text-sm text-muted-foreground">{t.description}</p>
                   )}
                 </div>
-                <span className="mt-1 shrink-0 rounded-full bg-muted px-2.5 py-0.5 text-xs text-muted-foreground">
-                  {t.status}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="mt-1 shrink-0 rounded-full bg-muted px-2.5 py-0.5 text-xs text-muted-foreground">
+                    {t.status}
+                  </span>
+                  <Button asChild type="button" variant="outline" size="sm">
+                    <Link href={`/speech-coach?templateId=${t._id}&mode=preview`}>
+                      Preview session
+                    </Link>
+                  </Button>
+                </div>
               </div>
             </li>
           ))}

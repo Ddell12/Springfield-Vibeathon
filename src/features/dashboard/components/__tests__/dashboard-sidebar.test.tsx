@@ -69,4 +69,9 @@ describe("DashboardSidebar (SLP)", () => {
     const nameElements = screen.getAllByText((_, el) => el?.textContent === "Jane SLP" && el?.tagName === "P");
     expect(nameElements.length).toBeGreaterThanOrEqual(1);
   });
+  it("keeps Speech Coach as the top-level nav item for SLPs", () => {
+    render(<DashboardSidebar />);
+    expect(screen.getByRole("link", { name: /speech coach/i })).toHaveAttribute("href", "/speech-coach");
+    expect(screen.queryByRole("link", { name: /preview coach/i })).not.toBeInTheDocument();
+  });
 });

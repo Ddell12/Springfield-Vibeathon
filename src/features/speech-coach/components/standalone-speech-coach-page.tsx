@@ -2,12 +2,14 @@
 
 import { useUser } from "@clerk/nextjs";
 import { useConvexAuth,useQuery } from "convex/react";
+import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 
 import { cn } from "@/core/utils";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/components/ui/card";
 
 import { api } from "../../../../convex/_generated/api";
+import type { Id } from "../../../../convex/_generated/dataModel";
 import { useStandaloneSpeechSession } from "../hooks/use-standalone-speech-session";
 import { ActiveSession } from "./active-session";
 import { SessionConfig } from "./session-config";
@@ -28,6 +30,23 @@ export function StandaloneSpeechCoachPage() {
   const session = useStandaloneSpeechSession();
   const role = (user?.publicMetadata as { role?: string } | undefined)?.role;
   const isSLP = role !== "caregiver";
+
+  const searchParams = useSearchParams();
+  const previewTemplateId = searchParams.get("templateId");
+  const isPreviewMode = searchParams.get("mode") === "preview";
+
+  const previewTemplate = useQuery(
+    api.speechCoachTemplates.getById,
+    previewTemplateId ? { templateId: previewTemplateId as Id<"speechCoachTemplates"> } : "skip",
+  );
+
+  const speechCoachConfig = previewTemplate
+    ? {
+        targetSounds: previewTemplate.defaultTargetSounds,
+        ageRange: previewTemplate.defaultAgeRange,
+        defaultDurationMinutes: previewTemplate.defaultDurationMinutes,
+      }
+    : DEFAULT_CONFIG;
 
   const progress = useQuery(
     api.speechCoach.getStandaloneProgress,
@@ -53,7 +72,7 @@ export function StandaloneSpeechCoachPage() {
         onEnd={() => session.endSession()}
         durationMinutes={session.durationMinutes}
         sessionConfig={session.sessionConfig ?? undefined}
-        speechCoachConfig={DEFAULT_CONFIG}
+        speechCoachConfig={speechCoachConfig}
       />
     );
   }
@@ -114,6 +133,11 @@ export function StandaloneSpeechCoachPage() {
         <p className="mt-1 text-sm text-on-surface-variant">
           Try an interactive voice session and practice speech sounds with an AI coach.
         </p>
+        {isSLP && isPreviewMode ? (
+          <p className="mt-1 text-sm text-muted-foreground">
+            Previewing this coach setup before assigning it to a child.
+          </p>
+        ) : null}
       </div>
 
       <div className="flex gap-1 rounded-full bg-surface-container p-1 w-fit">
@@ -138,7 +162,7 @@ export function StandaloneSpeechCoachPage() {
         {activeTab === "new" && (
           <div className="mx-auto max-w-lg">
             <SessionConfig
-              speechCoachConfig={DEFAULT_CONFIG}
+              speechCoachConfig={speechCoachConfig}
               onStart={session.begin}
               lastRecommended={lastRecommended}
               isLoading={session.phase === "connecting"}

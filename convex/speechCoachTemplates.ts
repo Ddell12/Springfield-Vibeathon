@@ -31,6 +31,16 @@ export const create = slpMutation({
   },
 });
 
+export const getById = slpQuery({
+  args: { templateId: v.id("speechCoachTemplates") },
+  handler: async (ctx, args) => {
+    if (!ctx.slpUserId) return null;
+    const template = await ctx.db.get(args.templateId);
+    if (!template || template.slpUserId !== ctx.slpUserId) return null;
+    return template;
+  },
+});
+
 export const update = slpMutation({
   args: {
     templateId: v.id("speechCoachTemplates"),
