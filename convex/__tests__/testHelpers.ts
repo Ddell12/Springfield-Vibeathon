@@ -1,5 +1,6 @@
-import { afterAll, beforeAll } from "vitest";
 import { convexTest } from "convex-test";
+import { afterAll, beforeAll } from "vitest";
+
 import { api } from "../_generated/api";
 import type { Id } from "../_generated/dataModel";
 
