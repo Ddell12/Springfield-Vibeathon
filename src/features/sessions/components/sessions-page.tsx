@@ -3,7 +3,10 @@
 import { useUser } from "@clerk/nextjs";
 import { useQuery } from "convex/react";
 import dynamic from "next/dynamic";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
+
+import { canShowDeveloperAccelerators } from "@/shared/lib/developer-gate";
 import { toast } from "sonner";
 
 import { usePatients } from "@/features/patients/hooks/use-patients";
@@ -55,7 +58,11 @@ export function SessionsPage() {
     isSLP ? user?.id : undefined,
   );
 
-  const { create } = useAppointmentActions();
+  const { create, startDeveloperTestCall } = useAppointmentActions();
+  const router = useRouter();
+  const showDeveloperAccelerators = canShowDeveloperAccelerators(
+    user?.primaryEmailAddress?.emailAddress ?? null,
+  );
 
   const [bookingOpen, setBookingOpen] = useState(false);
   const [bookingSlot, setBookingSlot] = useState<number | null>(null);
@@ -133,6 +140,19 @@ export function SessionsPage() {
                 <MaterialIcon icon="schedule" size="sm" />
                 Availability
               </Button>
+              {showDeveloperAccelerators && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={async () => {
+                    const appointmentId = await startDeveloperTestCall();
+                    router.push(`/sessions/${appointmentId}/call`);
+                  }}
+                >
+                  <MaterialIcon icon="science" size="sm" />
+                  Start test call
+                </Button>
+              )}
             </>
           )}
           <div className="flex items-center gap-1 rounded-full bg-surface-container p-1">

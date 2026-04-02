@@ -50,6 +50,7 @@ export function useAppointmentActions() {
   const startSession = useMutation(api.appointments.startSession);
   const completeSession = useMutation(api.appointments.completeSession);
   const markNoShow = useMutation(api.appointments.markNoShow);
+  const startDeveloperTestCall = useMutation(api.appointments.startDeveloperTestCall);
 
   return {
     create,
@@ -58,5 +59,6 @@ export function useAppointmentActions() {
     startSession,
     completeSession,
     markNoShow,
+    startDeveloperTestCall,
   };
 }
