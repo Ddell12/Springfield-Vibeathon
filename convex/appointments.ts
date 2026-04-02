@@ -430,6 +430,8 @@ export const startDeveloperTestCall = slpMutation({
   args: {},
   handler: async (ctx) => {
     const identity = await assertDeveloperGate(ctx);
+    // assertDeveloperGate throws if identity is null — non-null assert is safe here
+    const userId = identity!.subject ?? ctx.slpUserId;
 
     // Create a minimal synthetic patient for the test call
     const patientId = await ctx.db.insert("patients", {
@@ -440,7 +442,7 @@ export const startDeveloperTestCall = slpMutation({
       diagnosis: "articulation",
       status: "active",
       notes: "Synthetic developer teletherapy patient",
-      testMetadata: buildDeveloperTestMetadata(identity.subject),
+      testMetadata: buildDeveloperTestMetadata(userId),
     });
 
     const scheduledAt = Date.now() + 60_000;
@@ -451,7 +453,7 @@ export const startDeveloperTestCall = slpMutation({
       duration: 30,
       status: "scheduled",
       joinLink: "",
-      testMetadata: buildDeveloperTestMetadata(identity.subject),
+      testMetadata: buildDeveloperTestMetadata(userId),
     });
 
     await ctx.db.patch(appointmentId, {
