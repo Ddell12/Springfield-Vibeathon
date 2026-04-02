@@ -16,11 +16,17 @@ interface AIAssistPanelProps {
     interests?: string[];
     communicationLevel?: string;
   };
+  initialDescription?: string;
   onApply: (configJson: string) => void;
 }
 
-export function AIAssistPanel({ templateType, childProfile, onApply }: AIAssistPanelProps) {
-  const [description, setDescription] = useState("");
+export function AIAssistPanel({
+  templateType,
+  childProfile,
+  initialDescription,
+  onApply,
+}: AIAssistPanelProps) {
+  const [description, setDescription] = useState(initialDescription ?? "");
   const { status, error, generate } = useAIConfigAssist({
     templateType,
     childProfile,

@@ -239,6 +239,7 @@ export default defineSchema({
       v.literal("archived")
     ),
     version: v.number(),
+    originalDescription: v.optional(v.string()),
     shareToken: v.optional(v.string()),
     publishedAt: v.optional(v.number()),
   })
