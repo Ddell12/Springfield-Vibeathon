@@ -121,6 +121,7 @@ export const listRecentBySLP = query({
 
     const limit = Math.min(args.limit ?? 5, 10);
 
+    // .order("desc") sorts by _creationTime within the slpUserId partition (most recently created first)
     return ctx.db
       .query("app_instances")
       .withIndex("by_slpUserId", (q) => q.eq("slpUserId", identity.subject))
