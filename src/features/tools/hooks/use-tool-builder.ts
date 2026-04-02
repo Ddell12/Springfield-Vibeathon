@@ -75,6 +75,7 @@ export function useToolBuilder(initialId?: Id<"app_instances"> | null) {
   const updateInstance = useMutation(api.tools.update);
   const publishInstance = useMutation(api.tools.publish);
   const archiveInstance = useMutation(api.tools.archive);
+  const unpublishInstance = useMutation(api.tools.unpublish);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const latestConfigRef = useRef<unknown>(null);
 
@@ -85,8 +86,13 @@ export function useToolBuilder(initialId?: Id<"app_instances"> | null) {
   }, []);
 
   const selectPatient = useCallback(
-    (patientId: Id<"patients">) => setState((s) => ({ ...s, patientId })),
-    []
+    async (patientId: Id<"patients">) => {
+      setState((s) => ({ ...s, patientId }));
+      if (state.instanceId) {
+        await updateInstance({ id: state.instanceId, patientId });
+      }
+    },
+    [state.instanceId, updateInstance]
   );
 
   const selectTemplate = useCallback((templateType: string) => {
@@ -189,12 +195,12 @@ export function useToolBuilder(initialId?: Id<"app_instances"> | null) {
     if (!instanceId) return;
     setState((s) => ({ ...s, isSaving: true }));
     try {
-      await archiveInstance({ id: instanceId });
+      await unpublishInstance({ id: instanceId });
       setState((s) => ({ ...s, publishedShareToken: null, isSaving: false }));
     } catch {
       setState((s) => ({ ...s, isSaving: false }));
     }
-  }, [state, archiveInstance]);
+  }, [state, unpublishInstance]);
 
   return { ...state, selectPatient, selectTemplate, nextStep, prevStep, closePublish, updateConfig, updateAppearance, saveAndAdvance, publish, unpublish };
 }

@@ -23,7 +23,7 @@ interface PublishSheetProps {
   publishedShareToken: string | null;
   instanceId: Id<"app_instances"> | null;
   patientId: Id<"patients"> | null;
-  onSelectPatient: (id: Id<"patients">) => void;
+  onSelectPatient: (id: Id<"patients">) => void | Promise<void>;
   onPublish: () => Promise<string | null>;
   onUnpublish: () => Promise<void>;
 }
@@ -34,7 +34,7 @@ export function PublishSheet({
   onPublish, onUnpublish,
 }: PublishSheetProps) {
   const [copied, setCopied] = useState(false);
-  const patients = useQuery(api.patients.list, {}) ?? [];
+  const patients = useQuery(api.patients.list, { status: "active" }) ?? [];
 
   const shareUrl = publishedShareToken
     ? `${typeof window !== "undefined" ? window.location.origin : ""}/apps/${publishedShareToken}`
