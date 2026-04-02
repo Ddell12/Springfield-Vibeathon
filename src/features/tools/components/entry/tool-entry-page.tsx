@@ -27,16 +27,22 @@ export function ToolEntryPage({ childProfile }: ToolEntryPageProps) {
   const [description, setDescription] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const inFlight = useRef(false);
 
   const handleBuildIt = async () => {
-    const desc = description.trim();
-    if (!desc) return;
-
-    setStatus("loading");
-    setError(null);
+    if (inFlight.current) return;
+    inFlight.current = true;
 
     try {
+      const desc = description.trim();
+      if (!desc) {
+        inFlight.current = false;
+        return;
+      }
+
+      setStatus("loading");
+      setError(null);
+
       const res = await fetch("/api/tools/infer-template", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -66,14 +72,26 @@ export function ToolEntryPage({ childProfile }: ToolEntryPageProps) {
     } catch {
       setStatus("error");
       setError("Something went wrong. Please try again.");
+    } finally {
+      inFlight.current = false;
     }
   };
 
   const handleQuickStart = async (templateType: string) => {
-    setStatus("loading");
-    setError(null);
+    if (inFlight.current) return;
+    inFlight.current = true;
+
     try {
+      setStatus("loading");
+      setError(null);
+
       const reg = templateRegistry[templateType];
+      if (!reg) {
+        setStatus("error");
+        setError("Something went wrong. Please try again.");
+        return;
+      }
+
       const id = await createInstance({
         templateType,
         title: reg.meta.name,
@@ -83,6 +101,8 @@ export function ToolEntryPage({ childProfile }: ToolEntryPageProps) {
     } catch {
       setStatus("error");
       setError("Something went wrong. Please try again.");
+    } finally {
+      inFlight.current = false;
     }
   };
 
@@ -103,7 +123,6 @@ export function ToolEntryPage({ childProfile }: ToolEntryPageProps) {
 
         <div className="flex flex-col gap-3">
           <Textarea
-            ref={textareaRef}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder={`e.g. "Token board for Marcus, 5 tokens, reward is iPad time. He loves dinosaurs."`}

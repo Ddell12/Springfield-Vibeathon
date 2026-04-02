@@ -101,4 +101,24 @@ describe("ToolEntryPage", () => {
     render(<ToolEntryPage />);
     expect(screen.getByText(/token board/i)).toBeInTheDocument();
   });
+
+  it("quick-start card creates instance and redirects", async () => {
+    render(<ToolEntryPage />);
+    // Click the first quick-start card (e.g. "Token Board" or whatever the first template is)
+    // We need to find a button that is NOT the "Build it" button
+    const cards = screen.getAllByRole("button");
+    // The last buttons are the quick-start cards; click one that isn't "Build it"
+    const quickStartButton = cards.find(
+      (btn) => btn.textContent && !/build it/i.test(btn.textContent)
+    );
+    expect(quickStartButton).toBeDefined();
+    fireEvent.click(quickStartButton!);
+
+    await waitFor(() => {
+      expect(mockCreateInstance).toHaveBeenCalled();
+    });
+    await waitFor(() => {
+      expect(mockPush).toHaveBeenCalledWith(expect.stringMatching(/^\/tools\//));
+    });
+  });
 });
