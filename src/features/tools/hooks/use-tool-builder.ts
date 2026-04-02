@@ -74,6 +74,11 @@ export function useToolBuilder(initialId?: Id<"app_instances"> | null) {
   const publishInstance = useMutation(api.tools.publish);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const latestConfigRef = useRef<unknown>(null);
+  const stateRef = useRef(state);
+
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
 
   useEffect(() => {
     return () => {
@@ -132,7 +137,7 @@ export function useToolBuilder(initialId?: Id<"app_instances"> | null) {
   );
 
   const saveAndAdvance = useCallback(async () => {
-    const { patientId, templateType, config, instanceId } = state;
+    const { patientId, templateType, config, instanceId } = stateRef.current;
     if (!templateType || !config) return;
 
     setState((s) => ({ ...s, isSaving: true }));
@@ -143,8 +148,8 @@ export function useToolBuilder(initialId?: Id<"app_instances"> | null) {
           title: (config as { title?: string }).title ?? "Untitled",
           configJson: JSON.stringify(config),
           ...(patientId ? { patientId } : {}),
-          ...(state.originalDescription
-            ? { originalDescription: state.originalDescription }
+          ...(stateRef.current.originalDescription
+            ? { originalDescription: stateRef.current.originalDescription }
             : {}),
         };
         const id = await createInstance(payload);
@@ -164,10 +169,10 @@ export function useToolBuilder(initialId?: Id<"app_instances"> | null) {
     } catch {
       setState((s) => ({ ...s, isSaving: false }));
     }
-  }, [state, createInstance, updateInstance]);
+  }, [createInstance, updateInstance]);
 
   const publish = useCallback(async (): Promise<string | null> => {
-    const { instanceId } = state;
+    const { instanceId } = stateRef.current;
     if (!instanceId) return null;
 
     setState((s) => ({ ...s, isSaving: true }));
@@ -179,7 +184,7 @@ export function useToolBuilder(initialId?: Id<"app_instances"> | null) {
       setState((s) => ({ ...s, isSaving: false }));
       return null;
     }
-  }, [state, publishInstance]);
+  }, [publishInstance]);
 
   return {
     ...state,
