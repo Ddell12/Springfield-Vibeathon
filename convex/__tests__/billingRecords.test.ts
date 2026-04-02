@@ -468,6 +468,49 @@ describe("billingRecords.create", () => {
   });
 });
 
+describe("testMetadata filtering", () => {
+  it("excludes testMetadata-tagged billing records from listBySlp", async () => {
+    const t = convexTest(schema, modules);
+    const slp = t.withIdentity({ subject: "slp-user-123", issuer: "clerk" });
+
+    // Create a patient
+    const { patientId } = await slp.mutation(api.patients.create, {
+      firstName: "Test",
+      lastName: "Child",
+      dateOfBirth: "2020-01-01",
+      diagnosis: "articulation",
+    });
+
+    // Insert a session note with testMetadata directly
+    const noteId = await t.run(async (ctx) => {
+      return await ctx.db.insert("sessionNotes", {
+        patientId,
+        slpUserId: "slp-user-123",
+        sessionDate: "2026-04-01",
+        sessionDuration: 30,
+        sessionType: "teletherapy",
+        status: "draft",
+        structuredData: { targetsWorkedOn: [] },
+        aiGenerated: true,
+        testMetadata: { source: "developer-shortcut" as const },
+      });
+    });
+
+    // Create billing record from the synthetic note
+    await t.mutation(internal.billingRecords.createFromSessionNote, {
+      sessionNoteId: noteId,
+      slpUserId: "slp-user-123",
+      patientId,
+      sessionDate: "2026-04-01",
+      sessionType: "teletherapy",
+    });
+
+    // listBySlp should exclude the test-tagged record
+    const records = await slp.query(api.billingRecords.listBySlp, {});
+    expect(records).toHaveLength(0);
+  });
+});
+
 describe("sessionNotes.sign billing integration", () => {
   it("signing a note does not throw and sets status to signed", async () => {
     const t = convexTest(schema, modules).withIdentity(SLP_IDENTITY);

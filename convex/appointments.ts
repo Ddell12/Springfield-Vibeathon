@@ -402,6 +402,7 @@ export const completeSession = slpMutation({
       duration: args.durationSeconds,
       interactionLog: args.interactionLog,
       status: "processing",
+      testMetadata: appointment.testMetadata,
     });
 
     await ctx.scheduler.runAfter(0, internal.sessionActions.fetchAudio, {

@@ -486,6 +486,9 @@ export const createFromMeeting = internalMutation({
     meetingRecordId: v.id("meetingRecords"),
   },
   handler: async (ctx, args) => {
+    // Fetch meeting record to propagate testMetadata
+    const meeting = await ctx.db.get(args.meetingRecordId);
+
     return await ctx.db.insert("sessionNotes", {
       patientId: args.patientId,
       slpUserId: args.slpUserId,
@@ -503,6 +506,7 @@ export const createFromMeeting = internalMutation({
       soapNote: args.soap,
       aiGenerated: true,
       meetingRecordId: args.meetingRecordId,
+      testMetadata: meeting?.testMetadata,
     });
   },
 });

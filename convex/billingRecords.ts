@@ -25,6 +25,8 @@ export const createFromSessionNote = internalMutation({
       .first();
     if (existing) return existing._id;
 
+    const sessionNote = await ctx.db.get(args.sessionNoteId);
+
     const cptCode = "92507";
     const cptDescription = "individual speech/language/voice treatment";
 
@@ -52,6 +54,7 @@ export const createFromSessionNote = internalMutation({
       units: 1,
       fee,
       status: "draft",
+      testMetadata: sessionNote?.testMetadata,
     });
   },
 });
@@ -85,20 +88,22 @@ export const listBySlp = slpQuery({
     if (!ctx.slpUserId) return [];
 
     if (args.status) {
-      return await ctx.db
+      return (await ctx.db
         .query("billingRecords")
         .withIndex("by_slpUserId_status", (q) =>
           q.eq("slpUserId", ctx.slpUserId!).eq("status", args.status!)
         )
         .order("desc")
-        .collect();
+        .collect()
+      ).filter((record) => !record.testMetadata);
     }
 
-    return await ctx.db
+    return (await ctx.db
       .query("billingRecords")
       .withIndex("by_slpUserId", (q) => q.eq("slpUserId", ctx.slpUserId!))
       .order("desc")
-      .collect();
+      .collect()
+    ).filter((record) => !record.testMetadata);
   },
 });
 

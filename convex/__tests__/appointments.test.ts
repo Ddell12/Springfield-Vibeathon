@@ -2,6 +2,9 @@ import { convexTest } from "convex-test";
 import { describe, expect, it, vi } from "vitest";
 import { api } from "../_generated/api";
 import schema from "../schema";
+import { suppressSchedulerErrors } from "./testHelpers";
+
+suppressSchedulerErrors();
 
 const modules = import.meta.glob("../**/*.ts");
 
@@ -35,6 +38,24 @@ describe("appointments developer gate", () => {
     expect(appointment?.testMetadata?.source).toBe("developer-shortcut");
     expect(appointment?.testMetadata?.createdByUserId).toBe("slp-user-123");
     expect(appointment?.testMetadata?.expiresAt).toBeTypeOf("number");
+  });
+
+  it("copies appointment testMetadata into meeting records on completion", async () => {
+    vi.stubEnv("DEVELOPER_ALLOWLIST", "dev@bridges.ai");
+    const t = convexTest(schema, modules);
+    const slp = t.withIdentity({ subject: "slp-user-123", issuer: "clerk", email: "dev@bridges.ai" });
+
+    // Create a developer test call appointment
+    const appointmentId = await slp.mutation(api.appointments.startDeveloperTestCall, {});
+
+    // Complete the session
+    const meetingRecordId = await slp.mutation(api.appointments.completeSession, {
+      appointmentId,
+      durationSeconds: 600,
+    });
+
+    const meetingRecord = await t.run((ctx) => ctx.db.get(meetingRecordId));
+    expect(meetingRecord?.testMetadata?.source).toBe("developer-shortcut");
   });
 
   it("creates a synthetic patient and joinable appointment for the current SLP", async () => {
