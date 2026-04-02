@@ -1,7 +1,9 @@
 import { act,fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, test, vi } from "vitest";
+import { describe, expect, it, test, vi } from "vitest";
 
 import { TemplatesPage } from "../templates-page";
+
+const replace = vi.fn();
 
 vi.mock("next/link", () => ({
   default: ({
@@ -20,7 +22,7 @@ vi.mock("next/link", () => ({
 
 vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(),
-  useRouter: () => ({ replace: vi.fn() }),
+  useRouter: () => ({ replace }),
 }));
 
 vi.mock("@/core/utils", () => ({
@@ -37,6 +39,10 @@ vi.mock("@/shared/components/ui/input", () => ({
 }));
 
 describe("TemplatesPage", () => {
+  beforeEach(() => {
+    replace.mockClear();
+  });
+
   test("renders page heading", () => {
     render(<TemplatesPage />);
     expect(
@@ -194,5 +200,15 @@ describe("TemplatesPage", () => {
     expect(screen.getByRole("tab", { name: /^all$/i })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: /communication/i })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: /daily living/i })).toBeInTheDocument();
+  });
+
+  it("writes the selected category into the URL when a tab is clicked", () => {
+    render(<TemplatesPage />);
+    const rewardTab = screen.getByRole("tab", { name: /reward/i });
+    fireEvent.click(rewardTab);
+    expect(replace).toHaveBeenCalledWith(
+      expect.stringContaining("category=reward"),
+      { scroll: false }
+    );
   });
 });

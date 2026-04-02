@@ -4,10 +4,11 @@ import userEvent from "@testing-library/user-event";
 import { LibraryPage } from "../library-page";
 
 const replace = vi.fn();
+let searchParams = new URLSearchParams();
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ replace }),
-  useSearchParams: () => new URLSearchParams(),
+  useSearchParams: () => searchParams,
 }));
 
 vi.mock("@/features/my-tools/components/my-tools-page", () => ({
@@ -21,6 +22,7 @@ vi.mock("@/features/templates/components/templates-page", () => ({
 describe("LibraryPage", () => {
   beforeEach(() => {
     replace.mockClear();
+    searchParams = new URLSearchParams();
   });
 
   it("defaults to My Apps and renders that tab first", () => {
@@ -39,5 +41,15 @@ describe("LibraryPage", () => {
     await user.click(screen.getByRole("tab", { name: /templates/i }));
 
     expect(replace).toHaveBeenCalledWith("/library?tab=templates&page=1", { scroll: false });
+  });
+
+  it("resets page to 1 when the tab changes", async () => {
+    const user = userEvent.setup();
+    render(<LibraryPage />);
+    await user.click(screen.getByRole("tab", { name: /templates/i }));
+    expect(replace).toHaveBeenCalledWith(
+      expect.stringContaining("page=1"),
+      { scroll: false }
+    );
   });
 });

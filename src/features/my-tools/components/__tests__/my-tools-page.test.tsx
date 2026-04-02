@@ -337,4 +337,12 @@ describe("MyToolsPage", () => {
     render(<MyToolsPage />);
     expect(screen.queryByText("Building...")).not.toBeInTheDocument();
   });
+
+  it("asks the backend for the requested page, search, and sort", () => {
+    render(<MyToolsPage />);
+    expect(mockUseQuery).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ page: 1, pageSize: expect.any(Number), search: "", sortBy: "recent" })
+    );
+  });
 });
