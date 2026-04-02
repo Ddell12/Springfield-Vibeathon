@@ -20,7 +20,7 @@ export type LiveKitRuntimeSession = {
   tokenPath: string;
 };
 
-type SessionPhase = "idle" | "connecting" | "active" | "ending" | "done" | "error";
+type SessionPhase = "idle" | "connecting" | "active" | "ending" | "reviewing" | "done" | "error";
 
 export function useStandaloneSpeechSession() {
   const [phase, setPhase] = useState<SessionPhase>("idle");
@@ -84,10 +84,10 @@ export function useStandaloneSpeechSession() {
     setPhase("ending");
     try {
       await endSessionMutation({ sessionId });
-      setPhase("done");
+      setPhase("reviewing");
     } catch (err) {
       console.error("[SpeechCoach] End session error:", err);
-      setPhase("done");
+      setPhase("error");
     }
   }, [sessionId, endSessionMutation]);
 

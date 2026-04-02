@@ -30,4 +30,45 @@ describe("ProgressCard", () => {
     render(<ProgressCard progress={MOCK_PROGRESS} />);
     expect(screen.getByText("Next time, try:")).toBeInTheDocument();
   });
+
+  it("renders score cards, insight groups, and transcript turns", () => {
+    render(
+      <ProgressCard
+        progress={{
+          summary: "Needed cueing but stayed engaged.",
+          soundsAttempted: [],
+          overallEngagement: "medium",
+          recommendedNextFocus: ["/s/"],
+          scoreCards: {
+            overall: 72,
+            productionAccuracy: 68,
+            consistency: 70,
+            cueingSupport: 55,
+            engagement: 80,
+          },
+          insights: {
+            strengths: ["Strong imitation after a direct model"],
+            patterns: ["Dropped final /d/ in sad"],
+            notableCueingPatterns: ["Best after immediate repetition"],
+            recommendedNextTargets: ["/s/"],
+            homePracticeNotes: ["Practice sad, sun, sock with a visual card"],
+          },
+          transcriptTurns: [
+            {
+              speaker: "coach",
+              text: "Say sad",
+              targetLabel: "sad",
+              attemptOutcome: "incorrect",
+              retryCount: 0,
+              timestampMs: 1000,
+            },
+          ],
+        }}
+      />
+    );
+
+    expect(screen.getByText("Overall")).toBeInTheDocument();
+    expect(screen.getByText("Strong imitation after a direct model")).toBeInTheDocument();
+    expect(screen.getByText("Say sad")).toBeInTheDocument();
+  });
 });

@@ -690,10 +690,16 @@ export default defineSchema({
     status: v.union(
       v.literal("configuring"),
       v.literal("active"),
-      v.literal("completed"),
+      v.literal("transcript_ready"),
+      v.literal("analyzing"),
       v.literal("analyzed"),
+      v.literal("review_failed"),
+      v.literal("completed"),
       v.literal("failed")
     ),
+    analysisAttempts: v.optional(v.number()),
+    analysisFailedAt: v.optional(v.number()),
+    analysisErrorMessage: v.optional(v.string()),
     config: v.object({
       targetSounds: v.array(v.string()),
       ageRange: v.union(v.literal("2-4"), v.literal("5-7")),
@@ -745,6 +751,39 @@ export default defineSchema({
     recommendedNextFocus: v.array(v.string()),
     summary: v.string(),
     analyzedAt: v.number(),
+    transcriptTurns: v.optional(v.array(
+      v.object({
+        speaker: v.union(v.literal("coach"), v.literal("child"), v.literal("system")),
+        text: v.string(),
+        targetItemId: v.optional(v.string()),
+        targetLabel: v.optional(v.string()),
+        targetVisualUrl: v.optional(v.string()),
+        attemptOutcome: v.optional(
+          v.union(
+            v.literal("correct"),
+            v.literal("approximate"),
+            v.literal("incorrect"),
+            v.literal("no_response")
+          )
+        ),
+        retryCount: v.number(),
+        timestampMs: v.number(),
+      })
+    )),
+    scoreCards: v.optional(v.object({
+      overall: v.number(),
+      productionAccuracy: v.number(),
+      consistency: v.number(),
+      cueingSupport: v.number(),
+      engagement: v.number(),
+    })),
+    insights: v.optional(v.object({
+      strengths: v.array(v.string()),
+      patterns: v.array(v.string()),
+      notableCueingPatterns: v.array(v.string()),
+      recommendedNextTargets: v.array(v.string()),
+      homePracticeNotes: v.array(v.string()),
+    })),
   })
     .index("by_patientId", ["patientId"])
     .index("by_sessionId", ["sessionId"])
