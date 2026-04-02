@@ -1,10 +1,9 @@
-import { render, screen, waitFor } from "@testing-library/react";
-import { beforeEach,describe, expect, it, vi } from "vitest";
+import { render, screen } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { DashboardSidebar } from "../dashboard-sidebar";
 
 let mockPathnameValue = "/sessions";
-const mockReplace = vi.fn();
 
 vi.mock("convex/react", () => ({ useQuery: () => [] }));
 vi.mock("@clerk/nextjs", () => ({
@@ -15,7 +14,7 @@ vi.mock("@clerk/nextjs", () => ({
 vi.mock("next/navigation", () => ({
   usePathname: () => mockPathnameValue,
   useSearchParams: () => ({ get: () => null }),
-  useRouter: () => ({ replace: mockReplace, push: vi.fn() }),
+  useRouter: () => ({ replace: vi.fn(), push: vi.fn() }),
 }));
 vi.mock("next/link", () => ({ default: ({ href, children, ...props }: any) => <a href={href} {...props}>{children}</a> }));
 vi.mock("@/shared/components/ui/popover", () => ({
@@ -24,18 +23,9 @@ vi.mock("@/shared/components/ui/popover", () => ({
   PopoverContent: ({ children }: any) => <div>{children}</div>,
 }));
 
-function mockPathname(path: string) {
-  mockPathnameValue = path;
-}
-
-function mockCaregiver() {
-  // role is caregiver via the @clerk/nextjs mock above
-}
-
 beforeEach(() => {
   localStorage.clear();
   mockPathnameValue = "/sessions";
-  mockReplace.mockClear();
 });
 
 describe("DashboardSidebar (caregiver)", () => {
@@ -52,39 +42,11 @@ describe("DashboardSidebar (caregiver)", () => {
     expect(nav).not.toHaveTextContent("Library");
   });
 
-  it("redirects caregiver away from /tools/new (SLP builder is restricted)", async () => {
-    mockPathname("/tools/new");
-    mockCaregiver();
+  it("renders caregiver navigation without client-side redirect side effects", () => {
+    mockPathnameValue = "/tools/new";
     render(<DashboardSidebar />);
-    await waitFor(() => {
-      expect(mockReplace).toHaveBeenCalledWith("/family");
-    });
-  });
-
-  it("does not redirect caregiver on /flashcards", async () => {
-    mockPathname("/flashcards");
-    mockCaregiver();
-    render(<DashboardSidebar />);
-    await waitFor(() => {
-      expect(mockReplace).not.toHaveBeenCalled();
-    });
-  });
-
-  it("does not redirect caregiver on /my-tools", async () => {
-    mockPathname("/my-tools");
-    mockCaregiver();
-    render(<DashboardSidebar />);
-    await waitFor(() => {
-      expect(mockReplace).not.toHaveBeenCalled();
-    });
-  });
-
-  it("does not redirect caregiver on /templates", async () => {
-    mockPathname("/templates");
-    mockCaregiver();
-    render(<DashboardSidebar />);
-    await waitFor(() => {
-      expect(mockReplace).not.toHaveBeenCalled();
-    });
+    const nav = screen.getByRole("navigation", { name: "Primary" });
+    expect(nav).toHaveTextContent("Home");
+    expect(nav).toHaveTextContent("Settings");
   });
 });

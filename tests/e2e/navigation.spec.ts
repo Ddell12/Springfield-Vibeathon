@@ -1,5 +1,12 @@
 import { expect,test } from "./fixtures";
 
+test("caregiver cannot open therapist-only routes", async ({ caregiverPage }) => {
+  for (const route of ["/tools/new", "/patients", "/billing"]) {
+    await caregiverPage.goto(route);
+    await expect(caregiverPage).toHaveURL(/\/family/);
+  }
+});
+
 test.describe("Navigation — authenticated", () => {
   test.skip(
     !process.env.E2E_CLERK_USER_EMAIL || !process.env.E2E_CLERK_USER_PASSWORD,

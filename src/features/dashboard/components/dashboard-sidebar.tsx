@@ -3,7 +3,7 @@
 import { Show,useClerk, useUser } from "@clerk/nextjs";
 import { useQuery } from "convex/react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { ROUTES } from "@/core/routes";
@@ -15,22 +15,10 @@ import { CAREGIVER_NAV_ITEMS, isNavActive, NAV_ITEMS } from "@/shared/lib/naviga
 
 import { api } from "../../../../convex/_generated/api";
 
-const CAREGIVER_ALLOWED_PREFIXES = [
-  "/family",
-  "/settings",
-  "/speech-coach",
-  "/sessions",
-  "/flashcards",
-  "/my-tools",
-  "/templates",
-  "/library",
-];
-
 export function DashboardSidebar() {
   const pathname = usePathname();
   const { user } = useUser();
   const { signOut } = useClerk();
-  const router = useRouter();
 
   const role = (user?.publicMetadata as { role?: string } | undefined)?.role;
   const isCaregiver = role === "caregiver";
@@ -50,12 +38,6 @@ export function DashboardSidebar() {
   };
 
   const recentTools = useQuery(api.tools.listRecentBySLP, { limit: 5 }) ?? [];
-
-  useEffect(() => {
-    if (isCaregiver && !CAREGIVER_ALLOWED_PREFIXES.some((p) => pathname.startsWith(p))) {
-      router.replace("/family");
-    }
-  }, [isCaregiver, pathname, router]);
 
   const initials = [user?.firstName?.[0], user?.lastName?.[0]]
     .filter(Boolean)
