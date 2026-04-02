@@ -93,7 +93,7 @@ function FamilyDashboardInner({ patientId }: { patientId: string }) {
       {isPatientLoading ? (
         <Skeleton className="h-8 w-48" />
       ) : (
-        <FamilyDashboardHeader patient={patient} />
+        <FamilyDashboardHeader patient={{ name: patient?.firstName }} />
       )}
 
       {/* Intake banner */}
