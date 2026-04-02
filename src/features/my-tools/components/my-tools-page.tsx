@@ -31,6 +31,15 @@ import type { Id } from "../../../../convex/_generated/dataModel";
 type SortOption = "recent" | "alphabetical";
 
 const PAGE_SIZE = 12;
+const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+
+function getActivityBadge(lastActivityAt: number | undefined): string | null {
+  if (!lastActivityAt) return null;
+  const diff = Date.now() - lastActivityAt;
+  if (diff < 24 * 60 * 60 * 1000) return "Used today";
+  if (diff < SEVEN_DAYS_MS) return "Used this week";
+  return null;
+}
 
 const SORT_OPTIONS: { label: string; value: SortOption }[] = [
   { label: "Last Edited", value: "recent" },
@@ -277,6 +286,17 @@ export function MyToolsPage({ embedded = false }: MyToolsPageProps) {
                     }}
                     onDuplicate={() => setDuplicateTarget(tool._id)}
                   />
+                  {(() => {
+                    const badge = getActivityBadge((tool as Record<string, unknown>).lastActivityAt as number | undefined);
+                    return badge ? (
+                      <div className="absolute top-4 left-4 z-10 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 dark:bg-emerald-950">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                        <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                          {badge}
+                        </span>
+                      </div>
+                    ) : null;
+                  })()}
                   {tool.status === "published" && tool.shareToken && (
                     <Button
                       variant="gradient"
