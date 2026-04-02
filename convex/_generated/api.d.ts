@@ -58,6 +58,7 @@ import type * as lib_testFixtures from "../lib/testFixtures.js";
 import type * as lib_testMetadata from "../lib/testMetadata.js";
 import type * as meetingRecords from "../meetingRecords.js";
 import type * as messages from "../messages.js";
+import type * as migrations from "../migrations.js";
 import type * as notificationActions from "../notificationActions.js";
 import type * as notifications from "../notifications.js";
 import type * as patientMaterials from "../patientMaterials.js";
@@ -148,6 +149,7 @@ declare const fullApi: ApiFromModules<{
   "lib/testMetadata": typeof lib_testMetadata;
   meetingRecords: typeof meetingRecords;
   messages: typeof messages;
+  migrations: typeof migrations;
   notificationActions: typeof notificationActions;
   notifications: typeof notifications;
   patientMaterials: typeof patientMaterials;
