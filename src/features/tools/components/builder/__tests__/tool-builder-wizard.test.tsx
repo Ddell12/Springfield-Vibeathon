@@ -25,8 +25,8 @@ vi.mock("../publish-sheet", () => ({
   PublishSheet: () => <div data-testid="publish-sheet" />,
 }));
 
-import { ToolBuilderWizard } from "../tool-builder-wizard";
 import type { useToolBuilder } from "../../hooks/use-tool-builder";
+import { ToolBuilderWizard } from "../tool-builder-wizard";
 
 type Builder = ReturnType<typeof useToolBuilder>;
 
