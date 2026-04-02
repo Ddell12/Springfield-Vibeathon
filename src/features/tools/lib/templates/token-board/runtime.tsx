@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { cn } from "@/core/utils";
 
@@ -14,14 +14,18 @@ export function TokenBoardRuntime({
   const [earned, setEarned] = useState(0);
   const [completed, setCompleted] = useState(false);
   const [justFilledIndex, setJustFilledIndex] = useState<number | null>(null);
+  const fillTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => { onEvent("app_opened"); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => () => { if (fillTimeoutRef.current) clearTimeout(fillTimeoutRef.current); }, []);
 
   const handleTokenTap = useCallback((i: number) => {
     if (completed || i !== earned) return;
     const newEarned = earned + 1;
     setJustFilledIndex(i);
-    setTimeout(() => setJustFilledIndex(null), 350);
+    if (fillTimeoutRef.current) clearTimeout(fillTimeoutRef.current);
+    fillTimeoutRef.current = setTimeout(() => setJustFilledIndex(null), 350);
     onEvent("token_added", JSON.stringify({ tokenIndex: i, earned: newEarned }));
     setEarned(newEarned);
     if (newEarned === config.tokenCount) {
