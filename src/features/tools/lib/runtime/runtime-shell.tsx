@@ -59,10 +59,14 @@ export function RuntimeShell({
           <aside className="flex flex-col gap-4 rounded-2xl bg-muted/30 p-4">
             {shell.enableDifficulty && (
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                <label
+                  htmlFor="shell-difficulty"
+                  className="text-xs font-medium uppercase tracking-wide text-muted-foreground"
+                >
                   Difficulty
                 </label>
                 <select
+                  id="shell-difficulty"
                   value={state.difficulty}
                   onChange={(e) =>
                     state.setDifficulty(
@@ -79,10 +83,14 @@ export function RuntimeShell({
             )}
             {shell.enableSounds && (
               <div className="flex items-center justify-between">
-                <label className="text-sm font-medium text-foreground">
+                <label
+                  htmlFor="shell-sounds"
+                  className="text-sm font-medium text-foreground"
+                >
                   Sounds
                 </label>
                 <input
+                  id="shell-sounds"
                   type="checkbox"
                   checked={state.soundsEnabled}
                   onChange={(e) => state.setSoundsEnabled(e.target.checked)}
@@ -97,8 +105,11 @@ export function RuntimeShell({
                 </label>
                 <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
                   <div
-                    className="h-full rounded-full bg-primary transition-[width] duration-300"
-                    style={{ width: `${state.progress}%` }}
+                    className="h-full rounded-full bg-primary"
+                    style={{
+                      width: `${state.progress}%`,
+                      transition: "width 300ms cubic-bezier(0.4, 0, 0.2, 1)",
+                    }}
                     role="progressbar"
                     aria-valuenow={state.progress}
                     aria-valuemin={0}
