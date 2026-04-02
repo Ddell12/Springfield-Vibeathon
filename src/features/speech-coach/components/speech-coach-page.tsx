@@ -157,27 +157,52 @@ export function SpeechCoachPage({ patientId, homeProgramId }: Props) {
     );
   }
 
-  // Post-session screen
-  if (session.phase === "ending" || session.phase === "done") {
+  // Ending — brief transition while the mutation fires
+  if (session.phase === "ending") {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-6 p-8">
         <p className="text-4xl" aria-hidden="true">{"\uD83C\uDF89"}</p>
         <h2 className="font-headline text-2xl font-bold text-foreground">Great job!</h2>
+        <p className="text-muted-foreground">Ending session…</p>
+      </div>
+    );
+  }
+
+  // Reviewing — transcript saved, AI analysis queued
+  if (session.phase === "reviewing") {
+    return (
+      <div className="flex h-full flex-col items-center justify-center gap-6 p-8">
+        <h2 className="font-headline text-2xl font-bold text-foreground">Reviewing the session...</h2>
         <p className="text-muted-foreground">
-          {session.phase === "ending" ? "Reviewing the session..." : "Session complete!"}
+          We saved the transcript and are preparing a therapist-friendly summary.
         </p>
-        {session.phase === "done" && (
-          <button
-            type="button"
-            onClick={() => {
-              session.reset();
-              setActiveTab("history");
-            }}
-            className="text-sm font-medium text-primary underline"
-          >
-            View results
-          </button>
-        )}
+        <button
+          type="button"
+          onClick={() => setActiveTab("history")}
+          className="text-sm font-medium text-primary underline"
+        >
+          View session status
+        </button>
+      </div>
+    );
+  }
+
+  // Done — fallback for any legacy path that sets done directly
+  if (session.phase === "done") {
+    return (
+      <div className="flex h-full flex-col items-center justify-center gap-6 p-8">
+        <p className="text-4xl" aria-hidden="true">{"\uD83C\uDF89"}</p>
+        <h2 className="font-headline text-2xl font-bold text-foreground">Session complete!</h2>
+        <button
+          type="button"
+          onClick={() => {
+            session.reset();
+            setActiveTab("history");
+          }}
+          className="text-sm font-medium text-primary underline"
+        >
+          View results
+        </button>
       </div>
     );
   }

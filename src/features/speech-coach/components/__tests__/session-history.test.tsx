@@ -2,6 +2,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import type { Id } from "../../../../../convex/_generated/dataModel";
+import { SpeechCoachPage } from "../speech-coach-page";
 import { SessionHistory } from "../session-history";
 
 const mockUseQuery = vi.fn();
@@ -10,6 +11,18 @@ const mockRetryReview = vi.fn();
 vi.mock("convex/react", () => ({
   useQuery: (...args: unknown[]) => mockUseQuery(...args),
   useMutation: () => mockRetryReview,
+  useConvexAuth: () => ({ isAuthenticated: true, isLoading: false }),
+}));
+
+vi.mock("@clerk/nextjs", () => ({
+  useUser: () => ({ user: { publicMetadata: { role: "slp" } } }),
+}));
+
+vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
+
+const mockUseSpeechSession = vi.fn();
+vi.mock("../../hooks/use-speech-session", () => ({
+  useSpeechSession: (...args: unknown[]) => mockUseSpeechSession(...args),
 }));
 
 const SESSION_ID = "speechCoachSessions_1" as Id<"speechCoachSessions">;
@@ -42,6 +55,38 @@ const ANALYZING_SESSION = {
     runtimeSnapshot: { templateVersion: "1.0", voiceKey: "echo" },
   },
 };
+
+const FAKE_PROGRAM = {
+  _id: "fake",
+  _creationTime: 1700000000000,
+  speechCoachConfig: {
+    targetSounds: ["/s/"],
+    ageRange: "5-7",
+    defaultDurationMinutes: 10,
+    coachSetup: { preferredThemes: [], avoidThemes: [] },
+  },
+};
+
+describe("SpeechCoachPage reviewing phase", () => {
+  it("shows reviewing copy after a session ends instead of treating analysis as complete", async () => {
+    mockUseSpeechSession.mockReturnValue({
+      phase: "reviewing",
+      sessionId: null,
+      runtimeSession: null,
+      error: null,
+      durationMinutes: 10,
+      sessionConfig: null,
+      begin: vi.fn(),
+      markActive: vi.fn(),
+      endSession: vi.fn(),
+      reset: vi.fn(),
+    });
+    mockUseQuery.mockReturnValue([FAKE_PROGRAM]);
+
+    render(<SpeechCoachPage patientId={"fake" as never} homeProgramId={"fake" as never} />);
+    expect(await screen.findByText("Reviewing the session...")).toBeInTheDocument();
+  });
+});
 
 describe("SessionHistory", () => {
   const patientId = "patients_1" as Id<"patients">;
