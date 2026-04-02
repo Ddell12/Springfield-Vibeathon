@@ -2,13 +2,11 @@
 
 import { useConvexAuth, useMutation, useQuery } from "convex/react";
 import dynamic from "next/dynamic";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import React, { useState } from "react";
 
 import { ROUTES } from "@/core/routes";
 import { useIntakeForms } from "@/features/intake/hooks/use-intake-forms";
-import { Button } from "@/shared/components/ui/button";
 import { Separator } from "@/shared/components/ui/separator";
 import { Skeleton } from "@/shared/components/ui/skeleton";
 
@@ -17,8 +15,10 @@ import type { Id } from "../../../../convex/_generated/dataModel";
 import { useFamilyData } from "../hooks/use-family-data";
 import { AppPicker } from "./app-picker";
 import { CelebrationCard } from "./celebration-card";
+import { FamilyDashboardHeader } from "./family-dashboard-header";
 import { FamilyIntakeBanner } from "./family-intake-banner";
 import { FamilyKidModeEntry } from "./family-kid-mode-entry";
+import { FamilyMessagesCard } from "./family-messages-card";
 import { FamilySpeechCoachCards } from "./family-speech-coach-cards";
 const PinSetupModal = dynamic(
   () => import("./pin-setup-modal").then((m) => ({ default: m.PinSetupModal })),
@@ -33,29 +33,10 @@ interface FamilyDashboardProps {
   paramsPromise: Promise<{ patientId: string }>;
 }
 
-function DashboardLoadingFallback() {
-  return (
-    <div className="flex flex-col gap-6 p-4 sm:p-6">
-      <Skeleton className="h-8 w-48" />
-      <Skeleton className="h-32 rounded-xl" />
-      <Skeleton className="h-20 rounded-xl" />
-      <Skeleton className="h-10 rounded-xl" />
-    </div>
-  );
-}
-
 export function FamilyDashboard({ paramsPromise }: FamilyDashboardProps) {
-  const [params, setParams] = useState<{ patientId: string } | null>(null);
+  const { patientId } = React.use(paramsPromise);
 
-  useEffect(() => {
-    paramsPromise.then(setParams);
-  }, [paramsPromise]);
-
-  if (!params) {
-    return <DashboardLoadingFallback />;
-  }
-
-  return <FamilyDashboardInner patientId={params.patientId} />;
+  return <FamilyDashboardInner patientId={patientId} />;
 }
 
 function FamilyDashboardInner({ patientId }: { patientId: string }) {
@@ -109,18 +90,11 @@ function FamilyDashboardInner({ patientId }: { patientId: string }) {
   return (
     <div className="flex flex-col gap-6 p-4 sm:p-6">
       {/* Header */}
-      <div>
-        {isPatientLoading ? (
-          <Skeleton className="h-8 w-48" />
-        ) : (
-          <h1 className="font-headline text-2xl font-bold text-foreground">
-            {patient ? `${patient.firstName}'s Practice` : "Practice Dashboard"}
-          </h1>
-        )}
-        <p className="mt-1 text-sm text-muted-foreground">
-          Track progress and stay connected with the therapy team.
-        </p>
-      </div>
+      {isPatientLoading ? (
+        <Skeleton className="h-8 w-48" />
+      ) : (
+        <FamilyDashboardHeader patient={patient} />
+      )}
 
       {/* Intake banner */}
       <FamilyIntakeBanner
@@ -198,22 +172,8 @@ function FamilyDashboardInner({ patientId }: { patientId: string }) {
             <Skeleton className="h-10 rounded-full" />
           )}
 
-          {/* Messages link */}
-          <div className="flex items-center justify-between rounded-xl bg-muted/50 p-4">
-            <div>
-              <p className="text-sm font-medium text-foreground">Therapist messages</p>
-              {unreadCount !== undefined && unreadCount > 0 ? (
-                <p className="text-xs text-caution">
-                  {unreadCount} unread message{unreadCount !== 1 ? "s" : ""}
-                </p>
-              ) : (
-                <p className="text-xs text-muted-foreground">Stay in touch with your team</p>
-              )}
-            </div>
-            <Button asChild variant="outline" size="sm">
-              <Link href={`/family/${patientId}/messages`}>Message Therapist</Link>
-            </Button>
-          </div>
+          {/* Messages */}
+          <FamilyMessagesCard patientId={patientId} unreadCount={unreadCount ?? 0} />
         </>
       )}
     </div>
@@ -221,7 +181,7 @@ function FamilyDashboardInner({ patientId }: { patientId: string }) {
 }
 
 function FamilySpeechCoachCardsConnected({ patientId }: { patientId: Id<"patients"> }) {
-  const programs = useQuery(api.homePrograms.getActiveByPatient, { patientId });
+  const programs = useQuery(api.homePrograms.listActiveSpeechCoachByPatient, { patientId });
 
   if (!programs) return null;
 

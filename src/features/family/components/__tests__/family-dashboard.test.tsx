@@ -1,4 +1,5 @@
-import { render, screen } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
+import { Suspense } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mocks must come before component import
@@ -119,7 +120,13 @@ describe("FamilyDashboard", () => {
     // All queries return undefined (loading)
     vi.mocked(useQuery).mockReturnValue(undefined);
 
-    render(<FamilyDashboard paramsPromise={makeParamsPromise()} />);
+    await act(async () => {
+      render(
+        <Suspense fallback={null}>
+          <FamilyDashboard paramsPromise={makeParamsPromise()} />
+        </Suspense>
+      );
+    });
 
     // Wait for React.use() to resolve the promise and re-render
     const btn = await screen.findByRole("button", { name: /kid mode/i });
@@ -141,9 +148,16 @@ describe("FamilyDashboard", () => {
       return { firstName: "Alex" } as any;
     });
 
-    render(<FamilyDashboard paramsPromise={makeParamsPromise()} />);
+    await act(async () => {
+      render(
+        <Suspense fallback={null}>
+          <FamilyDashboard paramsPromise={makeParamsPromise()} />
+        </Suspense>
+      );
+    });
 
-    const banner = await screen.findByText(/1 of 4 required forms signed/i);
-    expect(banner).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText(/1 of 4 required forms signed/i)).toBeInTheDocument();
+    });
   });
 });
