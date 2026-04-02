@@ -84,9 +84,14 @@ export const analyzeSession = internalAction({
         throw new Error(`Transcript fetch failed: ${String(error)}`);
       }
 
-      // Skip analysis for very short sessions
+      // Skip analysis for very short sessions — but mark as failed so the session
+      // doesn't stay stuck in "analyzing" forever
       if (transcript.length < 100) {
         console.warn("[SpeechCoach] Transcript too short, skipping analysis");
+        await ctx.runMutation(internal.speechCoach.markReviewFailed, {
+          sessionId: args.sessionId,
+          errorMessage: "Transcript too short to analyze",
+        });
         return;
       }
 
@@ -273,7 +278,7 @@ async function callClaude(
 ) {
   const response = await anthropic.messages.create({
     model: "claude-sonnet-4-6",
-    max_tokens: 1024,
+    max_tokens: 4096,
     messages: [{ role: "user", content: prompt }],
   });
 

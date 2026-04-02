@@ -192,18 +192,6 @@ export const getSessionById = internalQuery({
   },
 });
 
-export const setTranscriptStorageId = internalMutation({
-  args: {
-    sessionId: v.id("speechCoachSessions"),
-    storageId: v.id("_storage"),
-  },
-  handler: async (ctx, args) => {
-    await ctx.db.patch(args.sessionId, {
-      transcriptStorageId: args.storageId,
-    });
-  },
-});
-
 const transcriptTurnValidator = v.object({
   speaker: v.union(v.literal("coach"), v.literal("child"), v.literal("system")),
   text: v.string(),
@@ -252,9 +240,10 @@ export const markAnalyzing = internalMutation({
   args: { sessionId: v.id("speechCoachSessions") },
   handler: async (ctx, args) => {
     const session = await ctx.db.get(args.sessionId);
+    if (!session) throw new ConvexError("Session not found");
     await ctx.db.patch(args.sessionId, {
       status: "analyzing",
-      analysisAttempts: (session?.analysisAttempts ?? 0) + 1,
+      analysisAttempts: (session.analysisAttempts ?? 0) + 1,
       analysisErrorMessage: undefined,
     });
   },
@@ -276,7 +265,18 @@ export const retryReview = mutation({
   handler: async (ctx, args) => {
     const session = await ctx.db.get(args.sessionId);
     if (!session) throw new ConvexError("Session not found");
-    if (session.patientId) await assertPatientAccess(ctx, session.patientId);
+    if (session.patientId) {
+      await assertPatientAccess(ctx, session.patientId);
+    } else {
+      // Standalone session — verify the caller owns it.
+      // Check session.userId first (canonical standalone field); fall back to
+      // caregiverUserId for sessions created before userId was added.
+      const userId = await getAuthUserId(ctx);
+      const ownerField = session.userId ?? session.caregiverUserId;
+      if (!userId || ownerField !== userId) {
+        throw new ConvexError("Not authorized");
+      }
+    }
     if (session.status === "analyzing") throw new ConvexError("Review already in progress");
     if (session.status !== "review_failed") throw new ConvexError("Review is not retryable");
     await ctx.db.patch(args.sessionId, {
