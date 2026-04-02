@@ -1,7 +1,8 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { createContext, type ReactNode,useContext } from "react";
-import { beforeEach,describe, expect, it, vi } from "vitest";
+import * as React from "react";
+import { createContext, type ReactNode, useContext } from "react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { NotificationBell } from "../notification-bell";
 
@@ -47,7 +48,6 @@ vi.mock("@/shared/components/ui/button", () => ({
 }));
 
 vi.mock("@/shared/components/ui/popover", () => {
-  const React = require("react");
   const PopoverContext = createContext<
     { open: boolean; onOpenChange: (open: boolean) => void } | undefined
   >(undefined);
