@@ -1,3 +1,6 @@
+// APP_NAME: used in the authenticated app shell (e.g. sidebar header link)
+// APP_BRAND: used in marketing surfaces and metadata
+// Both are currently identical — update together if the brand name changes
 export const APP_NAME = "Vocali";
 export const APP_BRAND = "Vocali";
 export const APP_TAGLINE = "Modern speech therapy for growing voices.";

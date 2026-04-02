@@ -4,7 +4,7 @@ import { Show,useClerk, useUser } from "@clerk/nextjs";
 import { useQuery } from "convex/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { ROUTES } from "@/core/routes";
 import { cn } from "@/core/utils";
@@ -24,11 +24,9 @@ export function DashboardSidebar() {
   const isCaregiver = role === "caregiver";
   const navItems = isCaregiver ? CAREGIVER_NAV_ITEMS : NAV_ITEMS;
 
-  const [collapsed, setCollapsed] = useState(false);
-
-  useEffect(() => {
-    setCollapsed(localStorage.getItem("vocali_sidebar_collapsed") === "true");
-  }, []);
+  const [collapsed, setCollapsed] = useState(
+    () => typeof window !== "undefined" && localStorage.getItem("vocali_sidebar_collapsed") === "true",
+  );
 
   const toggleCollapsed = () => {
     setCollapsed((prev) => {

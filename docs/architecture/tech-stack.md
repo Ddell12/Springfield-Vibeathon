@@ -7,7 +7,7 @@
 | Frontend | Next.js (App Router) | Largest ecosystem, best AI coding tool support, excellent Convex integration |
 | Backend | Convex | Real-time reactivity, zero boilerplate, built-in vector search for RAG, TypeScript E2E |
 | Database | Convex Database | Included with Convex, document-relational, ACID, reactive queries, vector search |
-| Auth | Clerk (deferred to Phase 6) | Pre-built UI, social login, org management. Deferred for E2E testing ease. |
+| Auth | Clerk v7 (`@clerk/nextjs`) | Pre-built UI, social login, JWT sessions. Fully integrated with server-side role guards. |
 | Payments | Stripe (post-hackathon) | Industry standard. Not needed for demo. |
 | Deployment | Vercel | One-click Next.js deploy, preview URLs |
 
@@ -45,9 +45,8 @@ NEXT_PUBLIC_CONVEX_URL=        # From Convex dashboard
 ANTHROPIC_API_KEY=             # Claude API key
 GOOGLE_API_KEY=                # Google AI API key for embeddings
 ELEVENLABS_API_KEY=            # ElevenLabs API key
-# Clerk (Phase 6 only)
-# NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=
-# CLERK_SECRET_KEY=
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=  # Clerk public key
+CLERK_SECRET_KEY=              # Clerk server-side key
 ```
 
 ## Setup Order
@@ -59,10 +58,12 @@ ELEVENLABS_API_KEY=            # ElevenLabs API key
 
 ## Integration Patterns
 
-- **Convex + Next.js:** `ConvexProvider` in root layout. `useQuery`/`useMutation` hooks for data.
+- **Convex + Next.js:** `ConvexProviderWithClerk` in root layout bridges Clerk sessions to Convex. `useQuery`/`useMutation` hooks for data.
 - **Vercel AI SDK + Convex:** Chat API route uses `streamText`. Tool calls invoke Convex actions via HTTP client.
 - **External APIs in Convex:** All Claude/Google/ElevenLabs calls happen in Convex `action` functions with `"use node";` directive.
 - **Real-time preview:** Tool configs in Convex → `useQuery` subscription → preview re-renders automatically.
+- **Server-side auth:** Clerk `currentUser()` is used in server components/layouts for route-level redirects before restricted UI renders. `requireSlpUser()` in `src/features/auth/lib/server-role-guards.ts` guards the `builder/`, `patients/`, and `tools/` route subtrees.
+- **Shell query bounds:** Shell widgets fetch bounded result sets — e.g. the sidebar recent tools query is limited to 5 records at the backend.
 
 ## Gotchas
 
