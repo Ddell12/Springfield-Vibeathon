@@ -42,9 +42,9 @@ export function StandaloneSpeechCoachPage() {
 
   const speechCoachConfig = previewTemplate
     ? {
-        targetSounds: previewTemplate.defaultTargetSounds,
-        ageRange: previewTemplate.defaultAgeRange,
-        defaultDurationMinutes: previewTemplate.defaultDurationMinutes,
+        targetSounds: DEFAULT_CONFIG.targetSounds,
+        ageRange: previewTemplate.sessionDefaults.ageRange,
+        defaultDurationMinutes: previewTemplate.sessionDefaults.defaultDurationMinutes,
       }
     : DEFAULT_CONFIG;
 
