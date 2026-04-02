@@ -10,13 +10,11 @@ import { templateRegistry } from "@/features/tools/lib/registry";
 
 export const runtime = "nodejs";
 
-const TEMPLATE_KEYS = [
-  "aac_board",
-  "first_then_board",
-  "token_board",
-  "visual_schedule",
-  "matching_game",
-] as const;
+// Derive keys from registry to prevent sync bugs when templates are added
+const TEMPLATE_KEYS = Object.keys(templateRegistry) as [
+  string,
+  ...string[],
+];
 
 function buildInferPrompt(description: string, childContext: string): string {
   return `You are helping a speech-language pathologist choose the right therapy tool type.
@@ -90,6 +88,13 @@ export async function POST(req: Request) {
 
     const { templateType, suggestedTitle } = inferResult.output;
     const registration = templateRegistry[templateType];
+
+    if (!registration) {
+      return NextResponse.json(
+        { error: "Unknown template type" },
+        { status: 500 }
+      );
+    }
 
     // Step 2: Generate config for the inferred template
     const configResult = await generateText({
