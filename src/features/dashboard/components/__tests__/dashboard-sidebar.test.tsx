@@ -1,6 +1,8 @@
 import { fireEvent,render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
+import { ROUTES } from "@/core/routes";
+import { isNavActive } from "@/shared/lib/navigation";
 import { DashboardSidebar } from "../dashboard-sidebar";
 
 vi.mock("convex/react", () => ({
@@ -19,6 +21,12 @@ vi.mock("next/navigation", () => ({
 vi.mock("next/link", () => ({
   default: ({ href, children, ...props }: any) => <a href={href} {...props}>{children}</a>,
 }));
+vi.mock("@/features/sessions/components/notification-bell", () => ({
+  NotificationBell: () => <button aria-label="Notifications">Notifications</button>,
+}));
+vi.mock("@/features/sessions/hooks/use-unread-notifications-count", () => ({
+  useUnreadNotificationsCount: () => ({ unreadCount: 3 }),
+}));
 vi.mock("@/shared/components/ui/popover", () => ({
   Popover: ({ children }: any) => <div>{children}</div>,
   PopoverTrigger: ({ children }: any) => <div>{children}</div>,
@@ -30,9 +38,9 @@ beforeEach(() => {
 });
 
 describe("DashboardSidebar (SLP)", () => {
-  it("renders New App button linking to /tools/new", () => {
+  it("does not render a duplicate create tool button", () => {
     render(<DashboardSidebar />);
-    expect(screen.getByRole("link", { name: /create tool/i })).toHaveAttribute("href", "/tools/new");
+    expect(screen.queryByRole("link", { name: /create tool/i })).not.toBeInTheDocument();
   });
   it("renders Builder, Patients, Sessions, Speech Coach, Library nav items", () => {
     render(<DashboardSidebar />);
@@ -58,6 +66,11 @@ describe("DashboardSidebar (SLP)", () => {
     fireEvent.click(toggle);
     // After collapse, nav labels should be removed from the DOM
     expect(screen.queryByText("Patients")).not.toBeInTheDocument();
+    expect(screen.getByText("3")).toBeInTheDocument();
+  });
+  it("renders notifications in the expanded top bar", () => {
+    render(<DashboardSidebar />);
+    expect(screen.getByRole("button", { name: /notifications/i })).toBeInTheDocument();
   });
   it("shows Recents section when expanded", () => {
     render(<DashboardSidebar />);
@@ -73,5 +86,9 @@ describe("DashboardSidebar (SLP)", () => {
     render(<DashboardSidebar />);
     expect(screen.getByRole("link", { name: /speech coach/i })).toHaveAttribute("href", "/speech-coach");
     expect(screen.queryByRole("link", { name: /preview coach/i })).not.toBeInTheDocument();
+  });
+  it("keeps Speech Coach active on /speech-coach/setup and /speech-coach/templates", () => {
+    expect(isNavActive(ROUTES.SPEECH_COACH, "/speech-coach/setup")).toBe(true);
+    expect(isNavActive(ROUTES.SPEECH_COACH, "/speech-coach/templates")).toBe(true);
   });
 });

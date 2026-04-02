@@ -17,6 +17,8 @@ export const ROUTES = {
   SIGN_UP: "/sign-up",
   FAMILY: "/family",
   SPEECH_COACH: "/speech-coach",
+  SPEECH_COACH_SETUP: "/speech-coach/setup",
+  SPEECH_COACH_TEMPLATES: "/speech-coach/templates",
   SESSIONS: "/sessions",
   SESSION_DETAIL: (id: string) => `/sessions/${id}` as const,
   BILLING: "/billing",
