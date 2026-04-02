@@ -39,6 +39,12 @@ export function MatchingGameRuntime({
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
+    if (config.pairs.length === 0) return;
+    const percent = Math.round((matchedPairIds.size / config.pairs.length) * 100);
+    onEvent("progress_updated", JSON.stringify({ percent }));
+  }, [matchedPairIds, config.pairs.length, onEvent]);
+
+  useEffect(() => {
     return () => {
       if (incorrectTimeoutRef.current) clearTimeout(incorrectTimeoutRef.current);
     };
@@ -91,7 +97,7 @@ export function MatchingGameRuntime({
   return (
     <div
       className={cn(
-        "min-h-screen bg-background p-4",
+        "p-4",
         config.highContrast && "high-contrast bg-black"
       )}
     >

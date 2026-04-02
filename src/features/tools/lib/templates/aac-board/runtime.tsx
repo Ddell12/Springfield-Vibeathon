@@ -33,7 +33,7 @@ export function AACBoardRuntime({
   return (
     <div
       className={cn(
-        "min-h-screen bg-background p-4",
+        "p-4",
         config.highContrast && "high-contrast bg-black"
       )}
     >
