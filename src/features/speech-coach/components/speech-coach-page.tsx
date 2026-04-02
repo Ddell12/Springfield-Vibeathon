@@ -1,116 +1,31 @@
 "use client";
 
-import { useUser } from "@clerk/nextjs";
-import { useConvexAuth,useMutation,useQuery } from "convex/react";
+import { useConvexAuth, useQuery } from "convex/react";
+import Link from "next/link";
 import { useState } from "react";
-import { toast } from "sonner";
 
+import { ROUTES } from "@/core/routes";
 import { cn } from "@/core/utils";
+import { Button } from "@/shared/components/ui/button";
 
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 import { useSpeechSession } from "../hooks/use-speech-session";
-import type { SpeechCoachConfig } from "../lib/config";
 import { ActiveSession } from "./active-session";
-import { CoachSetupTab } from "./coach-setup-tab";
 import { SessionConfig } from "./session-config";
 import { SessionHistory } from "./session-history";
-import { TemplateAssignmentCard } from "./template-assignment-card";
 
-type Tab = "new" | "history" | "coach-setup" | "assigned-template";
+type Tab = "new" | "history";
 
 type Props = {
   patientId: Id<"patients">;
   homeProgramId: Id<"homePrograms">;
 };
 
-type PanelProps = {
-  patientId: Id<"patients">;
-  homeProgramId: Id<"homePrograms">;
-};
-
-function TemplateAssignmentPanel({ patientId: _patientId, homeProgramId }: PanelProps) {
-  const { isAuthenticated } = useConvexAuth();
-  const assignTemplate = useMutation(api.homePrograms.assignSpeechCoachTemplate);
-  const programs = useQuery(
-    api.homePrograms.listByPatient,
-    isAuthenticated ? { patientId: _patientId } : "skip"
-  );
-  const program = programs?.find((p) => p._id === homeProgramId);
-  const templates = useQuery(
-    api.speechCoachTemplates.listMine,
-    isAuthenticated ? {} : "skip"
-  );
-
-  async function handleAssign(assignment: {
-    templateId: Id<"speechCoachTemplates">;
-    templateVersion: number;
-    childNotes: string;
-  }) {
-    if (!program?.speechCoachConfig) return;
-    try {
-      await assignTemplate({
-        id: homeProgramId,
-        assignedTemplateId: assignment.templateId,
-        childOverrides: {
-          targetSounds: program.speechCoachConfig.targetSounds,
-          ageRange: program.speechCoachConfig.ageRange,
-          defaultDurationMinutes: program.speechCoachConfig.defaultDurationMinutes,
-          preferredThemes: program.speechCoachConfig.coachSetup?.preferredThemes ?? [],
-          avoidThemes: program.speechCoachConfig.coachSetup?.avoidThemes ?? [],
-          childNotes: assignment.childNotes || undefined,
-        },
-      });
-      toast.success("Template assigned");
-    } catch (err) {
-      console.error("[SpeechCoach] Failed to assign template:", err);
-      toast.error("Could not assign template");
-    }
-  }
-
-  if (!templates) {
-    return (
-      <div className="flex items-center justify-center p-8">
-        <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-      </div>
-    );
-  }
-
-  const currentAssignment = program?.speechCoachConfig
-    ? {
-        templateId: (program.speechCoachConfig as { assignedTemplateId?: Id<"speechCoachTemplates"> }).assignedTemplateId ?? null,
-        childNotes: (program.speechCoachConfig as { childNotes?: string }).childNotes ?? "",
-      }
-    : null;
-
-  return (
-    <div className="mx-auto max-w-lg">
-      <TemplateAssignmentCard
-        templates={templates}
-        value={
-          currentAssignment?.templateId
-            ? {
-                templateId: currentAssignment.templateId,
-                templateVersion: 0,
-                childNotes: currentAssignment.childNotes,
-              }
-            : null
-        }
-        onSave={handleAssign}
-      />
-    </div>
-  );
-}
-
 export function SpeechCoachPage({ patientId, homeProgramId }: Props) {
-  const { user } = useUser();
   const { isAuthenticated } = useConvexAuth();
   const [activeTab, setActiveTab] = useState<Tab>("new");
   const session = useSpeechSession(homeProgramId);
-  const updateProgram = useMutation(api.homePrograms.update);
-  const [isSavingSetup, setIsSavingSetup] = useState(false);
-  const role = (user?.publicMetadata as { role?: string } | undefined)?.role;
-  const isSLP = role !== "caregiver";
 
   // Get the home program for config defaults
   const programs = useQuery(
@@ -202,25 +117,7 @@ export function SpeechCoachPage({ patientId, homeProgramId }: Props) {
   const TABS: { id: Tab; label: string }[] = [
     { id: "new", label: "New Session" },
     { id: "history", label: "History" },
-    ...(isSLP ? [{ id: "coach-setup" as const, label: "Coach Setup" }] : []),
-    ...(isSLP ? [{ id: "assigned-template" as const, label: "Template" }] : []),
   ];
-
-  async function handleSaveCoachSetup(config: SpeechCoachConfig) {
-    setIsSavingSetup(true);
-    try {
-      await updateProgram({
-        id: homeProgramId,
-        speechCoachConfig: config,
-      });
-      toast.success("Coach setup saved");
-    } catch (error) {
-      console.error("[SpeechCoach] Failed to save coach setup:", error);
-      toast.error("Could not save coach setup");
-    } finally {
-      setIsSavingSetup(false);
-    }
-  }
 
   return (
     <div className="flex flex-col gap-6 p-4 sm:p-6 lg:p-8">
@@ -260,18 +157,22 @@ export function SpeechCoachPage({ patientId, homeProgramId }: Props) {
             />
           </div>
         )}
+        {activeTab === "new" && !program.speechCoachConfig && (
+          <div className="rounded-2xl bg-muted/30 p-4">
+            <p className="text-sm text-muted-foreground">
+              Set up this child&apos;s coach before starting a session.
+            </p>
+            <div className="mt-3 flex gap-3">
+              <Button asChild size="sm">
+                <Link href={ROUTES.SPEECH_COACH_SETUP}>Open setup</Link>
+              </Button>
+              <Button asChild size="sm" variant="outline">
+                <Link href={ROUTES.SPEECH_COACH_TEMPLATES}>Browse templates</Link>
+              </Button>
+            </div>
+          </div>
+        )}
         {activeTab === "history" ? <SessionHistory patientId={patientId} /> : null}
-        {activeTab === "coach-setup" && program.speechCoachConfig ? (
-          <CoachSetupTab
-            key={JSON.stringify(program.speechCoachConfig.coachSetup ?? null)}
-            speechCoachConfig={program.speechCoachConfig}
-            onSave={handleSaveCoachSetup}
-            isSaving={isSavingSetup}
-          />
-        ) : null}
-        {activeTab === "assigned-template" ? (
-          <TemplateAssignmentPanel patientId={patientId} homeProgramId={homeProgramId} />
-        ) : null}
       </div>
     </div>
   );
