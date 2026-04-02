@@ -10,9 +10,9 @@ import type { FirstThenBoardConfig } from "./schema";
 
 export function FirstThenBoardRuntime({
   config,
-  mode,
+  mode: _mode,
   onEvent,
-  voice,
+  voice: _voice,
 }: RuntimeProps<FirstThenBoardConfig>) {
   const [firstDone, setFirstDone] = useState(false);
 

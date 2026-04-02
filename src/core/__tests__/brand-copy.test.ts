@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import {
   APP_BRAND,
   APP_CONTACT_EMAIL,

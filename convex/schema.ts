@@ -1,7 +1,7 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
-import { speechCoachSkillKeyValidator, speechCoachTemplateValidator,speechCoachToolKeyValidator } from "./lib/speechCoachValidators";
+import { speechCoachTemplateValidator } from "./lib/speechCoachValidators";
 import { testMetadataValidator } from "./lib/testMetadata";
 
 export default defineSchema({

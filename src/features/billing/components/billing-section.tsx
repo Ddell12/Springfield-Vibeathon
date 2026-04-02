@@ -23,19 +23,8 @@ import { UsageMeter } from "./usage-meter";
 
 export function BillingSection() {
   const { isPremium, isLoading } = useEntitlements();
-  const createCheckout = useAction(api.subscriptions.createCheckoutSession);
   const createPortal = useAction(api.subscriptions.createPortalSession);
   const [actionLoading, setActionLoading] = useState(false);
-
-  async function handleUpgrade() {
-    setActionLoading(true);
-    try {
-      const { url } = await createCheckout();
-      if (url) window.location.href = url;
-    } finally {
-      setActionLoading(false);
-    }
-  }
 
   async function handleManage() {
     setActionLoading(true);

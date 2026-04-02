@@ -37,8 +37,7 @@ type Slot = {
 const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
 
 export function CaregiverBooking({ slpId }: CaregiverBookingProps) {
-  const { currentDate, weekStart, goToPrevious, goToNext, goToToday } =
-    useCalendar();
+  const { weekStart, goToPrevious, goToNext, goToToday } = useCalendar();
 
   const [pendingSlot, setPendingSlot] = useState<Slot | null>(null);
   const [booking, setBooking] = useState(false);

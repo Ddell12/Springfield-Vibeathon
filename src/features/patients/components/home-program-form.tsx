@@ -92,7 +92,7 @@ export function HomeProgramForm({ open, onOpenChange, patientId }: HomeProgramFo
       toast.success("Home program assigned");
       resetForm();
       onOpenChange(false);
-    } catch (err) {
+    } catch {
       toast.error("Failed to create home program");
     } finally {
       setIsSubmitting(false);

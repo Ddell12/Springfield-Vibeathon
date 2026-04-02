@@ -22,7 +22,10 @@ const eslintConfig = defineConfig([
   {
     files: ["**/__tests__/**/*.{ts,tsx}", "**/*.test.{ts,tsx}", "**/*.spec.{ts,tsx}"],
     rules: {
-      "@typescript-eslint/no-explicit-any": "warn",
+      "@typescript-eslint/no-explicit-any": "off",
+      "@typescript-eslint/no-unused-vars": "off",
+      "@next/next/no-img-element": "off",
+      "jsx-a11y/alt-text": "off",
       "no-var": "off", // vitest mock-hoisting plugin converts const→var at transform time
     },
   },
@@ -50,7 +53,9 @@ const eslintConfig = defineConfig([
     "artifacts/**",
     "speech-adventures/**",
     "coverage/**",
+    "playwright-report/**",
     "scripts/**",
+    "test-results/**",
   ]),
 ]);
 

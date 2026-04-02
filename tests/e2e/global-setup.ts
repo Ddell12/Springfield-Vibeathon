@@ -1,6 +1,5 @@
-import { clerkSetup } from "@clerk/testing/playwright";
 import { test as setup } from "@playwright/test";
 
 setup("global setup", async ({}) => {
-  await clerkSetup();
+  // Auth flows are exercised through the app's own sign-in UI in fixtures.ts.
 });

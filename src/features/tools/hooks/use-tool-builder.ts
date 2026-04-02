@@ -5,8 +5,8 @@ import type { Id } from "@convex/_generated/dataModel";
 import { useMutation, useQuery } from "convex/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import type { ThemePreset } from "../lib/runtime/app-shell-types";
 import { templateRegistry } from "../lib/registry";
+import type { ThemePreset } from "../lib/runtime/app-shell-types";
 
 export type WizardStep = 1 | 2 | 3 | 4;
 
@@ -49,19 +49,22 @@ export function useToolBuilder(initialId?: Id<"app_instances"> | null) {
   useEffect(() => {
     if (existingInstance && !seeded.current) {
       seeded.current = true;
-      setState({
-        step: 3,
-        patientId: existingInstance.patientId ?? null,
-        templateType: existingInstance.templateType,
-        config: JSON.parse(existingInstance.configJson),
-        instanceId: existingInstance._id,
-        publishedShareToken: existingInstance.shareToken ?? null,
-        isSaving: false,
-        appearance: {
-          themePreset: "calm",
-          accentColor: "#00595c",
-        },
-      });
+      const timer = setTimeout(() => {
+        setState({
+          step: 3,
+          patientId: existingInstance.patientId ?? null,
+          templateType: existingInstance.templateType,
+          config: JSON.parse(existingInstance.configJson),
+          instanceId: existingInstance._id,
+          publishedShareToken: existingInstance.shareToken ?? null,
+          isSaving: false,
+          appearance: {
+            themePreset: "calm",
+            accentColor: "#00595c",
+          },
+        });
+      }, 0);
+      return () => clearTimeout(timer);
     }
   }, [existingInstance]);
 

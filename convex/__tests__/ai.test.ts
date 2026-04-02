@@ -127,8 +127,8 @@ describe("generateSpeech — ElevenLabs SDK wiring", () => {
     expect(mockConvert).toHaveBeenCalledOnce();
     expect(mockConvert).toHaveBeenCalledWith("hpp4J3VqNfWAUOO0d1Us", {
       text: "hello therapy world",
-      modelId: "eleven_flash_v2_5",
-      voiceSettings: { stability: 0.5, similarityBoost: 0.75 },
+      model_id: "eleven_flash_v2_5",
+      voice_settings: { stability: 0.5, similarity_boost: 0.75 },
     });
   });
 

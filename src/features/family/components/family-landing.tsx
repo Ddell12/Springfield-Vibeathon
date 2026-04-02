@@ -3,7 +3,7 @@
 import { useConvexAuth, useQuery } from "convex/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 
 import { Button } from "@/shared/components/ui/button";
 import { Card, CardContent } from "@/shared/components/ui/card";
@@ -59,13 +59,8 @@ function ChildCard({ patientId }: ChildCardProps) {
 // ── Family landing ────────────────────────────────────────────────────────────
 
 export function FamilyLanding() {
-  const [mounted, setMounted] = useState(false);
   const { isAuthenticated } = useConvexAuth();
   const router = useRouter();
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   const queryArgs = isAuthenticated ? ({} as const) : ("skip" as const);
   const links = useQuery(api.caregivers.listByCaregiver, queryArgs);
@@ -78,7 +73,7 @@ export function FamilyLanding() {
   }, [links, router]);
 
   // Loading state
-  if (!mounted || links === undefined) {
+  if (links === undefined) {
     return (
       <div className="flex flex-col gap-6 p-4 sm:p-6">
         <div>

@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 
 import { cn } from "@/core/utils";
 import { Button } from "@/shared/components/ui/button";
+
 import { templateRegistry } from "../../lib/registry";
 import { DEFAULT_APP_SHELL } from "../../lib/runtime/app-shell-types";
 import { RuntimeShell } from "../../lib/runtime/runtime-shell";

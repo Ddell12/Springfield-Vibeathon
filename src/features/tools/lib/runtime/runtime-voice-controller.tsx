@@ -2,7 +2,7 @@
 
 import { api } from "@convex/_generated/api";
 import { useAction } from "convex/react";
-import { useCallback,useState } from "react";
+import { useCallback, useRef, useState } from "react";
 
 export type VoiceStatus = "idle" | "loading" | "ready" | "error";
 
@@ -14,7 +14,7 @@ export interface VoiceController {
 
 export function useVoiceController(): VoiceController {
   const [status, setStatus] = useState<VoiceStatus>("idle");
-  const [audioEl, setAudioEl] = useState<HTMLAudioElement | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const generateSpeech = useAction(api.aiActions.generateSpeech);
 
   const speak = useCallback(
@@ -25,10 +25,13 @@ export function useVoiceController(): VoiceController {
         const result = await generateSpeech({ text, voice });
         if (result?.audioUrl) {
           const audio = new Audio(result.audioUrl);
-          setAudioEl(audio);
+          audioRef.current = audio;
           setStatus("ready");
           audio.play();
-          audio.onended = () => setStatus("idle");
+          audio.onended = () => {
+            audioRef.current = null;
+            setStatus("idle");
+          };
         } else {
           setStatus("idle");
         }
@@ -40,13 +43,14 @@ export function useVoiceController(): VoiceController {
   );
 
   const stop = useCallback(() => {
-    if (audioEl) {
-      audioEl.pause();
-      audioEl.src = "";
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.removeAttribute("src");
+      audioRef.current.load();
+      audioRef.current = null;
     }
-    setAudioEl(null);
     setStatus("idle");
-  }, [audioEl]);
+  }, []);
 
   return { speak, stop, status };
 }

@@ -36,13 +36,12 @@ export function ShareDialog({
 
   // Reset timedOut when dialog closes or slug arrives
   useEffect(() => {
-    if (!open || shareSlug) {
-      setTimedOut(false);  
-      return;
-    }
+    if (!open || shareSlug) return;
     const timer = setTimeout(() => setTimedOut(true), 10_000);
     return () => clearTimeout(timer);
   }, [open, shareSlug]);
+
+  const didTimeOut = open && !shareSlug && timedOut;
 
   async function handleCopy() {
     await copyToClipboard(shareUrl, "Link copied!");
@@ -82,7 +81,7 @@ export function ShareDialog({
         {/* QR Code */}
         <div className="flex justify-center">
           <div className="w-40 h-40 border border-surface-container-low rounded-xl p-2 flex items-center justify-center">
-            {isLoading && timedOut ? (
+            {didTimeOut ? (
               <p className="text-sm text-on-surface-variant text-center px-2">
                 Still preparing your share link.
                 <br />Please close and try again.
@@ -99,7 +98,7 @@ export function ShareDialog({
         <div className="flex gap-2">
           <div className="flex-1 bg-surface-container-low px-4 py-2.5 rounded-lg flex items-center">
             <span className="text-sm text-on-surface truncate">
-              {isLoading && timedOut ? "Preparing share link..." : isLoading ? "Creating share link..." : shareUrl}
+              {didTimeOut ? "Preparing share link..." : isLoading ? "Creating share link..." : shareUrl}
             </span>
           </div>
           <button

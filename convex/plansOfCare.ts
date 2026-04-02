@@ -122,7 +122,7 @@ export const update = slpMutation({
       throw new ConvexError("Cannot edit an amended or expired Plan of Care");
     }
 
-    const { pocId, ...updates } = args;
+    const { pocId: _pocId, ...updates } = args;
     const filtered: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(updates)) {
       if (value !== undefined) filtered[key] = value;
@@ -182,7 +182,7 @@ export const amend = slpMutation({
     await ctx.db.patch(args.pocId, { status: "amended" });
 
     // Create new version with overrides
-    const { pocId, ...overrides } = args;
+    const { pocId: _pocId, ...overrides } = args;
     const newPocId = await ctx.db.insert("plansOfCare", {
       patientId: oldPoc.patientId,
       slpUserId: ctx.slpUserId,

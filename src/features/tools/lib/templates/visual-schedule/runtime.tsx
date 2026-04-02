@@ -10,9 +10,9 @@ import type { VisualScheduleConfig } from "./schema";
 
 export function VisualScheduleRuntime({
   config,
-  mode,
+  mode: _mode,
   onEvent,
-  voice,
+  voice: _voice,
 }: RuntimeProps<VisualScheduleConfig>) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [completed, setCompleted] = useState(false);

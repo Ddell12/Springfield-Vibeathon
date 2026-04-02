@@ -2,6 +2,7 @@ import { render } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import { templateRegistry } from "@/features/tools/lib/registry";
+
 import { RuntimeShell } from "../runtime-shell";
 
 const MOCK_VOICE = {

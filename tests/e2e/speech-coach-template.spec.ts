@@ -3,9 +3,9 @@ import { TIMEOUTS } from "./helpers";
 
 test.describe("speech coach templates", () => {
   test("slp can navigate to template library and see heading", async ({
-    slpPage,
+    authedPage,
   }) => {
-    const page = slpPage;
+    const page = authedPage;
 
     await page.goto("/speech-coach/templates");
     await page.waitForLoadState("networkidle");
@@ -19,8 +19,8 @@ test.describe("speech coach templates", () => {
     ).toBeVisible();
   });
 
-  test("slp can open new template form", async ({ slpPage }) => {
-    const page = slpPage;
+  test("slp can open new template form", async ({ authedPage }) => {
+    const page = authedPage;
 
     await page.goto("/speech-coach/templates");
     await page.waitForLoadState("networkidle");
@@ -46,9 +46,9 @@ test.describe("speech coach templates", () => {
   });
 
   test("template library shows empty state or template list", async ({
-    slpPage,
+    authedPage,
   }) => {
-    const page = slpPage;
+    const page = authedPage;
 
     await page.goto("/speech-coach/templates");
     await page.waitForLoadState("networkidle");

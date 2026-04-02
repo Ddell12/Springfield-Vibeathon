@@ -1,52 +1,52 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 
 test.describe("Explore page", () => {
-  test("page loads with hero heading", async ({ page }) => {
-    await page.goto("/explore");
+  test("page loads with hero heading", async ({ authedPage }) => {
+    await authedPage.goto("/explore");
 
-    const heading = page.getByRole("heading", { name: /see what you can build/i });
+    const heading = authedPage.getByRole("heading", { name: /see what you can build/i });
     await expect(heading).toBeVisible();
   });
 
-  test("renders 6 demo tool cards", async ({ page }) => {
-    await page.goto("/explore");
+  test("renders 6 demo tool cards", async ({ authedPage }) => {
+    await authedPage.goto("/explore");
 
-    const cards = page.getByRole("button", { name: /try it/i });
-    await expect(cards.first()).toBeVisible({ timeout: 10000 });
+    const cards = authedPage.getByRole("button", { name: /try it/i });
+    await expect(cards.first()).toBeVisible({ timeout: 10_000 });
     await expect(cards).toHaveCount(6);
   });
 
-  test("'Start Building' CTA links to /builder", async ({ page }) => {
-    await page.goto("/explore");
+  test("'Start Building' CTA links to /builder", async ({ authedPage }) => {
+    await authedPage.goto("/explore");
 
-    const cta = page.getByRole("link", { name: /start building/i });
+    const cta = authedPage.getByRole("link", { name: /start building/i });
     await expect(cta.first()).toBeVisible();
     const href = await cta.first().getAttribute("href");
     expect(href).toContain("/builder");
   });
 
-  test("'Browse Templates' CTA links to the library templates tab", async ({ page }) => {
-    await page.goto("/explore");
+  test("'Browse Templates' CTA links to the library templates tab", async ({ authedPage }) => {
+    await authedPage.goto("/explore");
 
-    const cta = page.getByRole("link", { name: /browse templates/i });
+    const cta = authedPage.getByRole("link", { name: /browse templates/i });
     await expect(cta).toBeVisible();
     const href = await cta.getAttribute("href");
     expect(href).toContain("/library?tab=templates");
   });
 
-  test("header includes Explore nav link", async ({ page }) => {
-    await page.goto("/explore");
+  test("header includes current marketing navigation", async ({ authedPage }) => {
+    await authedPage.goto("/explore");
 
-    const navLink = page.locator("header").getByRole("link", { name: /explore/i });
+    const navLink = authedPage.locator("header").getByRole("link", { name: /meet vocali/i });
     await expect(navLink.first()).toBeVisible();
   });
 
-  test("cards stack to single column on mobile", async ({ page }) => {
-    await page.setViewportSize({ width: 375, height: 812 });
-    await page.goto("/explore");
+  test("cards stack to single column on mobile", async ({ authedPage }) => {
+    await authedPage.setViewportSize({ width: 375, height: 812 });
+    await authedPage.goto("/explore");
 
-    const cards = page.getByRole("button", { name: /try it/i });
-    await expect(cards.first()).toBeVisible({ timeout: 10000 });
+    const cards = authedPage.getByRole("button", { name: /try it/i });
+    await expect(cards.first()).toBeVisible({ timeout: 10_000 });
 
     const firstBox = await cards.nth(0).boundingBox();
     const secondBox = await cards.nth(1).boundingBox();

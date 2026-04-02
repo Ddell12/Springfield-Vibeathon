@@ -3,6 +3,7 @@
 import Link from "next/link";
 
 import { MaterialIcon } from "@/shared/components/material-icon";
+
 import type { Id } from "../../../../convex/_generated/dataModel";
 
 interface SpeechCoachProgram {

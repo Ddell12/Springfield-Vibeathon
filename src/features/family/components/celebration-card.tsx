@@ -1,7 +1,7 @@
 "use client";
 
 import { X } from "lucide-react";
-import { useEffect,useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 
 import { cn } from "@/core/utils";
 import { Button } from "@/shared/components/ui/button";
@@ -66,16 +66,15 @@ function buildCelebrations(
 
 export function CelebrationCard({ childName, currentStreak, goals }: CelebrationCardProps) {
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());
-  const [mounted, setMounted] = useState(false);
-
-  // Read localStorage after hydration to avoid SSR mismatch
-  useEffect(() => {
-    setMounted(true);  
-  }, []);
+  const isHydrated = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  );
 
   const allCelebrations = buildCelebrations(childName, currentStreak, goals);
 
-  const visible = mounted
+  const visible = isHydrated
     ? allCelebrations.filter((c) => {
         if (dismissed.has(c.storageKey)) return false;
         try {

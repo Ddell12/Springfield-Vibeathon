@@ -77,7 +77,7 @@ function ActiveSessionInner({
   const [isConnected, setIsConnected] = useState(false);
 
   // TODO: wire to LiveKit data-channel events for real-time target state updates
-  const [visual, setVisual] = useState<SessionVisualState>({
+  const [visual] = useState<SessionVisualState>({
     targetLabel: sessionConfig?.targetSounds?.[0] ?? "Practice sound",
     promptState: "listen",
     totalCorrect: 0,
@@ -106,7 +106,7 @@ function ActiveSessionInner({
         setServerUrl(serverUrl);
       })
       .catch(() => setFetchError(true));
-  }, [runtimeSession.tokenPath, runtimeSession.roomName]);
+  }, [runtimeSession.roomMetadata, runtimeSession.roomName, runtimeSession.tokenPath]);
 
   // Connection timeout — fast-fail on fetch error, or exit after 15s if room never connects.
   useEffect(() => {

@@ -31,7 +31,7 @@ export function InviteLanding({ paramsPromise }: InviteLandingProps) {
   useEffect(() => {
     if (isLoaded && isSignedIn && !isSLP && inviteInfo && !isAccepting && !acceptAttemptedRef.current) {
       acceptAttemptedRef.current = true;
-      setIsAccepting(true);  
+      setTimeout(() => setIsAccepting(true), 0);
       acceptInvite({ token })
         .then(() => {
           toast.success("You're connected!");

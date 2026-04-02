@@ -19,9 +19,9 @@ function shuffleArray<T>(arr: T[]): T[] {
 
 export function MatchingGameRuntime({
   config,
-  mode,
+  mode: _mode,
   onEvent,
-  voice,
+  voice: _voice,
 }: RuntimeProps<MatchingGameConfig>) {
   const [selectedPromptId, setSelectedPromptId] = useState<string | null>(null);
   const [matchedPairIds, setMatchedPairIds] = useState<Set<string>>(new Set());

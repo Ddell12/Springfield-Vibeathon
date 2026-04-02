@@ -5,15 +5,6 @@ import { query } from "./_generated/server";
 import { assertCaregiverAccess, assertPatientAccess } from "./lib/auth";
 import { authedMutation, authedQuery } from "./lib/customFunctions";
 
-const FORM_TYPE_VALIDATOR = v.union(
-  v.literal("hipaa-npp"),
-  v.literal("consent-treatment"),
-  v.literal("financial-agreement"),
-  v.literal("cancellation-policy"),
-  v.literal("release-authorization"),
-  v.literal("telehealth-consent")
-);
-
 const REQUIRED_INTAKE_FORMS = [
   "hipaa-npp",
   "consent-treatment",

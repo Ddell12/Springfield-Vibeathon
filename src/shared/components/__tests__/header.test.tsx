@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react";
 
 import { APP_NAME } from "@/core/config";
+
 import { Header } from "../header";
 
 vi.mock("next/link", () => ({

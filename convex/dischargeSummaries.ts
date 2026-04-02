@@ -115,7 +115,7 @@ export const update = slpMutation({
       throw new ConvexError("Cannot edit a signed discharge summary");
     }
 
-    const { dischargeId, ...updates } = args;
+    const { dischargeId: _dischargeId, ...updates } = args;
     const filtered: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(updates)) {
       if (value !== undefined) filtered[key] = value;

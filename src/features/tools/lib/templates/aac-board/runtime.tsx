@@ -10,7 +10,7 @@ import type { AACBoardConfig } from "./schema";
 
 export function AACBoardRuntime({
   config,
-  mode,
+  mode: _mode,
   onEvent,
   voice,
 }: RuntimeProps<AACBoardConfig>) {

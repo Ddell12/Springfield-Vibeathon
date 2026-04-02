@@ -4,7 +4,7 @@ import { useQuery } from "convex/react";
 import { Home, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { use, useEffect, useRef, useState } from "react";
+import { use, useEffect, useMemo, useRef } from "react";
 import { toast } from "sonner";
 
 import { api } from "../../../../convex/_generated/api";
@@ -19,7 +19,6 @@ interface AppViewerProps {
 function AppViewerInner({ patientId, appId }: { patientId: string; appId: string }) {
   const router = useRouter();
   const iframeRef = useRef<HTMLIFrameElement>(null);
-  const [blobUrl, setBlobUrl] = useState<string | null>(null);
 
   const bundle = useQuery(api.generated_files.getBundleByAppId, {
     appId: appId as Id<"apps">,
@@ -33,20 +32,21 @@ function AppViewerInner({ patientId, appId }: { patientId: string; appId: string
     if (bundle === null) {
       toast.error("This activity could not be loaded.");
       router.replace(`/family/${patientId}/play`);
-      return;
     }
-
-    const url = URL.createObjectURL(
-      new Blob([bundle], { type: "text/html" })
-    );
-    setBlobUrl(url);  
-
-    return () => {
-      URL.revokeObjectURL(url);
-    };
   }, [bundle, patientId, router]);
 
-  const isLoading = bundle === undefined || (bundle !== null && blobUrl === null);
+  const blobUrl = useMemo(() => {
+    if (typeof bundle !== "string") return null;
+    return URL.createObjectURL(new Blob([bundle], { type: "text/html" }));
+  }, [bundle]);
+
+  useEffect(() => {
+    return () => {
+      if (blobUrl) URL.revokeObjectURL(blobUrl);
+    };
+  }, [blobUrl]);
+
+  const isLoading = bundle === undefined || (typeof bundle === "string" && blobUrl === null);
 
   return (
     <div className="relative h-screen w-full bg-background">

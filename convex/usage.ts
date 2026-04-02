@@ -1,5 +1,3 @@
-import { v } from "convex/values";
-
 import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { checkPremiumStatus, FREE_LIMITS } from "./lib/billing";
 import { authedMutation, authedQuery } from "./lib/customFunctions";

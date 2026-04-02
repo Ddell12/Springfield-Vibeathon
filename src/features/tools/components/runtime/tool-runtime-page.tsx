@@ -3,8 +3,8 @@
 import { api } from "@convex/_generated/api";
 import { useMutation } from "convex/react";
 
-import { DEFAULT_APP_SHELL } from "../../lib/runtime/app-shell-types";
 import { templateRegistry } from "../../lib/registry";
+import { DEFAULT_APP_SHELL } from "../../lib/runtime/app-shell-types";
 import { RuntimeShell } from "../../lib/runtime/runtime-shell";
 import { useVoiceController } from "../../lib/runtime/runtime-voice-controller";
 

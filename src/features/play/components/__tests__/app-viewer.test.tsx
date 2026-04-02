@@ -69,7 +69,7 @@ describe("AppViewer", () => {
   });
 
   it("renders iframe when bundle is available", async () => {
-    vi.mocked(useQuery).mockReturnValue({ html: "<html><body>Hello</body></html>" });
+    vi.mocked(useQuery).mockReturnValue("<html><body>Hello</body></html>");
 
     const { AppViewer } = await import("../app-viewer");
     await act(async () => {
@@ -85,7 +85,7 @@ describe("AppViewer", () => {
   });
 
   it("iframe has correct sandbox attributes", async () => {
-    vi.mocked(useQuery).mockReturnValue({ html: "<html><body>Hello</body></html>" });
+    vi.mocked(useQuery).mockReturnValue("<html><body>Hello</body></html>");
 
     const { AppViewer } = await import("../app-viewer");
     await act(async () => {

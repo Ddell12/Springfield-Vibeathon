@@ -14,7 +14,6 @@ import { useIntakeForms } from "../hooks/use-intake-forms";
 import {
   FORM_LABELS,
   getFormTemplate,
-  type IntakeFormType,
   type PracticeInfo,
   REQUIRED_INTAKE_FORMS,
 } from "../lib/form-content";

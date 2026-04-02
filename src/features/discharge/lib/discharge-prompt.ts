@@ -1,5 +1,3 @@
-const trunc = (s: string, max = 500) => s.length > max ? s.slice(0, max) + "..." : s;
-
 export interface DischargePatient {
   firstName: string;
   lastName: string;

@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-import { cn } from "@/core/utils";
 import { ROUTES } from "@/core/routes";
+import { cn } from "@/core/utils";
 
 import { SPEECH_COACH_SECTIONS } from "./speech-coach-sections";
 

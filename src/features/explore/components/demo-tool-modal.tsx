@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 
 import { cn } from "@/core/utils";
 import { Button } from "@/shared/components/ui/button";
@@ -20,15 +20,24 @@ import {
 } from "@/shared/components/ui/sheet";
 
 function useIsDesktop(): boolean | undefined {
-  const [isDesktop, setIsDesktop] = useState<boolean | undefined>(undefined);
-  useEffect(() => {
-    const mq = window.matchMedia("(min-width: 768px)");
-    setIsDesktop(mq.matches);  
-    const handler = (e: MediaQueryListEvent) => setIsDesktop(e.matches);
-    mq.addEventListener("change", handler);
-    return () => mq.removeEventListener("change", handler);
-  }, []);
-  return isDesktop;
+  return useSyncExternalStore(
+    (onStoreChange) => {
+      if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
+        return () => {};
+      }
+      const mq = window.matchMedia("(min-width: 768px)");
+      const handler = () => onStoreChange();
+      mq.addEventListener("change", handler);
+      return () => mq.removeEventListener("change", handler);
+    },
+    () => {
+      if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
+        return undefined;
+      }
+      return window.matchMedia("(min-width: 768px)").matches;
+    },
+    () => undefined
+  );
 }
 
 interface DemoToolModalProps {

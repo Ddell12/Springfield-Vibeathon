@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { ROUTES } from "@/core/routes";
 import { isNavActive } from "@/shared/lib/navigation";
+
 import { DashboardSidebar } from "../dashboard-sidebar";
 
 vi.mock("convex/react", () => ({

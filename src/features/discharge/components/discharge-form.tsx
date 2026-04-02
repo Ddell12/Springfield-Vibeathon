@@ -3,14 +3,13 @@
 import { startTransition, useEffect, useState } from "react";
 import { toast } from "sonner";
 
+import { useActiveGoals } from "@/shared/clinical";
 import { MaterialIcon } from "@/shared/components/material-icon";
 import { Button } from "@/shared/components/ui/button";
 import { Checkbox } from "@/shared/components/ui/checkbox";
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
 import { Textarea } from "@/shared/components/ui/textarea";
-
-import { useActiveGoals } from "@/shared/clinical";
 
 import type { Id } from "../../../../convex/_generated/dataModel";
 import {

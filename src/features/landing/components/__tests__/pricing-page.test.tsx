@@ -1,4 +1,5 @@
 import { render, screen } from "@testing-library/react";
+
 import { PricingPage } from "../pricing-page";
 
 it("renders Free and Premium plans with CTAs", () => {

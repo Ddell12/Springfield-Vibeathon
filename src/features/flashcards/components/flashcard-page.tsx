@@ -114,14 +114,7 @@ export function FlashcardPage() {
       toast.error("Could not save — please try again");
     }
   }, [activeSessionId, sessionName, ensureApp]);
-
-   
-  useEffect(() => {
-    if (sessionDecks && sessionDecks.length > 0 && !activeDeckId) {
-      setActiveDeckId(sessionDecks[0]._id);
-    }
-  }, [sessionDecks, activeDeckId]);
-   
+  const selectedDeckId = activeDeckId ?? sessionDecks?.[0]?._id ?? null;
 
   const handleSubmit = useCallback(
     (query: string) => {
@@ -181,7 +174,7 @@ export function FlashcardPage() {
     if (!deleteDeckId) return;
     try {
       await removeDeck({ deckId: deleteDeckId });
-      if (activeDeckId === deleteDeckId) {
+      if (selectedDeckId === deleteDeckId) {
         setActiveDeckId(null);
       }
       toast.success("Deck deleted");
@@ -325,7 +318,7 @@ export function FlashcardPage() {
                 ) : (
                   <div className="h-full overflow-hidden rounded-2xl bg-surface-container-lowest">
                     <FlashcardPreviewPanel
-                      activeDeckId={activeDeckId}
+                      activeDeckId={selectedDeckId}
                       onOpenDeckSheet={() => setDeckSheetOpen(true)}
                       status={status}
                     />
@@ -353,7 +346,7 @@ export function FlashcardPage() {
                 <ResizablePanel defaultSize={70} minSize={30}>
                   <div className="h-full overflow-hidden rounded-2xl bg-surface-container-lowest">
                     <FlashcardPreviewPanel
-                      activeDeckId={activeDeckId}
+                      activeDeckId={selectedDeckId}
                       onOpenDeckSheet={() => setDeckSheetOpen(true)}
                       status={status}
                     />
@@ -373,7 +366,7 @@ export function FlashcardPage() {
           </SheetHeader>
           <div className="mt-4 overflow-y-auto">
             <DeckList
-              activeDeckId={activeDeckId}
+              activeDeckId={selectedDeckId}
               onSelectDeck={setActiveDeckId}
               onRenameDeck={handleRenameDeck}
               onDeleteDeck={handleDeleteDeck}

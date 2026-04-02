@@ -2,8 +2,8 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import type { Id } from "../../../../../convex/_generated/dataModel";
-import { SpeechCoachPage } from "../speech-coach-page";
 import { SessionHistory } from "../session-history";
+import { SpeechCoachPage } from "../speech-coach-page";
 
 const mockUseQuery = vi.fn();
 const mockRetryReview = vi.fn();

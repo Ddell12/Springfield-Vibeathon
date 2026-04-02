@@ -1,4 +1,3 @@
-import { clerk } from "@clerk/testing/playwright";
 import { expect, type Page,test as base, type TestInfo } from "@playwright/test";
 
 type AuthFixtures = {
@@ -11,25 +10,30 @@ type AuthFixtures = {
  * Sign in a Clerk test user via the testing helper.
  * Navigates to "/" first so Clerk JS can initialize.
  */
-async function signInAs(page: Page, email: string, password: string) {
-  await page.goto("/");
+async function signInAs(page: Page, email: string, role: "slp" | "caregiver") {
+  await page.goto(`/sign-in?role=${role}`);
   await page.waitForLoadState("networkidle");
 
-  // Wait for Clerk to mount (UserButton or Sign In link appears)
-  await page.waitForSelector(
-    "[data-clerk-component], a[href='/sign-in']",
-    { timeout: 10_000 }
-  );
+  await expect(page.getByRole("textbox", { name: /email address/i })).toBeVisible();
+  await page.getByRole("textbox", { name: /email address/i }).fill(email);
+  await page.getByRole("button", { name: /continue with email/i }).click();
 
-  await clerk.signIn({
-    page,
-    signInParams: {
-      strategy: "password",
-      identifier: email,
-      password,
-    },
-  });
+  const codeInput = page.getByLabel(/verification code/i);
+  const revealCodeButton = page.getByRole("button", { name: /enter verification code/i });
 
+  await page.waitForTimeout(1000);
+  if (await revealCodeButton.isVisible().catch(() => false)) {
+    await revealCodeButton.click();
+  } else {
+    await expect(codeInput.or(revealCodeButton)).toBeVisible({ timeout: 20_000 });
+    if (await revealCodeButton.isVisible().catch(() => false)) {
+      await revealCodeButton.click();
+    }
+  }
+
+  await page.getByLabel(/verification code/i).fill("424242");
+  await page.getByRole("button", { name: /verify and continue/i }).click();
+  await expect(page).not.toHaveURL(/\/sign-in/);
   await page.waitForLoadState("networkidle");
 }
 
@@ -49,22 +53,19 @@ function requireEnvOrSkip(name: string, testInfo: TestInfo): string {
 export const test = base.extend<AuthFixtures>({
   authedPage: async ({ page }, use, testInfo) => {
     const email = requireEnvOrSkip("E2E_CLERK_USER_EMAIL", testInfo);
-    const password = requireEnvOrSkip("E2E_CLERK_USER_PASSWORD", testInfo);
-    await signInAs(page, email, password);
+    await signInAs(page, email, "slp");
     await use(page);
   },
 
   slpPage: async ({ page }, use, testInfo) => {
     const email = requireEnvOrSkip("E2E_SLP_EMAIL", testInfo);
-    const password = requireEnvOrSkip("E2E_SLP_PASSWORD", testInfo);
-    await signInAs(page, email, password);
+    await signInAs(page, email, "slp");
     await use(page);
   },
 
   caregiverPage: async ({ page }, use, testInfo) => {
     const email = requireEnvOrSkip("E2E_CAREGIVER_EMAIL", testInfo);
-    const password = requireEnvOrSkip("E2E_CAREGIVER_PASSWORD", testInfo);
-    await signInAs(page, email, password);
+    await signInAs(page, email, "caregiver");
     await use(page);
   },
 });

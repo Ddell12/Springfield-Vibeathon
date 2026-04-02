@@ -26,7 +26,7 @@ export function VoiceInput({ onTranscript, disabled }: VoiceInputProps) {
   useEffect(() => {
     if (!audioBase64 || isTranscribingRef.current) return;
     isTranscribingRef.current = true;
-    setIsTranscribing(true);
+    const startTimer = setTimeout(() => setIsTranscribing(true), 0);
 
     transcribe({ audioBase64 })
       .then((result) => {
@@ -42,8 +42,8 @@ export function VoiceInput({ onTranscript, disabled }: VoiceInputProps) {
         isTranscribingRef.current = false;
         setIsTranscribing(false);
       });
+    return () => clearTimeout(startTimer);
   }, [audioBase64, transcribe, onTranscript]);
-   
 
   const handleClick = useCallback(() => {
     if (isRecording) {

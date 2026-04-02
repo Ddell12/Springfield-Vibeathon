@@ -4,10 +4,10 @@ import { useConvexAuth, useQuery } from "convex/react";
 import Link from "next/link";
 import { useState } from "react";
 
+import { MaterialIcon } from "@/shared/components/material-icon";
 import { Badge } from "@/shared/components/ui/badge";
 import { Button } from "@/shared/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/components/ui/card";
-import { MaterialIcon } from "@/shared/components/material-icon";
 
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";

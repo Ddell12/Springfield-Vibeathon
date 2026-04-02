@@ -1,27 +1,17 @@
 import { expect, test } from "@playwright/test";
 
 test.describe("Shared tool page", () => {
-  test("invalid slug shows 'doesn't exist' error", async ({ page }) => {
+  test("invalid slug shows the current not-found state and CTA", async ({ page }) => {
     await page.goto("/tool/nonexistent-slug-xyz");
 
-    // SharedToolPage shows a loading skeleton first (app === undefined), then when
-    // the Convex query resolves to null it renders the "doesn't exist" state.
-    // We wait up to 15s because Convex needs to be connected and the query must resolve.
-    await expect(page.getByText(/doesn't exist/i)).toBeVisible({ timeout: 15_000 });
-
-    await page.screenshot({ path: "test-results/shared-tool-not-found.png" });
-  });
-
-  test("error page has 'Build Your Own' CTA", async ({ page }) => {
-    await page.goto("/tool/nonexistent-slug-xyz");
-
-    // Wait for the not-found state (same dependency as above)
-    await page.getByText(/doesn't exist/i).waitFor({ timeout: 15_000 });
+    const notFoundMessage = page.getByText(/doesn't exist/i);
+    await expect(notFoundMessage).toBeVisible({ timeout: 15_000 });
 
     const cta = page.getByRole("link", { name: /build your own/i });
     await expect(cta).toBeVisible();
-    const href = await cta.getAttribute("href");
-    expect(href).toBe("/builder");
+    expect(await cta.getAttribute("href")).toBe("/builder");
+
+    await page.screenshot({ path: "test-results/shared-tool-not-found.png" });
   });
 
   test.fixme("valid slug renders tool iframe", async ({ page }) => {

@@ -22,9 +22,9 @@ const EMPTY_EMOJI: Record<string, string> = {
 
 export function TokenBoardRuntime({
   config,
-  mode,
+  mode: _mode,
   onEvent,
-  voice,
+  voice: _voice,
 }: RuntimeProps<TokenBoardConfig>) {
   const [earned, setEarned] = useState(0);
   const [completed, setCompleted] = useState(false);

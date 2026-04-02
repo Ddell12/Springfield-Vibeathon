@@ -137,7 +137,7 @@ export const update = slpMutation({
       throw new ConvexError("Cannot edit a signed evaluation");
     }
 
-    const { evalId, ...updates } = args;
+    const { evalId: _evalId, ...updates } = args;
     const filtered: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(updates)) {
       if (value !== undefined) filtered[key] = value;

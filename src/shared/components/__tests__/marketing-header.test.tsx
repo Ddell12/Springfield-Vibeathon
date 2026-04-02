@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react";
 
 import { APP_BRAND } from "@/core/config";
+
 import { MarketingHeader } from "../marketing-header";
 
 vi.mock("@clerk/nextjs", () => ({

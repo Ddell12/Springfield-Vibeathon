@@ -61,7 +61,9 @@ describe("SettingsSidebar", () => {
     const profileBtn = screen.getByRole("button", { name: /Profile/i });
     const accountBtn = screen.getByRole("button", { name: /Account/i });
     // Active button should contain active class, inactive should not
-    expect(profileBtn.className).toContain("bg-white");
-    expect(accountBtn.className).not.toContain("bg-white");
+    expect(profileBtn.className).toContain("bg-surface");
+    expect(profileBtn.className).toContain("ring-outline-variant/60");
+    expect(accountBtn.className).toContain("text-on-surface-variant");
+    expect(accountBtn.className).not.toContain("ring-outline-variant/60");
   });
 });

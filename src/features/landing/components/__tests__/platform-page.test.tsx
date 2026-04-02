@@ -1,4 +1,5 @@
 import { render, screen } from "@testing-library/react";
+
 import { PlatformPage } from "../platform-page";
 
 it("renders the pipeline and builder CTA", () => {

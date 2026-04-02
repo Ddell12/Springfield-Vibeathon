@@ -8,7 +8,6 @@ import { Textarea } from "@/shared/components/ui/textarea";
 
 import { useAIConfigAssist } from "../../hooks/use-ai-config-assist";
 import { DEFAULT_GENERATION_PROFILE } from "../../lib/ai/generation-profile";
-import { templateRegistry } from "../../lib/registry";
 
 interface AIAssistPanelProps {
   templateType: string;
@@ -27,7 +26,6 @@ export function AIAssistPanel({ templateType, childProfile, onApply }: AIAssistP
     childProfile,
     generationProfile: DEFAULT_GENERATION_PROFILE,
   });
-  const registration = templateRegistry[templateType];
 
   const handleGenerate = async () => {
     if (!description.trim()) return;

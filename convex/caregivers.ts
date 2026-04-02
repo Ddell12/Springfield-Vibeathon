@@ -196,7 +196,7 @@ export const listByPatient = authedQuery({
       .query("caregiverLinks")
       .withIndex("by_patientId", (q) => q.eq("patientId", args.patientId))
       .take(50);
-    return links.map(({ inviteToken, ...rest }) => rest);
+    return links.map(({ inviteToken: _inviteToken, ...rest }) => rest);
   },
 });
 

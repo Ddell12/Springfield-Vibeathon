@@ -24,7 +24,11 @@ export function FullscreenAppView({
   }, [bundleHtml]);
 
   useEffect(() => {
-    return () => URL.revokeObjectURL(blobUrl);
+    fadeTimerRef.current = setTimeout(() => setShowControls(false), 3000);
+    return () => {
+      if (fadeTimerRef.current) clearTimeout(fadeTimerRef.current);
+      URL.revokeObjectURL(blobUrl);
+    };
   }, [blobUrl]);
 
   const resetFadeTimer = useCallback(() => {
@@ -32,13 +36,6 @@ export function FullscreenAppView({
     if (fadeTimerRef.current) clearTimeout(fadeTimerRef.current);
     fadeTimerRef.current = setTimeout(() => setShowControls(false), 3000);
   }, []);
-
-  useEffect(() => {
-    resetFadeTimer();  
-    return () => {
-      if (fadeTimerRef.current) clearTimeout(fadeTimerRef.current);
-    };
-  }, [resetFadeTimer]);
 
   useEffect(() => {
     const handler = () => resetFadeTimer();

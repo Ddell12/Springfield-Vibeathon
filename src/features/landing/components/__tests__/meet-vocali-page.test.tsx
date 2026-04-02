@@ -1,4 +1,5 @@
 import { render, screen } from "@testing-library/react";
+
 import { MeetVocaliPage } from "../meet-vocali-page";
 
 it("renders the three role cards and primary signup CTA", () => {

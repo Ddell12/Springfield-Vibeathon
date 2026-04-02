@@ -5,7 +5,6 @@ import { Track } from "livekit-client";
 
 import { cn } from "@/core/utils";
 import { MaterialIcon } from "@/shared/components/material-icon";
-import { Button } from "@/shared/components/ui/button";
 
 type CallControlsProps = {
   className?: string;

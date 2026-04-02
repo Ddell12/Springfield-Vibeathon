@@ -13,28 +13,47 @@ interface UseDeckNavigationReturn {
 }
 
 export function useDeckNavigation(totalCards: number): UseDeckNavigationReturn {
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [navigationState, setNavigationState] = useState(() => ({
+    currentIndex: 0,
+    totalCards,
+  }));
 
-   
-  useEffect(() => { setCurrentIndex(0); }, [totalCards]);
-   
+  const effectiveIndex =
+    navigationState.totalCards === totalCards ? navigationState.currentIndex : 0;
+  const clampedIndex = (() => {
+    if (totalCards === 0) return 0;
+    return Math.min(effectiveIndex, totalCards - 1);
+  })();
 
   const goTo = useCallback(
     (index: number) => {
       if (totalCards === 0) return;
-      setCurrentIndex(Math.max(0, Math.min(index, totalCards - 1)));
+      setNavigationState({
+        currentIndex: Math.max(0, Math.min(index, totalCards - 1)),
+        totalCards,
+      });
     },
     [totalCards],
   );
 
   const goNext = useCallback(() => {
     if (totalCards === 0) return;
-    setCurrentIndex((prev) => Math.min(prev + 1, totalCards - 1));
+    setNavigationState((prev) => ({
+      currentIndex:
+        prev.totalCards === totalCards
+          ? Math.min(prev.currentIndex + 1, totalCards - 1)
+          : 1,
+      totalCards,
+    }));
   }, [totalCards]);
 
   const goPrev = useCallback(() => {
     if (totalCards === 0) return;
-    setCurrentIndex((prev) => Math.max(prev - 1, 0));
+    setNavigationState((prev) => ({
+      currentIndex:
+        prev.totalCards === totalCards ? Math.max(prev.currentIndex - 1, 0) : 0,
+      totalCards,
+    }));
   }, [totalCards]);
 
   useEffect(() => {
@@ -52,12 +71,12 @@ export function useDeckNavigation(totalCards: number): UseDeckNavigationReturn {
   }, [goNext, goPrev]);
 
   return {
-    currentIndex,
+    currentIndex: clampedIndex,
     totalCards,
     goTo,
     goNext,
     goPrev,
-    isFirst: currentIndex === 0,
-    isLast: currentIndex === totalCards - 1,
+    isFirst: clampedIndex === 0,
+    isLast: clampedIndex === totalCards - 1,
   };
 }

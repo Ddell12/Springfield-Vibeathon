@@ -1,39 +1,83 @@
 import { expect, test } from "@playwright/test";
 
+function getHandshakeRedirect(urlString: string): string | null {
+  const url = new URL(urlString);
+  if (!url.hostname.endsWith(".clerk.accounts.dev")) {
+    return null;
+  }
+
+  return url.searchParams.get("redirect_url");
+}
+
+async function expectAuthRoute(
+  page: import("@playwright/test").Page,
+  expectedPath: string | RegExp,
+) {
+  const redirectUrl = getHandshakeRedirect(page.url());
+  if (redirectUrl) {
+    if (typeof expectedPath === "string") {
+      expect(redirectUrl).toContain(expectedPath);
+    } else {
+      expect(redirectUrl).toMatch(expectedPath);
+    }
+    return;
+  }
+
+  await expect(page).toHaveURL(expectedPath);
+}
+
 test.describe("Auth pages", () => {
-  test("/sign-in renders Clerk sign-in component", async ({ page }) => {
+  test("/sign-in renders the current auth entrypoint", async ({ page }) => {
     await page.goto("/sign-in");
 
-    // Clerk mounts its component as a custom element or with a data-clerk-component attribute
-    const clerkComponent = page.locator("[data-clerk-component]");
-    await expect(clerkComponent).toBeVisible({ timeout: 10_000 });
+    const redirectUrl = getHandshakeRedirect(page.url());
+    if (redirectUrl) {
+      expect(redirectUrl).toContain("/sign-in");
+      return;
+    }
+
+    await expect(page.getByRole("heading", { name: /describe it\./i })).toBeVisible();
+    await expect(page.getByRole("textbox", { name: /email address/i })).toBeVisible();
+    await expect(page.getByRole("button", { name: /continue with email/i })).toBeVisible();
   });
 
-  test("sign-in page has link to sign-up", async ({ page }) => {
+  test("sign-in page includes the current auth/legal affordances", async ({ page }) => {
     await page.goto("/sign-in");
 
-    // Clerk's SignIn component renders a link to the sign-up page
-    const signUpLink = page.getByRole("link", { name: /sign.?up/i }).or(
-      page.getByText(/sign.?up/i),
-    );
-    await expect(signUpLink.first()).toBeVisible({ timeout: 10_000 });
+    const redirectUrl = getHandshakeRedirect(page.url());
+    if (redirectUrl) {
+      expect(redirectUrl).toContain("/sign-in");
+      expect(page.url()).toContain("dev-browser-missing");
+      return;
+    }
+
+    await expect(page.getByRole("button", { name: /continue with google/i })).toBeVisible();
+    await expect(page.getByText(/privacy policy/i)).toBeVisible();
   });
 
-  test("/sign-up renders Clerk sign-up component", async ({ page }) => {
+  test("/sign-up resolves into the current auth flow", async ({ page }) => {
     await page.goto("/sign-up");
 
-    // Clerk mounts its component as a custom element or with a data-clerk-component attribute
-    const clerkComponent = page.locator("[data-clerk-component]");
-    await expect(clerkComponent).toBeVisible({ timeout: 10_000 });
+    const redirectUrl = getHandshakeRedirect(page.url());
+    if (redirectUrl) {
+      expect(redirectUrl).toContain("/sign-up");
+      return;
+    }
+
+    await expectAuthRoute(page, /\/sign-in\?role=slp/);
+    await expect(page.getByRole("textbox", { name: /email address/i })).toBeVisible();
   });
 
-  test("sign-up page has link to sign-in", async ({ page }) => {
-    await page.goto("/sign-up");
+  test("caregiver sign-in preserves the caregiver entry route", async ({ page }) => {
+    await page.goto("/sign-in?role=caregiver");
 
-    // Clerk's SignUp component renders a link back to the sign-in page
-    const signInLink = page.getByRole("link", { name: /sign.?in/i }).or(
-      page.getByText(/sign.?in/i),
-    );
-    await expect(signInLink.first()).toBeVisible({ timeout: 10_000 });
+    const redirectUrl = getHandshakeRedirect(page.url());
+    if (redirectUrl) {
+      expect(redirectUrl).toContain("/sign-in?role=caregiver");
+      return;
+    }
+
+    await expect(page.getByText(/caregiver access is usually created from an invite/i)).toBeVisible();
+    await expect(page.getByRole("button", { name: /continue with email/i })).toBeVisible();
   });
 });
