@@ -2,7 +2,7 @@ import { v } from "convex/values";
 
 import { FREE_PLAN_LIMIT_REACHED_MESSAGE } from "../shared/app-limits";
 import { mutation, query } from "./_generated/server";
-import { assertSessionOwner } from "./lib/auth";
+import { assertSessionOwner, getAuthUserId } from "./lib/auth";
 import { checkPremiumStatus, FREE_LIMITS } from "./lib/billing";
 import { authedQuery } from "./lib/customFunctions";
 
@@ -15,15 +15,15 @@ export const create = mutation({
     previewUrl: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) throw new Error("Not authenticated");
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
 
     // Free-tier limit enforcement — premium users bypass
-    const isPremium = await checkPremiumStatus(ctx, identity.subject);
+    const isPremium = await checkPremiumStatus(ctx, userId);
     if (!isPremium) {
       const userApps = await ctx.db
         .query("apps")
-        .withIndex("by_user", (q) => q.eq("userId", identity.subject))
+        .withIndex("by_user", (q) => q.eq("userId", userId))
         .take(FREE_LIMITS.maxApps);
       if (userApps.length >= FREE_LIMITS.maxApps) {
         throw new Error(FREE_PLAN_LIMIT_REACHED_MESSAGE);
@@ -34,7 +34,7 @@ export const create = mutation({
     return await ctx.db.insert("apps", {
       title: args.title,
       description: args.description,
-      userId: identity.subject,
+      userId,
       sessionId: args.sessionId,
       shareSlug: args.shareSlug,
       previewUrl: args.previewUrl,
@@ -110,7 +110,7 @@ export const ensureForSession = mutation({
   },
   handler: async (ctx, args) => {
     await assertSessionOwner(ctx, args.sessionId);
-    const identity = await ctx.auth.getUserIdentity();
+    const userId = await getAuthUserId(ctx);
 
     const existing = await ctx.db
       .query("apps")
@@ -119,12 +119,12 @@ export const ensureForSession = mutation({
     if (existing) return existing;
 
     // Free-tier limit enforcement applies only when creating a new saved app record.
-    if (identity) {
-      const isPremium = await checkPremiumStatus(ctx, identity.subject);
+    if (userId) {
+      const isPremium = await checkPremiumStatus(ctx, userId);
       if (!isPremium) {
         const userApps = await ctx.db
           .query("apps")
-          .withIndex("by_user", (q) => q.eq("userId", identity.subject))
+          .withIndex("by_user", (q) => q.eq("userId", userId))
           .take(FREE_LIMITS.maxApps);
         if (userApps.length >= FREE_LIMITS.maxApps) {
           throw new Error(FREE_PLAN_LIMIT_REACHED_MESSAGE);
@@ -142,7 +142,7 @@ export const ensureForSession = mutation({
       description: args.description ?? "",
       sessionId: args.sessionId,
       shareSlug: slug,
-      userId: identity?.subject,
+      userId: userId ?? undefined,
       createdAt: now,
       updatedAt: now,
     });

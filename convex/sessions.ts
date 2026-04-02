@@ -1,7 +1,7 @@
 import { ConvexError, v } from "convex/values";
 
 import { internalMutation, mutation, query } from "./_generated/server";
-import { assertSessionOwner } from "./lib/auth";
+import { assertSessionOwner, getAuthUserId } from "./lib/auth";
 import { authedMutation, authedQuery } from "./lib/customFunctions";
 import {
   SESSION_STATES,
@@ -17,9 +17,9 @@ export const create = mutation({
     patientId: v.optional(v.id("patients")),
   },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
+    const userId = await getAuthUserId(ctx);
     return await ctx.db.insert("sessions", {
-      userId: identity?.subject,
+      userId: userId ?? undefined,
       title: args.title,
       query: args.query,
       state: SESSION_STATES.IDLE,
