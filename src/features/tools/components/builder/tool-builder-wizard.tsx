@@ -30,8 +30,8 @@ export function ToolBuilderWizard({ builder }: ToolBuilderWizardProps) {
   const title = (config?.title as string) ?? "Untitled";
 
   const handleTitleChange = (newTitle: string) => {
-    if (!config) return;
-    builder.updateConfig({ ...config, title: newTitle });
+    if (!builder.config) return;
+    builder.updateConfig({ ...(builder.config as Record<string, unknown>), title: newTitle });
   };
 
   return (
@@ -80,8 +80,15 @@ export function ToolBuilderWizard({ builder }: ToolBuilderWizardProps) {
                 childProfile={{}}
                 initialDescription={builder.originalDescription ?? undefined}
                 onApply={(configJson) => {
-                  const reg = templateRegistry[builder.templateType!];
-                  if (reg) builder.updateConfig(reg.parseConfig(configJson));
+                  const type = builder.templateType;
+                  if (!type) return;
+                  const reg = templateRegistry[type];
+                  if (!reg) return;
+                  try {
+                    builder.updateConfig(reg.parseConfig(configJson));
+                  } catch (err) {
+                    console.error("[ToolBuilderWizard] parseConfig failed:", err);
+                  }
                 }}
               />
             </div>
@@ -107,7 +114,7 @@ export function ToolBuilderWizard({ builder }: ToolBuilderWizardProps) {
                 />
               </TabsContent>
 
-              <TabsContent value="appearance" className="overflow-y-auto p-4 mt-0">
+              <TabsContent value="appearance" className="flex-1 overflow-y-auto p-4 mt-0">
                 <AppearanceControls
                   value={builder.appearance}
                   onChange={builder.updateAppearance}
