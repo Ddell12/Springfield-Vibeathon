@@ -11,7 +11,7 @@ import {
 import { Switch } from "@/shared/components/ui/switch";
 
 import type { EditorProps } from "../../registry";
-import { WORD_CATEGORIES, type AACBoardConfig, type AACButton } from "./schema";
+import { type AACBoardConfig, type AACButton,WORD_CATEGORIES } from "./schema";
 
 const CATEGORY_LABELS: Record<string, string> = {
   verb:       "Verb / action (green)",

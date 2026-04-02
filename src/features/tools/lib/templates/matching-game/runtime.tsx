@@ -5,8 +5,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { cn } from "@/core/utils";
 
 import type { RuntimeProps } from "../../registry";
-import { useShellState } from "../../runtime/shell-state-context";
 import { PremiumScreen, ReinforcementBanner } from "../../runtime/premium-primitives";
+import { useShellState } from "../../runtime/shell-state-context";
 import type { MatchingGameConfig } from "./schema";
 
 function shuffleArray<T>(arr: T[]): T[] {

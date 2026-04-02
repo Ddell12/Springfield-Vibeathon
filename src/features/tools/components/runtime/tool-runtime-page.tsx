@@ -10,7 +10,7 @@ import { DEFAULT_APP_SHELL } from "../../lib/runtime/app-shell-types";
 import { RuntimeShell } from "../../lib/runtime/runtime-shell";
 import { useVoiceController } from "../../lib/runtime/runtime-voice-controller";
 import { SessionBanner } from "./session-banner";
-import { SessionOverlay, type SessionEvent } from "./session-overlay";
+import { type SessionEvent,SessionOverlay } from "./session-overlay";
 
 interface ToolRuntimePageProps {
   shareToken: string;
