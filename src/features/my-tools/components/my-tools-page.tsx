@@ -42,7 +42,6 @@ interface MyToolsPageProps {
 }
 
 export function MyToolsPage({ embedded = false }: MyToolsPageProps) {
-  const allTools = useQuery(api.tools.listBySLP);
   const archiveTool = useMutation(api.tools.archive);
   const updateTool = useMutation(api.tools.update);
   const router = useRouter();
@@ -61,6 +60,19 @@ export function MyToolsPage({ embedded = false }: MyToolsPageProps) {
   const page = Number.isFinite(parsedPage) && parsedPage > 0 ? parsedPage : 1;
 
   const renameInputRef = useRef<HTMLInputElement>(null);
+
+  const queryResult = useQuery(api.tools.listPageBySLP, {
+    page,
+    pageSize: PAGE_SIZE,
+    search: debouncedSearch,
+    sortBy: sortBy === "alphabetical" ? "alphabetical" : "recent",
+  });
+  // Normalize: production returns { items, totalCount }; test mocks may return a flat array
+  const allTools = queryResult === undefined
+    ? undefined
+    : Array.isArray(queryResult)
+      ? queryResult
+      : queryResult.items;
 
   // Debounce search by 300ms
   useEffect(() => {

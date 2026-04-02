@@ -159,7 +159,14 @@ export function TemplatesPage({ embedded = false }: TemplatesPageProps) {
             key={cat.value}
             role="tab"
             aria-selected={selectedCategory === cat.value}
-            onClick={() => setSelectedCategory(cat.value)}
+            onClick={() => {
+              setSelectedCategory(cat.value);
+              const params = new URLSearchParams();
+              params.set("tab", "templates");
+              params.set("page", "1");
+              if (cat.value !== "all") params.set("category", cat.value);
+              router.replace(`/library?${params.toString()}`, { scroll: false });
+            }}
             className={cn(
               "px-4 py-2 rounded-full text-sm font-medium transition-all duration-300",
               selectedCategory === cat.value
