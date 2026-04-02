@@ -1,11 +1,13 @@
 import { fireEvent,render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+import React from "react";
 
 vi.mock("convex/react", () => ({
   useMutation: vi.fn(() => vi.fn().mockResolvedValue(undefined)),
 }));
 vi.mock("@convex/_generated/api", () => ({ api: { tools: { logEvent: "tools:logEvent" } } }));
 
+import { ShellStateContext } from "../../../../lib/runtime/shell-state-context";
 import { MatchingGameRuntime } from "../runtime";
 import type { MatchingGameConfig } from "../schema";
 
@@ -78,5 +80,59 @@ describe("MatchingGameRuntime", () => {
     fireEvent.click(screen.getByText("Cat"));
     fireEvent.click(screen.getByText("Meow"));
     expect(mockOnEvent).toHaveBeenCalledWith("activity_completed", expect.any(String));
+  });
+});
+
+const voice = { speak: vi.fn(), stop: vi.fn(), status: "idle" as const };
+const onEvent = vi.fn();
+const config = {
+  title: "Animals",
+  pairs: [
+    { id: "1", prompt: "Dog", answer: "Woof" },
+    { id: "2", prompt: "Cat", answer: "Meow" },
+    { id: "3", prompt: "Cow", answer: "Moo" },
+    { id: "4", prompt: "Duck", answer: "Quack" },
+    { id: "5", prompt: "Pig", answer: "Oink" },
+  ],
+  showAnswerImages: false, celebrateCorrect: true, highContrast: false,
+};
+
+function withDifficulty(difficulty: "easy" | "medium" | "hard") {
+  return render(
+    <ShellStateContext.Provider value={{ difficulty, soundsEnabled: true }}>
+      <MatchingGameRuntime config={config} mode="preview" onEvent={onEvent} voice={voice} />
+    </ShellStateContext.Provider>
+  );
+}
+
+describe("MatchingGameRuntime — difficulty slicing", () => {
+  it("shows 2 pairs on easy", () => {
+    withDifficulty("easy");
+    expect(screen.getByText("Dog")).toBeInTheDocument();
+    expect(screen.getByText("Cat")).toBeInTheDocument();
+    expect(screen.queryByText("Cow")).not.toBeInTheDocument();
+  });
+
+  it("shows 4 pairs on medium", () => {
+    withDifficulty("medium");
+    expect(screen.getByText("Duck")).toBeInTheDocument();
+    expect(screen.queryByText("Pig")).not.toBeInTheDocument();
+  });
+
+  it("shows all pairs on hard", () => {
+    withDifficulty("hard");
+    expect(screen.getByText("Pig")).toBeInTheDocument();
+  });
+});
+
+describe("MatchingGameRuntime — promptImageUrl", () => {
+  it("renders prompt image when promptImageUrl is set", () => {
+    const cfg = { ...config, pairs: [{ id: "1", prompt: "Dog", answer: "Woof", promptImageUrl: "https://ex.com/dog.jpg" }] };
+    render(
+      <ShellStateContext.Provider value={{ difficulty: "hard", soundsEnabled: true }}>
+        <MatchingGameRuntime config={cfg} mode="preview" onEvent={onEvent} voice={voice} />
+      </ShellStateContext.Provider>
+    );
+    expect(screen.getByAltText("Dog")).toHaveAttribute("src", "https://ex.com/dog.jpg");
   });
 });
