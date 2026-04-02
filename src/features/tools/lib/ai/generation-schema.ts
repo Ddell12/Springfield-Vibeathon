@@ -7,13 +7,20 @@ export const generationProfileSchema = z.object({
   sensoryMode: z.enum(["calm", "energetic"]).optional(),
 });
 
+export const childProfileSchema = z.object({
+  ageRange: z.string().optional(),
+  interests: z.array(z.string()).optional(),
+  communicationLevel: z.string().optional(),
+});
+
 export const generateConfigRequestSchema = z.object({
   templateType: z.string(),
   description: z.string().min(1),
-  childProfile: z.object({
-    ageRange: z.string().optional(),
-    interests: z.array(z.string()).optional(),
-    communicationLevel: z.string().optional(),
-  }),
+  childProfile: childProfileSchema,
   generationProfile: generationProfileSchema.optional(),
+});
+
+export const inferTemplateRequestSchema = z.object({
+  description: z.string().min(1).max(1000),
+  childProfile: childProfileSchema.optional(),
 });
