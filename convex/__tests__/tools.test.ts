@@ -417,4 +417,19 @@ describe("listPublishedByPatient", () => {
     const results = await t.query(api.tools.listPublishedByPatient, { patientId });
     expect(results).toHaveLength(0);
   });
+
+  it("listPublishedByPatient throws when caller has no patient access", async () => {
+    const slpT = convexTest(schema, modules).withIdentity(SLP_IDENTITY);
+    const { patientId } = await createPatient(slpT);
+
+    // A different user has no access to this patient
+    const otherT = convexTest(schema, modules).withIdentity({
+      subject: "other-user-999",
+      issuer: "clerk",
+    });
+
+    await expect(
+      otherT.query(api.tools.listPublishedByPatient, { patientId })
+    ).rejects.toThrow();
+  });
 });

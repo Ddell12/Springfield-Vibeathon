@@ -2,6 +2,7 @@ import { v } from "convex/values";
 
 import type { Id } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
+import { assertPatientAccess } from "./lib/auth";
 
 function normalizeTitle(title: string) {
   return title.trim().toLowerCase();
@@ -198,6 +199,7 @@ export const listByPatient = query({
 export const listPublishedByPatient = query({
   args: { patientId: v.id("patients") },
   handler: async (ctx, args) => {
+    await assertPatientAccess(ctx, args.patientId);
     const items = await ctx.db
       .query("app_instances")
       .withIndex("by_patientId", (q) => q.eq("patientId", args.patientId))
