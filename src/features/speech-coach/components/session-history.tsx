@@ -1,7 +1,7 @@
 "use client";
 
-import { useMutation, useQuery } from "convex/react";
-import { useState } from "react";
+import { useAction, useMutation, useQuery } from "convex/react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { cn } from "@/core/utils";
@@ -115,8 +115,45 @@ export function SessionHistory(props: Props) {
 
 function ExpandedDetail({ sessionId }: { sessionId: Id<"speechCoachSessions"> }) {
   const detail = useQuery(api.speechCoach.getSessionDetail, { sessionId });
+  const getTranscriptText = useAction(api.speechCoachActions.getTranscriptText);
   const retryReview = useMutation(api.speechCoach.retryReview);
   const [isRetrying, setIsRetrying] = useState(false);
+  const [transcriptText, setTranscriptText] = useState<string | null>(null);
+  const [isTranscriptLoading, setIsTranscriptLoading] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadTranscript() {
+      if (!detail?.session?.transcriptStorageId) {
+        setTranscriptText(null);
+        return;
+      }
+
+      setIsTranscriptLoading(true);
+      try {
+        const result = await getTranscriptText({ sessionId });
+        if (!cancelled) {
+          setTranscriptText(result.transcript);
+        }
+      } catch (error) {
+        console.error("[SessionHistory] Failed to load transcript:", error);
+        if (!cancelled) {
+          setTranscriptText(null);
+        }
+      } finally {
+        if (!cancelled) {
+          setIsTranscriptLoading(false);
+        }
+      }
+    }
+
+    void loadTranscript();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [detail?.session?.transcriptStorageId, getTranscriptText, sessionId]);
 
   async function handleRetry() {
     setIsRetrying(true);
@@ -132,6 +169,13 @@ function ExpandedDetail({ sessionId }: { sessionId: Id<"speechCoachSessions"> })
 
   if (!detail) return <div className="px-4 pb-4 text-sm text-muted-foreground">Loading...</div>;
   const snapshot = detail.session?.config.runtimeSnapshot;
+  const hasStoredTranscript = Boolean(detail.session?.transcriptStorageId);
+  const transcriptPanel = hasStoredTranscript ? (
+    <TranscriptPanel
+      transcriptText={transcriptText}
+      isLoading={isTranscriptLoading}
+    />
+  ) : null;
 
   if (!detail.progress) {
     if (detail.session?.status === "review_failed") {
@@ -152,6 +196,7 @@ function ExpandedDetail({ sessionId }: { sessionId: Id<"speechCoachSessions"> })
               Template v{snapshot.templateVersion} · {snapshot.voiceKey}
             </p>
           ) : null}
+          {transcriptPanel ? <div className="mt-3">{transcriptPanel}</div> : null}
         </div>
       );
     }
@@ -159,12 +204,17 @@ function ExpandedDetail({ sessionId }: { sessionId: Id<"speechCoachSessions"> })
     if (detail.session?.status === "analyzing") {
       return (
         <div className="px-4 pb-4 text-sm text-muted-foreground">
-          Transcript saved. AI review is in progress.
+          <p>
+            {hasStoredTranscript
+              ? "Transcript saved. AI review is in progress."
+              : "Preparing transcript and review."}
+          </p>
           {snapshot ? (
             <p className="mt-1 text-xs text-muted-foreground">
               Template v{snapshot.templateVersion} · {snapshot.voiceKey}
             </p>
           ) : null}
+          {transcriptPanel ? <div className="mt-3">{transcriptPanel}</div> : null}
         </div>
       );
     }
@@ -191,6 +241,26 @@ function ExpandedDetail({ sessionId }: { sessionId: Id<"speechCoachSessions"> })
         </p>
       ) : null}
       <ProgressCard progress={detail.progress} />
+      {transcriptPanel ? <div className="mt-4">{transcriptPanel}</div> : null}
+    </div>
+  );
+}
+
+function TranscriptPanel({
+  transcriptText,
+  isLoading,
+}: {
+  transcriptText: string | null;
+  isLoading: boolean;
+}) {
+  return (
+    <div className="rounded-xl bg-muted/35 p-3">
+      <p className="text-xs font-medium uppercase tracking-[0.08em] text-muted-foreground">
+        Raw transcript
+      </p>
+      <div className="mt-2 max-h-56 overflow-y-auto whitespace-pre-wrap rounded-lg bg-background/80 p-3 text-sm text-foreground">
+        {isLoading ? "Loading transcript…" : transcriptText ?? "Transcript is being prepared."}
+      </div>
     </div>
   );
 }

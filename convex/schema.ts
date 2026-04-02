@@ -688,6 +688,7 @@ export default defineSchema({
     userId: v.optional(v.string()),
     mode: v.optional(v.union(v.literal("standalone"), v.literal("clinical"))),
     agentId: v.string(),
+    runtimeProvider: v.optional(v.union(v.literal("livekit"), v.literal("elevenlabs"))),
     conversationId: v.optional(v.string()),
     status: v.union(
       v.literal("configuring"),
@@ -720,6 +721,14 @@ export default defineSchema({
     startedAt: v.optional(v.number()),
     endedAt: v.optional(v.number()),
     transcriptStorageId: v.optional(v.id("_storage")),
+    transcriptCapturedAt: v.optional(v.number()),
+    rawTranscriptTurns: v.optional(v.array(
+      v.object({
+        speaker: v.union(v.literal("coach"), v.literal("child"), v.literal("system")),
+        text: v.string(),
+        timestampMs: v.number(),
+      })
+    )),
     errorMessage: v.optional(v.string()),
     testMetadata: v.optional(testMetadataValidator),
   })

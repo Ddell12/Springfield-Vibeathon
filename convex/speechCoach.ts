@@ -7,6 +7,7 @@ import { assertCaregiverAccess, assertPatientAccess, getAuthUserId } from "./lib
 import { authedMutation, authedQuery } from "./lib/customFunctions";
 
 const SPEECH_COACH_AGENT_ID = "speech-coach";
+const DEFAULT_RUNTIME_PROVIDER = "livekit";
 
 const configValidator = v.object({
   targetSounds: v.array(v.string()),
@@ -58,6 +59,7 @@ export const createSession = mutation({
       homeProgramId: args.homeProgramId,
       caregiverUserId,
       agentId: SPEECH_COACH_AGENT_ID,
+      runtimeProvider: DEFAULT_RUNTIME_PROVIDER,
       status: "configuring",
       config: args.config,
     });
@@ -78,6 +80,7 @@ export const startSession = mutation({
 
     await ctx.db.patch(args.sessionId, {
       conversationId: args.conversationId,
+      runtimeProvider: session.runtimeProvider ?? DEFAULT_RUNTIME_PROVIDER,
       status: "active",
       startedAt: Date.now(),
     });
@@ -98,10 +101,13 @@ export const endSession = mutation({
     await ctx.db.patch(args.sessionId, {
       status: "analyzing",
       endedAt: Date.now(),
+      analysisErrorMessage: undefined,
     });
 
-    // Schedule analysis if we have a conversation to analyze
-    if (session.conversationId) {
+    if ((session.runtimeProvider ?? DEFAULT_RUNTIME_PROVIDER) === "elevenlabs" && session.conversationId) {
+      await ctx.db.patch(args.sessionId, {
+        analysisAttempts: (session.analysisAttempts ?? 0) + 1,
+      });
       await ctx.scheduler.runAfter(0, internal.speechCoachActions.analyzeSession, {
         sessionId: args.sessionId,
       });
@@ -260,6 +266,36 @@ export const setTranscriptStorageId = internalMutation({
     await ctx.db.patch(args.sessionId, {
       transcriptStorageId: args.storageId,
       status: "transcript_ready",
+    });
+  },
+});
+
+export const saveRuntimeTranscriptCapture = internalMutation({
+  args: {
+    sessionId: v.id("speechCoachSessions"),
+    storageId: v.id("_storage"),
+    capturedAt: v.number(),
+    rawTranscriptTurns: v.optional(v.array(v.object({
+      speaker: v.union(v.literal("coach"), v.literal("child"), v.literal("system")),
+      text: v.string(),
+      timestampMs: v.number(),
+    }))),
+    queueForAnalysis: v.boolean(),
+  },
+  handler: async (ctx, args) => {
+    const session = await ctx.db.get(args.sessionId);
+    if (!session) throw new ConvexError("Session not found");
+
+    await ctx.db.patch(args.sessionId, {
+      runtimeProvider: session.runtimeProvider ?? DEFAULT_RUNTIME_PROVIDER,
+      transcriptStorageId: args.storageId,
+      transcriptCapturedAt: args.capturedAt,
+      rawTranscriptTurns: args.rawTranscriptTurns,
+      status: args.queueForAnalysis ? "analyzing" : session.status,
+      analysisAttempts: args.queueForAnalysis
+        ? (session.analysisAttempts ?? 0) + 1
+        : session.analysisAttempts,
+      analysisErrorMessage: args.queueForAnalysis ? undefined : session.analysisErrorMessage,
     });
   },
 });
@@ -428,6 +464,7 @@ export const createStandaloneSession = authedMutation({
       caregiverUserId: ctx.userId,
       mode: "standalone",
       agentId: SPEECH_COACH_AGENT_ID,
+      runtimeProvider: DEFAULT_RUNTIME_PROVIDER,
       status: "configuring",
       config: args.config,
     });
@@ -449,6 +486,7 @@ export const startStandaloneSession = authedMutation({
 
     await ctx.db.patch(args.sessionId, {
       conversationId: args.conversationId,
+      runtimeProvider: session.runtimeProvider ?? DEFAULT_RUNTIME_PROVIDER,
       status: "active",
       startedAt: Date.now(),
     });
@@ -468,9 +506,13 @@ export const endStandaloneSession = authedMutation({
     await ctx.db.patch(args.sessionId, {
       status: "analyzing",
       endedAt: Date.now(),
+      analysisErrorMessage: undefined,
     });
 
-    if (session.conversationId) {
+    if ((session.runtimeProvider ?? DEFAULT_RUNTIME_PROVIDER) === "elevenlabs" && session.conversationId) {
+      await ctx.db.patch(args.sessionId, {
+        analysisAttempts: (session.analysisAttempts ?? 0) + 1,
+      });
       await ctx.scheduler.runAfter(0, internal.speechCoachActions.analyzeSession, {
         sessionId: args.sessionId,
       });

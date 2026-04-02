@@ -1,14 +1,43 @@
 "use node";
 
-import { ConvexError } from "convex/values";
-import { v } from "convex/values";
+import { ConvexError, v } from "convex/values";
 
 import { internal } from "./_generated/api";
+import type { Doc, Id } from "./_generated/dataModel";
 import { action } from "./_generated/server";
+
+const SPEECH_COACH_AGENT_ID = "speech-coach";
+const DEFAULT_RUNTIME_PROVIDER = "livekit";
+
+const rawTranscriptTurnValidator = v.object({
+  speaker: v.union(v.literal("coach"), v.literal("child"), v.literal("system")),
+  text: v.string(),
+  timestampMs: v.number(),
+});
+
+type SpeechCoachSessionDoc = {
+  _id: Id<"speechCoachSessions">;
+  caregiverUserId: string;
+  agentId: string;
+  runtimeProvider?: "livekit" | "elevenlabs";
+  transcriptStorageId?: Id<"_storage">;
+};
+
+type RuntimeLaunchContext = {
+  session: Doc<"speechCoachSessions">;
+  program: Doc<"homePrograms"> | null;
+  template: Doc<"speechCoachTemplates"> | null;
+} | null;
 
 export const createLiveSession = action({
   args: { sessionId: v.id("speechCoachSessions") },
-  handler: async (ctx, args) => {
+  handler: async (ctx, args): Promise<{
+    runtime: "livekit-agent";
+    roomName: string;
+    serverUrl: string;
+    tokenPath: string;
+    roomMetadata: string;
+  }> => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new ConvexError("Not authenticated");
     const authIdentifiers = Array.from(
@@ -19,18 +48,15 @@ export const createLiveSession = action({
       ),
     );
 
-    const launchContext = await ctx.runQuery(internal.speechCoach.getRuntimeLaunchContext, {
+    const launchContext: RuntimeLaunchContext = await ctx.runQuery(internal.speechCoach.getRuntimeLaunchContext, {
       sessionId: args.sessionId,
     });
     if (!launchContext) throw new ConvexError("Session not found");
     const { session, program, template } = launchContext;
 
-    // Verify requesting user is the caregiver or SLP for this session
     const isCaregiver = authIdentifiers.includes(session.caregiverUserId);
     if (!isCaregiver) throw new ConvexError("Not authorized");
 
-    // LIVEKIT_URL is the Convex env var (not NEXT_PUBLIC_LIVEKIT_URL).
-    // NEXT_PUBLIC_ vars are Next.js build-time only and don't exist in the Convex runtime.
     const livekitUrl = process.env.LIVEKIT_URL;
     if (!livekitUrl) throw new ConvexError("LIVEKIT_URL not configured");
 
@@ -84,10 +110,58 @@ export const createLiveSession = action({
       serverUrl: livekitUrl,
       tokenPath: "/api/speech-coach/livekit-token",
       roomMetadata: JSON.stringify({
+        sessionId: session._id,
         instructions,
         tools: resolvedConfig.tools.map((tool) => tool.key),
         targetItems,
       }),
     };
+  },
+});
+
+export const persistTranscript = action({
+  args: {
+    sessionId: v.id("speechCoachSessions"),
+    runtimeSecret: v.string(),
+    rawTranscript: v.string(),
+    rawTranscriptTurns: v.array(rawTranscriptTurnValidator),
+    capturedAt: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const expectedSecret = process.env.SPEECH_COACH_RUNTIME_SECRET;
+    if (!expectedSecret) throw new ConvexError("SPEECH_COACH_RUNTIME_SECRET not configured");
+    if (args.runtimeSecret !== expectedSecret) throw new ConvexError("Invalid runtime secret");
+
+    const session = await ctx.runQuery(internal.speechCoach.getSessionById, {
+      sessionId: args.sessionId,
+    }) as SpeechCoachSessionDoc | null;
+    if (!session) throw new ConvexError("Session not found");
+    if (session.agentId !== SPEECH_COACH_AGENT_ID) {
+      throw new ConvexError("Session does not belong to the speech coach runtime");
+    }
+    if ((session.runtimeProvider ?? DEFAULT_RUNTIME_PROVIDER) !== "livekit") {
+      throw new ConvexError("Transcript persistence is only supported for LiveKit sessions");
+    }
+
+    const transcriptBlob = new Blob([args.rawTranscript], { type: "text/plain" });
+    const storageId = await ctx.storage.store(transcriptBlob);
+
+    if (session.transcriptStorageId) {
+      await ctx.storage.delete(session.transcriptStorageId).catch(() => undefined);
+    }
+
+    await ctx.runMutation(internal.speechCoach.saveRuntimeTranscriptCapture, {
+      sessionId: args.sessionId,
+      storageId,
+      capturedAt: args.capturedAt,
+      rawTranscriptTurns: args.rawTranscriptTurns,
+      queueForAnalysis: true,
+    });
+
+    await ctx.scheduler.runAfter(0, internal.speechCoachActions.analyzeSession, {
+      sessionId: args.sessionId,
+    });
+
+    return { ok: true as const, storageId };
   },
 });

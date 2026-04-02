@@ -7,10 +7,12 @@ import { SpeechCoachPage } from "../speech-coach-page";
 
 const mockUseQuery = vi.fn();
 const mockRetryReview = vi.fn();
+const mockGetTranscriptText = vi.fn();
 
 vi.mock("convex/react", () => ({
   useQuery: (...args: unknown[]) => mockUseQuery(...args),
   useMutation: () => mockRetryReview,
+  useAction: () => mockGetTranscriptText,
   useConvexAuth: () => ({ isAuthenticated: true, isLoading: false }),
 }));
 
@@ -34,6 +36,7 @@ const REVIEW_FAILED_SESSION = {
   startedAt: 1700000000000,
   endedAt: 1700003600000,
   status: "review_failed",
+  transcriptStorageId: "storage_1",
   config: {
     targetSounds: ["/s/"],
     durationMinutes: 10,
@@ -48,6 +51,7 @@ const ANALYZING_SESSION = {
   startedAt: 1700000000001,
   endedAt: 1700003600001,
   status: "analyzing",
+  transcriptStorageId: "storage_2",
   config: {
     targetSounds: ["/r/"],
     durationMinutes: 10,
@@ -96,6 +100,7 @@ describe("SessionHistory", () => {
   });
 
   it("shows retry review when a session is review_failed but transcript exists", async () => {
+    mockGetTranscriptText.mockResolvedValue({ transcript: "Coach: Say sad\nChild: sad" });
     // Discriminate calls by args:
     // - getSessionHistory receives { patientId } → return session list
     // - getStandaloneHistory receives "skip" → return undefined (skipped)
@@ -116,9 +121,12 @@ describe("SessionHistory", () => {
 
     expect(await screen.findByText("Retry review")).toBeInTheDocument();
     expect(screen.getByText("Transcript available while review is retried.")).toBeInTheDocument();
+    expect(await screen.findByText(/Coach: Say sad/)).toBeInTheDocument();
+    expect(screen.getByText(/Child: sad/)).toBeInTheDocument();
   });
 
   it("shows in-progress message when a session is in analyzing state", async () => {
+    mockGetTranscriptText.mockResolvedValue({ transcript: "Coach: Say red\nChild: wed" });
     mockUseQuery.mockImplementation((_queryRef: unknown, args: unknown) => {
       if (args === "skip") return undefined;
       if (args && typeof args === "object" && "sessionId" in args) {
@@ -135,5 +143,35 @@ describe("SessionHistory", () => {
     expect(
       await screen.findByText("Transcript saved. AI review is in progress.")
     ).toBeInTheDocument();
+    expect(await screen.findByText(/Coach: Say red/)).toBeInTheDocument();
+    expect(screen.getByText(/Child: wed/)).toBeInTheDocument();
+  });
+
+  it("shows preparing copy before transcript storage exists", async () => {
+    mockUseQuery.mockImplementation((_queryRef: unknown, args: unknown) => {
+      if (args === "skip") return undefined;
+      if (args && typeof args === "object" && "sessionId" in args) {
+        return {
+          session: {
+            ...ANALYZING_SESSION,
+            transcriptStorageId: undefined,
+          },
+          progress: null,
+        };
+      }
+      return [
+        {
+          ...ANALYZING_SESSION,
+          transcriptStorageId: undefined,
+        },
+      ];
+    });
+
+    render(<SessionHistory patientId={patientId} />);
+
+    const button = await screen.findByRole("button");
+    fireEvent.click(button);
+
+    expect(await screen.findByText("Preparing transcript and review.")).toBeInTheDocument();
   });
 });

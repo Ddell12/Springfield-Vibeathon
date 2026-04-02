@@ -83,7 +83,7 @@ export function StandaloneSpeechCoachPage() {
       <div className="flex h-full flex-col items-center justify-center gap-6 p-8">
         <h2 className="font-headline text-2xl font-bold text-foreground">Reviewing the session...</h2>
         <p className="text-muted-foreground">
-          We saved the transcript and are preparing a therapist-friendly summary.
+          Preparing transcript and review.
         </p>
         <button
           type="button"

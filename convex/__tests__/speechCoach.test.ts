@@ -5,6 +5,16 @@ import { api, internal } from "../_generated/api";
 import schema from "../schema";
 import { createSpeechCoachFixture,suppressSchedulerErrors } from "./testHelpers";
 
+const mockAnthropicCreate = vi.fn();
+
+vi.mock("@anthropic-ai/sdk", () => ({
+  default: class MockAnthropic {
+    messages = {
+      create: mockAnthropicCreate,
+    };
+  },
+}));
+
 const modules = import.meta.glob("../**/*.*s");
 
 suppressSchedulerErrors();
@@ -24,6 +34,12 @@ const VALID_PATIENT = {
 };
 
 const today = new Date().toISOString().slice(0, 10);
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  vi.unstubAllEnvs();
+  vi.unstubAllGlobals();
+});
 
 async function setupSpeechCoachProgram(t: ReturnType<typeof convexTest>) {
   const slp = t.withIdentity(SLP_IDENTITY);
@@ -77,6 +93,7 @@ describe("speechCoach.createSession", () => {
     expect(session?.patientId).toBe(patientId);
     expect(session?.homeProgramId).toBe(programId);
     expect(session?.caregiverUserId).toBe("caregiver-789");
+    expect(session?.runtimeProvider).toBe("livekit");
     expect(session?.config.targetSounds).toEqual(["/s/"]);
   });
 
@@ -333,6 +350,7 @@ describe("speechCoachRuntimeActions.createLiveSession", () => {
     expect(result.roomName).toContain("speech-coach-");
     expect(result.tokenPath).toBe("/api/speech-coach/livekit-token");
     expect(result.runtime).toBe("livekit-agent");
+    expect(result.roomMetadata).toContain(String(sessionId));
   });
 
   it("authorizes a caregiver when the session stores tokenIdentifier", async () => {
@@ -366,6 +384,45 @@ describe("speechCoachRuntimeActions.createLiveSession", () => {
 
     const result = await caregiver.action(api.speechCoachRuntimeActions.createLiveSession, { sessionId });
     expect(result.runtime).toBe("livekit-agent");
+  });
+});
+
+describe("speechCoachRuntimeActions.persistTranscript", () => {
+  it("stores transcript capture, raw turns, and queues review for LiveKit sessions", async () => {
+    const t = convexTest(schema, modules);
+    vi.stubEnv("SPEECH_COACH_RUNTIME_SECRET", "runtime-secret");
+
+    const sessionId = await t.run((ctx) =>
+      ctx.db.insert("speechCoachSessions", {
+        caregiverUserId: "caregiver-789",
+        userId: "caregiver-789",
+        mode: "standalone",
+        agentId: "speech-coach",
+        runtimeProvider: "livekit",
+        status: "analyzing",
+        config: { targetSounds: ["/s/"], ageRange: "2-4", durationMinutes: 5 },
+      })
+    );
+
+    await t.action(api.speechCoachRuntimeActions.persistTranscript, {
+      sessionId,
+      runtimeSecret: "runtime-secret",
+      rawTranscript: "Coach: Say sad\nChild: sad",
+      rawTranscriptTurns: [
+        { speaker: "coach", text: "Say sad", timestampMs: 1000 },
+        { speaker: "child", text: "sad", timestampMs: 2000 },
+      ],
+      capturedAt: 3000,
+    });
+
+    const session = await t.run((ctx) => ctx.db.get(sessionId));
+    expect(session?.transcriptStorageId).toBeDefined();
+    expect(session?.transcriptCapturedAt).toBe(3000);
+    expect(session?.rawTranscriptTurns).toEqual([
+      { speaker: "coach", text: "Say sad", timestampMs: 1000 },
+      { speaker: "child", text: "sad", timestampMs: 2000 },
+    ]);
+    expect(session?.analysisAttempts).toBe(1);
   });
 });
 
@@ -501,6 +558,203 @@ describe("speechCoach markReviewFailed / retryReview", () => {
     const session = await t.run((ctx) => ctx.db.get(sessionId));
     expect(session?.status).toBe("analyzing");
     expect(session?.analysisAttempts).toBe(2);
+  });
+});
+
+describe("speechCoachActions.analyzeSession", () => {
+  it("loads stored transcript for LiveKit sessions instead of calling ElevenLabs", async () => {
+    const t = convexTest(schema, modules);
+    const fetchSpy = vi.fn();
+    vi.stubGlobal("fetch", fetchSpy);
+
+    vi.stubEnv("ANTHROPIC_API_KEY", "test-anthropic-key");
+    mockAnthropicCreate.mockResolvedValue({
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify({
+            transcriptTurns: [
+              {
+                speaker: "coach",
+                text: "Say sad",
+                retryCount: 0,
+                timestampMs: 1000,
+              },
+            ],
+            scoreCards: {
+              overall: 72,
+              productionAccuracy: 68,
+              consistency: 70,
+              cueingSupport: 55,
+              engagement: 80,
+            },
+            insights: {
+              strengths: ["Strong participation"],
+              patterns: ["Needed one reminder"],
+              notableCueingPatterns: ["Did best after direct model"],
+              recommendedNextTargets: ["/s/"],
+              homePracticeNotes: ["Practice five /s/ words"],
+            },
+            soundsAttempted: [
+              {
+                sound: "/s/",
+                wordsAttempted: 4,
+                approximateSuccessRate: "medium",
+                notes: "Improved with modeling",
+              },
+            ],
+            overallEngagement: "high",
+            recommendedNextFocus: ["/s/"],
+            summary: "Strong effort with improving /s/ productions.",
+          }),
+        },
+      ],
+    });
+
+    const transcriptStorageId = await t.run((ctx) =>
+      ctx.storage.store(new Blob([[
+        "Coach: Say sad.",
+        "Child: sad.",
+        "Coach: Say sad again and stretch the /s/ sound.",
+        "Child: sssad.",
+        "Coach: Nice correction. Let's do three more /s/ words together.",
+      ].join(" ")], { type: "text/plain" }))
+    );
+
+    const sessionId = await t.run((ctx) =>
+      ctx.db.insert("speechCoachSessions", {
+        caregiverUserId: "caregiver-789",
+        userId: "caregiver-789",
+        mode: "standalone",
+        agentId: "speech-coach",
+        runtimeProvider: "livekit",
+        status: "analyzing",
+        transcriptStorageId,
+        rawTranscriptTurns: [
+          { speaker: "coach", text: "Say sad", timestampMs: 1000 },
+          { speaker: "child", text: "sad", timestampMs: 2000 },
+        ],
+        config: { targetSounds: ["/s/"], ageRange: "2-4", durationMinutes: 5 },
+      })
+    );
+
+    await t.action(internal.speechCoachActions.analyzeSession, { sessionId });
+
+    expect(fetchSpy).not.toHaveBeenCalled();
+
+    const session = await t.run((ctx) => ctx.db.get(sessionId));
+    const progress = await t.run((ctx) =>
+      ctx.db.query("speechCoachProgress").withIndex("by_sessionId", (q) => q.eq("sessionId", sessionId)).first()
+    );
+    expect(session?.status).toBe("analyzed");
+    expect(progress?.summary).toContain("Strong effort");
+    expect(progress?.transcriptTurns).toHaveLength(1);
+  });
+
+  it("keeps the legacy ElevenLabs fetch path for explicit elevenlabs sessions", async () => {
+    const t = convexTest(schema, modules);
+    vi.stubEnv("ELEVENLABS_API_KEY", "test-elevenlabs-key");
+    vi.stubEnv("ANTHROPIC_API_KEY", "test-anthropic-key");
+    mockAnthropicCreate.mockResolvedValue({
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify({
+            transcriptTurns: [],
+            scoreCards: {
+              overall: 65,
+              productionAccuracy: 60,
+              consistency: 62,
+              cueingSupport: 55,
+              engagement: 82,
+            },
+            insights: {
+              strengths: ["Stayed engaged"],
+              patterns: ["Needed frequent repetition"],
+              notableCueingPatterns: ["Immediate model helped"],
+              recommendedNextTargets: ["/r/"],
+              homePracticeNotes: ["Keep sessions short"],
+            },
+            soundsAttempted: [
+              {
+                sound: "/r/",
+                wordsAttempted: 3,
+                approximateSuccessRate: "medium",
+                notes: "Improved gradually",
+              },
+            ],
+            overallEngagement: "medium",
+            recommendedNextFocus: ["/r/"],
+            summary: "Legacy summary",
+          }),
+        },
+      ],
+    });
+    const fetchSpy = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        transcript: [
+          { role: "assistant", text: "Say red" },
+          { role: "user", text: "wed" },
+          { role: "assistant", text: "Try red again" },
+        ],
+      }),
+    });
+    vi.stubGlobal("fetch", fetchSpy);
+
+    const sessionId = await t.run((ctx) =>
+      ctx.db.insert("speechCoachSessions", {
+        caregiverUserId: "caregiver-789",
+        userId: "caregiver-789",
+        mode: "standalone",
+        agentId: "speech-coach",
+        runtimeProvider: "elevenlabs",
+        conversationId: "conv_legacy_123",
+        status: "analyzing",
+        analysisAttempts: 1,
+        config: { targetSounds: ["/r/"], ageRange: "5-7", durationMinutes: 5 },
+      })
+    );
+
+    await t.action(internal.speechCoachActions.analyzeSession, { sessionId });
+
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+
+    const session = await t.run((ctx) => ctx.db.get(sessionId));
+    expect(session?.transcriptStorageId).toBeDefined();
+    expect(session?.status).toBe("analyzed");
+  });
+
+  it("returns stored transcript text for authorized users", async () => {
+    const t = convexTest(schema, modules);
+    const { programId } = await setupSpeechCoachProgram(t);
+    const caregiver = t.withIdentity(CAREGIVER_IDENTITY);
+
+    const sessionId = await caregiver.mutation(api.speechCoach.createSession, {
+      homeProgramId: programId,
+      config: { targetSounds: ["/s/"], ageRange: "2-4", durationMinutes: 5 },
+    });
+    const transcriptStorageId = await t.run((ctx) =>
+      ctx.storage.store(new Blob(["Coach: Say sad\nChild: sad"], { type: "text/plain" }))
+    );
+    await t.mutation(internal.speechCoach.saveRuntimeTranscriptCapture, {
+      sessionId,
+      storageId: transcriptStorageId,
+      capturedAt: 4000,
+      rawTranscriptTurns: [
+        { speaker: "coach", text: "Say sad", timestampMs: 1000 },
+        { speaker: "child", text: "sad", timestampMs: 2000 },
+      ],
+      queueForAnalysis: false,
+    });
+
+    const result = await caregiver.action(api.speechCoachActions.getTranscriptText, { sessionId });
+    expect(result.transcript).toBe("Coach: Say sad\nChild: sad");
+
+    const stranger = t.withIdentity({ subject: "stranger-000", issuer: "clerk" });
+    await expect(
+      stranger.action(api.speechCoachActions.getTranscriptText, { sessionId })
+    ).rejects.toThrow();
   });
 });
 
