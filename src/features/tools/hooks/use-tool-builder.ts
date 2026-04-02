@@ -5,6 +5,7 @@ import type { Id } from "@convex/_generated/dataModel";
 import { useMutation, useQuery } from "convex/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import type { ThemePreset } from "../lib/runtime/app-shell-types";
 import { templateRegistry } from "../lib/registry";
 
 export type WizardStep = 1 | 2 | 3 | 4;
@@ -17,6 +18,10 @@ interface BuilderState {
   instanceId: Id<"app_instances"> | null;
   publishedShareToken: string | null;
   isSaving: boolean;
+  appearance: {
+    themePreset: ThemePreset;
+    accentColor: string;
+  };
 }
 
 export function useToolBuilder(initialId?: Id<"app_instances"> | null) {
@@ -33,6 +38,10 @@ export function useToolBuilder(initialId?: Id<"app_instances"> | null) {
     instanceId: null,
     publishedShareToken: null,
     isSaving: false,
+    appearance: {
+      themePreset: "calm",
+      accentColor: "#00595c",
+    },
   });
 
   const seeded = useRef(false);
@@ -106,6 +115,13 @@ export function useToolBuilder(initialId?: Id<"app_instances"> | null) {
     [updateInstance]
   );
 
+  const updateAppearance = useCallback(
+    (appearance: BuilderState["appearance"]) => {
+      setState((s) => ({ ...s, appearance }));
+    },
+    []
+  );
+
   const saveAndAdvance = useCallback(async () => {
     const { patientId, templateType, config, instanceId } = state;
     if (!templateType || !config) return;
@@ -149,5 +165,5 @@ export function useToolBuilder(initialId?: Id<"app_instances"> | null) {
     }
   }, [state, publishInstance]);
 
-  return { ...state, selectPatient, selectTemplate, nextStep, prevStep, updateConfig, saveAndAdvance, publish };
+  return { ...state, selectPatient, selectTemplate, nextStep, prevStep, updateConfig, updateAppearance, saveAndAdvance, publish };
 }

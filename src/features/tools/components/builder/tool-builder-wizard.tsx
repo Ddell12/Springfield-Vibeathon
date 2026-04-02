@@ -13,6 +13,7 @@ import {
 import type { useToolBuilder } from "../../hooks/use-tool-builder";
 import { templateRegistry } from "../../lib/registry";
 import { AIAssistPanel } from "./ai-assist-panel";
+import { AppearanceControls } from "./appearance-controls";
 import { ConfigEditor } from "./config-editor";
 import { PreviewPanel } from "./preview-panel";
 import { PublishPanel } from "./publish-panel";
@@ -123,6 +124,12 @@ export function ToolBuilderWizard({ builder, patients }: ToolBuilderWizardProps)
         <>
           <div className="flex flex-1 overflow-hidden">
             <div className="w-1/2 overflow-y-auto border-r border-border flex flex-col">
+              <div className="p-4 border-b border-border shrink-0">
+                <AppearanceControls
+                  value={builder.appearance}
+                  onChange={builder.updateAppearance}
+                />
+              </div>
               <div className="p-4 border-b border-border shrink-0">
                 <AIAssistPanel
                   templateType={builder.templateType}
