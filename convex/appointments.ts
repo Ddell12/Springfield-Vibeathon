@@ -10,6 +10,8 @@ import {
   getAuthUserId,
 } from "./lib/auth";
 import { authedMutation, authedQuery, slpMutation } from "./lib/customFunctions";
+import { assertDeveloperGate } from "./lib/developerGate";
+import { buildDeveloperTestMetadata } from "./lib/testMetadata";
 
 export const getAvailableSlots = authedQuery({
   args: {
@@ -420,5 +422,47 @@ export const markNoShow = slpMutation({
     if (appointment.status !== "scheduled") throw new ConvexError("Not in scheduled status");
 
     await ctx.db.patch(args.appointmentId, { status: "no-show" });
+  },
+});
+
+export const startDeveloperTestCall = slpMutation({
+  args: {},
+  handler: async (ctx) => {
+    const identity = await assertDeveloperGate(ctx);
+
+    // Create a minimal synthetic patient for the test call
+    const patientId = await ctx.db.insert("patients", {
+      slpUserId: ctx.slpUserId,
+      firstName: "Test",
+      lastName: "Call",
+      dateOfBirth: "2020-01-01",
+      diagnosis: "articulation",
+      status: "active",
+      notes: "Synthetic developer teletherapy patient",
+      testMetadata: buildDeveloperTestMetadata(identity.subject),
+    });
+
+    const testMetadata = {
+      source: "developer-shortcut" as const,
+      createdByUserId: identity.subject,
+      expiresAt: Date.now() + 30 * 24 * 60 * 60 * 1000,
+    };
+
+    const scheduledAt = Date.now() + 60_000;
+    const appointmentId = await ctx.db.insert("appointments", {
+      slpId: ctx.slpUserId,
+      patientId,
+      scheduledAt,
+      duration: 30,
+      status: "scheduled",
+      joinLink: "",
+      testMetadata,
+    });
+
+    await ctx.db.patch(appointmentId, {
+      joinLink: `/sessions/${appointmentId}/call`,
+    });
+
+    return appointmentId;
   },
 });

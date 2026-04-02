@@ -1,6 +1,7 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 import { speechCoachToolKeyValidator, speechCoachSkillKeyValidator, speechCoachTemplateValidator } from "./lib/speechCoachValidators";
+import { testMetadataValidator } from "./lib/testMetadata";
 
 export default defineSchema({
   sessions: defineTable({
@@ -201,6 +202,7 @@ export default defineSchema({
     insuranceMemberId: v.optional(v.string()),
     insuranceGroupNumber: v.optional(v.string()),
     insurancePhone: v.optional(v.string()),
+    testMetadata: v.optional(testMetadataValidator),
   }).index("by_slpUserId", ["slpUserId"])
     .index("by_slpUserId_status", ["slpUserId", "status"]),
 
@@ -359,6 +361,7 @@ export default defineSchema({
     // Group session fields (CPT 92508)
     groupSessionId: v.optional(v.string()),
     groupPatientIds: v.optional(v.array(v.id("patients"))),
+    testMetadata: v.optional(testMetadataValidator),
   })
     .index("by_patientId_sessionDate", ["patientId", "sessionDate"])
     .index("by_slpUserId", ["slpUserId"])
@@ -394,6 +397,7 @@ export default defineSchema({
     joinLink: v.string(),
     notes: v.optional(v.string()),
     timezone: v.optional(v.string()),
+    testMetadata: v.optional(testMetadataValidator),
   })
     .index("by_slpId", ["slpId"])
     .index("by_patientId", ["patientId"])
@@ -419,6 +423,7 @@ export default defineSchema({
       v.literal("complete"),
       v.literal("failed"),
     ),
+    testMetadata: v.optional(testMetadataValidator),
   })
     .index("by_appointmentId", ["appointmentId"])
     .index("by_slpId", ["slpId"])
@@ -706,6 +711,7 @@ export default defineSchema({
     endedAt: v.optional(v.number()),
     transcriptStorageId: v.optional(v.id("_storage")),
     errorMessage: v.optional(v.string()),
+    testMetadata: v.optional(testMetadataValidator),
   })
     .index("by_patientId_startedAt", ["patientId", "startedAt"])
     .index("by_homeProgramId", ["homeProgramId"])
@@ -915,6 +921,7 @@ export default defineSchema({
     ),
     billedAt: v.optional(v.number()),
     notes: v.optional(v.string()),
+    testMetadata: v.optional(testMetadataValidator),
   })
     .index("by_patientId", ["patientId"])
     .index("by_slpUserId", ["slpUserId"])
