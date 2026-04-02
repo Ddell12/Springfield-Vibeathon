@@ -281,7 +281,7 @@ describe("speechCoach review states", () => {
       })
     );
 
-    await t.mutation(internal.speechCoach.saveProgress, {
+    await t.mutation(internal.speechCoach_lifecycle.saveProgress, {
       sessionId,
       caregiverUserId: "caregiver-789",
       userId: undefined,
@@ -528,7 +528,7 @@ describe("speechCoach markReviewFailed / retryReview", () => {
       })
     );
 
-    await t.mutation(internal.speechCoach.markReviewFailed, {
+    await t.mutation(internal.speechCoach_lifecycle.markReviewFailed, {
       sessionId,
       errorMessage: "Review timed out after 90 seconds",
     });
@@ -737,7 +737,7 @@ describe("speechCoachActions.analyzeSession", () => {
     const transcriptStorageId = await t.run((ctx) =>
       ctx.storage.store(new Blob(["Coach: Say sad\nChild: sad"], { type: "text/plain" }))
     );
-    await t.mutation(internal.speechCoach.saveRuntimeTranscriptCapture, {
+    await t.mutation(internal.speechCoach_lifecycle.saveRuntimeTranscriptCapture, {
       sessionId,
       storageId: transcriptStorageId,
       capturedAt: 4000,
