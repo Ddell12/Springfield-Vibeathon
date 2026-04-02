@@ -14,10 +14,15 @@ const agent = defineAgent({
   entry: async (ctx: JobContext) => {
     await ctx.connect();
 
-    let metadata: { instructions?: string; tools?: string[] } = {};
+    type RoomMetadata = {
+      instructions?: string;
+      tools?: string[];
+      targetItems?: Array<{ id: string; label: string; visualUrl?: string }>;
+    };
+    let metadata: RoomMetadata = {};
     try {
       if (ctx.room.metadata) {
-        metadata = JSON.parse(ctx.room.metadata) as { instructions?: string; tools?: string[] };
+        metadata = JSON.parse(ctx.room.metadata) as RoomMetadata;
       }
     } catch {
       // Use defaults if metadata is malformed
@@ -42,6 +47,7 @@ const agent = defineAgent({
           metadata.instructions ??
           "You are a helpful speech coach. Guide the child through articulation practice with patience and encouragement.",
         tools: metadata.tools ?? [],
+        targetItems: metadata.targetItems,
       }),
     });
   },

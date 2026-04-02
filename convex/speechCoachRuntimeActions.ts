@@ -24,11 +24,18 @@ export const createLiveSession = action({
     const livekitUrl = process.env.LIVEKIT_URL;
     if (!livekitUrl) throw new ConvexError("LIVEKIT_URL not configured");
 
+    // Map targetSounds to targetItems so the LiveKit agent can reference them.
+    const targetItems = (session.config?.targetSounds ?? []).map((sound: string) => ({
+      id: sound,
+      label: sound,
+    }));
+
     return {
       runtime: "livekit-agent" as const,
       roomName: `speech-coach-${args.sessionId}`,
       serverUrl: livekitUrl,
       tokenPath: "/api/speech-coach/livekit-token",
+      targetItems,
     };
   },
 });

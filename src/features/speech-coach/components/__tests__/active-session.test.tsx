@@ -13,7 +13,7 @@ vi.mock("@livekit/components-react", () => ({
 vi.mock("sonner", () => ({ toast: { error: vi.fn() } }));
 
 describe("ActiveSession", () => {
-  it("shows the active target card and green check for a correct attempt", () => {
+  it("shows the target card with listen prompt before the session connects", () => {
     render(
       <ActiveSession
         runtimeSession={{
@@ -31,7 +31,9 @@ describe("ActiveSession", () => {
     );
 
     expect(screen.getByText("Current practice")).toBeInTheDocument();
-    expect(screen.queryByText("Nice job")).not.toBeNull();
+    expect(screen.getByText("Listen carefully")).toBeInTheDocument();
+    // correct-attempt feedback only appears after a runtime event — not on initial render
+    expect(screen.queryByLabelText("correct-attempt")).toBeNull();
   });
 });
 

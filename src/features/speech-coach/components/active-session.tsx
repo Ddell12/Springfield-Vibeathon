@@ -1,6 +1,7 @@
 "use client";
 
 import { LiveKitRoom, RoomAudioRenderer } from "@livekit/components-react";
+import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -74,16 +75,12 @@ function ActiveSessionInner({
   // isConnected drives JSX — wasConnected.current is a ref and won't re-render.
   const [isConnected, setIsConnected] = useState(false);
 
-  // Visual state for the target card — updated by runtime events in future tasks.
-  // Starts in "nice_job" state so the encouragement text is visible from the first render;
-  // runtime data-channel messages will transition to listen → your_turn as the session runs.
+  // TODO: wire to LiveKit data-channel events for real-time target state updates
   const [visual, setVisual] = useState<SessionVisualState>({
     targetLabel: sessionConfig?.targetSounds?.[0] ?? "Practice sound",
-    promptState: "nice_job",
+    promptState: "listen",
     totalCorrect: 0,
   });
-  // setVisual is kept for future data-channel updates; suppress unused-var lint.
-  void setVisual;
 
   // Fetch LiveKit token from the speech coach token route.
   useEffect(() => {
@@ -178,9 +175,11 @@ function ActiveSessionInner({
               )}
             >
               {visual.targetVisualUrl ? (
-                <img
+                <Image
                   src={visual.targetVisualUrl}
                   alt={visual.targetLabel}
+                  width={192}
+                  height={192}
                   className="h-full w-full object-cover"
                 />
               ) : (
@@ -200,7 +199,10 @@ function ActiveSessionInner({
               <div aria-label="correct-attempt">Nice job</div>
             ) : null}
             {getCelebrationMode({ totalCorrect: visual.totalCorrect }) === "milestone" ? (
-              <div aria-hidden="true">Fireworks</div>
+              <>
+                {/* TODO: replace with animation component */}
+                <div aria-hidden="true">Fireworks</div>
+              </>
             ) : null}
           </div>
         </div>
