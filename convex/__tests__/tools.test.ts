@@ -372,6 +372,72 @@ describe("getEventSummaryByPatient", () => {
   });
 });
 
+describe("tools.get auth boundary", () => {
+  it("get returns null for unauthenticated caller on draft", async () => {
+    const t = convexTest(schema, modules);
+    const owner = t.withIdentity(SLP_IDENTITY);
+    const { patientId } = await createPatient(owner);
+    const id = await owner.mutation(api.tools.create, {
+      templateType: "aac_board",
+      title: "Private Draft",
+      patientId,
+      configJson: SAMPLE_CONFIG,
+    });
+
+    // Unauthenticated — same DB, no identity
+    const result = await t.query(api.tools.get, { id });
+    expect(result).toBeNull();
+  });
+
+  it("get returns null for authenticated non-owner on draft", async () => {
+    const t = convexTest(schema, modules);
+    const owner = t.withIdentity(SLP_IDENTITY);
+    const { patientId } = await createPatient(owner);
+    const id = await owner.mutation(api.tools.create, {
+      templateType: "aac_board",
+      title: "Private Draft",
+      patientId,
+      configJson: SAMPLE_CONFIG,
+    });
+
+    const other = t.withIdentity({ subject: "other-slp-999", issuer: "clerk" });
+    const result = await other.query(api.tools.get, { id });
+    expect(result).toBeNull();
+  });
+
+  it("get returns instance for owner on draft", async () => {
+    const t = convexTest(schema, modules).withIdentity(SLP_IDENTITY);
+    const { patientId } = await createPatient(t);
+    const id = await t.mutation(api.tools.create, {
+      templateType: "aac_board",
+      title: "My Draft",
+      patientId,
+      configJson: SAMPLE_CONFIG,
+    });
+    const result = await t.query(api.tools.get, { id });
+    expect(result).not.toBeNull();
+    expect(result?.title).toBe("My Draft");
+  });
+
+  it("get returns published instance for unauthenticated caller", async () => {
+    const t = convexTest(schema, modules);
+    const owner = t.withIdentity(SLP_IDENTITY);
+    const { patientId } = await createPatient(owner);
+    const id = await owner.mutation(api.tools.create, {
+      templateType: "aac_board",
+      title: "Public App",
+      patientId,
+      configJson: SAMPLE_CONFIG,
+    });
+    await owner.mutation(api.tools.publish, { id });
+
+    // Unauthenticated — same DB, no identity, published should be accessible
+    const result = await t.query(api.tools.get, { id });
+    expect(result).not.toBeNull();
+    expect(result?.status).toBe("published");
+  });
+});
+
 describe("listPublishedByPatient", () => {
   it("returns only published apps with a shareToken", async () => {
     const t = convexTest(schema, modules).withIdentity(SLP_IDENTITY);

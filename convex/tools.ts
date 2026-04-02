@@ -86,7 +86,14 @@ export const publish = mutation({
 
 export const get = query({
   args: { id: v.id("app_instances") },
-  handler: async (ctx, args) => ctx.db.get(args.id),
+  handler: async (ctx, args) => {
+    const instance = await ctx.db.get(args.id);
+    if (!instance) return null;
+    if (instance.status === "published") return instance;
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity || instance.slpUserId !== identity.subject) return null;
+    return instance;
+  },
 });
 
 export const getByShareToken = query({
