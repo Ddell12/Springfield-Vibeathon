@@ -57,6 +57,10 @@ export function useToolBuilder(initialId?: Id<"app_instances"> | null) {
         instanceId: existingInstance._id,
         publishedShareToken: existingInstance.shareToken ?? null,
         isSaving: false,
+        appearance: {
+          themePreset: "calm",
+          accentColor: "#00595c",
+        },
       });
     }
   }, [existingInstance]);
