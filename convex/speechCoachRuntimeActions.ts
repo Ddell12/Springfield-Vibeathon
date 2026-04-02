@@ -25,7 +25,8 @@ export const createLiveSession = action({
     if (!livekitUrl) throw new ConvexError("LIVEKIT_URL not configured");
 
     // Map targetSounds to targetItems so the LiveKit agent can reference them.
-    const targetItems = (session.config?.targetSounds ?? []).map((sound: string) => ({
+    const targetSounds: string[] = session.config?.targetSounds ?? [];
+    const targetItems: Array<{ id: string; label: string }> = targetSounds.map((sound) => ({
       id: sound,
       label: sound,
     }));
