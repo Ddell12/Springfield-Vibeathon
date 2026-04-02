@@ -39,8 +39,8 @@ export function SessionOverlay({
 
   return (
     <>
-      <button onClick={() => setOpen(true)} aria-label="Session controls"
-        className="fixed bottom-6 right-6 z-50 w-12 h-12 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center hover:bg-primary/90 transition-colors">
+      <button type="button" onClick={() => setOpen(true)} aria-label="Session controls"
+        className="fixed bottom-6 right-6 z-50 w-12 h-12 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center hover:bg-primary/90 transition-colors focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2">
         <ClipboardList className="w-5 h-5" />
       </button>
 
