@@ -11,6 +11,8 @@ vi.mock("@convex/_generated/api", () => ({
       create: "tools:create",
       update: "tools:update",
       publish: "tools:publish",
+      unpublish: "tools:unpublish",
+      archive: "tools:archive",
       get: "tools:get",
     },
   },
@@ -43,9 +45,9 @@ describe("useToolBuilder", () => {
     expect(result.current.step).toBe(1);
   });
 
-  it("stores patientId after selectPatient", () => {
+  it("stores patientId after selectPatient", async () => {
     const { result } = renderHook(() => useToolBuilder());
-    act(() => result.current.selectPatient("patient-123" as never));
+    await act(async () => { await result.current.selectPatient("patient-123" as never); });
     expect(result.current.patientId).toBe("patient-123");
   });
 
