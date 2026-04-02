@@ -650,6 +650,7 @@ export default defineSchema({
         slpNotes: v.optional(v.string()),
       })),
     })),
+    testMetadata: v.optional(testMetadataValidator),
   })
     .index("by_patientId", ["patientId"])
     .index("by_patientId_status", ["patientId", "status"]),

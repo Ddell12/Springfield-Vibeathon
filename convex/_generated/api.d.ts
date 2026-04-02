@@ -53,6 +53,7 @@ import type * as lib_progress from "../lib/progress.js";
 import type * as lib_session_states from "../lib/session_states.js";
 import type * as lib_speechCoachValidators from "../lib/speechCoachValidators.js";
 import type * as lib_template_schema_descriptions from "../lib/template_schema_descriptions.js";
+import type * as lib_testFixtures from "../lib/testFixtures.js";
 import type * as lib_testMetadata from "../lib/testMetadata.js";
 import type * as meetingRecords from "../meetingRecords.js";
 import type * as messages from "../messages.js";
@@ -140,6 +141,7 @@ declare const fullApi: ApiFromModules<{
   "lib/session_states": typeof lib_session_states;
   "lib/speechCoachValidators": typeof lib_speechCoachValidators;
   "lib/template_schema_descriptions": typeof lib_template_schema_descriptions;
+  "lib/testFixtures": typeof lib_testFixtures;
   "lib/testMetadata": typeof lib_testMetadata;
   meetingRecords: typeof meetingRecords;
   messages: typeof messages;

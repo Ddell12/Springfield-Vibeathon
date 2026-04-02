@@ -47,6 +47,7 @@ export const seedTestCaregiverLink = internalMutation({
     await createSpeechCoachProgramFixture(ctx, {
       patientId,
       slpUserId: args.slpUserId,
+      testMetadata,
     });
 
     return { status: "seeded", patientId };

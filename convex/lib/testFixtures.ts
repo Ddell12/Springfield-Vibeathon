@@ -47,11 +47,13 @@ export async function createSpeechCoachProgramFixture(
   args: {
     patientId: Id<"patients">;
     slpUserId: string;
+    testMetadata?: TestMetadata;
   },
 ): Promise<Id<"homePrograms">> {
   return await ctx.db.insert("homePrograms", {
     patientId: args.patientId,
     slpUserId: args.slpUserId,
+    testMetadata: args.testMetadata,
     title: "Speech Coach — /s/ sounds",
     instructions: "Practice /s/ sounds with the speech coach.",
     frequency: "daily",
