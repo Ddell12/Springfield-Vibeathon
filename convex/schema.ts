@@ -69,9 +69,9 @@ export default defineSchema({
     .index("by_featured_order", ["featured", "featuredOrder"]),
 
   appState: defineTable({
-    appId: v.string(),
+    appId: v.id("app_instances"), // Scoped to a valid app instance — closes free-string abuse surface
     key: v.string(),
-    value: v.any(), // Generic KV store — value shape varies by key, validated in application code
+    value: v.any(), // Intentional: sandbox KV, value shape varies by key
     updatedAt: v.number(),
   }).index("by_appKey", ["appId", "key"]),
 
