@@ -15,7 +15,7 @@ export const childProfileSchema = z.object({
 
 export const generateConfigRequestSchema = z.object({
   templateType: z.string(),
-  description: z.string().min(1),
+  description: z.string().min(1).max(1000),
   childProfile: childProfileSchema,
   generationProfile: generationProfileSchema.optional(),
 });
