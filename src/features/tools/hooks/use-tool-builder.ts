@@ -18,6 +18,7 @@ interface BuilderState {
   instanceId: Id<"app_instances"> | null;
   publishedShareToken: string | null;
   isSaving: boolean;
+  isPublishOpen: boolean;
   appearance: {
     themePreset: ThemePreset;
     accentColor: string;
@@ -38,6 +39,7 @@ export function useToolBuilder(initialId?: Id<"app_instances"> | null) {
     instanceId: null,
     publishedShareToken: null,
     isSaving: false,
+    isPublishOpen: false,
     appearance: {
       themePreset: "calm",
       accentColor: "#00595c",
@@ -58,6 +60,7 @@ export function useToolBuilder(initialId?: Id<"app_instances"> | null) {
           instanceId: existingInstance._id,
           publishedShareToken: existingInstance.shareToken ?? null,
           isSaving: false,
+          isPublishOpen: false,
           appearance: {
             themePreset: "calm",
             accentColor: "#00595c",
@@ -96,12 +99,20 @@ export function useToolBuilder(initialId?: Id<"app_instances"> | null) {
   }, []);
 
   const nextStep = useCallback(
-    () => setState((s) => ({ ...s, step: Math.min(4, s.step + 1) as WizardStep })),
+    () => setState((s) => {
+      const next = Math.min(4, s.step + 1) as WizardStep;
+      return { ...s, step: next, isPublishOpen: next === 4 ? true : s.isPublishOpen };
+    }),
     []
   );
 
   const prevStep = useCallback(
     () => setState((s) => ({ ...s, step: Math.max(1, s.step - 1) as WizardStep })),
+    []
+  );
+
+  const closePublish = useCallback(
+    () => setState((s) => ({ ...s, isPublishOpen: false })),
     []
   );
 
@@ -185,5 +196,5 @@ export function useToolBuilder(initialId?: Id<"app_instances"> | null) {
     }
   }, [state, archiveInstance]);
 
-  return { ...state, selectPatient, selectTemplate, nextStep, prevStep, updateConfig, updateAppearance, saveAndAdvance, publish, unpublish };
+  return { ...state, selectPatient, selectTemplate, nextStep, prevStep, closePublish, updateConfig, updateAppearance, saveAndAdvance, publish, unpublish };
 }

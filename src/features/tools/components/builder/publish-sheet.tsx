@@ -120,12 +120,6 @@ export function PublishSheet({
                     ))}
                   </SelectContent>
                 </Select>
-                {/* Accessible patient list for assistive tech and testing */}
-                <ul className="sr-only" aria-label="Caseload patients">
-                  {patients.map((p) => (
-                    <li key={p._id}>{p.firstName} {p.lastName}</li>
-                  ))}
-                </ul>
               </div>
 
               {/* Unpublish */}

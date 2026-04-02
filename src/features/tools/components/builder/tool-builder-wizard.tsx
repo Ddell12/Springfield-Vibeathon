@@ -17,7 +17,6 @@ import { AppearanceControls } from "./appearance-controls";
 import { ConfigEditor } from "./config-editor";
 import { GoalTagsEditor } from "./goal-tags-editor";
 import { PreviewPanel } from "./preview-panel";
-import { PublishPanel } from "./publish-panel";
 import { PublishSheet } from "./publish-sheet";
 import { TemplatePicker } from "./template-picker";
 
@@ -181,26 +180,17 @@ export function ToolBuilderWizard({ builder, patients }: ToolBuilderWizardProps)
       )}
 
       {/* Step 4: Publish */}
-      {builder.step === 4 && (
-        <>
-          <PublishPanel
-            isSaving={builder.isSaving}
-            publishedShareToken={builder.publishedShareToken}
-            onPublish={builder.publish}
-          />
-          <PublishSheet
-            open={builder.step === 4}
-            onClose={builder.prevStep}
-            isSaving={builder.isSaving}
-            publishedShareToken={builder.publishedShareToken}
-            instanceId={builder.instanceId}
-            patientId={builder.patientId}
-            onSelectPatient={builder.selectPatient}
-            onPublish={builder.publish}
-            onUnpublish={builder.unpublish}
-          />
-        </>
-      )}
+      <PublishSheet
+        open={builder.isPublishOpen}
+        onClose={builder.closePublish}
+        isSaving={builder.isSaving}
+        publishedShareToken={builder.publishedShareToken}
+        instanceId={builder.instanceId}
+        patientId={builder.patientId}
+        onSelectPatient={builder.selectPatient}
+        onPublish={builder.publish}
+        onUnpublish={builder.unpublish}
+      />
     </div>
   );
 }
