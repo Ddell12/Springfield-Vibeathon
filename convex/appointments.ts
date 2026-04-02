@@ -442,12 +442,6 @@ export const startDeveloperTestCall = slpMutation({
       testMetadata: buildDeveloperTestMetadata(identity.subject),
     });
 
-    const testMetadata = {
-      source: "developer-shortcut" as const,
-      createdByUserId: identity.subject,
-      expiresAt: Date.now() + 30 * 24 * 60 * 60 * 1000,
-    };
-
     const scheduledAt = Date.now() + 60_000;
     const appointmentId = await ctx.db.insert("appointments", {
       slpId: ctx.slpUserId,
@@ -456,7 +450,7 @@ export const startDeveloperTestCall = slpMutation({
       duration: 30,
       status: "scheduled",
       joinLink: "",
-      testMetadata,
+      testMetadata: buildDeveloperTestMetadata(identity.subject),
     });
 
     await ctx.db.patch(appointmentId, {

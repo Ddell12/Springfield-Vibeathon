@@ -9,7 +9,7 @@ export function parseAllowlist(raw: string | undefined) {
   );
 }
 
-export async function assertDeveloperGate(ctx: { auth: any }) {
+export async function assertDeveloperGate(ctx: { auth: { getUserIdentity(): Promise<{ email?: string; subject?: string } | null> } }) {
   const identity = await ctx.auth.getUserIdentity();
   const email = identity?.email?.toLowerCase();
   const allowlist = parseAllowlist(process.env.DEVELOPER_ALLOWLIST);

@@ -29,6 +29,8 @@ describe("appointments developer gate", () => {
 
     const appointmentId = await t.mutation(api.appointments.startDeveloperTestCall, {});
     const appointment = await t.run((ctx) => ctx.db.get(appointmentId));
+    const patient = appointment ? await t.run((ctx) => ctx.db.get(appointment.patientId)) : null;
+    expect(patient?.testMetadata?.source).toBe("developer-shortcut");
 
     expect(appointment?.testMetadata?.source).toBe("developer-shortcut");
     expect(appointment?.testMetadata?.createdByUserId).toBe("slp-user-123");
