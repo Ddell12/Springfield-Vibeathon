@@ -13,8 +13,8 @@ bridges/
 │   │   │   ├── platform/page.tsx         # Platform → renders features/landing/platform-page
 │   │   │   ├── pricing/page.tsx          # Pricing → renders features/landing/pricing-page
 │   │   │   ├── meet-vocali/page.tsx      # Meet Vocali → renders features/landing/meet-vocali-page
-│   │   │   └── solutions/page.tsx        # Solutions → renders features/landing components
-│   │   │   # NOTE: all (marketing) page.tsx files are thin wrappers (< 20 lines)
+│   │   │   └── solutions/page.tsx        # Solutions (inline JSX — not yet extracted)
+│   │   │   # NOTE: platform, pricing, meet-vocali page.tsx files are thin wrappers (< 20 lines)
 │   │   │   # that render feature-owned components from src/features/landing/components/
 │   │   │
 │   │   ├── (app)/                        # Authenticated app shell
@@ -30,15 +30,18 @@ bridges/
 │   │   │   │   ├── layout.tsx            # Enforces therapist-only access via requireSlpUser()
 │   │   │   │   └── page.tsx
 │   │   │   ├── sessions/
-│   │   │   ├── goals/
-│   │   │   ├── evaluations/
-│   │   │   ├── plan-of-care/
+│   │   │   ├── flashcards/
+│   │   │   ├── library/
 │   │   │   ├── speech-coach/
 │   │   │   ├── family/                   # Caregiver-facing routes
+│   │   │   ├── billing/                  # requireSlpUser() guarded at page level
 │   │   │   └── settings/
 │   │   │
 │   │   ├── api/
-│   │   │   └── generate/route.ts         # SSE streaming endpoint (code generation)
+│   │   │   ├── generate-{type}/route.ts  # SSE generation endpoints (soap, report, evaluation…)
+│   │   │   ├── tools/                    # Tool config generation
+│   │   │   ├── speech-coach/             # LiveKit token endpoint
+│   │   │   └── livekit/                  # LiveKit webhook/token helpers
 │   │   ├── error.tsx                     # Root error boundary
 │   │   └── globals.css                   # Tailwind v4 @theme tokens
 │   │
@@ -59,7 +62,6 @@ bridges/
 │   │   │   ├── app-header.tsx
 │   │   │   ├── header.tsx
 │   │   │   ├── marketing-header.tsx
-│   │   │   ├── loading-skeleton.tsx
 │   │   │   └── share-dialog.tsx
 │   │   ├── hooks/
 │   │   └── lib/
@@ -130,7 +132,7 @@ bridges/
 
 ## Route Groups
 
-- **`(marketing)/`** — Public-facing pages. All `page.tsx` files are thin wrappers that render feature-owned components from `src/features/landing/components/`. No auth required.
+- **`(marketing)/`** — Public-facing pages. `platform`, `pricing`, and `meet-vocali` page.tsx files are thin wrappers that render feature-owned components from `src/features/landing/components/`. No auth required.
 - **`(app)/`** — Authenticated app shell with sidebar. The `builder/`, `patients/`, and `tools/` subtrees each have a `layout.tsx` that calls `requireSlpUser()` before rendering, enforcing therapist-only access at the route level.
 
 ## Shared Boundary Rules
