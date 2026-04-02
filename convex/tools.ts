@@ -14,6 +14,7 @@ export const create = mutation({
     title: v.string(),
     patientId: v.optional(v.id("patients")),
     configJson: v.string(),
+    originalDescription: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
@@ -26,6 +27,7 @@ export const create = mutation({
       ...(args.patientId !== undefined ? { patientId: args.patientId } : {}),
       slpUserId: identity.subject,
       configJson: args.configJson,
+      originalDescription: args.originalDescription,
       status: "draft",
       version: 1,
     });
