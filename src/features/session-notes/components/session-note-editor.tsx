@@ -7,7 +7,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { cn } from "@/core/utils";
-import { usePatient } from "@/features/patients/hooks/use-patients";
+import { usePatient } from "@/shared/clinical";
 import { MaterialIcon } from "@/shared/components/material-icon";
 import {
   Accordion,

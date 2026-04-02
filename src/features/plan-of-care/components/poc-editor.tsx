@@ -6,8 +6,7 @@ import { startTransition, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { ICD10Picker } from "@/features/evaluations/components/icd10-picker";
-import { useActiveGoals } from "@/features/goals/hooks/use-goals";
-import { usePatient } from "@/features/patients/hooks/use-patients";
+import { useActiveGoals, usePatient } from "@/shared/clinical";
 import { MaterialIcon } from "@/shared/components/material-icon";
 import { Button } from "@/shared/components/ui/button";
 import { Checkbox } from "@/shared/components/ui/checkbox";

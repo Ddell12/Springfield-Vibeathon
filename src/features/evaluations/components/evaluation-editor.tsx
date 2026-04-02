@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { startTransition, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
-import { usePatient } from "@/features/patients/hooks/use-patients";
+import { usePatient } from "@/shared/clinical";
 import { MaterialIcon } from "@/shared/components/material-icon";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";

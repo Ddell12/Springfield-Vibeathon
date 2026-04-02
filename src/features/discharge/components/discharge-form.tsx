@@ -10,8 +10,9 @@ import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
 import { Textarea } from "@/shared/components/ui/textarea";
 
+import { useActiveGoals } from "@/shared/clinical";
+
 import type { Id } from "../../../../convex/_generated/dataModel";
-import { useActiveGoals } from "../../goals/hooks/use-goals";
 import {
   useCreateDischargeSummary,
   useDischargeGeneration,

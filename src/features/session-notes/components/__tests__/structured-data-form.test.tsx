@@ -34,12 +34,9 @@ vi.mock("@/shared/components/material-icon", () => ({
   ),
 }));
 
-vi.mock("@/features/goals/hooks/use-goals", () => ({
-  useActiveGoals: vi.fn(() => []),
-}));
-
 vi.mock("@/shared/clinical", () => ({
   formatAge: vi.fn((dob: string) => "5y 2m"),
+  useActiveGoals: vi.fn(() => []),
 }));
 
 vi.mock("../target-entry", () => ({
