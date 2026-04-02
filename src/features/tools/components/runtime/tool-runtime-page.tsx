@@ -3,6 +3,7 @@
 import { api } from "@convex/_generated/api";
 import { useMutation } from "convex/react";
 
+import { DEFAULT_APP_SHELL } from "../../lib/runtime/app-shell-types";
 import { templateRegistry } from "../../lib/registry";
 import { RuntimeShell } from "../../lib/runtime/runtime-shell";
 import { useVoiceController } from "../../lib/runtime/runtime-voice-controller";
@@ -43,7 +44,7 @@ export function ToolRuntimePage({ shareToken, templateType, configJson }: ToolRu
   };
 
   return (
-    <RuntimeShell mode="published" onExit={handleExit}>
+    <RuntimeShell mode="published" shell={DEFAULT_APP_SHELL} title="App" onExit={handleExit}>
       <Runtime
         config={config}
         mode="published"
