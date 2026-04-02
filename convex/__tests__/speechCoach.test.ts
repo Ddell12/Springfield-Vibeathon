@@ -371,6 +371,53 @@ describe("speechCoach queries", () => {
   });
 });
 
+// ── review failure / retry states ───────────────────────────────────────────
+
+describe("speechCoach markReviewFailed / retryReview", () => {
+  it("markReviewFailed stores a retryable review failure instead of leaving analyzing forever", async () => {
+    const t = convexTest(schema, modules);
+    const sessionId = await t.run((ctx) =>
+      ctx.db.insert("speechCoachSessions", {
+        caregiverUserId: "caregiver-789",
+        agentId: "speech-coach",
+        status: "analyzing",
+        config: { targetSounds: ["/s/"], ageRange: "2-4", durationMinutes: 5 },
+      })
+    );
+
+    await t.mutation(internal.speechCoach.markReviewFailed, {
+      sessionId,
+      errorMessage: "Review timed out after 90 seconds",
+    });
+
+    const session = await t.run((ctx) => ctx.db.get(sessionId));
+    expect(session?.status).toBe("review_failed");
+    expect(session?.analysisErrorMessage).toContain("90 seconds");
+  });
+
+  it("retryReview moves review_failed back to analyzing and increments attempts", async () => {
+    const t = convexTest(schema, modules);
+    const { programId } = await setupSpeechCoachProgram(t);
+    const caregiver = t.withIdentity(CAREGIVER_IDENTITY);
+    const sessionId = await t.run((ctx) =>
+      ctx.db.insert("speechCoachSessions", {
+        homeProgramId: programId,
+        caregiverUserId: "caregiver-789",
+        agentId: "speech-coach",
+        status: "review_failed",
+        analysisAttempts: 1,
+        config: { targetSounds: ["/s/"], ageRange: "2-4", durationMinutes: 5 },
+      })
+    );
+
+    await caregiver.mutation(api.speechCoach.retryReview, { sessionId });
+
+    const session = await t.run((ctx) => ctx.db.get(sessionId));
+    expect(session?.status).toBe("analyzing");
+    expect(session?.analysisAttempts).toBe(2);
+  });
+});
+
 // ── shared fixtures ──────────────────────────────────────────────────────────
 
 describe("shared fixtures", () => {

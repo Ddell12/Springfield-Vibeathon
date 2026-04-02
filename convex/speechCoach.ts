@@ -238,6 +238,58 @@ const insightsValidator = v.object({
   homePracticeNotes: v.array(v.string()),
 });
 
+export const markTranscriptReady = internalMutation({
+  args: { sessionId: v.id("speechCoachSessions"), storageId: v.id("_storage") },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.sessionId, {
+      transcriptStorageId: args.storageId,
+      status: "transcript_ready",
+    });
+  },
+});
+
+export const markAnalyzing = internalMutation({
+  args: { sessionId: v.id("speechCoachSessions") },
+  handler: async (ctx, args) => {
+    const session = await ctx.db.get(args.sessionId);
+    await ctx.db.patch(args.sessionId, {
+      status: "analyzing",
+      analysisAttempts: (session?.analysisAttempts ?? 0) + 1,
+      analysisErrorMessage: undefined,
+    });
+  },
+});
+
+export const markReviewFailed = internalMutation({
+  args: { sessionId: v.id("speechCoachSessions"), errorMessage: v.string() },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.sessionId, {
+      status: "review_failed",
+      analysisFailedAt: Date.now(),
+      analysisErrorMessage: args.errorMessage,
+    });
+  },
+});
+
+export const retryReview = mutation({
+  args: { sessionId: v.id("speechCoachSessions") },
+  handler: async (ctx, args) => {
+    const session = await ctx.db.get(args.sessionId);
+    if (!session) throw new ConvexError("Session not found");
+    if (session.patientId) await assertPatientAccess(ctx, session.patientId);
+    if (session.status === "analyzing") throw new ConvexError("Review already in progress");
+    if (session.status !== "review_failed") throw new ConvexError("Review is not retryable");
+    await ctx.db.patch(args.sessionId, {
+      status: "analyzing",
+      analysisAttempts: (session.analysisAttempts ?? 0) + 1,
+      analysisErrorMessage: undefined,
+    });
+    await ctx.scheduler.runAfter(0, internal.speechCoachActions.analyzeSession, {
+      sessionId: args.sessionId,
+    });
+  },
+});
+
 export const saveProgress = internalMutation({
   args: {
     sessionId: v.id("speechCoachSessions"),
