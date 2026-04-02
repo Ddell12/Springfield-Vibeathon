@@ -74,6 +74,10 @@ export function MyToolsPage({ embedded = false }: MyToolsPageProps) {
       ? queryResult
       : queryResult.items;
 
+  const serverTotalCount = queryResult !== undefined && !Array.isArray(queryResult)
+    ? queryResult.totalCount
+    : undefined;
+
   // Debounce search by 300ms
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(searchQuery), 300);
@@ -111,7 +115,8 @@ export function MyToolsPage({ embedded = false }: MyToolsPageProps) {
     return results;
   }, [allTools, debouncedSearch, sortBy]);
 
-  const totalPages = tools ? Math.max(1, Math.ceil(tools.length / PAGE_SIZE)) : 1;
+  const totalCount = serverTotalCount ?? tools?.length ?? 0;
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
   const safePage = Math.min(page, totalPages);
   const pageItems = tools?.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
