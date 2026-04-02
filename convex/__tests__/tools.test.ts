@@ -162,6 +162,76 @@ describe("tools", () => {
     expect(recent).toHaveLength(5);
     expect(recent.map((tool) => tool.title)).toEqual(["F", "E", "D", "C", "B"]);
   });
+
+  it("listPageBySLP returns only non-archived results by default", async () => {
+    const t = convexTest(schema, modules).withIdentity(SLP_IDENTITY);
+    await t.mutation(api.tools.create, {
+      templateType: "visual_schedule",
+      title: "Alpha Board",
+      configJson: SAMPLE_CONFIG,
+    });
+    const archivedId = await t.mutation(api.tools.create, {
+      templateType: "token_board",
+      title: "Archived Board",
+      configJson: SAMPLE_CONFIG,
+    });
+    await t.mutation(api.tools.archive, { id: archivedId });
+
+    const page = await t.query(api.tools.listPageBySLP, {
+      page: 1,
+      pageSize: 12,
+      search: "",
+      sortBy: "recent",
+    });
+
+    expect(page.items.map((item) => item.title)).toEqual(["Alpha Board"]);
+    expect(page.totalCount).toBe(1);
+  });
+
+  it("listPageBySLP returns correct items on page 2", async () => {
+    const t = convexTest(schema, modules).withIdentity(SLP_IDENTITY);
+    for (let i = 1; i <= 13; i++) {
+      await t.mutation(api.tools.create, {
+        templateType: "visual_schedule",
+        title: `App ${String(i).padStart(2, "0")}`,
+        configJson: SAMPLE_CONFIG,
+      });
+    }
+
+    const page2 = await t.query(api.tools.listPageBySLP, {
+      page: 2,
+      pageSize: 12,
+      search: "",
+      sortBy: "alphabetical",
+    });
+
+    expect(page2.totalCount).toBe(13);
+    expect(page2.items).toHaveLength(1);
+    expect(page2.items[0].title).toBe("App 13");
+  });
+
+  it("listPageBySLP applies search and alphabetical sort", async () => {
+    const t = convexTest(schema, modules).withIdentity(SLP_IDENTITY);
+    await t.mutation(api.tools.create, {
+      templateType: "visual_schedule",
+      title: "Banana Board",
+      configJson: SAMPLE_CONFIG,
+    });
+    await t.mutation(api.tools.create, {
+      templateType: "visual_schedule",
+      title: "Apple Board",
+      configJson: SAMPLE_CONFIG,
+    });
+
+    const page = await t.query(api.tools.listPageBySLP, {
+      page: 1,
+      pageSize: 12,
+      search: "Board",
+      sortBy: "alphabetical",
+    });
+
+    expect(page.items.map((item) => item.title)).toEqual(["Apple Board", "Banana Board"]);
+  });
 });
 
 describe("duplicate", () => {
