@@ -2,12 +2,40 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import { CoachSetupTab } from "../coach-setup-tab";
+import { SlpSpeechCoachPage } from "../slp-speech-coach-page";
+
+vi.mock("convex/react", () => ({
+  useConvexAuth: () => ({ isAuthenticated: true }),
+  useMutation: () => vi.fn(),
+  useQuery: () => [
+    {
+      _id: "program1",
+      speechCoachConfig: {
+        targetSounds: ["/s/"],
+        ageRange: "5-7",
+        defaultDurationMinutes: 5,
+      },
+    },
+  ],
+}));
+
+vi.mock("../../../../convex/_generated/api", () => ({ api: {} }));
 
 const DEFAULT_CONFIG = {
   targetSounds: ["/s/"],
   ageRange: "5-7" as const,
   defaultDurationMinutes: 5,
 };
+
+describe("SlpSpeechCoachPage", () => {
+  it("renders setup inside the shared route layout instead of local tabs", async () => {
+    render(
+      <SlpSpeechCoachPage patientId={"patient" as never} homeProgramId={"program1" as never} />
+    );
+    expect(await screen.findByRole("heading", { name: "Speech Coach" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Template" })).not.toBeInTheDocument();
+  });
+});
 
 describe("CoachSetupTab", () => {
   it("renders the clinician-facing setup sections", () => {
