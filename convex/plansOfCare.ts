@@ -48,7 +48,7 @@ export const getByPatient = slpQuery({
       .query("plansOfCare")
       .withIndex("by_patientId", (q) => q.eq("patientId", args.patientId))
       .order("desc")
-      .collect();
+      .take(20);
   },
 });
 

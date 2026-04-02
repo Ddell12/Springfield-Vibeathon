@@ -50,7 +50,7 @@ export const getByPatient = slpQuery({
       .query("dischargeSummaries")
       .withIndex("by_patientId", (q) => q.eq("patientId", args.patientId))
       .order("desc")
-      .collect();
+      .take(20);
   },
 });
 

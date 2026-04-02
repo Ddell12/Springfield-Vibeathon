@@ -1,6 +1,6 @@
 "use client";
 
-import { useConvexAuth, useQuery } from "convex/react";
+import { useConvexAuth, useMutation, useQuery } from "convex/react";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -12,6 +12,7 @@ import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 import { useSpeechSession } from "../hooks/use-speech-session";
 import { ActiveSession } from "./active-session";
+import { ProgressCard } from "./progress-card";
 import { SessionConfig } from "./session-config";
 import { SessionHistory } from "./session-history";
 
@@ -21,6 +22,20 @@ type Props = {
   patientId: Id<"patients">;
   homeProgramId: Id<"homePrograms">;
 };
+
+function RetryButton({ sessionId }: { sessionId: Id<"speechCoachSessions"> | null }) {
+  const retry = useMutation(api.speechCoach.retryReview);
+  if (!sessionId) return null;
+  return (
+    <button
+      type="button"
+      onClick={() => { void retry({ sessionId }); }}
+      className="rounded-lg bg-primary px-6 py-2 text-sm font-medium text-primary-foreground"
+    >
+      Retry review
+    </button>
+  );
+}
 
 export function SpeechCoachPage({ patientId, homeProgramId }: Props) {
   const { isAuthenticated } = useConvexAuth();
@@ -85,21 +100,58 @@ export function SpeechCoachPage({ patientId, homeProgramId }: Props) {
 
   // Reviewing — transcript saved, AI analysis queued
   if (session.phase === "reviewing") {
+    const serverStatus = session.sessionDetail?.session.status;
+    const progress = session.sessionDetail?.progress;
+
+    if (serverStatus === "analyzed" && progress) {
+      return (
+        <div className="flex flex-col gap-6 p-4 sm:p-8 max-w-2xl mx-auto w-full">
+          <div>
+            <p className="text-4xl mb-2" aria-hidden="true">🎉</p>
+            <h2 className="font-headline text-2xl font-bold text-foreground">Session complete!</h2>
+          </div>
+          <ProgressCard progress={progress} />
+          <button
+            type="button"
+            onClick={() => { session.reset(); setActiveTab("history"); }}
+            className="text-sm font-medium text-primary underline self-start"
+          >
+            View full history
+          </button>
+        </div>
+      );
+    }
+
+    if (serverStatus === "review_failed") {
+      return (
+        <div className="flex h-full flex-col items-center justify-center gap-4 p-8 text-center">
+          <h2 className="font-headline text-xl font-bold text-foreground">Review didn&apos;t complete</h2>
+          <p className="text-sm text-muted-foreground">
+            {session.sessionDetail?.session.analysisErrorMessage ?? "Something went wrong analyzing this session."}
+          </p>
+          <RetryButton sessionId={session.sessionId} />
+          <button
+            type="button"
+            onClick={() => { session.reset(); setActiveTab("history"); }}
+            className="text-sm font-medium text-primary underline"
+          >
+            View session history
+          </button>
+        </div>
+      );
+    }
+
     return (
       <div className="flex h-full flex-col items-center justify-center gap-6 p-8">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
         <h2 className="font-headline text-2xl font-bold text-foreground">Reviewing the session...</h2>
-        <p className="text-muted-foreground">
-          Preparing transcript and review.
-        </p>
+        <p className="text-muted-foreground">Analyzing transcript. This takes about 30 seconds.</p>
         <button
           type="button"
-          onClick={() => {
-            session.reset();
-            setActiveTab("history");
-          }}
+          onClick={() => { session.reset(); setActiveTab("history"); }}
           className="text-sm font-medium text-primary underline"
         >
-          View session status
+          Check back later in History
         </button>
       </div>
     );
@@ -182,6 +234,7 @@ export function SpeechCoachPage({ patientId, homeProgramId }: Props) {
               onStart={session.begin}
               lastRecommended={lastRecommended}
               isLoading={session.phase === "connecting"}
+              error={session.error ?? undefined}
             />
           </div>
         )}

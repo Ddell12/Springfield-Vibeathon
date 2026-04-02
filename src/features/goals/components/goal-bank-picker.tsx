@@ -88,7 +88,7 @@ export function GoalBankPicker({ onSelect }: GoalBankPickerProps) {
   );
 
   function handleDomainChange(value: string) {
-    setSelectedDomain(value as GoalDomain | "");
+    setSelectedDomain(value === "__all__" ? "" : value as GoalDomain);
     setSelectedSkillLevel(""); // reset skill level when domain changes
   }
 
@@ -97,12 +97,12 @@ export function GoalBankPicker({ onSelect }: GoalBankPickerProps) {
       {/* Filter bar */}
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         {/* Domain */}
-        <Select value={selectedDomain} onValueChange={handleDomainChange}>
+        <Select value={selectedDomain || "__all__"} onValueChange={handleDomainChange}>
           <SelectTrigger>
             <SelectValue placeholder="All Domains" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All Domains</SelectItem>
+            <SelectItem value="__all__">All Domains</SelectItem>
             {DOMAINS.map((d) => (
               <SelectItem key={d} value={d}>
                 {domainLabel(d)}
@@ -113,14 +113,14 @@ export function GoalBankPicker({ onSelect }: GoalBankPickerProps) {
 
         {/* Age range */}
         <Select
-          value={selectedAgeRange}
-          onValueChange={(v) => setSelectedAgeRange(v as AgeRange | "")}
+          value={selectedAgeRange || "__all__"}
+          onValueChange={(v) => setSelectedAgeRange(v === "__all__" ? "" : v as AgeRange)}
         >
           <SelectTrigger>
             <SelectValue placeholder="All Ages" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All Ages</SelectItem>
+            <SelectItem value="__all__">All Ages</SelectItem>
             {AGE_RANGES.map((a) => (
               <SelectItem key={a} value={a}>
                 {AGE_RANGE_LABELS[a]}
@@ -132,14 +132,14 @@ export function GoalBankPicker({ onSelect }: GoalBankPickerProps) {
         {/* Skill level — only shown when domain selected */}
         {selectedDomain && (
           <Select
-            value={selectedSkillLevel}
-            onValueChange={(v) => setSelectedSkillLevel(v)}
+            value={selectedSkillLevel || "__all__"}
+            onValueChange={(v) => setSelectedSkillLevel(v === "__all__" ? "" : v)}
           >
             <SelectTrigger>
               <SelectValue placeholder="All Skill Levels" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Skill Levels</SelectItem>
+              <SelectItem value="__all__">All Skill Levels</SelectItem>
               {(skillLevels ?? []).map((level) => (
                 <SelectItem key={level} value={level}>
                   {level}

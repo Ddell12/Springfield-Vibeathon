@@ -16,7 +16,7 @@ export const listByGoal = slpQuery({
   args: { goalId: v.id("goals") },
   handler: async (ctx, args) => {
     const slpUserId = ctx.slpUserId;
-    if (!slpUserId) throw new ConvexError("Not authorized");
+    if (!slpUserId) return [];
     const goal = await ctx.db.get(args.goalId);
     if (!goal) throw new ConvexError("Goal not found");
     if (goal.slpUserId !== slpUserId) throw new ConvexError("Not authorized");
@@ -37,7 +37,7 @@ export const listByPatient = slpQuery({
   },
   handler: async (ctx, args) => {
     const slpUserId = ctx.slpUserId;
-    if (!slpUserId) throw new ConvexError("Not authorized");
+    if (!slpUserId) return [];
     const patient = await ctx.db.get(args.patientId);
     if (!patient) throw new ConvexError("Patient not found");
     if (patient.slpUserId !== slpUserId) throw new ConvexError("Not authorized");

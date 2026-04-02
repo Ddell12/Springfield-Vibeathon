@@ -57,7 +57,7 @@ export const search = slpQuery({
     keyword: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    if (!ctx.slpUserId) throw new ConvexError("Not authorized");
+    if (!ctx.slpUserId) return [];
 
     let results;
 
@@ -81,7 +81,7 @@ export const search = slpQuery({
         .withIndex("by_domain", (q) => q.eq("domain", args.domain!))
         .take(200);
     } else {
-      results = await ctx.db.query("goalBank").collect();
+      results = await ctx.db.query("goalBank").take(500);
     }
 
     // Apply keyword filter
@@ -103,7 +103,7 @@ export const search = slpQuery({
     const customGoals = await ctx.db
       .query("goalBank")
       .withIndex("by_createdBy", (q) => q.eq("createdBy", ctx.slpUserId ?? undefined))
-      .collect();
+      .take(500);
 
     const resultIds = new Set(results.map((g) => g._id));
     for (const goal of customGoals) {
@@ -127,7 +127,7 @@ export const search = slpQuery({
 export const listDomainSkillLevels = slpQuery({
   args: { domain: domainValidator },
   handler: async (ctx, args) => {
-    if (!ctx.slpUserId) throw new ConvexError("Not authorized");
+    if (!ctx.slpUserId) return [];
 
     const goals = await ctx.db
       .query("goalBank")

@@ -20,9 +20,10 @@ type Props = {
   onStart: (config: SessionConfigData) => void;
   lastRecommended?: string[];
   isLoading?: boolean;
+  error?: string;
 };
 
-export function SessionConfig({ speechCoachConfig, onStart, lastRecommended, isLoading }: Props) {
+export function SessionConfig({ speechCoachConfig, onStart, lastRecommended, isLoading, error }: Props) {
   const [selectedSounds, setSelectedSounds] = useState<string[]>(
     lastRecommended ?? speechCoachConfig.targetSounds
   );
@@ -163,6 +164,13 @@ export function SessionConfig({ speechCoachConfig, onStart, lastRecommended, isL
           Your child&apos;s coach setup is already prepared. Choose the sounds for today&apos;s session and start when ready.
         </p>
       </div>
+
+      {/* Error display */}
+      {error && (
+        <p className="rounded-lg bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          {error}
+        </p>
+      )}
 
       {/* Start */}
       <Button

@@ -1,7 +1,7 @@
 "use client";
 
-import { useAction,useMutation } from "convex/react";
-import { useCallback,useState } from "react";
+import { useAction, useMutation, useQuery } from "convex/react";
+import { useCallback, useEffect, useState } from "react";
 
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
@@ -30,6 +30,23 @@ export function useSpeechSession(homeProgramId: Id<"homePrograms">) {
   const [error, setError] = useState<string | null>(null);
   const [durationMinutes, setDurationMinutes] = useState<number>(5);
   const [sessionConfig, setCurrentSessionConfig] = useState<SessionConfig | null>(null);
+
+  // Subscribe to server status while in reviewing phase to auto-transition
+  const sessionDetail = useQuery(
+    api.speechCoach.getSessionDetail,
+    phase === "reviewing" && sessionId ? { sessionId } : "skip"
+  );
+
+  useEffect(() => {
+    if (phase !== "reviewing") return;
+    const status = sessionDetail?.session.status;
+    if (status === "analyzed") {
+      setPhase("done");
+    } else if (status === "review_failed") {
+      setError(sessionDetail?.session.analysisErrorMessage ?? "Review failed. You can retry below.");
+      setPhase("error");
+    }
+  }, [phase, sessionDetail]);
 
   const createSession = useMutation(api.speechCoach.createSession);
   const startSession = useMutation(api.speechCoach.startSession);
@@ -100,5 +117,5 @@ export function useSpeechSession(homeProgramId: Id<"homePrograms">) {
     setCurrentSessionConfig(null);
   }, []);
 
-  return { phase, sessionId, runtimeSession, error, durationMinutes, sessionConfig, begin, markActive, endSession, reset };
+  return { phase, sessionId, runtimeSession, error, durationMinutes, sessionConfig, begin, markActive, endSession, reset, sessionDetail };
 }

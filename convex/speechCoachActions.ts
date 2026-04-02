@@ -350,3 +350,21 @@ function computeAverageAccuracy(
   const total = sounds.reduce((sum, sound) => sum + rateMap[sound.approximateSuccessRate], 0);
   return Math.round(total / sounds.length);
 }
+
+// ── Timeout guard ────────────────────────────────────────────────────────────
+
+export const checkSessionTimeout = internalAction({
+  args: { sessionId: v.id("speechCoachSessions") },
+  handler: async (ctx, args) => {
+    const session = await ctx.runQuery(internal.speechCoach.getSessionById, {
+      sessionId: args.sessionId,
+    });
+    // Only mark failed if still stuck in analyzing after 90s
+    if (session?.status === "analyzing") {
+      await ctx.runMutation(internal.speechCoach.markReviewFailed, {
+        sessionId: args.sessionId,
+        errorMessage: "Review timed out after 90 seconds. You can retry below.",
+      });
+    }
+  },
+});

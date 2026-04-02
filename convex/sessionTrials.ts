@@ -136,7 +136,7 @@ export const linkToSessionNote = slpMutation({
 export const getActiveForPatient = slpQuery({
   args: { patientId: v.id("patients") },
   handler: async (ctx, args) => {
-    if (!ctx.slpUserId) throw new ConvexError("Not authorized");
+    if (!ctx.slpUserId) return [];
 
     const patient = await ctx.db.get(args.patientId);
     if (!patient) throw new ConvexError("Patient not found");
@@ -145,7 +145,7 @@ export const getActiveForPatient = slpQuery({
     const all = await ctx.db
       .query("sessionTrials")
       .withIndex("by_patientId_sessionDate", (q) => q.eq("patientId", args.patientId))
-      .collect();
+      .take(500);
 
     return all.filter((r) => r.endedAt === undefined);
   },
@@ -154,12 +154,12 @@ export const getActiveForPatient = slpQuery({
 export const listBySessionNote = slpQuery({
   args: { sessionNoteId: v.id("sessionNotes") },
   handler: async (ctx, args) => {
-    if (!ctx.slpUserId) throw new ConvexError("Not authorized");
+    if (!ctx.slpUserId) return [];
 
     return await ctx.db
       .query("sessionTrials")
       .withIndex("by_sessionNoteId", (q) => q.eq("sessionNoteId", args.sessionNoteId))
-      .collect();
+      .take(500);
   },
 });
 
@@ -169,13 +169,13 @@ export const listByPatientDate = slpQuery({
     sessionDate: v.string(),
   },
   handler: async (ctx, args) => {
-    if (!ctx.slpUserId) throw new ConvexError("Not authorized");
+    if (!ctx.slpUserId) return [];
 
     return await ctx.db
       .query("sessionTrials")
       .withIndex("by_patientId_sessionDate", (q) =>
         q.eq("patientId", args.patientId).eq("sessionDate", args.sessionDate)
       )
-      .collect();
+      .take(500);
   },
 });

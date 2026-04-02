@@ -62,7 +62,7 @@ export const signForm = authedMutation({
     const signedForms = await ctx.db
       .query("intakeForms")
       .withIndex("by_patientId", (q) => q.eq("patientId", args.patientId))
-      .collect();
+      .take(50);
 
     const signedByCaregiver = new Set(
       signedForms
@@ -144,7 +144,7 @@ export const getByPatient = authedQuery({
     return await ctx.db
       .query("intakeForms")
       .withIndex("by_patientId", (q) => q.eq("patientId", args.patientId))
-      .collect();
+      .take(50);
   },
 });
 
@@ -160,7 +160,7 @@ export const getByCaregiver = authedQuery({
     const all = await ctx.db
       .query("intakeForms")
       .withIndex("by_patientId", (q) => q.eq("patientId", args.patientId))
-      .collect();
+      .take(50);
 
     return all.filter((f) => f.caregiverUserId === ctx.userId);
   },
@@ -188,7 +188,7 @@ export const getRequiredProgressByCaregiver = query({
     const allForms = await ctx.db
       .query("intakeForms")
       .withIndex("by_patientId", (q) => q.eq("patientId", args.patientId))
-      .collect();
+      .take(50);
 
     const signedTypes = new Set(
       allForms

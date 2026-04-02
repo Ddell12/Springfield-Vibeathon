@@ -26,14 +26,14 @@ export const getAvailableSlots = authedQuery({
     const availability = await ctx.db
       .query("availability")
       .withIndex("by_slpId", (q) => q.eq("slpId", args.slpId))
-      .collect();
+      .take(200);
 
     const appointments = await ctx.db
       .query("appointments")
       .withIndex("by_slpId_scheduledAt", (q) =>
         q.eq("slpId", args.slpId).gte("scheduledAt", args.weekStart)
       )
-      .collect();
+      .take(200);
 
     const bookedTimes = new Set(
       appointments
@@ -126,7 +126,7 @@ export const listForCaregiver = query({
     const links = await ctx.db
       .query("caregiverLinks")
       .withIndex("by_caregiverUserId", (q) => q.eq("caregiverUserId", userId))
-      .collect();
+      .take(50);
 
     const patientIds = links
       .filter((l) => l.inviteStatus === "accepted")
@@ -139,7 +139,7 @@ export const listForCaregiver = query({
       const forPatient = await ctx.db
         .query("appointments")
         .withIndex("by_patientId", (q) => q.eq("patientId", patientId))
-        .collect();
+        .take(200);
       for (const apt of forPatient) {
         if (seen.has(apt._id)) continue;
         seen.add(apt._id);
@@ -179,7 +179,7 @@ export const listByPatient = query({
     return await ctx.db
       .query("appointments")
       .withIndex("by_patientId", (q) => q.eq("patientId", args.patientId))
-      .collect();
+      .take(200);
   },
 });
 

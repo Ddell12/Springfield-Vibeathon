@@ -189,11 +189,17 @@ export const listPageBySLP = query({
 
 export const listByPatient = query({
   args: { patientId: v.id("patients") },
-  handler: async (ctx, args) =>
-    ctx.db
+  handler: async (ctx, args) => {
+    try {
+      await assertPatientAccess(ctx, args.patientId);
+    } catch {
+      return [];
+    }
+    return ctx.db
       .query("app_instances")
       .withIndex("by_patientId", (q) => q.eq("patientId", args.patientId))
-      .collect(),
+      .take(100);
+  },
 });
 
 export const listPublishedByPatient = query({
@@ -211,10 +217,15 @@ export const listPublishedByPatient = query({
 export const getEventSummaryByPatient = query({
   args: { patientId: v.id("patients") },
   handler: async (ctx, args) => {
+    try {
+      await assertPatientAccess(ctx, args.patientId);
+    } catch {
+      return [];
+    }
     const instances = await ctx.db
       .query("app_instances")
       .withIndex("by_patientId", (q) => q.eq("patientId", args.patientId))
-      .collect();
+      .take(100);
 
     const summaries = await Promise.all(
       instances.map(async (instance) => {

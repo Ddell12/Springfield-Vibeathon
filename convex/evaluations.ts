@@ -52,7 +52,7 @@ const statusValidator = v.union(
 export const get = slpQuery({
   args: { evalId: v.id("evaluations") },
   handler: async (ctx, args) => {
-    if (!ctx.slpUserId) throw new ConvexError("Not authenticated");
+    if (!ctx.slpUserId) return null;
     const evaluation = await ctx.db.get(args.evalId);
     if (!evaluation) throw new ConvexError("Evaluation not found");
     if (evaluation.slpUserId !== ctx.slpUserId) throw new ConvexError("Not authorized");
@@ -63,7 +63,7 @@ export const get = slpQuery({
 export const getByPatient = slpQuery({
   args: { patientId: v.id("patients") },
   handler: async (ctx, args) => {
-    if (!ctx.slpUserId) throw new ConvexError("Not authenticated");
+    if (!ctx.slpUserId) return [];
     const patient = await ctx.db.get(args.patientId);
     if (!patient) throw new ConvexError("Patient not found");
     if (patient.slpUserId !== ctx.slpUserId) throw new ConvexError("Not authorized");
@@ -72,7 +72,7 @@ export const getByPatient = slpQuery({
       .query("evaluations")
       .withIndex("by_patientId", (q) => q.eq("patientId", args.patientId))
       .order("desc")
-      .collect();
+      .take(50);
   },
 });
 

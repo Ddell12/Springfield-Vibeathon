@@ -72,7 +72,7 @@ export const listByPatient = slpQuery({
       .query("billingRecords")
       .withIndex("by_patientId", (q) => q.eq("patientId", args.patientId))
       .order("desc")
-      .collect();
+      .take(200);
   },
 });
 
@@ -94,7 +94,7 @@ export const listBySlp = slpQuery({
           q.eq("slpUserId", ctx.slpUserId!).eq("status", args.status!)
         )
         .order("desc")
-        .collect()
+        .take(200)
       ).filter((record) => !record.testMetadata);
     }
 
@@ -102,7 +102,7 @@ export const listBySlp = slpQuery({
       .query("billingRecords")
       .withIndex("by_slpUserId", (q) => q.eq("slpUserId", ctx.slpUserId!))
       .order("desc")
-      .collect()
+      .take(200)
     ).filter((record) => !record.testMetadata);
   },
 });
@@ -127,7 +127,7 @@ export const getUnbilledCount = slpQuery({
       .withIndex("by_slpUserId_status", (q) =>
         q.eq("slpUserId", ctx.slpUserId!).eq("status", "draft")
       )
-      .collect()
+      .take(200)
     ).filter((r) => !r.testMetadata);
 
     const finalized = (await ctx.db
@@ -135,7 +135,7 @@ export const getUnbilledCount = slpQuery({
       .withIndex("by_slpUserId_status", (q) =>
         q.eq("slpUserId", ctx.slpUserId!).eq("status", "finalized")
       )
-      .collect()
+      .take(200)
     ).filter((r) => !r.testMetadata);
 
     return drafts.length + finalized.length;

@@ -112,6 +112,11 @@ export const endSession = mutation({
         sessionId: args.sessionId,
       });
     }
+
+    // 90-second timeout — marks session as review_failed if still analyzing after 90s
+    await ctx.scheduler.runAfter(90_000, internal.speechCoachActions.checkSessionTimeout, {
+      sessionId: args.sessionId,
+    });
   },
 });
 
@@ -517,6 +522,11 @@ export const endStandaloneSession = authedMutation({
         sessionId: args.sessionId,
       });
     }
+
+    // 90-second timeout — marks session as review_failed if still analyzing after 90s
+    await ctx.scheduler.runAfter(90_000, internal.speechCoachActions.checkSessionTimeout, {
+      sessionId: args.sessionId,
+    });
   },
 });
 

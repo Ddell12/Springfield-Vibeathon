@@ -32,7 +32,7 @@ export const unreadCount = authedQuery({
     const unread = await ctx.db
       .query("notifications")
       .withIndex("by_userId_read", (q) => q.eq("userId", ctx.userId!).eq("read", false))
-      .collect();
+      .take(100);
 
     return unread.length;
   },
@@ -54,7 +54,7 @@ export const markAllRead = authedMutation({
     const unread = await ctx.db
       .query("notifications")
       .withIndex("by_userId_read", (q) => q.eq("userId", ctx.userId).eq("read", false))
-      .collect();
+      .take(100);
 
     await Promise.all(unread.map((n) => ctx.db.patch(n._id, { read: true })));
   },
