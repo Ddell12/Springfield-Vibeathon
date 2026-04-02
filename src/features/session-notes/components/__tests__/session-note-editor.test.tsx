@@ -34,7 +34,7 @@ vi.mock("@/shared/components/material-icon", () => ({
 }));
 
 const mockUsePatient = vi.fn();
-vi.mock("@/shared/clinical", () => ({
+vi.mock("@/features/patients/hooks/use-patients", () => ({
   usePatient: (...args: any[]) => mockUsePatient(...args),
 }));
 

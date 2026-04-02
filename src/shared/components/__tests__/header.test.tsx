@@ -1,5 +1,6 @@
 import { render, screen } from "@testing-library/react";
 
+import { APP_NAME } from "@/core/config";
 import { Header } from "../header";
 
 vi.mock("next/link", () => ({
@@ -37,10 +38,9 @@ vi.mock("@/shared/components/material-icon", () => ({
 }));
 
 describe("Header", () => {
-  it("renders the brand name as a link to home", () => {
+  it("renders the configured brand name as a link to home", () => {
     render(<Header />);
-    const brand = screen.getByText("Vocali");
-    expect(brand).toBeInTheDocument();
+    const brand = screen.getByText(APP_NAME);
     expect(brand.closest("a")).toHaveAttribute("href", "/");
   });
 

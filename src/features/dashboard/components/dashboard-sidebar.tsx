@@ -3,8 +3,8 @@
 import { Show,useClerk, useUser } from "@clerk/nextjs";
 import { useQuery } from "convex/react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
+import { useState } from "react";
 
 import { ROUTES } from "@/core/routes";
 import { cn } from "@/core/utils";
@@ -15,32 +15,18 @@ import { CAREGIVER_NAV_ITEMS, isNavActive, NAV_ITEMS } from "@/shared/lib/naviga
 
 import { api } from "../../../../convex/_generated/api";
 
-const CAREGIVER_ALLOWED_PREFIXES = [
-  "/family",
-  "/settings",
-  "/speech-coach",
-  "/sessions",
-  "/flashcards",
-  "/my-tools",
-  "/templates",
-  "/library",
-];
-
 export function DashboardSidebar() {
   const pathname = usePathname();
   const { user } = useUser();
   const { signOut } = useClerk();
-  const router = useRouter();
 
   const role = (user?.publicMetadata as { role?: string } | undefined)?.role;
   const isCaregiver = role === "caregiver";
   const navItems = isCaregiver ? CAREGIVER_NAV_ITEMS : NAV_ITEMS;
 
-  const [collapsed, setCollapsed] = useState(false);
-
-  useEffect(() => {
-    setCollapsed(localStorage.getItem("vocali_sidebar_collapsed") === "true");
-  }, []);
+  const [collapsed, setCollapsed] = useState(
+    () => typeof window !== "undefined" && localStorage.getItem("vocali_sidebar_collapsed") === "true",
+  );
 
   const toggleCollapsed = () => {
     setCollapsed((prev) => {
@@ -49,16 +35,7 @@ export function DashboardSidebar() {
     });
   };
 
-  const allTools = useQuery(api.tools.listBySLP) ?? [];
-  const recentSessions = [...allTools]
-    .sort((a, b) => b._creationTime - a._creationTime)
-    .slice(0, 5);
-
-  useEffect(() => {
-    if (isCaregiver && !CAREGIVER_ALLOWED_PREFIXES.some((p) => pathname.startsWith(p))) {
-      router.replace("/family");
-    }
-  }, [isCaregiver, pathname, router]);
+  const recentTools = useQuery(api.tools.listRecentBySLP, { limit: 5 }) ?? [];
 
   const initials = [user?.firstName?.[0], user?.lastName?.[0]]
     .filter(Boolean)
@@ -139,21 +116,21 @@ export function DashboardSidebar() {
             Recents
           </p>
           <div className="flex flex-col gap-0.5 overflow-y-auto">
-            {recentSessions.length === 0 ? (
+            {recentTools.length === 0 ? (
               <p className="px-2 text-xs text-on-surface-variant/50">No recent apps</p>
             ) : (
-              recentSessions.map((s) => {
-                const isActive = pathname === ROUTES.TOOLS_EDIT(s._id);
+              recentTools.map((tool) => {
+                const isActive = pathname === ROUTES.TOOLS_EDIT(tool._id);
                 return (
                   <Link
-                    key={s._id}
-                    href={ROUTES.TOOLS_EDIT(s._id)}
+                    key={tool._id}
+                    href={ROUTES.TOOLS_EDIT(tool._id)}
                     className={cn(
                       "flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs text-on-surface-variant hover:bg-surface-container-high transition-colors",
                       isActive && "bg-surface-container-high text-on-surface font-medium",
                     )}
                   >
-                    <span className="truncate">{s.title || "Untitled App"}</span>
+                    <span className="truncate">{tool.title || "Untitled App"}</span>
                   </Link>
                 );
               })

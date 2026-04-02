@@ -143,6 +143,25 @@ describe("tools", () => {
     const instance = await t.query(api.tools.get, { id });
     expect(instance?.patientId).toBeUndefined();
   });
+
+  it("listRecentBySLP returns only the newest five tools for the current therapist", async () => {
+    const t = convexTest(schema, modules).withIdentity(SLP_IDENTITY);
+    const { patientId } = await createPatient(t);
+
+    for (const title of ["A", "B", "C", "D", "E", "F"]) {
+      await t.mutation(api.tools.create, {
+        templateType: "aac_board",
+        title,
+        patientId,
+        configJson: SAMPLE_CONFIG,
+      });
+    }
+
+    const recent = await t.query(api.tools.listRecentBySLP, { limit: 5 });
+
+    expect(recent).toHaveLength(5);
+    expect(recent.map((tool) => tool.title)).toEqual(["F", "E", "D", "C", "B"]);
+  });
 });
 
 describe("duplicate", () => {

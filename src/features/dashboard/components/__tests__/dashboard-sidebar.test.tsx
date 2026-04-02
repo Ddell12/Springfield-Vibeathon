@@ -6,7 +6,13 @@ import { isNavActive } from "@/shared/lib/navigation";
 import { DashboardSidebar } from "../dashboard-sidebar";
 
 vi.mock("convex/react", () => ({
-  useQuery: () => [],
+  useQuery: (_query: unknown, args?: { limit?: number }) =>
+    args?.limit === 5
+      ? [
+          { _id: "tool-1", _creationTime: 2, title: "Newest App" },
+          { _id: "tool-2", _creationTime: 1, title: "Older App" },
+        ]
+      : [],
 }));
 vi.mock("@clerk/nextjs", () => ({
   useUser: () => ({ user: { firstName: "Jane", lastName: "SLP", email: "jane@test.com", publicMetadata: { role: "slp" } } }),
@@ -90,5 +96,10 @@ describe("DashboardSidebar (SLP)", () => {
   it("keeps Speech Coach active on /speech-coach/setup and /speech-coach/templates", () => {
     expect(isNavActive(ROUTES.SPEECH_COACH, "/speech-coach/setup")).toBe(true);
     expect(isNavActive(ROUTES.SPEECH_COACH, "/speech-coach/templates")).toBe(true);
+  });
+  it("requests exactly five recent tools for the recents section", () => {
+    render(<DashboardSidebar />);
+    expect(screen.getByText("Newest App")).toBeInTheDocument();
+    expect(screen.getByText("Older App")).toBeInTheDocument();
   });
 });

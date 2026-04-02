@@ -113,6 +113,23 @@ export const listBySLP = query({
   },
 });
 
+export const listRecentBySLP = query({
+  args: { limit: v.optional(v.number()) },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) return [];
+
+    const limit = Math.min(args.limit ?? 5, 10);
+
+    // .order("desc") sorts by _creationTime within the slpUserId partition (most recently created first)
+    return ctx.db
+      .query("app_instances")
+      .withIndex("by_slpUserId", (q) => q.eq("slpUserId", identity.subject))
+      .order("desc")
+      .take(limit);
+  },
+});
+
 export const listByPatient = query({
   args: { patientId: v.id("patients") },
   handler: async (ctx, args) =>

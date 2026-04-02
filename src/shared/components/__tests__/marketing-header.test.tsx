@@ -1,5 +1,6 @@
 import { render, screen } from "@testing-library/react";
 
+import { APP_BRAND } from "@/core/config";
 import { MarketingHeader } from "../marketing-header";
 
 vi.mock("@clerk/nextjs", () => ({
@@ -46,10 +47,9 @@ vi.mock("@/shared/components/ui/sheet", () => ({
 
 
 describe("MarketingHeader", () => {
-  it("renders the Vocali logo as a link to home", () => {
+  it("renders the configured marketing brand name", () => {
     render(<MarketingHeader />);
-    const logo = screen.getByText("Vocali");
-    expect(logo).toBeInTheDocument();
+    const logo = screen.getByText(APP_BRAND);
     expect(logo.closest("a")).toHaveAttribute("href", "/");
   });
 

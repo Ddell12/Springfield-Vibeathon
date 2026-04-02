@@ -1,6 +1,7 @@
 "use client";
 
-import { formatAge,useActiveGoals } from "@/shared/clinical";
+import { useActiveGoals } from "@/features/goals/hooks/use-goals";
+import { formatAge } from "@/shared/clinical";
 import { MaterialIcon } from "@/shared/components/material-icon";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
