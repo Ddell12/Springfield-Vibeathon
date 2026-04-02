@@ -69,6 +69,7 @@ const DEFAULT_AAC_CONFIG: AACBoardConfig = {
   ],
   showTextLabels: true,
   autoSpeak: true,
+  sentenceStripEnabled: false,
   voice: "child-friendly",
   highContrast: false,
 };
