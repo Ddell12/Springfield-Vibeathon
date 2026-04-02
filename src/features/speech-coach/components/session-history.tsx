@@ -1,9 +1,10 @@
 "use client";
 
-import { useQuery } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { useState } from "react";
 
 import { cn } from "@/core/utils";
+import { Button } from "@/shared/components/ui/button";
 
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
@@ -12,17 +13,25 @@ import { ProgressCard } from "./progress-card";
 const STATUS_STYLES = {
   configuring: "bg-muted text-muted-foreground",
   active: "bg-info-container text-on-info-container",
-  completed: "bg-caution-container text-on-caution-container",
+  transcript_ready: "bg-caution-container text-on-caution-container",
+  analyzing: "bg-caution-container text-on-caution-container",
   analyzed: "bg-success-container text-on-success-container",
+  review_failed: "bg-error-container text-on-error-container",
   failed: "bg-error-container text-on-error-container",
+  // legacy compat
+  completed: "bg-success-container text-on-success-container",
 };
 
 const STATUS_LABELS = {
   configuring: "Setting up",
   active: "In progress",
-  completed: "Reviewing",
+  transcript_ready: "Transcript saved",
+  analyzing: "Reviewing",
   analyzed: "Complete",
+  review_failed: "Review failed",
   failed: "Failed",
+  // legacy compat
+  completed: "Complete",
 };
 
 function formatDuration(startedAt?: number, endedAt?: number): string {
@@ -116,11 +125,46 @@ export function SessionHistory(props: Props) {
 
 function ExpandedDetail({ sessionId }: { sessionId: Id<"speechCoachSessions"> }) {
   const detail = useQuery(api.speechCoach.getSessionDetail, { sessionId });
+  const retryReview = useMutation(api.speechCoach.retryReview);
 
   if (!detail) return <div className="px-4 pb-4 text-sm text-muted-foreground">Loading...</div>;
   const snapshot = detail.session?.config.runtimeSnapshot;
 
   if (!detail.progress) {
+    if (detail.session?.status === "review_failed") {
+      return (
+        <div className="px-4 pb-4">
+          <p className="text-sm text-foreground">Transcript available while review is retried.</p>
+          <Button
+            size="sm"
+            variant="outline"
+            className="mt-2"
+            onClick={() => retryReview({ sessionId })}
+          >
+            Retry review
+          </Button>
+          {snapshot ? (
+            <p className="mt-2 text-xs text-muted-foreground">
+              Template v{snapshot.templateVersion} · {snapshot.voiceKey}
+            </p>
+          ) : null}
+        </div>
+      );
+    }
+
+    if (detail.session?.status === "analyzing") {
+      return (
+        <div className="px-4 pb-4 text-sm text-muted-foreground">
+          Transcript saved. AI review is in progress.
+          {snapshot ? (
+            <p className="mt-1 text-xs text-muted-foreground">
+              Template v{snapshot.templateVersion} · {snapshot.voiceKey}
+            </p>
+          ) : null}
+        </div>
+      );
+    }
+
     return (
       <div className="px-4 pb-4 text-sm text-muted-foreground">
         {detail.session?.status === "failed"
