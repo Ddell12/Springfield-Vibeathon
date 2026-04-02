@@ -15,6 +15,7 @@ import { templateRegistry } from "../../lib/registry";
 import { AIAssistPanel } from "./ai-assist-panel";
 import { AppearanceControls } from "./appearance-controls";
 import { ConfigEditor } from "./config-editor";
+import { GoalTagsEditor } from "./goal-tags-editor";
 import { PreviewPanel } from "./preview-panel";
 import { PublishPanel } from "./publish-panel";
 import { TemplatePicker } from "./template-picker";
@@ -146,6 +147,14 @@ export function ToolBuilderWizard({ builder, patients }: ToolBuilderWizardProps)
                   config={builder.config}
                   onChange={builder.updateConfig}
                 />
+                {builder.instanceId && (
+                  <div className="mt-6 pt-4 border-t border-border px-4 pb-4">
+                    <GoalTagsEditor
+                      instanceId={builder.instanceId}
+                      initialTags={(builder.config as { goalTags?: string[] })?.goalTags ?? []}
+                    />
+                  </div>
+                )}
               </div>
             </div>
             <div className="w-1/2 overflow-hidden">
