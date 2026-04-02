@@ -71,6 +71,7 @@ export function useToolBuilder(initialId?: Id<"app_instances"> | null) {
   const createInstance = useMutation(api.tools.create);
   const updateInstance = useMutation(api.tools.update);
   const publishInstance = useMutation(api.tools.publish);
+  const archiveInstance = useMutation(api.tools.archive);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const latestConfigRef = useRef<unknown>(null);
 
@@ -172,5 +173,17 @@ export function useToolBuilder(initialId?: Id<"app_instances"> | null) {
     }
   }, [state, publishInstance]);
 
-  return { ...state, selectPatient, selectTemplate, nextStep, prevStep, updateConfig, updateAppearance, saveAndAdvance, publish };
+  const unpublish = useCallback(async () => {
+    const { instanceId } = state;
+    if (!instanceId) return;
+    setState((s) => ({ ...s, isSaving: true }));
+    try {
+      await archiveInstance({ id: instanceId });
+      setState((s) => ({ ...s, publishedShareToken: null, isSaving: false }));
+    } catch {
+      setState((s) => ({ ...s, isSaving: false }));
+    }
+  }, [state, archiveInstance]);
+
+  return { ...state, selectPatient, selectTemplate, nextStep, prevStep, updateConfig, updateAppearance, saveAndAdvance, publish, unpublish };
 }
