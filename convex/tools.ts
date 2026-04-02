@@ -35,8 +35,10 @@ export const create = mutation({
 export const update = mutation({
   args: {
     id: v.id("app_instances"),
-    configJson: v.string(),
+    configJson: v.optional(v.string()),        // optional: not required when only updating metadata
     title: v.optional(v.string()),
+    patientId: v.optional(v.id("patients")),   // new: patient assignment from publish panel
+    goalTags: v.optional(v.array(v.string())), // new: IEP goal tags
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
@@ -46,10 +48,10 @@ export const update = mutation({
     if (instance.slpUserId !== identity.subject) throw new Error("Forbidden");
 
     await ctx.db.patch(args.id, {
-      configJson: args.configJson,
-      ...(args.title !== undefined
-        ? { title: args.title, titleLower: normalizeTitle(args.title) }
-        : {}),
+      ...(args.configJson !== undefined ? { configJson: args.configJson } : {}),
+      ...(args.title !== undefined ? { title: args.title, titleLower: normalizeTitle(args.title) } : {}),
+      ...(args.patientId !== undefined ? { patientId: args.patientId } : {}),
+      ...(args.goalTags !== undefined ? { goalTags: args.goalTags } : {}),
     });
   },
 });
@@ -253,6 +255,7 @@ export const getEventSummaryByPatient = query({
           templateType: instance.templateType,
           status: instance.status,
           shareToken: instance.shareToken,
+          goalTags: instance.goalTags,
           totalEvents: events.length,
           completions,
           interactions,
@@ -331,5 +334,8 @@ export const logEvent = mutation({
       eventType: args.eventType,
       eventPayloadJson: args.eventPayloadJson,
     });
+
+    // Patch lastActivityAt on the instance for the My Tools activity badge
+    await ctx.db.patch(instance._id, { lastActivityAt: Date.now() });
   },
 });
