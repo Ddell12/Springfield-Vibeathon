@@ -68,6 +68,7 @@ export function SessionsPage() {
   const [bookingSlot, setBookingSlot] = useState<number | null>(null);
   const [availabilityOpen, setAvailabilityOpen] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
+  const [testCallLoading, setTestCallLoading] = useState(false);
 
   const appointments: AppointmentListItem[] = (appointmentsRaw ?? []).map(
     (a) => ({
@@ -144,9 +145,17 @@ export function SessionsPage() {
                 <Button
                   type="button"
                   variant="outline"
+                  disabled={testCallLoading}
                   onClick={async () => {
-                    const appointmentId = await startDeveloperTestCall();
-                    router.push(`/sessions/${appointmentId}/call`);
+                    setTestCallLoading(true);
+                    try {
+                      const appointmentId = await startDeveloperTestCall();
+                      router.push(`/sessions/${appointmentId}/call`);
+                    } catch {
+                      toast.error("Failed to start test call");
+                    } finally {
+                      setTestCallLoading(false);
+                    }
                   }}
                 >
                   <MaterialIcon icon="science" size="sm" />
