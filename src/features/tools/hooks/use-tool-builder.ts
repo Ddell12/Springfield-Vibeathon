@@ -8,16 +8,15 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { templateRegistry } from "../lib/registry";
 import type { ThemePreset } from "../lib/runtime/app-shell-types";
 
-export type WizardStep = 1 | 2 | 3 | 4;
-
 interface BuilderState {
-  step: WizardStep;
   patientId: Id<"patients"> | null;
   templateType: string | null;
   config: unknown;
   instanceId: Id<"app_instances"> | null;
   publishedShareToken: string | null;
   isSaving: boolean;
+  originalDescription: string | null;
+  isPublishOpen: boolean;
   appearance: {
     themePreset: ThemePreset;
     accentColor: string;
@@ -31,13 +30,14 @@ export function useToolBuilder(initialId?: Id<"app_instances"> | null) {
   );
 
   const [state, setState] = useState<BuilderState>({
-    step: 1,
     patientId: null,
     templateType: null,
     config: null,
     instanceId: null,
     publishedShareToken: null,
     isSaving: false,
+    originalDescription: null,
+    isPublishOpen: false,
     appearance: {
       themePreset: "calm",
       accentColor: "#00595c",
@@ -51,13 +51,14 @@ export function useToolBuilder(initialId?: Id<"app_instances"> | null) {
       seeded.current = true;
       const timer = setTimeout(() => {
         setState({
-          step: 3,
           patientId: existingInstance.patientId ?? null,
           templateType: existingInstance.templateType,
           config: JSON.parse(existingInstance.configJson),
           instanceId: existingInstance._id,
           publishedShareToken: existingInstance.shareToken ?? null,
           isSaving: false,
+          originalDescription: existingInstance.originalDescription ?? null,
+          isPublishOpen: false,
           appearance: {
             themePreset: "calm",
             accentColor: "#00595c",
@@ -94,27 +95,29 @@ export function useToolBuilder(initialId?: Id<"app_instances"> | null) {
     }));
   }, []);
 
-  const nextStep = useCallback(
-    () => setState((s) => ({ ...s, step: Math.min(4, s.step + 1) as WizardStep })),
+  const openPublish = useCallback(
+    () => setState((s) => ({ ...s, isPublishOpen: true })),
     []
   );
 
-  const prevStep = useCallback(
-    () => setState((s) => ({ ...s, step: Math.max(1, s.step - 1) as WizardStep })),
+  const closePublish = useCallback(
+    () => setState((s) => ({ ...s, isPublishOpen: false })),
     []
   );
 
   const updateConfig = useCallback(
     (config: unknown) => {
       setState((s) => ({ ...s, config }));
-      latestConfigRef.current = config; // always track latest
+      latestConfigRef.current = config;
 
-      // Debounced autosave — fires 1.5s after last edit if instance already exists
       if (saveTimer.current) clearTimeout(saveTimer.current);
       saveTimer.current = setTimeout(() => {
         setState((s) => {
           if (!s.instanceId) return s;
-          void updateInstance({ id: s.instanceId, configJson: JSON.stringify(latestConfigRef.current) });
+          void updateInstance({
+            id: s.instanceId,
+            configJson: JSON.stringify(latestConfigRef.current),
+          });
           return s;
         });
       }, 1500);
@@ -123,9 +126,8 @@ export function useToolBuilder(initialId?: Id<"app_instances"> | null) {
   );
 
   const updateAppearance = useCallback(
-    (appearance: BuilderState["appearance"]) => {
-      setState((s) => ({ ...s, appearance }));
-    },
+    (appearance: BuilderState["appearance"]) =>
+      setState((s) => ({ ...s, appearance })),
     []
   );
 
@@ -141,9 +143,16 @@ export function useToolBuilder(initialId?: Id<"app_instances"> | null) {
           title: (config as { title?: string }).title ?? "Untitled",
           configJson: JSON.stringify(config),
           ...(patientId ? { patientId } : {}),
+          ...(state.originalDescription
+            ? { originalDescription: state.originalDescription }
+            : {}),
         };
         const id = await createInstance(payload);
-        setState((s) => ({ ...s, instanceId: id as Id<"app_instances">, isSaving: false }));
+        setState((s) => ({
+          ...s,
+          instanceId: id as Id<"app_instances">,
+          isSaving: false,
+        }));
       } else {
         await updateInstance({
           id: instanceId,
@@ -172,5 +181,15 @@ export function useToolBuilder(initialId?: Id<"app_instances"> | null) {
     }
   }, [state, publishInstance]);
 
-  return { ...state, selectPatient, selectTemplate, nextStep, prevStep, updateConfig, updateAppearance, saveAndAdvance, publish };
+  return {
+    ...state,
+    selectPatient,
+    selectTemplate,
+    openPublish,
+    closePublish,
+    updateConfig,
+    updateAppearance,
+    saveAndAdvance,
+    publish,
+  };
 }

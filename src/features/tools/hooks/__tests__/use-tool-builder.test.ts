@@ -1,8 +1,8 @@
-import { act,renderHook } from "@testing-library/react";
+import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("convex/react", () => ({
-  useMutation: vi.fn(() => vi.fn().mockResolvedValue({ id: "inst-1", shareToken: "tok-abc" })),
+  useMutation: vi.fn(() => vi.fn().mockResolvedValue("inst-1")),
   useQuery: vi.fn(() => undefined),
 }));
 vi.mock("@convex/_generated/api", () => ({
@@ -19,58 +19,58 @@ vi.mock("@convex/_generated/api", () => ({
 import { useToolBuilder } from "../use-tool-builder";
 
 describe("useToolBuilder", () => {
-  it("starts on step 1", () => {
+  it("initialises with null template and instance", () => {
     const { result } = renderHook(() => useToolBuilder());
-    expect(result.current.step).toBe(1);
+    expect(result.current.templateType).toBeNull();
+    expect(result.current.instanceId).toBeNull();
+    expect(result.current.originalDescription).toBeNull();
   });
 
-  it("advances step when nextStep is called", () => {
+  it("publish panel is closed initially", () => {
     const { result } = renderHook(() => useToolBuilder());
-    act(() => result.current.nextStep());
-    expect(result.current.step).toBe(2);
+    expect(result.current.isPublishOpen).toBe(false);
   });
 
-  it("cannot advance past step 4", () => {
+  it("openPublish opens the publish panel", () => {
     const { result } = renderHook(() => useToolBuilder());
-    act(() => { for (let i = 0; i < 10; i++) result.current.nextStep(); });
-    expect(result.current.step).toBeLessThanOrEqual(4);
+    act(() => result.current.openPublish());
+    expect(result.current.isPublishOpen).toBe(true);
   });
 
-  it("goes back one step when prevStep is called", () => {
+  it("closePublish closes the publish panel", () => {
     const { result } = renderHook(() => useToolBuilder());
-    act(() => result.current.nextStep());
-    act(() => result.current.prevStep());
-    expect(result.current.step).toBe(1);
+    act(() => result.current.openPublish());
+    act(() => result.current.closePublish());
+    expect(result.current.isPublishOpen).toBe(false);
   });
 
-  it("stores patientId after selectPatient", () => {
+  it("selectPatient stores patientId", () => {
     const { result } = renderHook(() => useToolBuilder());
     act(() => result.current.selectPatient("patient-123" as never));
     expect(result.current.patientId).toBe("patient-123");
   });
 
-  it("stores templateType and default config after selectTemplate", () => {
+  it("updateConfig stores new config", () => {
     const { result } = renderHook(() => useToolBuilder());
-    act(() => result.current.selectTemplate("aac_board"));
-    expect(result.current.templateType).toBe("aac_board");
-    expect(result.current.config).not.toBeNull();
+    const config = { title: "My Board" };
+    act(() => result.current.updateConfig(config));
+    expect(result.current.config).toEqual(config);
   });
 
-  it("updates config when updateConfig is called", () => {
+  it("saveAndAdvance creates an instance when none exists", async () => {
     const { result } = renderHook(() => useToolBuilder());
-    const newConfig = { title: "Updated" };
-    act(() => result.current.updateConfig(newConfig));
-    expect(result.current.config).toEqual(newConfig);
-  });
-
-  it("allows saveAndAdvance without patientId", async () => {
-    const { result } = renderHook(() => useToolBuilder());
-    act(() => result.current.selectTemplate("aac_board"));
+    act(() => result.current.updateConfig({ title: "Test", tokenCount: 5 }));
+    act(() => result.current.selectTemplate("token_board"));
 
     await act(async () => {
       await result.current.saveAndAdvance();
     });
 
     expect(result.current.instanceId).not.toBeNull();
+  });
+
+  it("appearance defaults to calm preset", () => {
+    const { result } = renderHook(() => useToolBuilder());
+    expect(result.current.appearance.themePreset).toBe("calm");
   });
 });
