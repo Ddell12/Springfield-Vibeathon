@@ -6,6 +6,7 @@ import { useMutation } from "convex/react";
 import { Loader2, Sparkles } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
+import { toast } from "sonner";
 
 import { Button } from "@/shared/components/ui/button";
 import { Textarea } from "@/shared/components/ui/textarea";
@@ -68,6 +69,11 @@ export function ToolEntryPage({ childProfile }: ToolEntryPageProps) {
         originalDescription: desc,
       });
 
+      const friendlyName = templateRegistry[templateType]?.meta.name ?? templateType;
+      toast.success(`Built a ${friendlyName}`, {
+        description: "Looks wrong? You can change the type in the editor.",
+        duration: 5000,
+      });
       router.push(`/tools/${id as Id<"app_instances">}`);
     } catch {
       setStatus("error");

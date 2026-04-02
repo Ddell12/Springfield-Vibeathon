@@ -18,6 +18,9 @@ vi.mock("@convex/_generated/api", () => ({
 const mockFetch = vi.fn();
 global.fetch = mockFetch;
 
+const mockToast = vi.fn();
+vi.mock("sonner", () => ({ toast: { success: (...args: unknown[]) => mockToast(...args) } }));
+
 import { ToolEntryPage } from "../tool-entry-page";
 
 describe("ToolEntryPage", () => {
@@ -100,6 +103,21 @@ describe("ToolEntryPage", () => {
   it("quick-start cards are visible", () => {
     render(<ToolEntryPage />);
     expect(screen.getByText(/token board/i)).toBeInTheDocument();
+  });
+
+  it("shows toast with template name after AI build", async () => {
+    render(<ToolEntryPage />);
+    fireEvent.change(screen.getByRole("textbox"), {
+      target: { value: "token board for Marcus" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /build it/i }));
+
+    await waitFor(() => {
+      expect(mockToast).toHaveBeenCalledWith(
+        expect.stringMatching(/token board/i),
+        expect.objectContaining({ description: expect.stringMatching(/looks wrong/i) })
+      );
+    });
   });
 
   it("quick-start card creates instance and redirects", async () => {

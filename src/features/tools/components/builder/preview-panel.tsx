@@ -2,6 +2,8 @@
 
 import { useRef, useState } from "react";
 
+import { Smartphone, Tablet } from "lucide-react";
+
 import { cn } from "@/core/utils";
 import { Button } from "@/shared/components/ui/button";
 
@@ -19,6 +21,7 @@ interface PreviewPanelProps {
 export function PreviewPanel({ templateType, config }: PreviewPanelProps) {
   const voice = useVoiceController();
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [device, setDevice] = useState<"tablet" | "phone">("tablet");
   const containerRef = useRef<HTMLDivElement | null>(null);
   const registration = templateRegistry[templateType];
 
@@ -46,10 +49,44 @@ export function PreviewPanel({ templateType, config }: PreviewPanelProps) {
     >
       <div className="mb-3 flex items-center justify-between">
         {!isFullscreen ? (
-          <FullscreenPreviewButton
-            onOpen={() => setIsFullscreen(true)}
-            onBrowserFullscreen={handleBrowserFullscreen}
-          />
+          <div className="flex items-center gap-2">
+            <FullscreenPreviewButton
+              onOpen={() => setIsFullscreen(true)}
+              onBrowserFullscreen={handleBrowserFullscreen}
+            />
+            <div className="flex items-center gap-1 ml-2">
+              <button
+                type="button"
+                onClick={() => setDevice("tablet")}
+                aria-pressed={device === "tablet"}
+                aria-label="Tablet view"
+                className={cn(
+                  "flex items-center gap-1 px-2 py-1 rounded text-xs transition-colors",
+                  device === "tablet"
+                    ? "bg-primary/10 text-primary"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <Tablet className="w-3.5 h-3.5" />
+                Tablet
+              </button>
+              <button
+                type="button"
+                onClick={() => setDevice("phone")}
+                aria-pressed={device === "phone"}
+                aria-label="Phone view"
+                className={cn(
+                  "flex items-center gap-1 px-2 py-1 rounded text-xs transition-colors",
+                  device === "phone"
+                    ? "bg-primary/10 text-primary"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <Smartphone className="w-3.5 h-3.5" />
+                Phone
+              </button>
+            </div>
+          </div>
         ) : (
           <div className="flex gap-2">
             <Button
@@ -71,7 +108,7 @@ export function PreviewPanel({ templateType, config }: PreviewPanelProps) {
           </div>
         )}
       </div>
-      <div className="mx-auto max-w-lg overflow-hidden rounded-xl bg-background shadow-sm">
+      <div className={cn("mx-auto overflow-hidden rounded-xl bg-background shadow-sm", device === "tablet" ? "max-w-[768px]" : "max-w-[390px]")}>
         <RuntimeShell mode="preview" shell={shell} title={title}>
           <Runtime
             config={config}
