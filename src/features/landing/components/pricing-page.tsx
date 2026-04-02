@@ -1,7 +1,6 @@
 import { Check } from "lucide-react";
 import Link from "next/link";
 
-import { cn } from "@/core/utils";
 import { Button } from "@/shared/components/ui/button";
 
 const FREE_FEATURES = [
@@ -61,7 +60,7 @@ export function PricingPage() {
         </div>
 
         {/* Premium plan */}
-        <div className={cn("rounded-3xl bg-surface p-8 ring-2 ring-primary")}>
+        <div className="rounded-3xl bg-surface p-8 ring-2 ring-primary">
           <h2 className="text-lg font-semibold text-on-surface">Premium</h2>
           <p className="mt-1 text-sm text-on-surface-variant">
             Unlock the full power of Vocali
