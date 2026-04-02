@@ -78,6 +78,11 @@ export async function createSpeechCoachFixture(
 /**
  * Creates a minimal test patient directly via ctx.db.insert.
  * Reusable across unit tests that need a patient record without a full SLP/caregiver flow.
+ *
+ * **Unit tests only.** This helper uses `t.run()` from convex-test and cannot be
+ * called inside a Convex mutation. For fixtures needed within mutations (e.g. in
+ * `convex/lib/testFixtures.ts` seed scripts), use `createPatientFixture` from
+ * `lib/testFixtures.ts` instead.
  */
 export async function createTestPatient(
   t: ReturnType<typeof convexTest>,
