@@ -253,9 +253,11 @@ export const duplicate = mutation({
     const original = await ctx.db.get(args.id);
     if (!original) throw new Error("Not found");
     if (original.slpUserId !== identity.subject) throw new Error("Forbidden");
+    const title = args.title ?? `Copy of ${original.title}`;
     return ctx.db.insert("app_instances", {
       templateType: original.templateType,
-      title: args.title ?? `Copy of ${original.title}`,
+      title,
+      titleLower: normalizeTitle(title),
       patientId: args.patientId,
       slpUserId: identity.subject,
       configJson: original.configJson,
