@@ -1,6 +1,7 @@
 import type { ComponentType } from "react";
 import { z } from "zod";
 
+import { type AppShellConfig, DEFAULT_APP_SHELL } from "./runtime/app-shell-types";
 import { AACBoardEditor } from "./templates/aac-board/editor";
 import { AACBoardRuntime } from "./templates/aac-board/runtime";
 import { type AACBoardConfig,AACBoardConfigSchema } from "./templates/aac-board/schema";
@@ -49,7 +50,7 @@ export interface TemplateRegistration {
   Runtime: ComponentType<RuntimeProps<any>>;
   defaultConfig: unknown;
   parseConfig: (json: string) => unknown;
-   
+  shell: AppShellConfig;
   aiConfigSchema: z.ZodTypeAny;
   schemaPrompt: string;
 }
@@ -130,6 +131,7 @@ export const templateRegistry: Record<string, TemplateRegistration> = {
     Runtime: AACBoardRuntime,
     defaultConfig: DEFAULT_AAC_CONFIG,
     parseConfig: (json: string) => AACBoardConfigSchema.parse(JSON.parse(json)),
+    shell: { ...DEFAULT_APP_SHELL, themePreset: "calm", enableSounds: true, enableDifficulty: false },
     aiConfigSchema: z.object({}).passthrough(),
     schemaPrompt: "Return a config object matching the template defaults.",
   },
@@ -145,6 +147,7 @@ export const templateRegistry: Record<string, TemplateRegistration> = {
     Runtime: FirstThenBoardRuntime,
     defaultConfig: DEFAULT_FIRST_THEN_CONFIG,
     parseConfig: (json: string) => FirstThenBoardConfigSchema.parse(JSON.parse(json)),
+    shell: { ...DEFAULT_APP_SHELL, themePreset: "calm", enableSounds: true, enableDifficulty: false },
     aiConfigSchema: z.object({}).passthrough(),
     schemaPrompt: "Return a config object matching the template defaults.",
   },
@@ -160,6 +163,7 @@ export const templateRegistry: Record<string, TemplateRegistration> = {
     Runtime: TokenBoardRuntime,
     defaultConfig: DEFAULT_TOKEN_BOARD_CONFIG,
     parseConfig: (json: string) => TokenBoardConfigSchema.parse(JSON.parse(json)),
+    shell: { ...DEFAULT_APP_SHELL, themePreset: "calm", enableSounds: true, enableDifficulty: false },
     aiConfigSchema: z.object({}).passthrough(),
     schemaPrompt: "Return a config object matching the template defaults.",
   },
@@ -175,6 +179,7 @@ export const templateRegistry: Record<string, TemplateRegistration> = {
     Runtime: VisualScheduleRuntime,
     defaultConfig: DEFAULT_VISUAL_SCHEDULE_CONFIG,
     parseConfig: (json: string) => VisualScheduleConfigSchema.parse(JSON.parse(json)),
+    shell: { ...DEFAULT_APP_SHELL, themePreset: "calm", enableSounds: true, enableDifficulty: false },
     aiConfigSchema: z.object({}).passthrough(),
     schemaPrompt: "Return a config object matching the template defaults.",
   },
@@ -190,6 +195,7 @@ export const templateRegistry: Record<string, TemplateRegistration> = {
     Runtime: MatchingGameRuntime,
     defaultConfig: DEFAULT_MATCHING_GAME_CONFIG,
     parseConfig: (json: string) => MatchingGameConfigSchema.parse(JSON.parse(json)),
+    shell: { ...DEFAULT_APP_SHELL, themePreset: "playful", enableSounds: true, enableDifficulty: true, enableProgress: true },
     aiConfigSchema: z.object({}).passthrough(),
     schemaPrompt: "Return a config object matching the template defaults.",
   },

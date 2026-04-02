@@ -24,4 +24,12 @@ describe("template runtime contract", () => {
       ).not.toThrow();
     });
   });
+
+  it("each template registration declares shared shell defaults", () => {
+    Object.values(templateRegistry).forEach((registration) => {
+      expect(registration.shell).toBeDefined();
+      expect(registration.shell.themePreset).toBeTruthy();
+      expect(registration.shell.enableInstructions).toBeTypeOf("boolean");
+    });
+  });
 });
