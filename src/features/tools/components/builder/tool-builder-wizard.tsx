@@ -16,8 +16,10 @@ import { templateRegistry } from "../../lib/registry";
 import { AIAssistPanel } from "./ai-assist-panel";
 import { AppearanceControls } from "./appearance-controls";
 import { ConfigEditor } from "./config-editor";
+import { GoalTagsEditor } from "./goal-tags-editor";
 import { PreviewPanel } from "./preview-panel";
 import { PublishSheet } from "./publish-sheet";
+import { TemplatePicker } from "./template-picker";
 
 type Builder = ReturnType<typeof useToolBuilder>;
 
@@ -112,6 +114,14 @@ export function ToolBuilderWizard({ builder }: ToolBuilderWizardProps) {
                   config={builder.config}
                   onChange={builder.updateConfig}
                 />
+                {builder.instanceId && (
+                  <div className="mt-6 pt-4 border-t border-border px-4 pb-4">
+                    <GoalTagsEditor
+                      instanceId={builder.instanceId}
+                      initialTags={(builder.config as { goalTags?: string[] })?.goalTags ?? []}
+                    />
+                  </div>
+                )}
               </TabsContent>
 
               <TabsContent value="appearance" className="flex-1 overflow-y-auto p-4 mt-0">
@@ -150,7 +160,11 @@ export function ToolBuilderWizard({ builder }: ToolBuilderWizardProps) {
         onClose={builder.closePublish}
         isSaving={builder.isSaving}
         publishedShareToken={builder.publishedShareToken}
+        instanceId={builder.instanceId}
+        patientId={builder.patientId}
+        onSelectPatient={builder.selectPatient}
         onPublish={builder.publish}
+        onUnpublish={builder.unpublish}
       />
     </div>
   );

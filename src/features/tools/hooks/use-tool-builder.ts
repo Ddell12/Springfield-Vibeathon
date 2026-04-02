@@ -8,7 +8,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { templateRegistry } from "../lib/registry";
 import type { ThemePreset } from "../lib/runtime/app-shell-types";
 
+export type WizardStep = 1 | 2 | 3 | 4;
+
 interface BuilderState {
+  step: WizardStep;
   patientId: Id<"patients"> | null;
   templateType: string | null;
   config: unknown;
@@ -30,6 +33,7 @@ export function useToolBuilder(initialId?: Id<"app_instances"> | null) {
   );
 
   const [state, setState] = useState<BuilderState>({
+    step: 1,
     patientId: null,
     templateType: null,
     config: null,
@@ -51,6 +55,7 @@ export function useToolBuilder(initialId?: Id<"app_instances"> | null) {
       seeded.current = true;
       const timer = setTimeout(() => {
         setState({
+          step: 3,
           patientId: existingInstance.patientId ?? null,
           templateType: existingInstance.templateType,
           config: JSON.parse(existingInstance.configJson),
@@ -72,6 +77,8 @@ export function useToolBuilder(initialId?: Id<"app_instances"> | null) {
   const createInstance = useMutation(api.tools.create);
   const updateInstance = useMutation(api.tools.update);
   const publishInstance = useMutation(api.tools.publish);
+  const archiveInstance = useMutation(api.tools.archive);
+  const unpublishInstance = useMutation(api.tools.unpublish);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const latestConfigRef = useRef<unknown>(null);
   const stateRef = useRef(state);
@@ -87,8 +94,13 @@ export function useToolBuilder(initialId?: Id<"app_instances"> | null) {
   }, []);
 
   const selectPatient = useCallback(
-    (patientId: Id<"patients">) => setState((s) => ({ ...s, patientId })),
-    []
+    async (patientId: Id<"patients">) => {
+      setState((s) => ({ ...s, patientId }));
+      if (state.instanceId) {
+        await updateInstance({ id: state.instanceId, patientId });
+      }
+    },
+    [state.instanceId, updateInstance]
   );
 
   const selectTemplate = useCallback((templateType: string) => {
@@ -102,6 +114,19 @@ export function useToolBuilder(initialId?: Id<"app_instances"> | null) {
 
   const openPublish = useCallback(
     () => setState((s) => ({ ...s, isPublishOpen: true })),
+    []
+  );
+
+  const nextStep = useCallback(
+    () => setState((s) => {
+      const next = Math.min(4, s.step + 1) as WizardStep;
+      return { ...s, step: next, isPublishOpen: next === 4 ? true : s.isPublishOpen };
+    }),
+    []
+  );
+
+  const prevStep = useCallback(
+    () => setState((s) => ({ ...s, step: Math.max(1, s.step - 1) as WizardStep })),
     []
   );
 
@@ -186,15 +211,30 @@ export function useToolBuilder(initialId?: Id<"app_instances"> | null) {
     }
   }, [publishInstance]);
 
+  const unpublish = useCallback(async () => {
+    const { instanceId } = stateRef.current;
+    if (!instanceId) return;
+    setState((s) => ({ ...s, isSaving: true }));
+    try {
+      await unpublishInstance({ id: instanceId });
+      setState((s) => ({ ...s, publishedShareToken: null, isSaving: false }));
+    } catch {
+      setState((s) => ({ ...s, isSaving: false }));
+    }
+  }, [unpublishInstance]);
+
   return {
     ...state,
     selectPatient,
     selectTemplate,
     openPublish,
+    nextStep,
+    prevStep,
     closePublish,
     updateConfig,
     updateAppearance,
     saveAndAdvance,
     publish,
+    unpublish,
   };
 }

@@ -24,6 +24,12 @@ vi.mock("../appearance-controls", () => ({
 vi.mock("../publish-sheet", () => ({
   PublishSheet: () => <div data-testid="publish-sheet" />,
 }));
+vi.mock("../goal-tags-editor", () => ({
+  GoalTagsEditor: () => <div data-testid="goal-tags-editor" />,
+}));
+vi.mock("./template-picker", () => ({
+  TemplatePicker: () => <div data-testid="template-picker" />,
+}));
 
 import type { useToolBuilder } from "../../hooks/use-tool-builder";
 import { ToolBuilderWizard } from "../tool-builder-wizard";
@@ -32,6 +38,7 @@ type Builder = ReturnType<typeof useToolBuilder>;
 
 function makeBuilder(overrides: Partial<Builder> = {}): Builder {
   return {
+    step: 3 as never,
     patientId: null,
     templateType: "token_board",
     config: { title: "Test Board", tokenCount: 5, rewardLabel: "iPad", tokenShape: "star", tokenColor: "#FBBF24", highContrast: false },
@@ -44,11 +51,14 @@ function makeBuilder(overrides: Partial<Builder> = {}): Builder {
     selectPatient: vi.fn(),
     selectTemplate: vi.fn(),
     openPublish: vi.fn(),
+    nextStep: vi.fn(),
+    prevStep: vi.fn(),
     closePublish: vi.fn(),
     updateConfig: vi.fn(),
     updateAppearance: vi.fn(),
     saveAndAdvance: vi.fn(),
     publish: vi.fn().mockResolvedValue(null),
+    unpublish: vi.fn().mockResolvedValue(undefined),
     ...overrides,
   } as unknown as Builder;
 }

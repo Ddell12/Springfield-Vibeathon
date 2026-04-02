@@ -242,6 +242,8 @@ export default defineSchema({
     originalDescription: v.optional(v.string()),
     shareToken: v.optional(v.string()),
     publishedAt: v.optional(v.number()),
+    goalTags: v.optional(v.array(v.string())),
+    lastActivityAt: v.optional(v.number()),
   })
     .index("by_slpUserId", ["slpUserId"])
     .index("by_slpUserId_status", ["slpUserId", "status"])
@@ -270,6 +272,8 @@ export default defineSchema({
       v.literal("app_closed")
     ),
     eventPayloadJson: v.optional(v.string()),
+    sessionId: v.optional(v.string()),
+    eventSource: v.optional(v.union(v.literal("child"), v.literal("slp"))),
   })
     .index("by_appInstanceId", ["appInstanceId"])
     .index("by_patientId", ["patientId"]),
