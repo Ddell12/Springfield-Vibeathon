@@ -3,6 +3,10 @@ import { v } from "convex/values";
 import type { Id } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
 
+function normalizeTitle(title: string) {
+  return title.trim().toLowerCase();
+}
+
 export const create = mutation({
   args: {
     templateType: v.string(),
@@ -17,6 +21,7 @@ export const create = mutation({
     return ctx.db.insert("app_instances", {
       templateType: args.templateType,
       title: args.title,
+      titleLower: normalizeTitle(args.title),
       ...(args.patientId !== undefined ? { patientId: args.patientId } : {}),
       slpUserId: identity.subject,
       configJson: args.configJson,
@@ -41,7 +46,9 @@ export const update = mutation({
 
     await ctx.db.patch(args.id, {
       configJson: args.configJson,
-      ...(args.title !== undefined ? { title: args.title } : {}),
+      ...(args.title !== undefined
+        ? { title: args.title, titleLower: normalizeTitle(args.title) }
+        : {}),
     });
   },
 });
@@ -127,6 +134,55 @@ export const listRecentBySLP = query({
       .withIndex("by_slpUserId", (q) => q.eq("slpUserId", identity.subject))
       .order("desc")
       .take(limit);
+  },
+});
+
+export const listPageBySLP = query({
+  args: {
+    page: v.number(),
+    pageSize: v.number(),
+    search: v.string(),
+    sortBy: v.union(v.literal("recent"), v.literal("alphabetical")),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      return { items: [], totalCount: 0, page: 1, pageSize: args.pageSize };
+    }
+
+    // Single query — no silent .take() cap. Filter archived in JS.
+    const all = await ctx.db
+      .query("app_instances")
+      .withIndex("by_slpUserId", (q) => q.eq("slpUserId", identity.subject))
+      .collect();
+
+    let items = all.filter((item) => item.status !== "archived");
+
+    const search = args.search.trim().toLowerCase();
+    if (search) {
+      // titleLower may be undefined for docs written before the backfill migration ran.
+      items = items.filter((item) =>
+        (item.titleLower ?? item.title.toLowerCase()).includes(search)
+      );
+    }
+
+    items.sort((a, b) =>
+      args.sortBy === "alphabetical"
+        ? a.title.localeCompare(b.title)
+        : b._creationTime - a._creationTime
+    );
+
+    const totalCount = items.length;
+    const page = Math.max(1, args.page);
+    const pageSize = Math.min(Math.max(args.pageSize, 1), 24);
+    const start = (page - 1) * pageSize;
+
+    return {
+      items: items.slice(start, start + pageSize),
+      totalCount,
+      page,
+      pageSize,
+    };
   },
 });
 

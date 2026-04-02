@@ -229,6 +229,7 @@ export default defineSchema({
   app_instances: defineTable({
     templateType: v.string(),
     title: v.string(),
+    titleLower: v.optional(v.string()),
     patientId: v.optional(v.id("patients")),
     slpUserId: v.string(),
     configJson: v.string(),
@@ -242,6 +243,7 @@ export default defineSchema({
     publishedAt: v.optional(v.number()),
   })
     .index("by_slpUserId", ["slpUserId"])
+    .index("by_slpUserId_status", ["slpUserId", "status"])
     .index("by_patientId", ["patientId"])
     .index("by_shareToken", ["shareToken"]),
 
