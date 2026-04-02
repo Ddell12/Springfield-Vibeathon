@@ -14,7 +14,6 @@ vi.mock("@clerk/nextjs", () => ({
 vi.mock("next/navigation", () => ({
   usePathname: () => mockPathnameValue,
   useSearchParams: () => ({ get: () => null }),
-  useRouter: () => ({ replace: vi.fn(), push: vi.fn() }),
 }));
 vi.mock("next/link", () => ({ default: ({ href, children, ...props }: any) => <a href={href} {...props}>{children}</a> }));
 vi.mock("@/shared/components/ui/popover", () => ({

@@ -28,6 +28,16 @@ describe("requireSlpUser", () => {
     expect(mockRedirect).toHaveBeenCalledWith("/family");
   });
 
+  it("redirects unauthenticated users to /sign-in", async () => {
+    mockCurrentUser.mockResolvedValue(null);
+    mockRedirect.mockClear();
+
+    const { requireSlpUser } = await import("../server-role-guards");
+    await requireSlpUser();
+
+    expect(mockRedirect).toHaveBeenCalledWith("/sign-in");
+  });
+
   it("allows therapist users through", async () => {
     mockCurrentUser.mockResolvedValue({
       publicMetadata: { role: "slp" },
