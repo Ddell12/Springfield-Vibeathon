@@ -2,12 +2,14 @@
 
 import { useMutation, useQuery } from "convex/react";
 import { useState } from "react";
+import { toast } from "sonner";
 
 import { cn } from "@/core/utils";
 import { Button } from "@/shared/components/ui/button";
 
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
+import { getSessionStatusLabel } from "../lib/session-analysis";
 import { ProgressCard } from "./progress-card";
 
 const STATUS_STYLES = {
@@ -20,18 +22,6 @@ const STATUS_STYLES = {
   failed: "bg-error-container text-on-error-container",
   // legacy compat
   completed: "bg-success-container text-on-success-container",
-};
-
-const STATUS_LABELS = {
-  configuring: "Setting up",
-  active: "In progress",
-  transcript_ready: "Transcript saved",
-  analyzing: "Reviewing",
-  analyzed: "Complete",
-  review_failed: "Review failed",
-  failed: "Failed",
-  // legacy compat
-  completed: "Complete",
 };
 
 function formatDuration(startedAt?: number, endedAt?: number): string {
@@ -109,7 +99,7 @@ export function SessionHistory(props: Props) {
                 {formatDuration(session.startedAt, session.endedAt)}
               </span>
               <span className={cn("rounded-full px-2 py-0.5 text-xs font-medium", STATUS_STYLES[session.status as keyof typeof STATUS_STYLES])}>
-                {STATUS_LABELS[session.status as keyof typeof STATUS_LABELS]}
+                {getSessionStatusLabel(session.status)}
               </span>
             </div>
           </button>
@@ -126,6 +116,19 @@ export function SessionHistory(props: Props) {
 function ExpandedDetail({ sessionId }: { sessionId: Id<"speechCoachSessions"> }) {
   const detail = useQuery(api.speechCoach.getSessionDetail, { sessionId });
   const retryReview = useMutation(api.speechCoach.retryReview);
+  const [isRetrying, setIsRetrying] = useState(false);
+
+  async function handleRetry() {
+    setIsRetrying(true);
+    try {
+      await retryReview({ sessionId });
+    } catch (err) {
+      console.error("[SessionHistory] Failed to retry review:", err);
+      toast.error("Could not retry review. Please try again.");
+    } finally {
+      setIsRetrying(false);
+    }
+  }
 
   if (!detail) return <div className="px-4 pb-4 text-sm text-muted-foreground">Loading...</div>;
   const snapshot = detail.session?.config.runtimeSnapshot;
@@ -139,9 +142,10 @@ function ExpandedDetail({ sessionId }: { sessionId: Id<"speechCoachSessions"> })
             size="sm"
             variant="outline"
             className="mt-2"
-            onClick={() => retryReview({ sessionId })}
+            disabled={isRetrying}
+            onClick={handleRetry}
           >
-            Retry review
+            {isRetrying ? "Retrying…" : "Retry review"}
           </Button>
           {snapshot ? (
             <p className="mt-2 text-xs text-muted-foreground">

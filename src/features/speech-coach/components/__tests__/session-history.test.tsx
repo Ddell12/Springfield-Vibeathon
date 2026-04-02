@@ -13,6 +13,7 @@ vi.mock("convex/react", () => ({
 }));
 
 const SESSION_ID = "speechCoachSessions_1" as Id<"speechCoachSessions">;
+const ANALYZING_SESSION_ID = "speechCoachSessions_2" as Id<"speechCoachSessions">;
 
 const REVIEW_FAILED_SESSION = {
   _id: SESSION_ID,
@@ -22,6 +23,20 @@ const REVIEW_FAILED_SESSION = {
   status: "review_failed",
   config: {
     targetSounds: ["/s/"],
+    durationMinutes: 10,
+    patientName: "Ace",
+    runtimeSnapshot: { templateVersion: "1.0", voiceKey: "echo" },
+  },
+};
+
+const ANALYZING_SESSION = {
+  _id: ANALYZING_SESSION_ID,
+  _creationTime: 1700000000001,
+  startedAt: 1700000000001,
+  endedAt: 1700003600001,
+  status: "analyzing",
+  config: {
+    targetSounds: ["/r/"],
     durationMinutes: 10,
     patientName: "Ace",
     runtimeSnapshot: { templateVersion: "1.0", voiceKey: "echo" },
@@ -56,5 +71,24 @@ describe("SessionHistory", () => {
 
     expect(await screen.findByText("Retry review")).toBeInTheDocument();
     expect(screen.getByText("Transcript available while review is retried.")).toBeInTheDocument();
+  });
+
+  it("shows in-progress message when a session is in analyzing state", async () => {
+    mockUseQuery.mockImplementation((_queryRef: unknown, args: unknown) => {
+      if (args === "skip") return undefined;
+      if (args && typeof args === "object" && "sessionId" in args) {
+        return { session: ANALYZING_SESSION, progress: null };
+      }
+      return [ANALYZING_SESSION];
+    });
+
+    render(<SessionHistory patientId={patientId} />);
+
+    const button = await screen.findByRole("button");
+    fireEvent.click(button);
+
+    expect(
+      await screen.findByText("Transcript saved. AI review is in progress.")
+    ).toBeInTheDocument();
   });
 });
