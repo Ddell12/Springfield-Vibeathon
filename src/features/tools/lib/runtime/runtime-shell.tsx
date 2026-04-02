@@ -6,6 +6,7 @@ import { cn } from "@/core/utils";
 import { Button } from "@/shared/components/ui/button";
 
 import type { AppShellConfig } from "./app-shell-types";
+import { ShellStateContext } from "./shell-state-context";
 import { useAppShellState } from "./use-app-shell-state";
 
 export function RuntimeShell({
@@ -123,7 +124,11 @@ export function RuntimeShell({
             )}
           </aside>
         )}
-        <div>{children}</div>
+        <ShellStateContext.Provider
+          value={{ difficulty: state.difficulty, soundsEnabled: state.soundsEnabled }}
+        >
+          <div>{children}</div>
+        </ShellStateContext.Provider>
       </div>
     </div>
   );
