@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { ConvexError } from "convex/values";
 
+import { query } from "./_generated/server";
 import { assertCaregiverAccess, assertPatientAccess } from "./lib/auth";
 import { authedMutation, authedQuery } from "./lib/customFunctions";
 
@@ -171,6 +172,46 @@ export const getByCaregiver = authedQuery({
       .collect();
 
     return all.filter((f) => f.caregiverUserId === ctx.userId);
+  },
+});
+
+// ─── getRequiredProgressByCaregiver ──────────────────────────────────────────
+// Returns how many of the 4 required forms the current caregiver has signed
+// for the given patient. Returns all-zero defaults if unauthenticated or
+// the user does not have caregiver access (soft access check).
+export const getRequiredProgressByCaregiver = query({
+  args: { patientId: v.id("patients") },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      return { signed: 0, total: REQUIRED_INTAKE_FORMS.length, isComplete: false };
+    }
+
+    // Soft access check — return defaults rather than throwing for non-caregivers
+    try {
+      await assertCaregiverAccess(ctx, args.patientId);
+    } catch {
+      return { signed: 0, total: REQUIRED_INTAKE_FORMS.length, isComplete: false };
+    }
+
+    const allForms = await ctx.db
+      .query("intakeForms")
+      .withIndex("by_patientId", (q) => q.eq("patientId", args.patientId))
+      .collect();
+
+    const signedTypes = new Set(
+      allForms
+        .filter((form) => form.caregiverUserId === identity.subject)
+        .map((form) => form.formType)
+    );
+
+    const signedCount = REQUIRED_INTAKE_FORMS.filter((type) => signedTypes.has(type)).length;
+
+    return {
+      signed: signedCount,
+      total: REQUIRED_INTAKE_FORMS.length,
+      isComplete: REQUIRED_INTAKE_FORMS.every((type) => signedTypes.has(type)),
+    };
   },
 });
 

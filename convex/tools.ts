@@ -195,6 +195,17 @@ export const listByPatient = query({
       .collect(),
 });
 
+export const listPublishedByPatient = query({
+  args: { patientId: v.id("patients") },
+  handler: async (ctx, args) => {
+    const items = await ctx.db
+      .query("app_instances")
+      .withIndex("by_patientId", (q) => q.eq("patientId", args.patientId))
+      .take(100);
+    return items.filter((item) => item.status === "published" && item.shareToken);
+  },
+});
+
 export const getEventSummaryByPatient = query({
   args: { patientId: v.id("patients") },
   handler: async (ctx, args) => {

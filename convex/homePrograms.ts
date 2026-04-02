@@ -147,6 +147,20 @@ export const getActiveByPatient = query({
   },
 });
 
+export const listActiveSpeechCoachByPatient = query({
+  args: { patientId: v.id("patients") },
+  handler: async (ctx, args) => {
+    await assertPatientAccess(ctx, args.patientId);
+    const programs = await ctx.db
+      .query("homePrograms")
+      .withIndex("by_patientId_status", (q) =>
+        q.eq("patientId", args.patientId).eq("status", "active")
+      )
+      .take(100);
+    return programs.filter((program) => program.type === "speech-coach");
+  },
+});
+
 // ── Mutations ───────────────────────────────────────────────────────────────
 
 export const create = slpMutation({

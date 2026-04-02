@@ -371,3 +371,50 @@ describe("getEventSummaryByPatient", () => {
     expect(summary[0].lastActivityAt).not.toBeNull();
   });
 });
+
+describe("listPublishedByPatient", () => {
+  it("returns only published apps with a shareToken", async () => {
+    const t = convexTest(schema, modules).withIdentity(SLP_IDENTITY);
+    const { patientId } = await createPatient(t);
+
+    // Draft app — should NOT be returned
+    await t.mutation(api.tools.create, {
+      templateType: "aac_board",
+      title: "Draft App",
+      patientId,
+      configJson: SAMPLE_CONFIG,
+    });
+
+    // Published app without token is not possible via our API (publish always creates a token)
+    // Published app with token — SHOULD be returned
+    const publishedId = await t.mutation(api.tools.create, {
+      templateType: "aac_board",
+      title: "Published App",
+      patientId,
+      configJson: SAMPLE_CONFIG,
+    });
+    await t.mutation(api.tools.publish, { id: publishedId });
+
+    const results = await t.query(api.tools.listPublishedByPatient, { patientId });
+
+    expect(results).toHaveLength(1);
+    expect(results[0].title).toBe("Published App");
+    expect(results[0].status).toBe("published");
+    expect(results[0].shareToken).toBeTruthy();
+  });
+
+  it("returns empty array when no published apps exist", async () => {
+    const t = convexTest(schema, modules).withIdentity(SLP_IDENTITY);
+    const { patientId } = await createPatient(t);
+
+    await t.mutation(api.tools.create, {
+      templateType: "aac_board",
+      title: "Draft Only",
+      patientId,
+      configJson: SAMPLE_CONFIG,
+    });
+
+    const results = await t.query(api.tools.listPublishedByPatient, { patientId });
+    expect(results).toHaveLength(0);
+  });
+});

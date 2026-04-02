@@ -161,3 +161,70 @@ describe("intakeForms.hasTelehealthConsent", () => {
     expect(result).toBe(false);
   });
 });
+
+describe("intakeForms.getRequiredProgressByCaregiver", () => {
+  it("returns correct counts for partial completion", async () => {
+    const t = convexTest(schema, modules);
+    const patientId = await setupPatientWithCaregiver(t);
+    const caregiver = t.withIdentity(CAREGIVER_IDENTITY);
+
+    // Sign 1 of the 4 required forms
+    await caregiver.mutation(api.intakeForms.signForm, {
+      patientId,
+      formType: "hipaa-npp",
+      signerName: "Jane Smith",
+    });
+
+    const progress = await caregiver.query(
+      api.intakeForms.getRequiredProgressByCaregiver,
+      { patientId }
+    );
+
+    expect(progress.signed).toBe(1);
+    expect(progress.total).toBe(4);
+    expect(progress.isComplete).toBe(false);
+  });
+
+  it("returns isComplete=true when all 4 required forms are signed", async () => {
+    const t = convexTest(schema, modules);
+    const patientId = await setupPatientWithCaregiver(t);
+    const caregiver = t.withIdentity(CAREGIVER_IDENTITY);
+
+    const requiredForms = [
+      "hipaa-npp",
+      "consent-treatment",
+      "financial-agreement",
+      "cancellation-policy",
+    ] as const;
+
+    for (const formType of requiredForms) {
+      await caregiver.mutation(api.intakeForms.signForm, {
+        patientId,
+        formType,
+        signerName: "Jane Smith",
+      });
+    }
+
+    const progress = await caregiver.query(
+      api.intakeForms.getRequiredProgressByCaregiver,
+      { patientId }
+    );
+
+    expect(progress.signed).toBe(4);
+    expect(progress.total).toBe(4);
+    expect(progress.isComplete).toBe(true);
+  });
+
+  it("returns zero progress for unauthenticated caller", async () => {
+    const t = convexTest(schema, modules);
+    const patientId = await setupPatientWithCaregiver(t);
+
+    const progress = await t.query(
+      api.intakeForms.getRequiredProgressByCaregiver,
+      { patientId }
+    );
+
+    expect(progress.signed).toBe(0);
+    expect(progress.isComplete).toBe(false);
+  });
+});

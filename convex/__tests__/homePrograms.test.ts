@@ -286,3 +286,59 @@ describe("homePrograms.create — speech-coach type", () => {
     expect(program.speechCoachConfig).toBeUndefined();
   });
 });
+
+// ── homePrograms.listActiveSpeechCoachByPatient ──────────────────────────────
+
+describe("homePrograms.listActiveSpeechCoachByPatient", () => {
+  it("returns only speech-coach type programs", async () => {
+    const t = convexTest(schema, modules);
+    const slp = t.withIdentity(SLP_IDENTITY);
+    const { patientId } = await slp.mutation(api.patients.create, VALID_PATIENT);
+
+    // Create a standard program
+    await slp.mutation(api.homePrograms.create, {
+      patientId,
+      ...VALID_PROGRAM,
+      title: "Standard handout",
+      type: "standard",
+    });
+
+    // Create a speech-coach program
+    await slp.mutation(api.homePrograms.create, {
+      patientId,
+      ...VALID_PROGRAM,
+      title: "Speech Coach - /s/ sounds",
+      instructions: "Practice /s/ sounds.",
+      type: "speech-coach",
+      speechCoachConfig: {
+        targetSounds: ["/s/"],
+        ageRange: "5-7" as const,
+        defaultDurationMinutes: 10,
+      },
+    });
+
+    const speechPrograms = await slp.query(
+      api.homePrograms.listActiveSpeechCoachByPatient,
+      { patientId }
+    );
+
+    expect(speechPrograms).toHaveLength(1);
+    expect(speechPrograms[0].title).toBe("Speech Coach - /s/ sounds");
+    expect(speechPrograms[0].type).toBe("speech-coach");
+  });
+
+  it("returns empty array when no speech-coach programs exist", async () => {
+    const t = convexTest(schema, modules);
+    const slp = t.withIdentity(SLP_IDENTITY);
+    const { patientId } = await slp.mutation(api.patients.create, VALID_PATIENT);
+
+    await slp.mutation(api.homePrograms.create, { patientId, ...VALID_PROGRAM });
+
+    const speechPrograms = await slp.query(
+      api.homePrograms.listActiveSpeechCoachByPatient,
+      { patientId }
+    );
+
+    expect(speechPrograms).toHaveLength(0);
+  });
+});
