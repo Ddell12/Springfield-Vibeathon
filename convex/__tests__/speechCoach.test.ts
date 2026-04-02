@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { api } from "../_generated/api";
 import schema from "../schema";
-import { suppressSchedulerErrors } from "./testHelpers";
+import { suppressSchedulerErrors, createSpeechCoachFixture } from "./testHelpers";
 
 const modules = import.meta.glob("../**/*.*s");
 
@@ -289,5 +289,22 @@ describe("speechCoach queries", () => {
     const legacyDetail = await caregiver.query(api.speechCoach.getSessionDetail, { sessionId: legacySessionId });
     expect(legacyDetail.session).toBeDefined();
     expect(legacyDetail.session.config.runtimeSnapshot).toBeUndefined();
+  });
+});
+
+// ── shared fixtures ──────────────────────────────────────────────────────────
+
+describe("shared fixtures", () => {
+  it("creates a speech coach home program from shared fixtures", async () => {
+    const t = convexTest(schema, modules);
+    const fixture = await createSpeechCoachFixture(t, {
+      slpIdentity: SLP_IDENTITY,
+      caregiverIdentity: CAREGIVER_IDENTITY,
+    });
+
+    expect(fixture.patientId).toBeTruthy();
+    expect(fixture.programId).toBeTruthy();
+    const patient = await t.run((ctx) => ctx.db.get(fixture.patientId));
+    expect(patient?.testMetadata).toBeUndefined();
   });
 });

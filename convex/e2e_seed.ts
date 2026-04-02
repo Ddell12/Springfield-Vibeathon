@@ -1,6 +1,11 @@
 import { v } from "convex/values";
 
 import { internalMutation } from "./_generated/server";
+import {
+  createPatientFixture,
+  createAcceptedCaregiverLinkFixture,
+  createSpeechCoachProgramFixture,
+} from "./lib/testFixtures";
 
 /** Seed a patient + accepted caregiver link for E2E testing.
  *  Run via: npx convex run e2e_seed:seedTestCaregiverLink \
@@ -23,43 +28,25 @@ export const seedTestCaregiverLink = internalMutation({
       return { status: "skipped", reason: "Caregiver link already exists" };
     }
 
-    // 1. Create test patient owned by SLP
-    const patientId = await ctx.db.insert("patients", {
+    const testMetadata = { source: "seed-e2e" as const };
+
+    const patientId = await createPatientFixture(ctx, {
       slpUserId: args.slpUserId,
       firstName: "Test",
       lastName: "Child",
-      dateOfBirth: "2020-01-01",
-      diagnosis: "articulation",
-      status: "active",
-      communicationLevel: "single-words",
-      interests: ["dinosaurs", "bubbles"],
+      caregiverEmail: args.caregiverEmail,
+      testMetadata,
     });
 
-    // 2. Create accepted caregiver link
-    await ctx.db.insert("caregiverLinks", {
+    await createAcceptedCaregiverLinkFixture(ctx, {
       patientId,
       caregiverUserId: args.caregiverUserId,
-      email: args.caregiverEmail,
-      inviteToken: "e2e-test-token-00000000",
-      inviteStatus: "accepted",
-      relationship: "parent",
+      caregiverEmail: args.caregiverEmail,
     });
 
-    // 3. Create speech coach home program so Speech Coach is testable
-    await ctx.db.insert("homePrograms", {
+    await createSpeechCoachProgramFixture(ctx, {
       patientId,
       slpUserId: args.slpUserId,
-      title: "Speech Coach — /s/ sounds",
-      instructions: "Practice initial and final /s/ sounds with the speech coach. Focus on clear production.",
-      frequency: "daily",
-      status: "active",
-      startDate: "2026-03-01",
-      type: "speech-coach",
-      speechCoachConfig: {
-        targetSounds: ["s"],
-        ageRange: "5-7",
-        defaultDurationMinutes: 5,
-      },
     });
 
     return { status: "seeded", patientId };

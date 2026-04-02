@@ -16,6 +16,7 @@
     "postinstall": "cd artifacts/wab-scaffold && npm install --omit=dev --legacy-peer-deps --no-audit --no-fund 2>/dev/null || true",
     "seed:demo": "npx tsx scripts/seed-demo.ts",
     "seed:demo:reset": "npx tsx scripts/seed-demo.ts --reset",
+    "seed:e2e": "npx tsx scripts/seed-e2e.ts",
     "speech-coach:agent": "tsx --env-file=.env.local src/features/speech-coach/livekit/entrypoint.ts dev",
     "speech-coach:agent:start": "tsx --env-file=.env.local src/features/speech-coach/livekit/entrypoint.ts start"
   },
