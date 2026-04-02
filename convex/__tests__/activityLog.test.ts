@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import { api, internal } from "../_generated/api";
 import schema from "../schema";
+import { createTestPatient } from "./testHelpers";
 
 const modules = import.meta.glob("../**/*.*s");
 
@@ -10,19 +11,6 @@ const SLP_IDENTITY = { subject: "slp-user-123", issuer: "clerk" };
 const OTHER_IDENTITY = { subject: "other-user-456", issuer: "clerk" };
 
 describe("activityLog", () => {
-  async function createTestPatient(t: ReturnType<typeof convexTest>) {
-    return await t.run(async (ctx) => {
-      return await ctx.db.insert("patients", {
-        slpUserId: "slp-user-123",
-        firstName: "Alex",
-        lastName: "Smith",
-        dateOfBirth: "2020-01-15",
-        diagnosis: "articulation",
-        status: "active",
-      });
-    });
-  }
-
   it("log writes an activity entry", async () => {
     const t = convexTest(schema, modules);
     const patientId = await createTestPatient(t);
@@ -74,5 +62,13 @@ describe("activityLog", () => {
         { patientId }
       )
     ).rejects.toThrow();
+  });
+});
+
+describe("shared test helpers", () => {
+  it("creates a patient through shared test helpers", async () => {
+    const t = convexTest(schema, modules);
+    const patientId = await createTestPatient(t, { slpUserId: "slp-user-123" });
+    expect(patientId).toBeTruthy();
   });
 });

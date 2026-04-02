@@ -308,3 +308,15 @@ describe("shared fixtures", () => {
     expect(patient?.testMetadata).toBeUndefined();
   });
 });
+
+describe("shared helpers integration", () => {
+  it("creates speech coach fixtures through shared helpers", async () => {
+    const t = convexTest(schema, modules);
+    const fixture = await createSpeechCoachFixture(t, {
+      slpIdentity: SLP_IDENTITY,
+      caregiverIdentity: CAREGIVER_IDENTITY,
+    });
+
+    expect(fixture.programId).toBeTruthy();
+  });
+});

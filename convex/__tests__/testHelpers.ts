@@ -74,3 +74,31 @@ export async function createSpeechCoachFixture(
 
   return { patientId, programId };
 }
+
+/**
+ * Creates a minimal test patient directly via ctx.db.insert.
+ * Reusable across unit tests that need a patient record without a full SLP/caregiver flow.
+ */
+export async function createTestPatient(
+  t: ReturnType<typeof convexTest>,
+  args: {
+    slpUserId?: string;
+    testMetadata?: {
+      source: "developer-shortcut" | "seed-demo" | "seed-e2e";
+      createdByUserId?: string;
+      expiresAt?: number;
+    };
+  } = {},
+): Promise<Id<"patients">> {
+  return await t.run(async (ctx) => {
+    return await ctx.db.insert("patients", {
+      slpUserId: args.slpUserId ?? "slp-user-123",
+      firstName: "Alex",
+      lastName: "Smith",
+      dateOfBirth: "2020-01-15",
+      diagnosis: "articulation",
+      status: "active",
+      testMetadata: args.testMetadata,
+    });
+  });
+}
