@@ -3,12 +3,31 @@ import { ConvexError } from "convex/values";
 import type { Id } from "../_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "../_generated/server";
 
-/** Returns identity.subject or null (for queries that return null on auth failure). */
+function getAuthIdentifiers(
+  identity: { subject?: string | null; tokenIdentifier?: string | null } | null,
+): string[] {
+  return Array.from(
+    new Set(
+      [identity?.subject, identity?.tokenIdentifier].filter(
+        (value): value is string => typeof value === "string" && value.length > 0,
+      ),
+    ),
+  );
+}
+
+async function getCurrentAuthIdentifiers(
+  ctx: QueryCtx | MutationCtx,
+): Promise<string[]> {
+  const identity = await ctx.auth.getUserIdentity();
+  return getAuthIdentifiers(identity);
+}
+
+/** Returns the preferred auth user id or null (for queries that return null on auth failure). */
 export async function getAuthUserId(
   ctx: QueryCtx | MutationCtx,
 ): Promise<string | null> {
   const identity = await ctx.auth.getUserIdentity();
-  return identity?.subject ?? null;
+  return identity?.subject ?? identity?.tokenIdentifier ?? null;
 }
 
 /**
@@ -35,11 +54,10 @@ export async function assertSessionOwner(
     throw new Error("Session has no owner — legacy session access denied");
   }
 
-  // Owned sessions require matching auth
-  const userId = await getAuthUserId(ctx);
-  if (!userId || session.userId !== userId) {
+  const authIdentifiers = await getCurrentAuthIdentifiers(ctx);
+  if (authIdentifiers.length === 0 || !authIdentifiers.includes(session.userId)) {
     if (opts?.soft) return null;
-    throw new Error(userId ? "Not authorized" : "Not authenticated");
+    throw new Error(authIdentifiers.length > 0 ? "Not authorized" : "Not authenticated");
   }
 
   return session;
@@ -92,36 +110,50 @@ export async function assertCaregiverAccess(
   ctx: QueryCtx | MutationCtx,
   patientId: Id<"patients">,
 ): Promise<string> {
-  const userId = await getAuthUserId(ctx);
-  if (!userId) throw new ConvexError("Not authenticated");
-  const link = await ctx.db
-    .query("caregiverLinks")
-    .withIndex("by_caregiverUserId_patientId", (q) =>
-      q.eq("caregiverUserId", userId).eq("patientId", patientId)
-    )
-    .first();
-  if (!link || link.inviteStatus !== "accepted") {
+  const authIdentifiers = await getCurrentAuthIdentifiers(ctx);
+  if (authIdentifiers.length === 0) throw new ConvexError("Not authenticated");
+
+  for (const authIdentifier of authIdentifiers) {
+    const link = await ctx.db
+      .query("caregiverLinks")
+      .withIndex("by_caregiverUserId_patientId", (q) =>
+        q.eq("caregiverUserId", authIdentifier).eq("patientId", patientId)
+      )
+      .first();
+    if (link?.inviteStatus === "accepted") {
+      return link.caregiverUserId ?? authIdentifier;
+    }
+  }
+
+  {
     throw new ConvexError("Not authorized to access this patient");
   }
-  return userId;
 }
 
 export async function assertPatientAccess(
   ctx: QueryCtx | MutationCtx,
   patientId: Id<"patients">,
 ): Promise<{ userId: string; role: UserRole }> {
-  const userId = await getAuthUserId(ctx);
-  if (!userId) throw new ConvexError("Not authenticated");
+  const authIdentifiers = await getCurrentAuthIdentifiers(ctx);
+  if (authIdentifiers.length === 0) throw new ConvexError("Not authenticated");
   const patient = await ctx.db.get(patientId);
   if (!patient) throw new ConvexError("Patient not found");
-  if (patient.slpUserId === userId) return { userId, role: "slp" };
-  const link = await ctx.db
-    .query("caregiverLinks")
-    .withIndex("by_caregiverUserId_patientId", (q) =>
-      q.eq("caregiverUserId", userId).eq("patientId", patientId)
-    )
-    .filter((q) => q.eq(q.field("inviteStatus"), "accepted"))
-    .first();
-  if (link) return { userId, role: "caregiver" };
+
+  if (authIdentifiers.includes(patient.slpUserId)) {
+    return { userId: patient.slpUserId, role: "slp" };
+  }
+
+  for (const authIdentifier of authIdentifiers) {
+    const link = await ctx.db
+      .query("caregiverLinks")
+      .withIndex("by_caregiverUserId_patientId", (q) =>
+        q.eq("caregiverUserId", authIdentifier).eq("patientId", patientId)
+      )
+      .first();
+    if (link?.inviteStatus === "accepted") {
+      return { userId: link.caregiverUserId ?? authIdentifier, role: "caregiver" };
+    }
+  }
+
   throw new ConvexError("Not authorized");
 }

@@ -7,6 +7,7 @@ import { useState } from "react";
 import { Badge } from "@/shared/components/ui/badge";
 import { Button } from "@/shared/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/components/ui/card";
+import { MaterialIcon } from "@/shared/components/material-icon";
 
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
@@ -131,6 +132,22 @@ export function HomeProgramsWidget({ patientId }: HomeProgramsWidgetProps) {
                         <span className="sr-only">Print home program</span>
                       </Link>
                     </Button>
+                    {program.type === "speech-coach" ? (
+                      <Button
+                        asChild
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 w-7 shrink-0 p-0"
+                      >
+                        <Link
+                          href={`/patients/${patientId}/speech-coach?program=${program._id}`}
+                          title="Configure coach"
+                        >
+                          <MaterialIcon icon="tune" size="sm" />
+                          <span className="sr-only">Configure coach</span>
+                        </Link>
+                      </Button>
+                    ) : null}
                   </div>
                 )
               )}

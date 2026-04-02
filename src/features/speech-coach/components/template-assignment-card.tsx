@@ -63,7 +63,7 @@ export function TemplateAssignmentCard({
                 "rounded-lg px-4 py-2 text-left text-sm transition-colors duration-300",
                 selectedId === t._id
                   ? "bg-primary/10 text-primary"
-                  : "bg-muted text-muted-foreground hover:bg-muted/80"
+                  : "bg-surface-container-high text-on-surface-variant hover:bg-surface-container-highest"
               )}
             >
               {t.name}

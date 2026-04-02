@@ -8,6 +8,10 @@ vi.mock("@/app/api/lib/authenticate", () => ({
 // Mock livekit-server-sdk before importing the route handler
 vi.mock("livekit-server-sdk", () => {
   return {
+    RoomServiceClient: vi.fn().mockImplementation(() => ({
+      createRoom: vi.fn().mockResolvedValue(undefined),
+      updateRoomMetadata: vi.fn().mockResolvedValue(undefined),
+    })),
     AccessToken: vi.fn().mockImplementation(() => ({
       addGrant: vi.fn(),
       toJwt: vi.fn().mockResolvedValue("mock-jwt-token"),

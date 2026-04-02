@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "NODE_OPTIONS='--max-old-space-size=8192' next dev",
+    "dev": "concurrently --names \"next,livekit\" --prefix-colors \"cyan,magenta\" \"NODE_OPTIONS='--max-old-space-size=8192' next dev\" \"npm run speech-coach:agent\"",
     "build": "NODE_OPTIONS='--max-old-space-size=8192' next build",
     "start": "next start",
     "lint": "eslint",
@@ -91,6 +91,7 @@
     "@types/react-dom": "^19",
     "@vitejs/plugin-react": "^6.0.1",
     "@vitest/coverage-v8": "^4.1.1",
+    "concurrently": "^9.2.1",
     "convex-test": "^0.0.43",
     "eslint": "^9.39.4",
     "eslint-config-next": "^16.2.1",

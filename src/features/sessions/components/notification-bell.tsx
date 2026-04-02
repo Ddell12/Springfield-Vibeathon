@@ -2,11 +2,12 @@
 
 import { api } from "@convex/_generated/api";
 import type { Doc, Id } from "@convex/_generated/dataModel";
-import { useMutation, useQuery } from "convex/react";
+import { useMutation } from "convex/react";
 import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 
 import { cn } from "@/core/utils";
+import { useUnreadNotificationsCount } from "@/features/sessions/hooks/use-unread-notifications-count";
 import { MaterialIcon } from "@/shared/components/material-icon";
 import { Button } from "@/shared/components/ui/button";
 import {
@@ -57,14 +58,20 @@ function timeAgo(timestamp: number): string {
   return rtf.format(diffDay, "day");
 }
 
-export function NotificationBell() {
+type NotificationBellProps = {
+  align?: "start" | "center" | "end";
+  className?: string;
+};
+
+export function NotificationBell({
+  align = "end",
+  className,
+}: NotificationBellProps = {}) {
   const router = useRouter();
-  const notifications = useQuery(api.notifications.list);
+  const { notifications, unreadCount: count } = useUnreadNotificationsCount();
   const markRead = useMutation(api.notifications.markRead);
   const markAllRead = useMutation(api.notifications.markAllRead);
   const [open, setOpen] = useState(false);
-
-  const count = notifications?.filter((n) => !n.read).length ?? 0;
 
   const handleNotificationClick = useCallback(async (id: Id<"notifications">, link?: string) => {
     setOpen(false);
@@ -82,7 +89,8 @@ export function NotificationBell() {
           aria-label={count > 0 ? `${count} unread notifications` : "Notifications"}
           className={cn(
             "relative flex h-10 w-10 items-center justify-center rounded-xl transition-all duration-300",
-            "text-on-surface-variant hover:bg-surface-container-high active:scale-90"
+            "text-on-surface-variant hover:bg-surface-container-high active:scale-90",
+            className,
           )}
         >
           <MaterialIcon
@@ -104,7 +112,7 @@ export function NotificationBell() {
       </PopoverTrigger>
 
       <PopoverContent
-        align="end"
+        align={align}
         sideOffset={8}
         className="w-80 p-0 overflow-hidden"
       >

@@ -31,7 +31,7 @@ export function AppHeader({ title, className }: AppHeaderProps) {
   const navItems = role === "caregiver" ? CAREGIVER_NAV_ITEMS : NAV_ITEMS;
 
   return (
-    <header className={cn("sticky top-0 z-40 flex h-14 shrink-0 items-center gap-4 border-b border-outline-variant/20 bg-background/80 px-4 backdrop-blur-sm", className)}>
+    <header className={cn("sticky top-0 z-40 flex h-14 shrink-0 items-center gap-4 border-b border-outline-variant/20 bg-background/80 px-4 backdrop-blur-sm md:hidden", className)}>
       {/* Mobile nav hamburger — md:hidden */}
       <Show when="signed-in">
         <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
@@ -39,7 +39,7 @@ export function AppHeader({ title, className }: AppHeaderProps) {
             <button
               type="button"
               aria-label="Open navigation"
-              className="md:hidden flex h-8 w-8 items-center justify-center rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors"
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-on-surface-variant transition-colors hover:bg-surface-container-high"
             >
               <MaterialIcon icon="menu" size="sm" />
             </button>
@@ -85,9 +85,7 @@ export function AppHeader({ title, className }: AppHeaderProps) {
       <Show when="signed-in">
         <NotificationBell />
         {/* UserButton visible on mobile only — desktop uses sidebar user menu */}
-        <div className="md:hidden">
-          <UserButton />
-        </div>
+        <div><UserButton /></div>
       </Show>
       <Show when="signed-out">
         <Link href="/sign-in" className="text-sm font-semibold text-primary">

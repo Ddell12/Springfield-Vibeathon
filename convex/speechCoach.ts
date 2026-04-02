@@ -226,8 +226,36 @@ const insightsValidator = v.object({
   homePracticeNotes: v.array(v.string()),
 });
 
-export const markTranscriptReady = internalMutation({
-  args: { sessionId: v.id("speechCoachSessions"), storageId: v.id("_storage") },
+export const getRuntimeLaunchContext = internalQuery({
+  args: { sessionId: v.id("speechCoachSessions") },
+  handler: async (ctx, args) => {
+    const session = await ctx.db.get(args.sessionId);
+    if (!session) return null;
+
+    const program = session.homeProgramId
+      ? await ctx.db.get(session.homeProgramId)
+      : null;
+
+    const assignedTemplateId = program?.speechCoachConfig?.assignedTemplateId
+      ?? program?.speechCoachConfig?.childOverrides?.assignedTemplateId;
+
+    const template = assignedTemplateId
+      ? await ctx.db.get(assignedTemplateId)
+      : null;
+
+    return {
+      session,
+      program,
+      template,
+    };
+  },
+});
+
+export const setTranscriptStorageId = internalMutation({
+  args: {
+    sessionId: v.id("speechCoachSessions"),
+    storageId: v.id("_storage"),
+  },
   handler: async (ctx, args) => {
     await ctx.db.patch(args.sessionId, {
       transcriptStorageId: args.storageId,

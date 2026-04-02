@@ -147,7 +147,7 @@ export function TemplateEditor({
                     "rounded-lg px-5 py-2 text-sm font-medium transition-colors duration-300",
                     ageRange === range
                       ? "bg-primary text-primary-foreground"
-                      : "bg-muted text-muted-foreground hover:bg-muted/80"
+                      : "bg-surface-container-high text-on-surface-variant hover:bg-surface-container-highest"
                   )}
                 >
                   Ages {range}
@@ -170,7 +170,7 @@ export function TemplateEditor({
                     "rounded-lg px-5 py-2 text-sm font-medium transition-colors duration-300",
                     durationMinutes === mins
                       ? "bg-primary text-primary-foreground"
-                      : "bg-muted text-muted-foreground hover:bg-muted/80"
+                      : "bg-surface-container-high text-on-surface-variant hover:bg-surface-container-highest"
                   )}
                 >
                   {mins} min
@@ -204,7 +204,7 @@ export function TemplateEditor({
                   "flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors duration-300",
                   enabled
                     ? "bg-primary/10 text-primary"
-                    : "bg-muted text-muted-foreground hover:bg-muted/80"
+                    : "bg-surface-container-high text-on-surface-variant hover:bg-surface-container-highest"
                 )}
               >
                 <span
@@ -244,7 +244,7 @@ export function TemplateEditor({
                   "flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors duration-300",
                   enabled
                     ? "bg-primary/10 text-primary"
-                    : "bg-muted text-muted-foreground hover:bg-muted/80"
+                    : "bg-surface-container-high text-on-surface-variant hover:bg-surface-container-highest"
                 )}
               >
                 <span

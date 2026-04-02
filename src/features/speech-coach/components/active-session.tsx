@@ -22,6 +22,7 @@ type LiveKitRuntimeSession = {
   serverUrl: string;
   tokenPath: string;
   roomName: string;
+  roomMetadata?: string;
 };
 
 type Props = {
@@ -93,6 +94,7 @@ function ActiveSessionInner({
       body: JSON.stringify({
         roomName: runtimeSession.roomName,
         participantName: "participant",
+        roomMetadata: runtimeSession.roomMetadata,
       }),
     })
       .then((res) => {

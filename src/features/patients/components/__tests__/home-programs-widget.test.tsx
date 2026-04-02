@@ -96,4 +96,20 @@ describe("HomeProgramsWidget", () => {
     fireEvent.click(screen.getByText("Assign"));
     expect(screen.getByTestId("home-program-form")).toBeInTheDocument();
   });
+
+  it("renders a configure coach link for speech coach programs", () => {
+    mockUseQuery.mockReturnValue([
+      createMockHomeProgram({
+        type: "speech-coach",
+        speechCoachConfig: { targetSounds: ["s"] },
+      }),
+    ]);
+
+    render(<HomeProgramsWidget patientId={patientId} />);
+
+    expect(screen.getByRole("link", { name: /configure coach/i })).toHaveAttribute(
+      "href",
+      `/patients/${patientId}/speech-coach?program=homePrograms_1`,
+    );
+  });
 });

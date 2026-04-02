@@ -37,6 +37,9 @@ const speechCoachConfigValidator = v.object({
   targetSounds: v.array(v.string()),
   ageRange: v.union(v.literal("2-4"), v.literal("5-7")),
   defaultDurationMinutes: v.number(),
+  assignedTemplateId: v.optional(v.id("speechCoachTemplates")),
+  lastSyncedTemplateVersion: v.optional(v.number()),
+  childOverrides: v.optional(childSpeechCoachOverrideValidator),
   coachSetup: v.optional(v.object({
     targetPositions: v.array(v.union(
       v.literal("initial"),

@@ -16,6 +16,12 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => ({ get: () => null }),
 }));
 vi.mock("next/link", () => ({ default: ({ href, children, ...props }: any) => <a href={href} {...props}>{children}</a> }));
+vi.mock("@/features/sessions/components/notification-bell", () => ({
+  NotificationBell: () => <button aria-label="Notifications">Notifications</button>,
+}));
+vi.mock("@/features/sessions/hooks/use-unread-notifications-count", () => ({
+  useUnreadNotificationsCount: () => ({ unreadCount: 0 }),
+}));
 vi.mock("@/shared/components/ui/popover", () => ({
   Popover: ({ children }: any) => <div>{children}</div>,
   PopoverTrigger: ({ children }: any) => <div>{children}</div>,

@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { ConvexError } from "convex/values";
 
+import { internalQuery } from "./_generated/server";
 import { slpMutation, slpQuery } from "./lib/customFunctions";
 import { speechCoachTemplateValidator } from "./lib/speechCoachValidators";
 
@@ -38,6 +39,13 @@ export const getById = slpQuery({
     const template = await ctx.db.get(args.templateId);
     if (!template || template.slpUserId !== ctx.slpUserId) return null;
     return template;
+  },
+});
+
+export const getByIdInternal = internalQuery({
+  args: { templateId: v.id("speechCoachTemplates") },
+  handler: async (ctx, args) => {
+    return await ctx.db.get(args.templateId);
   },
 });
 

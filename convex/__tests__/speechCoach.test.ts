@@ -112,6 +112,59 @@ describe("speechCoach.createSession", () => {
       })
     ).rejects.toThrow();
   });
+
+  it("accepts caregiver links stored with tokenIdentifier and preserves that identifier on the session", async () => {
+    const t = convexTest(schema, modules);
+    const caregiverIdentity = {
+      subject: "caregiver-user-123",
+      tokenIdentifier: "https://clerk.example|caregiver-user-123",
+      issuer: "clerk",
+      public_metadata: JSON.stringify({ role: "caregiver" }),
+    };
+
+    const slp = t.withIdentity(SLP_IDENTITY);
+    const { patientId } = await slp.mutation(api.patients.create, {
+      ...VALID_PATIENT,
+      parentEmail: "parent@test.com",
+    });
+
+    await t.run(async (ctx) => {
+      await ctx.db.insert("caregiverLinks", {
+        patientId,
+        caregiverUserId: caregiverIdentity.tokenIdentifier,
+        email: "parent@test.com",
+        inviteToken: "token-123",
+        inviteStatus: "accepted",
+      });
+    });
+
+    const programId = await slp.mutation(api.homePrograms.create, {
+      patientId,
+      title: "Speech Coach - /s/ sounds",
+      instructions: "Practice /s/ sounds with the voice coach.",
+      frequency: "daily" as const,
+      startDate: today,
+      type: "speech-coach",
+      speechCoachConfig: {
+        targetSounds: ["/s/", "/r/"],
+        ageRange: "2-4" as const,
+        defaultDurationMinutes: 5,
+      },
+    });
+
+    const caregiver = t.withIdentity(caregiverIdentity);
+    const sessionId = await caregiver.mutation(api.speechCoach.createSession, {
+      homeProgramId: programId,
+      config: {
+        targetSounds: ["/s/"],
+        ageRange: "2-4" as const,
+        durationMinutes: 5,
+      },
+    });
+
+    const session = await t.run(async (ctx) => ctx.db.get(sessionId));
+    expect(session?.caregiverUserId).toBe(caregiverIdentity.tokenIdentifier);
+  });
 });
 
 // ── startSession / endSession / failSession ─────────────────────────────────
@@ -279,6 +332,39 @@ describe("speechCoachRuntimeActions.createLiveSession", () => {
 
     expect(result.roomName).toContain("speech-coach-");
     expect(result.tokenPath).toBe("/api/speech-coach/livekit-token");
+    expect(result.runtime).toBe("livekit-agent");
+  });
+
+  it("authorizes a caregiver when the session stores tokenIdentifier", async () => {
+    const t = convexTest(schema, modules);
+    const caregiverIdentity = {
+      subject: "caregiver-user-123",
+      tokenIdentifier: "https://clerk.example|caregiver-user-123",
+      issuer: "clerk",
+      public_metadata: JSON.stringify({ role: "caregiver" }),
+    };
+    const { patientId, programId } = await createSpeechCoachFixture(t, {
+      slpIdentity: SLP_IDENTITY,
+      caregiverIdentity,
+    });
+    const caregiver = t.withIdentity(caregiverIdentity);
+
+    const sessionId = await t.run(async (ctx) => {
+      return await ctx.db.insert("speechCoachSessions", {
+        patientId,
+        homeProgramId: programId,
+        caregiverUserId: caregiverIdentity.tokenIdentifier,
+        agentId: "speech-coach",
+        status: "configuring",
+        config: {
+          targetSounds: ["/s/"],
+          ageRange: "2-4",
+          durationMinutes: 5,
+        },
+      });
+    });
+
+    const result = await caregiver.action(api.speechCoachRuntimeActions.createLiveSession, { sessionId });
     expect(result.runtime).toBe("livekit-agent");
   });
 });

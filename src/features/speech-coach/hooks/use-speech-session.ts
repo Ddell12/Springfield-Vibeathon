@@ -18,6 +18,7 @@ export type LiveKitRuntimeSession = {
   roomName: string;
   serverUrl: string;
   tokenPath: string;
+  roomMetadata?: string;
 };
 
 type SessionPhase = "idle" | "connecting" | "active" | "ending" | "reviewing" | "done" | "error";

@@ -9,6 +9,8 @@ import { useState } from "react";
 import { ROUTES } from "@/core/routes";
 import { cn } from "@/core/utils";
 import { AUTH_SIGN_OUT_URL } from "@/features/auth/lib/auth-content";
+import { NotificationBell } from "@/features/sessions/components/notification-bell";
+import { useUnreadNotificationsCount } from "@/features/sessions/hooks/use-unread-notifications-count";
 import { MaterialIcon } from "@/shared/components/material-icon";
 import { Popover, PopoverContent, PopoverTrigger } from "@/shared/components/ui/popover";
 import { CAREGIVER_NAV_ITEMS, isNavActive, NAV_ITEMS } from "@/shared/lib/navigation";
@@ -36,6 +38,7 @@ export function DashboardSidebar() {
   };
 
   const recentTools = useQuery(api.tools.listRecentBySLP, { limit: 5 }) ?? [];
+  const { unreadCount } = useUnreadNotificationsCount();
 
   const initials = [user?.firstName?.[0], user?.lastName?.[0]]
     .filter(Boolean)
@@ -58,32 +61,30 @@ export function DashboardSidebar() {
           type="button"
           aria-label="Toggle sidebar"
           onClick={toggleCollapsed}
-          className="flex h-8 w-8 items-center justify-center rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors"
+          className="relative flex h-8 w-8 items-center justify-center rounded-lg text-on-surface-variant transition-colors hover:bg-surface-container-high"
         >
           <MaterialIcon icon="menu" size="sm" />
+          {collapsed && unreadCount > 0 && (
+            <span
+              aria-hidden="true"
+              className="absolute -right-1 -top-1 flex min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold leading-none text-white h-4"
+            >
+              {unreadCount > 99 ? "99+" : unreadCount}
+            </span>
+          )}
         </button>
         {!collapsed && (
-          <span className="text-sm font-bold text-on-surface tracking-tight">Vocali</span>
+          <>
+            <span className="text-sm font-bold tracking-tight text-on-surface">Vocali</span>
+            <div className="ml-auto">
+              <NotificationBell align="start" />
+            </div>
+          </>
         )}
       </div>
 
-      {/* New App button */}
-      <div className="shrink-0 px-2 py-3">
-        <Link
-          href="/tools/new"
-          aria-label="Create tool"
-          className={cn(
-            "flex items-center gap-2 rounded-xl border border-outline-variant/60 bg-surface text-on-surface shadow-sm transition-colors hover:bg-surface-container-high active:scale-95",
-            collapsed ? "h-10 w-10 justify-center" : "px-3 py-2",
-          )}
-        >
-          <MaterialIcon icon="add" size="sm" />
-          {!collapsed && <span className="text-sm font-semibold">Create tool</span>}
-        </Link>
-      </div>
-
       {/* Nav items */}
-      <nav aria-label="Primary" className="flex flex-col gap-1 px-2">
+      <nav aria-label="Primary" className="flex flex-col gap-1 px-2 py-3">
         {navItems.map((item) => {
           const isActive = isNavActive(item.href, pathname);
           return (

@@ -1,4 +1,4 @@
-import { AccessToken } from "livekit-server-sdk";
+import { AccessToken, RoomServiceClient } from "livekit-server-sdk";
 
 import { authenticate } from "@/app/api/lib/authenticate";
 
@@ -14,9 +14,10 @@ export async function POST(req: Request): Promise<Response> {
   const body = (await req.json()) as {
     roomName?: string;
     participantName?: string;
+    roomMetadata?: string;
   };
 
-  const { roomName, participantName } = body;
+  const { roomName, participantName, roomMetadata } = body;
 
   if (!roomName || !participantName) {
     return new Response(
@@ -41,11 +42,6 @@ export async function POST(req: Request): Promise<Response> {
     );
   }
 
-  const at = new AccessToken(apiKey, apiSecret, {
-    identity: participantName,
-    ttl: "30m",
-  });
-
   const serverUrl = process.env.NEXT_PUBLIC_LIVEKIT_URL;
   if (!serverUrl) {
     return new Response(JSON.stringify({ error: "LiveKit server URL not configured" }), {
@@ -53,6 +49,23 @@ export async function POST(req: Request): Promise<Response> {
       headers: { "Content-Type": "application/json" },
     });
   }
+
+  const roomService = new RoomServiceClient(serverUrl, apiKey, apiSecret);
+  try {
+    await roomService.createRoom({
+      name: roomName,
+      metadata: roomMetadata ?? "",
+    });
+  } catch {
+    if (roomMetadata !== undefined) {
+      await roomService.updateRoomMetadata(roomName, roomMetadata);
+    }
+  }
+
+  const at = new AccessToken(apiKey, apiSecret, {
+    identity: participantName,
+    ttl: "30m",
+  });
 
   at.addGrant({
     roomJoin: true,

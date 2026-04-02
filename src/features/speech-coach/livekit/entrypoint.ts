@@ -10,6 +10,26 @@ import * as google from "@livekit/agents-plugin-google";
 import { createSpeechCoachAgent } from "./agent";
 import { SPEECH_COACH_REALTIME_MODEL, SPEECH_COACH_VOICE_MODE } from "./model-config";
 
+export function createSpeechCoachRealtimeModelOptions(): ConstructorParameters<
+  typeof google.beta.realtime.RealtimeModel
+>[0] {
+  if (SPEECH_COACH_VOICE_MODE !== "native-audio") {
+    throw new Error(
+      "Speech coach voice mode disables model audio without a configured TTS provider."
+    );
+  }
+
+  return {
+    model: SPEECH_COACH_REALTIME_MODEL,
+  };
+}
+
+export function createSpeechCoachSession() {
+  return new voice.AgentSession({
+    llm: new google.beta.realtime.RealtimeModel(createSpeechCoachRealtimeModelOptions()),
+  });
+}
+
 const agent = defineAgent({
   entry: async (ctx: JobContext) => {
     await ctx.connect();
@@ -28,16 +48,11 @@ const agent = defineAgent({
       // Use defaults if metadata is malformed
     }
 
-    const realtimeModelOptions: ConstructorParameters<typeof google.beta.realtime.RealtimeModel>[0] =
-      {
-        model: SPEECH_COACH_REALTIME_MODEL,
-        ...(SPEECH_COACH_VOICE_MODE === "separate-tts"
-          ? { audio_output_config: { disabled: true } }
-          : {}),
-      };
+    const session = createSpeechCoachSession();
 
-    const session = new voice.AgentSession({
-      llm: new google.beta.realtime.RealtimeModel(realtimeModelOptions),
+    console.info("[speech-coach] starting LiveKit session", {
+      model: SPEECH_COACH_REALTIME_MODEL,
+      voiceMode: SPEECH_COACH_VOICE_MODE,
     });
 
     await session.start({
@@ -56,4 +71,6 @@ const agent = defineAgent({
 export default agent;
 
 // Bootstrap the worker — connects to LiveKit Cloud and listens for speech-coach-* jobs.
-cli.runApp(new WorkerOptions({ agent: fileURLToPath(import.meta.url) }));
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  cli.runApp(new WorkerOptions({ agent: fileURLToPath(import.meta.url) }));
+}

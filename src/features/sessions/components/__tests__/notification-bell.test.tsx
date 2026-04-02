@@ -22,9 +22,14 @@ vi.mock("@convex/_generated/api", () => ({
 }));
 
 vi.mock("convex/react", () => ({
-  useQuery: () => mockNotifications(),
   useMutation: (ref: string) =>
     ref === "notifications.markRead" ? mockMarkRead : mockMarkAllRead,
+}));
+vi.mock("@/features/sessions/hooks/use-unread-notifications-count", () => ({
+  useUnreadNotificationsCount: () => ({
+    notifications: mockNotifications(),
+    unreadCount: (mockNotifications() ?? []).filter((notification: { read: boolean }) => !notification.read).length,
+  }),
 }));
 
 vi.mock("next/navigation", () => ({

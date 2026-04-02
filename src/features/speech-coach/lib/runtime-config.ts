@@ -3,6 +3,8 @@ const BASE_RUNTIME_RULES = {
   safety: "No diagnosis, no medical advice, additive prompt overrides only.",
 };
 
+export type ResolvedSpeechCoachRuntimeConfig = ReturnType<typeof resolveSpeechCoachRuntimeConfig>;
+
 export function resolveSpeechCoachRuntimeConfig({
   template,
   childOverrides,
@@ -54,4 +56,28 @@ export function resolveSpeechCoachRuntimeConfig({
       template.sessionDefaults?.defaultDurationMinutes ??
       5,
   };
+}
+
+export function buildSpeechCoachRuntimeInstructions(args: {
+  resolvedConfig: ResolvedSpeechCoachRuntimeConfig;
+  sessionGuidance?: string | null;
+}) {
+  const { resolvedConfig, sessionGuidance } = args;
+
+  const instructionBlocks = [
+    "You are Vocali Speech Coach. Run a live speech practice session for a child using warm, concrete, child-safe language.",
+    `Opening rules: ${resolvedConfig.baseRules.opening}`,
+    `Safety rules: ${resolvedConfig.baseRules.safety}`,
+    resolvedConfig.prompt.baseExtension,
+    resolvedConfig.prompt.coachingStyle,
+    resolvedConfig.prompt.toolInstructions,
+    resolvedConfig.prompt.knowledgeInstructions,
+    resolvedConfig.prompt.childAddendum,
+    resolvedConfig.knowledge.snippets.length > 0
+      ? `Knowledge snippets: ${resolvedConfig.knowledge.snippets.join(" ")}`
+      : "",
+    sessionGuidance ?? "",
+  ].filter(Boolean);
+
+  return instructionBlocks.join("\n\n");
 }
