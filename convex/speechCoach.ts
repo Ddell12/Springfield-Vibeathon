@@ -96,7 +96,7 @@ export const endSession = mutation({
     await assertCaregiverAccess(ctx, session.patientId);
 
     await ctx.db.patch(args.sessionId, {
-      status: "completed",
+      status: "analyzing",
       endedAt: Date.now(),
     });
 
@@ -204,6 +204,40 @@ export const setTranscriptStorageId = internalMutation({
   },
 });
 
+const transcriptTurnValidator = v.object({
+  speaker: v.union(v.literal("coach"), v.literal("child"), v.literal("system")),
+  text: v.string(),
+  targetItemId: v.optional(v.string()),
+  targetLabel: v.optional(v.string()),
+  targetVisualUrl: v.optional(v.string()),
+  attemptOutcome: v.optional(
+    v.union(
+      v.literal("correct"),
+      v.literal("approximate"),
+      v.literal("incorrect"),
+      v.literal("no_response")
+    )
+  ),
+  retryCount: v.number(),
+  timestampMs: v.number(),
+});
+
+const scoreCardsValidator = v.object({
+  overall: v.number(),
+  productionAccuracy: v.number(),
+  consistency: v.number(),
+  cueingSupport: v.number(),
+  engagement: v.number(),
+});
+
+const insightsValidator = v.object({
+  strengths: v.array(v.string()),
+  patterns: v.array(v.string()),
+  notableCueingPatterns: v.array(v.string()),
+  recommendedNextTargets: v.array(v.string()),
+  homePracticeNotes: v.array(v.string()),
+});
+
 export const saveProgress = internalMutation({
   args: {
     sessionId: v.id("speechCoachSessions"),
@@ -226,21 +260,48 @@ export const saveProgress = internalMutation({
     recommendedNextFocus: v.array(v.string()),
     summary: v.string(),
     analyzedAt: v.number(),
+    transcriptTurns: v.optional(v.array(transcriptTurnValidator)),
+    scoreCards: v.optional(scoreCardsValidator),
+    insights: v.optional(insightsValidator),
   },
   handler: async (ctx, args) => {
-    await ctx.db.insert("speechCoachProgress", {
-      sessionId: args.sessionId,
-      patientId: args.patientId,
-      caregiverUserId: args.caregiverUserId,
-      userId: args.userId,
-      soundsAttempted: args.soundsAttempted,
-      overallEngagement: args.overallEngagement,
-      recommendedNextFocus: args.recommendedNextFocus,
-      summary: args.summary,
-      analyzedAt: args.analyzedAt,
-    });
+    const existing = await ctx.db
+      .query("speechCoachProgress")
+      .withIndex("by_sessionId", (q) => q.eq("sessionId", args.sessionId))
+      .first();
 
-    await ctx.db.patch(args.sessionId, { status: "analyzed" });
+    if (existing) {
+      await ctx.db.patch(existing._id, {
+        transcriptTurns: args.transcriptTurns,
+        scoreCards: args.scoreCards,
+        insights: args.insights,
+        soundsAttempted: args.soundsAttempted,
+        overallEngagement: args.overallEngagement,
+        recommendedNextFocus: args.recommendedNextFocus,
+        summary: args.summary,
+        analyzedAt: args.analyzedAt,
+      });
+    } else {
+      await ctx.db.insert("speechCoachProgress", {
+        sessionId: args.sessionId,
+        patientId: args.patientId,
+        caregiverUserId: args.caregiverUserId,
+        userId: args.userId,
+        transcriptTurns: args.transcriptTurns,
+        scoreCards: args.scoreCards,
+        insights: args.insights,
+        soundsAttempted: args.soundsAttempted,
+        overallEngagement: args.overallEngagement,
+        recommendedNextFocus: args.recommendedNextFocus,
+        summary: args.summary,
+        analyzedAt: args.analyzedAt,
+      });
+    }
+
+    await ctx.db.patch(args.sessionId, {
+      status: "analyzed",
+      analysisErrorMessage: undefined,
+    });
   },
 });
 

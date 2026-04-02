@@ -1,7 +1,7 @@
 import { convexTest } from "convex-test";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { api } from "../_generated/api";
+import { api, internal } from "../_generated/api";
 import schema from "../schema";
 import { createSpeechCoachFixture,suppressSchedulerErrors } from "./testHelpers";
 
@@ -137,7 +137,7 @@ describe("speechCoach session lifecycle", () => {
     expect(session?.startedAt).toBeDefined();
   });
 
-  it("endSession sets status to completed", async () => {
+  it("endSession sets status to analyzing", async () => {
     const t = convexTest(schema, modules);
     const { programId } = await setupSpeechCoachProgram(t);
     const caregiver = t.withIdentity(CAREGIVER_IDENTITY);
@@ -153,7 +153,7 @@ describe("speechCoach session lifecycle", () => {
     await caregiver.mutation(api.speechCoach.endSession, { sessionId });
 
     const session = await t.run(async (ctx) => ctx.db.get(sessionId));
-    expect(session?.status).toBe("completed");
+    expect(session?.status).toBe("analyzing");
     expect(session?.endedAt).toBeDefined();
   });
 
@@ -174,6 +174,85 @@ describe("speechCoach session lifecycle", () => {
     const session = await t.run(async (ctx) => ctx.db.get(sessionId));
     expect(session?.status).toBe("failed");
     expect(session?.errorMessage).toBe("Microphone access denied");
+  });
+});
+
+// ── review state tests ───────────────────────────────────────────────────────
+
+describe("speechCoach review states", () => {
+  it("endSession moves a finished session into analyzing instead of completed", async () => {
+    const t = convexTest(schema, modules);
+    const { programId } = await setupSpeechCoachProgram(t);
+    const caregiver = t.withIdentity(CAREGIVER_IDENTITY);
+
+    const sessionId = await caregiver.mutation(api.speechCoach.createSession, {
+      homeProgramId: programId,
+      config: { targetSounds: ["/s/"], ageRange: "2-4", durationMinutes: 5 },
+    });
+    await caregiver.mutation(api.speechCoach.startSession, {
+      sessionId,
+      conversationId: "conv_review_state",
+    });
+
+    await caregiver.mutation(api.speechCoach.endSession, { sessionId });
+
+    const session = await t.run((ctx) => ctx.db.get(sessionId));
+    expect(session?.status).toBe("analyzing");
+  });
+
+  it("saveProgress stores transcript turns and score cards before patching analyzed", async () => {
+    const t = convexTest(schema, modules);
+    const sessionId = await t.run((ctx) =>
+      ctx.db.insert("speechCoachSessions", {
+        caregiverUserId: "caregiver-789",
+        agentId: "speech-coach",
+        status: "analyzing",
+        config: { targetSounds: ["/s/"], ageRange: "2-4", durationMinutes: 5 },
+      })
+    );
+
+    await t.mutation(internal.speechCoach.saveProgress, {
+      sessionId,
+      caregiverUserId: "caregiver-789",
+      userId: undefined,
+      patientId: undefined,
+      transcriptTurns: [
+        {
+          speaker: "coach",
+          text: "Say sad",
+          targetItemId: "sad",
+          targetLabel: "sad",
+          attemptOutcome: "incorrect",
+          retryCount: 0,
+          timestampMs: 1,
+        },
+      ],
+      scoreCards: {
+        overall: 72,
+        productionAccuracy: 68,
+        consistency: 70,
+        cueingSupport: 55,
+        engagement: 80,
+      },
+      insights: {
+        strengths: ["Strong imitation with direct cueing"],
+        patterns: ["Final consonant deletion on /d/ words"],
+        notableCueingPatterns: ["Best accuracy after immediate model"],
+        recommendedNextTargets: ["/s/", "/d/"],
+        homePracticeNotes: ["Practice one-syllable /s/ words with visual cues"],
+      },
+      soundsAttempted: [],
+      overallEngagement: "medium",
+      recommendedNextFocus: ["/d/"],
+      summary: "Needed cueing but stayed engaged.",
+      analyzedAt: Date.now(),
+    });
+
+    const progress = await t.run((ctx) =>
+      ctx.db.query("speechCoachProgress").withIndex("by_sessionId", (q) => q.eq("sessionId", sessionId)).first()
+    );
+    expect(progress?.transcriptTurns).toHaveLength(1);
+    expect(progress?.scoreCards.overall).toBe(72);
   });
 });
 
