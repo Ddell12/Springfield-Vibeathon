@@ -3,9 +3,9 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { cn } from "@/core/utils";
-import { PremiumScreen, ProgressRail, ReinforcementBanner } from "../../runtime/premium-primitives";
 
 import type { RuntimeProps } from "../../registry";
+import { PremiumScreen, ProgressRail, ReinforcementBanner } from "../../runtime/premium-primitives";
 import type { VisualScheduleConfig } from "./schema";
 
 export function VisualScheduleRuntime({

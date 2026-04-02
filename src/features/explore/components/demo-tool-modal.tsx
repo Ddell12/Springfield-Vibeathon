@@ -23,7 +23,7 @@ function useIsDesktop(): boolean | undefined {
   const [isDesktop, setIsDesktop] = useState<boolean | undefined>(undefined);
   useEffect(() => {
     const mq = window.matchMedia("(min-width: 768px)");
-    setIsDesktop(mq.matches); // eslint-disable-line react-hooks/set-state-in-effect -- sync hydration
+    setIsDesktop(mq.matches);  
     const handler = (e: MediaQueryListEvent) => setIsDesktop(e.matches);
     mq.addEventListener("change", handler);
     return () => mq.removeEventListener("change", handler);

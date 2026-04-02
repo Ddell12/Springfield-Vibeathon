@@ -1,6 +1,6 @@
+import { api } from "@convex/_generated/api";
 import { fetchQuery } from "convex/nextjs";
 
-import { api } from "@convex/_generated/api";
 import { ToolRuntimePage } from "@/features/tools/components/runtime/tool-runtime-page";
 
 interface Props {

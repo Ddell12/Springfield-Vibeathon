@@ -39,7 +39,7 @@ function AppViewerInner({ patientId, appId }: { patientId: string; appId: string
     const url = URL.createObjectURL(
       new Blob([bundle], { type: "text/html" })
     );
-    setBlobUrl(url); // eslint-disable-line react-hooks/set-state-in-effect -- set blob URL after creation
+    setBlobUrl(url);  
 
     return () => {
       URL.revokeObjectURL(url);

@@ -2,8 +2,8 @@ import { v } from "convex/values";
 
 import { mutation, query } from "./_generated/server";
 import { assertSessionOwner, getAuthUserId } from "./lib/auth";
-import { authedQuery } from "./lib/customFunctions";
 import { checkPremiumStatus, FREE_LIMITS } from "./lib/billing";
+import { authedQuery } from "./lib/customFunctions";
 
 export const create = mutation({
   args: {

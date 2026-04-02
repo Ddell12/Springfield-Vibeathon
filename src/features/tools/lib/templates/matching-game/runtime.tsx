@@ -3,9 +3,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { cn } from "@/core/utils";
-import { PremiumScreen, ReinforcementBanner } from "../../runtime/premium-primitives";
 
 import type { RuntimeProps } from "../../registry";
+import { PremiumScreen, ReinforcementBanner } from "../../runtime/premium-primitives";
 import type { MatchingGameConfig } from "./schema";
 
 function shuffleArray<T>(arr: T[]): T[] {

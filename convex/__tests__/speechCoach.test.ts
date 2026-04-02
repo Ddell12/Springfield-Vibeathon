@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { api } from "../_generated/api";
 import schema from "../schema";
-import { suppressSchedulerErrors, createSpeechCoachFixture } from "./testHelpers";
+import { createSpeechCoachFixture,suppressSchedulerErrors } from "./testHelpers";
 
 const modules = import.meta.glob("../**/*.*s");
 

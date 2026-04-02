@@ -1,14 +1,14 @@
 "use client";
 
-import { useState } from "react";
-import { useMutation, useQuery } from "convex/react";
-import Link from "next/link";
-
 import { api } from "@convex/_generated/api";
 import type { Doc } from "@convex/_generated/dataModel";
+import { useMutation, useQuery } from "convex/react";
+import Link from "next/link";
+import { useState } from "react";
+
 import { Button } from "@/shared/components/ui/button";
 
-import { TemplateEditor, type SpeechCoachTemplateForm } from "./template-editor";
+import { type SpeechCoachTemplateForm,TemplateEditor } from "./template-editor";
 
 export function TemplateLibraryPage() {
   const [creating, setCreating] = useState(false);

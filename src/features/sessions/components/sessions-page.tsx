@@ -5,14 +5,13 @@ import { useQuery } from "convex/react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-
-import { canShowDeveloperAccelerators } from "@/shared/lib/developer-gate";
 import { toast } from "sonner";
 
 import { usePatients } from "@/features/patients/hooks/use-patients";
 import { MaterialIcon } from "@/shared/components/material-icon";
 import { Button } from "@/shared/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/shared/components/ui/toggle-group";
+import { canShowDeveloperAccelerators } from "@/shared/lib/developer-gate";
 
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";

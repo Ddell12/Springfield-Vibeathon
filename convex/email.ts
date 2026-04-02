@@ -4,7 +4,7 @@ import { ConvexError, v } from "convex/values";
 import { components, internal } from "./_generated/api";
 import { action, internalMutation } from "./_generated/server";
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://bridgeai-iota.vercel.app";
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://www.vocali.health";
 const INVITE_FROM_EMAIL = "Bridges <onboarding@resend.dev>";
 const FINAL_EMAIL_STATUSES = new Set(["delivered", "bounced", "failed", "cancelled"]);
 const PLACEHOLDER_EMAIL_DOMAINS = new Set(["example.com", "example.org", "example.net", "test.com"]);

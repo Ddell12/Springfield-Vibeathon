@@ -11,6 +11,8 @@ const ALLOWED_ORIGINS = new Set([
   "http://localhost:3001",
   "https://bridges-vibeathon.vercel.app",
   "https://bridgeai-iota.vercel.app",
+  "https://vocali.health",
+  "https://www.vocali.health",
 ]);
 
 function getCorsOrigin(request: Request): string {

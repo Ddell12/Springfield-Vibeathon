@@ -1,16 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useQuery } from "convex/react";
 import { Copy, ExternalLink } from "lucide-react";
 import Link from "next/link";
+import { useState } from "react";
 
-import { useQuery } from "convex/react";
+import { DuplicateToolDialog } from "@/features/tools/components/builder/duplicate-tool-dialog";
+import { Button } from "@/shared/components/ui/button";
+import { Skeleton } from "@/shared/components/ui/skeleton";
 
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
-import { Button } from "@/shared/components/ui/button";
-import { Skeleton } from "@/shared/components/ui/skeleton";
-import { DuplicateToolDialog } from "@/features/tools/components/builder/duplicate-tool-dialog";
 
 interface ToolActivitySummaryProps {
   patientId: Id<"patients">;

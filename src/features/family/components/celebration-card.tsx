@@ -70,7 +70,7 @@ export function CelebrationCard({ childName, currentStreak, goals }: Celebration
 
   // Read localStorage after hydration to avoid SSR mismatch
   useEffect(() => {
-    setMounted(true); // eslint-disable-line react-hooks/set-state-in-effect -- intentional mount-sync
+    setMounted(true);  
   }, []);
 
   const allCelebrations = buildCelebrations(childName, currentStreak, goals);

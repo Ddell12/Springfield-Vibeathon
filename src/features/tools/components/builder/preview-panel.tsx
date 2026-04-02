@@ -1,8 +1,8 @@
 "use client";
 
+import { templateRegistry } from "../../lib/registry";
 import { RuntimeShell } from "../../lib/runtime/runtime-shell";
 import { useVoiceController } from "../../lib/runtime/runtime-voice-controller";
-import { templateRegistry } from "../../lib/registry";
 
 interface PreviewPanelProps {
   templateType: string;

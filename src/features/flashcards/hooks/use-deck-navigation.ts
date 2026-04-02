@@ -15,9 +15,9 @@ interface UseDeckNavigationReturn {
 export function useDeckNavigation(totalCards: number): UseDeckNavigationReturn {
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  /* eslint-disable react-hooks/set-state-in-effect -- reset index when deck size changes */
+   
   useEffect(() => { setCurrentIndex(0); }, [totalCards]);
-  /* eslint-enable react-hooks/set-state-in-effect */
+   
 
   const goTo = useCallback(
     (index: number) => {

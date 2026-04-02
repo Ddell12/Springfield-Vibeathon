@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { createContext, useContext, type ReactNode } from "react";
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { createContext, type ReactNode,useContext } from "react";
+import { beforeEach,describe, expect, it, vi } from "vitest";
 
 import { NotificationBell } from "../notification-bell";
 

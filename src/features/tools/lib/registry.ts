@@ -3,23 +3,19 @@ import { z } from "zod";
 
 import { AACBoardEditor } from "./templates/aac-board/editor";
 import { AACBoardRuntime } from "./templates/aac-board/runtime";
-import { AACBoardConfigSchema, type AACBoardConfig } from "./templates/aac-board/schema";
-
+import { type AACBoardConfig,AACBoardConfigSchema } from "./templates/aac-board/schema";
 import { FirstThenBoardEditor } from "./templates/first-then-board/editor";
 import { FirstThenBoardRuntime } from "./templates/first-then-board/runtime";
-import { FirstThenBoardConfigSchema, type FirstThenBoardConfig } from "./templates/first-then-board/schema";
-
-import { TokenBoardEditor } from "./templates/token-board/editor";
-import { TokenBoardRuntime } from "./templates/token-board/runtime";
-import { TokenBoardConfigSchema, type TokenBoardConfig } from "./templates/token-board/schema";
-
-import { VisualScheduleEditor } from "./templates/visual-schedule/editor";
-import { VisualScheduleRuntime } from "./templates/visual-schedule/runtime";
-import { VisualScheduleConfigSchema, type VisualScheduleConfig } from "./templates/visual-schedule/schema";
-
+import { type FirstThenBoardConfig,FirstThenBoardConfigSchema } from "./templates/first-then-board/schema";
 import { MatchingGameEditor } from "./templates/matching-game/editor";
 import { MatchingGameRuntime } from "./templates/matching-game/runtime";
-import { MatchingGameConfigSchema, type MatchingGameConfig } from "./templates/matching-game/schema";
+import { type MatchingGameConfig,MatchingGameConfigSchema } from "./templates/matching-game/schema";
+import { TokenBoardEditor } from "./templates/token-board/editor";
+import { TokenBoardRuntime } from "./templates/token-board/runtime";
+import { type TokenBoardConfig,TokenBoardConfigSchema } from "./templates/token-board/schema";
+import { VisualScheduleEditor } from "./templates/visual-schedule/editor";
+import { VisualScheduleRuntime } from "./templates/visual-schedule/runtime";
+import { type VisualScheduleConfig,VisualScheduleConfigSchema } from "./templates/visual-schedule/schema";
 
 export interface RuntimeProps<TConfig = unknown> {
   config: TConfig;
@@ -53,7 +49,7 @@ export interface TemplateRegistration {
   Runtime: ComponentType<RuntimeProps<any>>;
   defaultConfig: unknown;
   parseConfig: (json: string) => unknown;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   aiConfigSchema: z.ZodTypeAny;
   schemaPrompt: string;
 }

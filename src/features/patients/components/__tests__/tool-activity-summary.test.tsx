@@ -6,6 +6,7 @@ vi.mock("convex/react", () => ({
 }));
 
 import { useQuery } from "convex/react";
+
 import { ToolActivitySummary } from "../tool-activity-summary";
 
 const PATIENT_ID = "pat123" as any;

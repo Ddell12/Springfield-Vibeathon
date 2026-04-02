@@ -1,9 +1,9 @@
 import { v } from "convex/values";
 import { ConvexError } from "convex/values";
 
+import { internal } from "./_generated/api";
 import type { Doc } from "./_generated/dataModel";
 import { internalQuery, query } from "./_generated/server";
-import { internal } from "./_generated/api";
 import {
   assertPatientAccess,
   getAuthRole,

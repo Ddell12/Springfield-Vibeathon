@@ -31,7 +31,7 @@ export function InviteLanding({ paramsPromise }: InviteLandingProps) {
   useEffect(() => {
     if (isLoaded && isSignedIn && !isSLP && inviteInfo && !isAccepting && !acceptAttemptedRef.current) {
       acceptAttemptedRef.current = true;
-      setIsAccepting(true); // eslint-disable-line react-hooks/set-state-in-effect -- auto-accept flow
+      setIsAccepting(true);  
       acceptInvite({ token })
         .then(() => {
           toast.success("You're connected!");

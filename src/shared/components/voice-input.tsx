@@ -22,7 +22,7 @@ export function VoiceInput({ onTranscript, disabled }: VoiceInputProps) {
   const isTranscribingRef = useRef(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
 
-  /* eslint-disable react-hooks/set-state-in-effect -- transcription state tracks async operation */
+   
   useEffect(() => {
     if (!audioBase64 || isTranscribingRef.current) return;
     isTranscribingRef.current = true;
@@ -43,7 +43,7 @@ export function VoiceInput({ onTranscript, disabled }: VoiceInputProps) {
         setIsTranscribing(false);
       });
   }, [audioBase64, transcribe, onTranscript]);
-  /* eslint-enable react-hooks/set-state-in-effect */
+   
 
   const handleClick = useCallback(() => {
     if (isRecording) {

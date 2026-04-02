@@ -115,13 +115,13 @@ export function FlashcardPage() {
     }
   }, [activeSessionId, sessionName, ensureApp]);
 
-  /* eslint-disable react-hooks/set-state-in-effect -- auto-select first deck on load */
+   
   useEffect(() => {
     if (sessionDecks && sessionDecks.length > 0 && !activeDeckId) {
       setActiveDeckId(sessionDecks[0]._id);
     }
   }, [sessionDecks, activeDeckId]);
-  /* eslint-enable react-hooks/set-state-in-effect */
+   
 
   const handleSubmit = useCallback(
     (query: string) => {

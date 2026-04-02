@@ -3,9 +3,9 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { cn } from "@/core/utils";
-import { PremiumScreen, ProgressRail, ReinforcementBanner } from "../../runtime/premium-primitives";
 
 import type { RuntimeProps } from "../../registry";
+import { PremiumScreen, ProgressRail, ReinforcementBanner } from "../../runtime/premium-primitives";
 import type { TokenBoardConfig } from "./schema";
 
 const TOKEN_EMOJI: Record<string, string> = {

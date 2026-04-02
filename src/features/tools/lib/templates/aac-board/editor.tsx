@@ -5,7 +5,6 @@ import { nanoid } from "nanoid";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
-import { Switch } from "@/shared/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -13,6 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/shared/components/ui/select";
+import { Switch } from "@/shared/components/ui/switch";
 
 import type { EditorProps } from "../../registry";
 import type { AACBoardConfig, AACButton } from "./schema";

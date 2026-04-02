@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 
-import { internalQuery, internalMutation } from "./_generated/server";
+import { internalMutation,internalQuery } from "./_generated/server";
 import { assertPatientAccess } from "./lib/auth";
 import { authedQuery } from "./lib/customFunctions";
 

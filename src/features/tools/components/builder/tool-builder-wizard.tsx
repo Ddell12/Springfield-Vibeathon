@@ -10,8 +10,8 @@ import {
   SelectValue,
 } from "@/shared/components/ui/select";
 
-import { templateRegistry } from "../../lib/registry";
 import type { useToolBuilder } from "../../hooks/use-tool-builder";
+import { templateRegistry } from "../../lib/registry";
 import { AIAssistPanel } from "./ai-assist-panel";
 import { ConfigEditor } from "./config-editor";
 import { PreviewPanel } from "./preview-panel";

@@ -1,5 +1,5 @@
-import { fileURLToPath } from "url";
 import { cli, defineAgent, JobContext, voice, WorkerOptions } from "@livekit/agents";
+import { fileURLToPath } from "url";
 
 // .env.local uses NEXT_PUBLIC_LIVEKIT_URL; the LiveKit worker needs LIVEKIT_URL.
 if (!process.env.LIVEKIT_URL && process.env.NEXT_PUBLIC_LIVEKIT_URL) {

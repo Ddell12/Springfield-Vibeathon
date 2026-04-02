@@ -1,6 +1,6 @@
 "use client";
 
-import { Grid2x2, Calendar, BarChart2, BookOpen, Home, Star } from "lucide-react";
+import { BarChart2, BookOpen, Calendar, Grid2x2, Home, Star } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 

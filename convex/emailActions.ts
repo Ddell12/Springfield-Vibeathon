@@ -1,16 +1,17 @@
 "use node";
 
-import { v } from "convex/values";
-import { internalAction } from "./_generated/server";
 import { Resend } from "@convex-dev/resend";
-import { components } from "./_generated/api";
 import { render } from "@react-email/render";
+import { v } from "convex/values";
+
 import { AppointmentBooked } from "../src/features/sessions/emails/appointment-booked";
 import { AppointmentCancelled } from "../src/features/sessions/emails/appointment-cancelled";
-import { SessionReminder } from "../src/features/sessions/emails/session-reminder";
 import { NotesReady } from "../src/features/sessions/emails/notes-ready";
+import { SessionReminder } from "../src/features/sessions/emails/session-reminder";
+import { components } from "./_generated/api";
+import { internalAction } from "./_generated/server";
 
-const BASE_URL = "https://bridgeai-iota.vercel.app";
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://www.vocali.health";
 
 export const resend = new Resend(components.resend, { testMode: false });
 

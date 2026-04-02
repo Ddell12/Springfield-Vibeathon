@@ -1,5 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { vi } from "vitest";
+
 import { TemplateEditor } from "../template-editor";
 
 it("saves voice, tools, skills, and knowledge changes", async () => {

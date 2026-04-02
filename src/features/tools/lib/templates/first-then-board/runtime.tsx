@@ -3,9 +3,9 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { cn } from "@/core/utils";
-import { PremiumScreen } from "../../runtime/premium-primitives";
 
 import type { RuntimeProps } from "../../registry";
+import { PremiumScreen } from "../../runtime/premium-primitives";
 import type { FirstThenBoardConfig } from "./schema";
 
 export function FirstThenBoardRuntime({

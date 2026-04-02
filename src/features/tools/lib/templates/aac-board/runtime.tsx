@@ -3,9 +3,9 @@
 import { useCallback, useEffect } from "react";
 
 import { cn } from "@/core/utils";
-import { PremiumScreen } from "../../runtime/premium-primitives";
 
 import type { RuntimeProps } from "../../registry";
+import { PremiumScreen } from "../../runtime/premium-primitives";
 import type { AACBoardConfig } from "./schema";
 
 export function AACBoardRuntime({

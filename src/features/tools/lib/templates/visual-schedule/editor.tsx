@@ -8,7 +8,7 @@ import { Label } from "@/shared/components/ui/label";
 import { Switch } from "@/shared/components/ui/switch";
 
 import type { EditorProps } from "../../registry";
-import type { VisualScheduleConfig, ScheduleItem } from "./schema";
+import type { ScheduleItem,VisualScheduleConfig } from "./schema";
 
 export function VisualScheduleEditor({ config, onChange }: EditorProps<VisualScheduleConfig>) {
   const set = <K extends keyof VisualScheduleConfig>(key: K, value: VisualScheduleConfig[K]) =>

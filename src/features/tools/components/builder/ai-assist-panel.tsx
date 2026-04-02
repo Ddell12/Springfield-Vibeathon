@@ -1,14 +1,14 @@
 "use client";
 
-import { useState } from "react";
 import { Loader2, Sparkles } from "lucide-react";
+import { useState } from "react";
 
 import { Button } from "@/shared/components/ui/button";
 import { Textarea } from "@/shared/components/ui/textarea";
 
 import { useAIConfigAssist } from "../../hooks/use-ai-config-assist";
-import { templateRegistry } from "../../lib/registry";
 import { DEFAULT_GENERATION_PROFILE } from "../../lib/ai/generation-profile";
+import { templateRegistry } from "../../lib/registry";
 
 interface AIAssistPanelProps {
   templateType: string;

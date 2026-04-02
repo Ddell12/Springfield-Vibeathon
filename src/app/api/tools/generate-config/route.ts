@@ -3,8 +3,8 @@ import { generateText, Output } from "ai";
 import { NextResponse } from "next/server";
 
 import { generateConfigRequestSchema } from "@/features/tools/lib/ai/generation-schema";
-import { buildPremiumToolPrompt } from "@/features/tools/lib/ai/premium-prompt";
 import { toolsGenerationModel } from "@/features/tools/lib/ai/model";
+import { buildPremiumToolPrompt } from "@/features/tools/lib/ai/premium-prompt";
 import { templateRegistry } from "@/features/tools/lib/registry";
 
 export const runtime = "nodejs";
