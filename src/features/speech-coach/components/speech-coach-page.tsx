@@ -178,7 +178,10 @@ export function SpeechCoachPage({ patientId, homeProgramId }: Props) {
         </p>
         <button
           type="button"
-          onClick={() => setActiveTab("history")}
+          onClick={() => {
+            session.reset();
+            setActiveTab("history");
+          }}
           className="text-sm font-medium text-primary underline"
         >
           View session status
