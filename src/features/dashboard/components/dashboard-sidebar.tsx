@@ -49,10 +49,7 @@ export function DashboardSidebar() {
     });
   };
 
-  const allTools = useQuery(api.tools.listBySLP) ?? [];
-  const recentSessions = [...allTools]
-    .sort((a, b) => b._creationTime - a._creationTime)
-    .slice(0, 5);
+  const recentTools = useQuery(api.tools.listRecentBySLP, { limit: 5 }) ?? [];
 
   useEffect(() => {
     if (isCaregiver && !CAREGIVER_ALLOWED_PREFIXES.some((p) => pathname.startsWith(p))) {
@@ -139,21 +136,21 @@ export function DashboardSidebar() {
             Recents
           </p>
           <div className="flex flex-col gap-0.5 overflow-y-auto">
-            {recentSessions.length === 0 ? (
+            {recentTools.length === 0 ? (
               <p className="px-2 text-xs text-on-surface-variant/50">No recent apps</p>
             ) : (
-              recentSessions.map((s) => {
-                const isActive = pathname === ROUTES.TOOLS_EDIT(s._id);
+              recentTools.map((tool) => {
+                const isActive = pathname === ROUTES.TOOLS_EDIT(tool._id);
                 return (
                   <Link
-                    key={s._id}
-                    href={ROUTES.TOOLS_EDIT(s._id)}
+                    key={tool._id}
+                    href={ROUTES.TOOLS_EDIT(tool._id)}
                     className={cn(
                       "flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs text-on-surface-variant hover:bg-surface-container-high transition-colors",
                       isActive && "bg-surface-container-high text-on-surface font-medium",
                     )}
                   >
-                    <span className="truncate">{s.title || "Untitled App"}</span>
+                    <span className="truncate">{tool.title || "Untitled App"}</span>
                   </Link>
                 );
               })

@@ -4,7 +4,13 @@ import { describe, expect, it, vi } from "vitest";
 import { DashboardSidebar } from "../dashboard-sidebar";
 
 vi.mock("convex/react", () => ({
-  useQuery: () => [],
+  useQuery: (_query: unknown, args?: { limit?: number }) =>
+    args?.limit === 5
+      ? [
+          { _id: "tool-1", _creationTime: 2, title: "Newest App" },
+          { _id: "tool-2", _creationTime: 1, title: "Older App" },
+        ]
+      : [],
 }));
 vi.mock("@clerk/nextjs", () => ({
   useUser: () => ({ user: { firstName: "Jane", lastName: "SLP", email: "jane@test.com", publicMetadata: { role: "slp" } } }),
@@ -73,5 +79,10 @@ describe("DashboardSidebar (SLP)", () => {
     render(<DashboardSidebar />);
     expect(screen.getByRole("link", { name: /speech coach/i })).toHaveAttribute("href", "/speech-coach");
     expect(screen.queryByRole("link", { name: /preview coach/i })).not.toBeInTheDocument();
+  });
+  it("requests exactly five recent tools for the recents section", () => {
+    render(<DashboardSidebar />);
+    expect(screen.getByText("Newest App")).toBeInTheDocument();
+    expect(screen.getByText("Older App")).toBeInTheDocument();
   });
 });
