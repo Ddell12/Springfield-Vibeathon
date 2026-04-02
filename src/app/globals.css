@@ -364,3 +364,27 @@ body {
 .lk-join-button:hover {
   opacity: 0.9 !important;
 }
+
+/* ─── Therapy tool animations ─── */
+/* Applied via inline style in JS. Duration set at call-site (e.g. "token-fill 300ms cubic-bezier(0.4,0,0.2,1) both").
+   Motion guard: prefers-reduced-motion media query above disables these globally for sensitive users. */
+
+@keyframes token-fill {
+  0%   { transform: scale(0.8); opacity: 0.5; }
+  60%  { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes checkmark-pop {
+  0%   { transform: scale(0); opacity: 0; }
+  60%  { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%      { transform: translateX(-4px); }
+  40%      { transform: translateX(4px); }
+  60%      { transform: translateX(-4px); }
+  80%      { transform: translateX(4px); }
+}

@@ -4,7 +4,8 @@ export const MatchPairSchema = z.object({
   id: z.string(),
   prompt: z.string().min(1).max(100),
   answer: z.string().min(1).max(100),
-  imageUrl: z.string().url().optional(),
+  imageUrl: z.string().url().optional(),       // answer column image
+  promptImageUrl: z.string().url().optional(), // prompt column image
 });
 
 export const MatchingGameConfigSchema = z.object({

@@ -1,5 +1,5 @@
-import { fireEvent,render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { act, fireEvent,render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("convex/react", () => ({
   useMutation: vi.fn(() => vi.fn().mockResolvedValue(undefined)),
@@ -76,5 +76,40 @@ describe("VisualScheduleRuntime", () => {
     );
     const durationElements = screen.getAllByText(/\d+ min/);
     expect(durationElements.length).toBeGreaterThan(0);
+  });
+});
+
+const voice = { speak: vi.fn(), stop: vi.fn(), status: "idle" as const };
+const onEvent = vi.fn();
+const config = {
+  title: "Morning Routine",
+  items: [{ id: "1", label: "Wake up", durationMinutes: 1 }, { id: "2", label: "Brush teeth" }],
+  showDuration: true, highContrast: false, showCheckmarks: true,
+};
+
+describe("VisualScheduleRuntime — countdown", () => {
+  beforeEach(() => vi.useFakeTimers());
+  afterEach(() => vi.useRealTimers());
+
+  it("shows countdown ring for active step with durationMinutes", () => {
+    render(<VisualScheduleRuntime config={config} mode="preview" onEvent={onEvent} voice={voice} />);
+    // Active step "Wake up" has durationMinutes — ring renders immediately
+    expect(document.querySelector("[data-countdown-ring]")).toBeInTheDocument();
+  });
+
+  it("auto-advances when countdown reaches zero", () => {
+    render(<VisualScheduleRuntime config={config} mode="preview" onEvent={onEvent} voice={voice} />);
+    act(() => { vi.advanceTimersByTime(60 * 1000); });
+    expect(screen.getByText("Brush teeth")).toBeInTheDocument();
+  });
+});
+
+describe("VisualScheduleRuntime — all-done overlay", () => {
+  it("shows all-done overlay when last step completed", () => {
+    const single = { ...config, items: [{ id: "1", label: "Wake up" }] };
+    render(<VisualScheduleRuntime config={single} mode="preview" onEvent={onEvent} voice={voice} />);
+    fireEvent.click(screen.getByRole("button", { name: /wake up/i }));
+    expect(screen.getByText(/all done/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /start again/i })).toBeInTheDocument();
   });
 });

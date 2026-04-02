@@ -80,35 +80,31 @@ export function MatchingGameEditor({ config, onChange }: EditorProps<MatchingGam
           <div key={pair.id} className="border border-border rounded-lg p-3 flex flex-col gap-2">
             <div className="flex items-center justify-between">
               <span className="text-xs text-muted-foreground">Pair {i + 1}</span>
-              <Button
-                variant="ghost"
-                size="sm"
-                aria-label="Remove pair"
+              <Button variant="ghost" size="sm" aria-label="Remove pair"
                 onClick={() => removePair(pair.id)}
-                className="h-6 text-muted-foreground hover:text-destructive"
-              >
+                className="h-6 text-muted-foreground hover:text-destructive">
                 Remove
               </Button>
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div className="flex flex-col gap-1">
                 <Label className="text-xs">Prompt</Label>
-                <Input
-                  value={pair.prompt}
+                <Input value={pair.prompt}
                   onChange={(e) => updatePair(pair.id, { prompt: e.target.value })}
-                  placeholder="e.g. Dog"
-                  className="h-8 text-sm"
-                />
+                  placeholder="e.g. Dog" className="h-8 text-sm" />
               </div>
               <div className="flex flex-col gap-1">
                 <Label className="text-xs">Answer</Label>
-                <Input
-                  value={pair.answer}
+                <Input value={pair.answer}
                   onChange={(e) => updatePair(pair.id, { answer: e.target.value })}
-                  placeholder="e.g. Woof"
-                  className="h-8 text-sm"
-                />
+                  placeholder="e.g. Woof" className="h-8 text-sm" />
               </div>
+            </div>
+            <div className="flex flex-col gap-1">
+              <Label className="text-xs">Prompt image URL (optional)</Label>
+              <Input value={pair.promptImageUrl ?? ""}
+                onChange={(e) => updatePair(pair.id, { promptImageUrl: e.target.value || undefined })}
+                placeholder="https://..." className="h-8 text-sm" type="url" />
             </div>
           </div>
         ))}

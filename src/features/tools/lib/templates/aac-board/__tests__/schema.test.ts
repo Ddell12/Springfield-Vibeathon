@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { AACBoardConfigSchema } from "../schema";
+import { AACBoardConfigSchema, AACButtonSchema } from "../schema";
 
 const validConfig = {
   title: "Snack Requests",
@@ -15,6 +15,38 @@ const validConfig = {
   voice: "child-friendly" as const,
   highContrast: false,
 };
+
+describe("AACButtonSchema — wordCategory", () => {
+  it("accepts valid wordCategory values", () => {
+    expect(() => AACButtonSchema.parse({ id: "1", label: "Go", speakText: "Go", wordCategory: "verb" })).not.toThrow();
+    expect(() => AACButtonSchema.parse({ id: "1", label: "Go", speakText: "Go", wordCategory: "core" })).not.toThrow();
+  });
+
+  it("rejects unknown wordCategory values", () => {
+    expect(() => AACButtonSchema.parse({ id: "1", label: "Go", speakText: "Go", wordCategory: "unknown" })).toThrow();
+  });
+
+  it("wordCategory is optional", () => {
+    expect(() => AACButtonSchema.parse({ id: "1", label: "Go", speakText: "Go" })).not.toThrow();
+  });
+});
+
+describe("AACBoardConfigSchema — sentenceStripEnabled", () => {
+  const base = {
+    title: "Board", gridCols: 3, gridRows: 2,
+    buttons: [{ id: "1", label: "Yes", speakText: "Yes" }],
+    showTextLabels: true, autoSpeak: true, voice: "child-friendly", highContrast: false,
+  };
+
+  it("accepts sentenceStripEnabled: true", () => {
+    expect(() => AACBoardConfigSchema.parse({ ...base, sentenceStripEnabled: true })).not.toThrow();
+  });
+
+  it("defaults sentenceStripEnabled to false", () => {
+    const result = AACBoardConfigSchema.parse(base);
+    expect(result.sentenceStripEnabled).toBe(false);
+  });
+});
 
 describe("AACBoardConfigSchema", () => {
   it("accepts a valid config", () => {

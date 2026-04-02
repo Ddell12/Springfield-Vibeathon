@@ -9,6 +9,63 @@ vi.mock("@convex/_generated/api", () => ({ api: { tools: { logEvent: "tools:logE
 import { TokenBoardRuntime } from "../runtime";
 import type { TokenBoardConfig } from "../schema";
 
+const voice = { speak: vi.fn(), stop: vi.fn(), status: "idle" as const };
+const onEvent = vi.fn();
+const config = {
+  title: "Token Board", tokenCount: 3, rewardLabel: "iPad time",
+  rewardImageUrl: undefined, tokenShape: "star" as const,
+  tokenColor: "#FBBF24", highContrast: false,
+};
+
+describe("TokenBoardRuntime — styled tokens", () => {
+  it("does not render emoji tokens", () => {
+    render(<TokenBoardRuntime config={config} mode="preview" onEvent={onEvent} voice={voice} />);
+    expect(screen.queryByText("⭐")).not.toBeInTheDocument();
+  });
+
+  it("applies tokenColor to filled tokens via inline style", () => {
+    render(<TokenBoardRuntime config={config} mode="preview" onEvent={onEvent} voice={voice} />);
+    fireEvent.click(screen.getByRole("button", { name: /token 1/i }));
+    const filledToken = screen.getByRole("button", { name: /token 1/i });
+    expect(filledToken).toHaveStyle("background-color: rgb(251, 191, 36)");
+  });
+});
+
+describe("TokenBoardRuntime — undo", () => {
+  it("undo is disabled when no tokens earned", () => {
+    render(<TokenBoardRuntime config={config} mode="preview" onEvent={onEvent} voice={voice} />);
+    expect(screen.getByRole("button", { name: /undo/i })).toBeDisabled();
+  });
+
+  it("undo decrements earned count", () => {
+    render(<TokenBoardRuntime config={config} mode="preview" onEvent={onEvent} voice={voice} />);
+    fireEvent.click(screen.getByRole("button", { name: /token 1/i }));
+    expect(screen.getByRole("button", { name: /undo/i })).not.toBeDisabled();
+    fireEvent.click(screen.getByRole("button", { name: /undo/i }));
+    expect(screen.getByRole("button", { name: /undo/i })).toBeDisabled();
+  });
+});
+
+describe("TokenBoardRuntime — celebration", () => {
+  it("shows celebration overlay when all tokens earned", () => {
+    render(<TokenBoardRuntime config={config} mode="preview" onEvent={onEvent} voice={voice} />);
+    fireEvent.click(screen.getByRole("button", { name: /token 1/i }));
+    fireEvent.click(screen.getByRole("button", { name: /token 2/i }));
+    fireEvent.click(screen.getByRole("button", { name: /token 3/i }));
+    expect(screen.getByText("iPad time")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /start over/i })).toBeInTheDocument();
+  });
+
+  it("shows reward image in celebration when rewardImageUrl is set", () => {
+    const cfg = { ...config, rewardImageUrl: "https://example.com/ipad.jpg" };
+    render(<TokenBoardRuntime config={cfg} mode="preview" onEvent={onEvent} voice={voice} />);
+    fireEvent.click(screen.getByRole("button", { name: /token 1/i }));
+    fireEvent.click(screen.getByRole("button", { name: /token 2/i }));
+    fireEvent.click(screen.getByRole("button", { name: /token 3/i }));
+    expect(screen.getByAltText("reward")).toHaveAttribute("src", "https://example.com/ipad.jpg");
+  });
+});
+
 const mockOnEvent = vi.fn();
 
 const mockConfig: TokenBoardConfig = {

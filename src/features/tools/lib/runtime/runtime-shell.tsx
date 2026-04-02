@@ -1,11 +1,13 @@
 "use client";
 
 import { X } from "lucide-react";
+import { useMemo } from "react";
 
 import { cn } from "@/core/utils";
 import { Button } from "@/shared/components/ui/button";
 
 import type { AppShellConfig } from "./app-shell-types";
+import { ShellStateContext } from "./shell-state-context";
 import { useAppShellState } from "./use-app-shell-state";
 
 export function RuntimeShell({
@@ -28,6 +30,11 @@ export function RuntimeShell({
 
   const hasSidebar =
     shell.enableDifficulty || shell.enableSounds || shell.enableProgress;
+
+  const shellContextValue = useMemo(
+    () => ({ difficulty: state.difficulty, soundsEnabled: state.soundsEnabled }),
+    [state.difficulty, state.soundsEnabled]
+  );
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -123,7 +130,9 @@ export function RuntimeShell({
             )}
           </aside>
         )}
-        <div>{children}</div>
+        <ShellStateContext.Provider value={shellContextValue}>
+          <div>{children}</div>
+        </ShellStateContext.Provider>
       </div>
     </div>
   );
