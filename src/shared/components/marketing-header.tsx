@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 
+import { APP_BRAND, APP_CONTACT_EMAIL, APP_SIGN_IN_CTA } from "@/core/config";
 import { cn } from "@/core/utils";
 import { MaterialIcon } from "@/shared/components/material-icon";
 import { Button } from "@/shared/components/ui/button";
@@ -46,7 +47,7 @@ function MarketingHeaderContent() {
             href="/"
             className="font-headline text-[2rem] tracking-[-0.04em] text-on-surface"
           >
-            Vocali
+            {APP_BRAND}
           </Link>
           <div className="hidden md:flex items-center gap-1">
             {navLinks.map(({ href, label }) => (
@@ -69,7 +70,7 @@ function MarketingHeaderContent() {
         <div className="flex items-center gap-3">
           <Show when="signed-out">
             <Link
-              href="mailto:hello@vocali.ai"
+              href={`mailto:${APP_CONTACT_EMAIL}`}
               className="hidden min-h-[44px] items-center rounded-xl border border-border bg-surface px-4 text-sm font-medium text-on-surface transition-colors hover:bg-surface-container-low md:flex"
             >
               Contact sales
@@ -79,7 +80,7 @@ function MarketingHeaderContent() {
             href="/sign-in?role=slp"
             className="hidden min-h-[44px] items-center gap-2 rounded-xl bg-on-surface px-5 py-2.5 text-sm font-semibold text-background transition-opacity hover:opacity-92 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 md:flex"
           >
-            Try Vocali
+            {APP_SIGN_IN_CTA}
           </Link>
           <Show when="signed-in">
             <div className="hidden md:flex">
@@ -114,7 +115,7 @@ function MarketingHeaderContent() {
                     </Link>
                   ))}
                   <Link
-                    href="mailto:hello@vocali.ai"
+                    href={`mailto:${APP_CONTACT_EMAIL}`}
                     className="mt-4 rounded-lg border border-border px-6 py-3 text-center text-sm font-medium text-on-surface"
                   >
                     Contact sales
@@ -124,7 +125,7 @@ function MarketingHeaderContent() {
                       href="/sign-in?role=slp"
                       className="mt-2 rounded-lg bg-on-surface px-6 py-3 text-center text-sm font-semibold text-background"
                     >
-                      Try Vocali
+                      {APP_SIGN_IN_CTA}
                     </Link>
                   </Show>
                   <Show when="signed-in">

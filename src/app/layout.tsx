@@ -3,30 +3,28 @@ import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
 import type { Metadata } from "next";
 
+import { APP_BRAND, APP_DESCRIPTION, APP_TAGLINE } from "@/core/config";
 import { ConvexClientProvider } from "@/core/providers";
 import { SkipToContent } from "@/shared/components/skip-to-content";
 import { Toaster } from "@/shared/components/ui/sonner";
 
-const PRODUCT_NAME = "Vocali";
-const PRODUCT_TAGLINE = "Modern speech therapy for growing voices.";
-
 export const metadata: Metadata = {
-  title: `${PRODUCT_NAME} — ${PRODUCT_TAGLINE}`,
-  description: "Build interactive therapy apps with AI. Designed for ABA therapists, speech therapists, and parents of autistic children.",
+  title: `${APP_BRAND} — ${APP_TAGLINE}`,
+  description: APP_DESCRIPTION,
   manifest: "/manifest.webmanifest",
   icons: {
     icon: "/favicon.svg",
   },
   openGraph: {
-    title: `${PRODUCT_NAME} — ${PRODUCT_TAGLINE}`,
-    description: "Describe therapy tools in plain language and get working, interactive apps built by AI.",
+    title: `${APP_BRAND} — ${APP_TAGLINE}`,
+    description: APP_DESCRIPTION,
     type: "website",
-    siteName: PRODUCT_NAME,
+    siteName: APP_BRAND,
   },
   twitter: {
     card: "summary_large_image",
-    title: `${PRODUCT_NAME} — ${PRODUCT_TAGLINE}`,
-    description: "Build interactive therapy apps with AI.",
+    title: `${APP_BRAND} — ${APP_TAGLINE}`,
+    description: APP_DESCRIPTION,
   },
 };
 
