@@ -97,23 +97,14 @@ export function MyToolsPage({ embedded = false }: MyToolsPageProps) {
 
     let results = allTools.filter((t) => t.status !== "archived");
 
+    // Client-side search filter for immediate feedback while the server query re-runs
     if (debouncedSearch.trim()) {
       const q = debouncedSearch.toLowerCase();
       results = results.filter((t) => t.title.toLowerCase().includes(q));
     }
 
-    switch (sortBy) {
-      case "alphabetical":
-        results = [...results].sort((a, b) => a.title.localeCompare(b.title));
-        break;
-      case "recent":
-      default:
-        results = [...results].sort((a, b) => b._creationTime - a._creationTime);
-        break;
-    }
-
     return results;
-  }, [allTools, debouncedSearch, sortBy]);
+  }, [allTools, debouncedSearch]);
 
   const totalCount = serverTotalCount ?? tools?.length ?? 0;
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));

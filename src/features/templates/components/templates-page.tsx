@@ -161,10 +161,14 @@ export function TemplatesPage({ embedded = false }: TemplatesPageProps) {
             aria-selected={selectedCategory === cat.value}
             onClick={() => {
               setSelectedCategory(cat.value);
-              const params = new URLSearchParams();
+              const params = new URLSearchParams(searchParams.toString());
               params.set("tab", "templates");
               params.set("page", "1");
-              if (cat.value !== "all") params.set("category", cat.value);
+              if (cat.value === "all") {
+                params.delete("category");
+              } else {
+                params.set("category", cat.value);
+              }
               router.replace(`/library?${params.toString()}`, { scroll: false });
             }}
             className={cn(
