@@ -21,7 +21,7 @@ export default defineSchema({
     ),
     stateMessage: v.optional(v.string()),
     error: v.optional(v.string()),
-    blueprint: v.optional(v.any()), // Validated via Zod at app layer
+    blueprint: v.optional(v.any()), // Structured therapy PRD from SSE pipeline, validated at app layer
     sandboxId: v.optional(v.string()),
     previewUrl: v.optional(v.string()),
     publishedUrl: v.optional(v.string()),
