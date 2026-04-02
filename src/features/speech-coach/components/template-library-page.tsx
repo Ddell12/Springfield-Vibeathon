@@ -6,18 +6,26 @@ import { useMutation, useQuery } from "convex/react";
 import Link from "next/link";
 import { useState } from "react";
 
+import { ROUTES } from "@/core/routes";
 import { Button } from "@/shared/components/ui/button";
 
 import { type SpeechCoachTemplateForm,TemplateEditor } from "./template-editor";
 
 export function TemplateLibraryPage() {
   const [creating, setCreating] = useState(false);
+  const [editing, setEditing] = useState<Doc<"speechCoachTemplates">["_id"] | null>(null);
   const templates = useQuery(api.speechCoachTemplates.listMine, {});
   const createTemplate = useMutation(api.speechCoachTemplates.create);
+  const updateTemplate = useMutation(api.speechCoachTemplates.update);
 
   async function handleSave(template: SpeechCoachTemplateForm) {
     await createTemplate({ template });
     setCreating(false);
+  }
+
+  async function handleUpdate(templateId: Doc<"speechCoachTemplates">["_id"], template: SpeechCoachTemplateForm) {
+    await updateTemplate({ templateId, template });
+    setEditing(null);
   }
 
   return (
@@ -63,8 +71,11 @@ export function TemplateLibraryPage() {
       {templates?.length === 0 && !creating && (
         <div className="rounded-xl bg-muted px-6 py-10 text-center">
           <p className="text-sm text-muted-foreground">
-            No templates yet. Create one to get started.
+            No templates yet. Create one now, then apply it from this page when a child is ready.
           </p>
+          <Button type="button" onClick={() => setCreating(true)} className="mt-4">
+            Create first template
+          </Button>
         </div>
       )}
 
@@ -74,7 +85,9 @@ export function TemplateLibraryPage() {
             <li key={t._id} className="rounded-xl bg-card p-4">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <p className="font-headline text-lg text-foreground">{t.name}</p>
+                  <p className="font-headline text-lg text-foreground">
+                    {t.name || "Untitled template"}
+                  </p>
                   {t.description && (
                     <p className="mt-0.5 text-sm text-muted-foreground">{t.description}</p>
                   )}
@@ -83,6 +96,19 @@ export function TemplateLibraryPage() {
                   <span className="mt-1 shrink-0 rounded-full bg-muted px-2.5 py-0.5 text-xs text-muted-foreground">
                     {t.status}
                   </span>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setEditing((current) => (current === t._id ? null : t._id))}
+                  >
+                    Edit
+                  </Button>
+                  <Button asChild type="button" variant="outline" size="sm">
+                    <Link href={`${ROUTES.SPEECH_COACH_SETUP}?templateId=${t._id}`}>
+                      Apply to child
+                    </Link>
+                  </Button>
                   <Button asChild type="button" variant="outline" size="sm">
                     <Link href={`/speech-coach?templateId=${t._id}&mode=preview`}>
                       Preview session
@@ -90,6 +116,27 @@ export function TemplateLibraryPage() {
                   </Button>
                 </div>
               </div>
+              {editing === t._id && (
+                <div className="mt-4 rounded-xl bg-background p-6">
+                  <div className="mb-6 flex items-center justify-between">
+                    <h2 className="font-headline text-xl text-foreground">Edit template</h2>
+                    <button
+                      type="button"
+                      onClick={() => setEditing(null)}
+                      className="text-sm text-muted-foreground hover:text-foreground"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                  <TemplateEditor
+                    initialTemplate={{
+                      ...t,
+                      name: t.name || "",
+                    }}
+                    onSave={(template) => handleUpdate(t._id, template)}
+                  />
+                </div>
+              )}
             </li>
           ))}
         </ul>
