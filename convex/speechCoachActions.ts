@@ -98,7 +98,7 @@ export const analyzeSession = internalAction({
       // 3. Store transcript in Convex file storage and mark transcript_ready
       const transcriptBlob = new Blob([transcript], { type: "text/plain" });
       const storageId = await ctx.storage.store(transcriptBlob);
-      await ctx.runMutation(internal.speechCoach.markTranscriptReady, {
+      await ctx.runMutation(internal.speechCoach.setTranscriptStorageId, {
         sessionId: args.sessionId,
         storageId,
       });
