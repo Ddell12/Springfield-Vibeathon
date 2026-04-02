@@ -93,7 +93,11 @@ In production:
 - developer-only buttons do not render
 - developer-only mutations cannot be called even if a client attempts to invoke them manually
 
-The backend must validate the same gate for all developer-only mutations.
+The backend must validate the same gate for all developer-only mutations. This is a security requirement, not a convenience — UI-only gating is bypassable via the Convex dashboard or DevTools. Extract an `assertDeveloperGate(ctx)` helper and call it at the top of every developer-only mutation, before any database operations.
+
+### 5.3 Allowlist management
+
+The developer identity allowlist must be stored in an environment variable (`DEVELOPER_ALLOWLIST`, comma-separated emails), not hardcoded in source. This prevents a code deploy being required to add or remove a developer. The variable should be set in the Convex dashboard environment variables for backend checks, and as a `NEXT_PUBLIC_DEVELOPER_ALLOWLIST` variable for the frontend gate (non-sensitive since it only controls UI visibility, with backend as the real enforcement layer).
 
 ## 6. Feature Design
 
@@ -234,6 +238,7 @@ The design standardizes on an explicit provenance object for developer-created r
 testMetadata: {
   source: "developer-shortcut" | "seed-demo" | "seed-e2e";
   createdByUserId?: string;
+  expiresAt?: number; // Unix ms — used for scheduled cleanup
 }
 ```
 
@@ -252,6 +257,50 @@ The provenance marker must allow the app to:
 - distinguish developer-created shortcuts from clinician-created real records
 
 This is a hard requirement. Shortcut-created records without provenance are not acceptable.
+
+### 9.2 Schema migration
+
+`testMetadata` is a new optional field that must be added to the Convex schema for any table that can receive test records. The initial set of affected tables is:
+
+- `appointments`
+- `patients`
+- `speechCoachSessions`
+
+Add the field as `v.optional(v.object({ ... }))` in `convex/schema.ts`. A `npx convex dev` codegen run is required after any schema change before downstream code can reference the new fields.
+
+```ts
+// convex/schema.ts — shared testMetadata shape (repeat inline per table)
+testMetadata: v.optional(v.object({
+  source: v.union(
+    v.literal("developer-shortcut"),
+    v.literal("seed-demo"),
+    v.literal("seed-e2e")
+  ),
+  createdByUserId: v.optional(v.string()),
+  expiresAt: v.optional(v.number()),
+}))
+```
+
+### 9.3 Child record propagation
+
+When the real call or session flow creates child records from a test-tagged root — session notes, billing events, progress data, LiveKit room records — those children must explicitly inherit `testMetadata` from the parent. This propagation is not automatic. Each Convex mutation that creates a child of a potentially-test record must:
+
+1. Read the parent's `testMetadata`.
+2. Pass it through to the child insert if present.
+
+A child record without `testMetadata` that was created from a test appointment is indistinguishable from a clinical record and will appear in reporting surfaces. This is a correctness requirement for every mutation in the session and billing flows.
+
+### 9.4 Expiry and cleanup
+
+Developer-shortcut records should default to `expiresAt = now + 30 days`. Seed records (demo, e2e) can omit `expiresAt` as they are managed by the seed reset flow.
+
+Add a scheduled internal Convex mutation (`internal.testData.sweepExpiredRecords`) that:
+
+- Runs nightly via `ctx.scheduler`.
+- Queries each affected table for records where `testMetadata.expiresAt < Date.now()`.
+- Deletes them in dependency order (children before parents) to avoid FK violations.
+
+This satisfies ISO 27001 Annex A 8.31 (separation of test and production environments with defined retention) and reduces the risk of test records accumulating alongside real PHI indefinitely.
 
 ## 10. Data Flow
 
@@ -343,6 +392,10 @@ This design intentionally stays focused on the current testability pain:
 
 It does not include a generalized internal QA suite, admin dashboard, or broader refactor of every clinical workflow.
 
+### 13.1 Implementation order constraint
+
+Schema changes must be applied and codegen run (`npx convex dev`) **before** any feature or mutation code references `testMetadata`. The migration step is a hard prerequisite for the teletherapy shortcut, child record propagation, and the nightly sweep mutation.
+
 ## 14. Success Criteria
 
 This work is successful when:
@@ -352,3 +405,6 @@ This work is successful when:
 3. E2E accounts have reliable seed data shaped like the demo path.
 4. New Convex tests can compose domain fixtures in a few lines instead of rebuilding setup from scratch.
 5. Synthetic shortcut data is clearly marked and excluded from real reporting surfaces.
+6. All child records of test-tagged appointments carry `testMetadata` and do not appear in billing or progress reports.
+7. Developer-shortcut appointments expire and are automatically cleaned up within 30 days.
+8. Removing or adding a developer to the allowlist requires only an env var change, not a code deploy.

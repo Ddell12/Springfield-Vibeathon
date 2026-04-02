@@ -179,6 +179,9 @@ agent-browser screenshot out.png  # Visual confirmation of styled preview
 - `GOOGLE_GENERATIVE_AI_API_KEY` — for RAG embeddings and image generation
 - `ELEVENLABS_API_KEY` — for TTS and STT
 - `VERCEL_TOKEN`, `VERCEL_PROJECT_ID` — for publish pipeline
+- `LIVEKIT_URL` — LiveKit server WebSocket URL for speech coach agent sessions (same value as `NEXT_PUBLIC_LIVEKIT_URL`)
+- `LIVEKIT_API_KEY` — LiveKit API key for token signing
+- `LIVEKIT_API_SECRET` — LiveKit API secret for token signing
 
 ## Convex Backend
 
