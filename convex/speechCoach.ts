@@ -386,7 +386,7 @@ export const endStandaloneSession = authedMutation({
     }
 
     await ctx.db.patch(args.sessionId, {
-      status: "completed",
+      status: "analyzing",
       endedAt: Date.now(),
     });
 
