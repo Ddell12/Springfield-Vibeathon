@@ -13,7 +13,6 @@ import type { Id } from "../../../../convex/_generated/dataModel";
 import { useSpeechSession } from "../hooks/use-speech-session";
 import { ActiveSession } from "./active-session";
 import { CaregiverProgressCard } from "./caregiver-progress-card";
-import { ProgressCard } from "./progress-card";
 import { SessionConfig } from "./session-config";
 import { SessionHistory } from "./session-history";
 
