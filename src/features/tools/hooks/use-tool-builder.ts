@@ -5,6 +5,7 @@ import type { Id } from "@convex/_generated/dataModel";
 import { useMutation, useQuery } from "convex/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { seedStateFromInstance } from "../lib/tool-config-seed";
 import { templateRegistry } from "../lib/registry";
 import type { ThemePreset } from "../lib/runtime/app-shell-types";
 
@@ -49,22 +50,17 @@ export function useToolBuilder(initialId?: Id<"app_instances"> | null) {
   useEffect(() => {
     if (existingInstance && !seeded.current) {
       seeded.current = true;
-      const timer = setTimeout(() => {
+      return seedStateFromInstance(existingInstance, (seededState) => {
         setState({
           step: 3,
-          patientId: existingInstance.patientId ?? null,
-          templateType: existingInstance.templateType,
-          config: JSON.parse(existingInstance.configJson),
-          instanceId: existingInstance._id,
-          publishedShareToken: existingInstance.shareToken ?? null,
+          ...seededState,
           isSaving: false,
           appearance: {
             themePreset: "calm",
             accentColor: "#00595c",
           },
         });
-      }, 0);
-      return () => clearTimeout(timer);
+      });
     }
   }, [existingInstance]);
 
