@@ -78,8 +78,8 @@ export function SessionConfig({ speechCoachConfig, onStart, lastRecommended, isL
           ))}
         </div>
         {lastRecommended && lastRecommended.length > 0 && (
-          <p className="mt-2 text-sm text-muted-foreground">
-            Based on the last session, we recommend practicing these sounds.
+          <p className="mt-2 text-xs font-medium text-primary">
+            ✓ Based on last session&apos;s recommendation
           </p>
         )}
       </div>
