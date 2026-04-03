@@ -13,7 +13,7 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "snapshot": "npx tsx scripts/generate-wc-snapshot.ts",
-    "postinstall": "cd artifacts/wab-scaffold && npm install --omit=dev --legacy-peer-deps --no-audit --no-fund 2>/dev/null || true",
+    "postinstall": "cd artifacts/wab-scaffold && npm install --omit=dev --legacy-peer-deps --no-audit --no-fund 2>/dev/null || (echo 'WAB scaffold install failed' >&2 && exit 1)",
     "seed:demo": "npx tsx scripts/seed-demo.ts",
     "seed:demo:reset": "npx tsx scripts/seed-demo.ts --reset",
     "seed:e2e": "npx tsx scripts/seed-e2e.ts",
