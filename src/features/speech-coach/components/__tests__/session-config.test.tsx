@@ -47,4 +47,15 @@ describe("SessionConfig", () => {
     );
     expect(screen.getByText("Start Session")).toBeDisabled();
   });
+
+  it("shows 'based on last session' label when lastRecommended is provided", () => {
+    render(
+      <SessionConfig
+        speechCoachConfig={DEFAULT_CONFIG}
+        onStart={vi.fn()}
+        lastRecommended={["/r/"]}
+      />
+    );
+    expect(screen.getByText(/based on.*last session/i)).toBeInTheDocument();
+  });
 });
