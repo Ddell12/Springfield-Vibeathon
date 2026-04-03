@@ -802,6 +802,24 @@ export default defineSchema({
       recommendedNextTargets: v.array(v.string()),
       homePracticeNotes: v.array(v.string()),
     })),
+    cueDistribution: v.optional(v.object({
+      spontaneous: v.number(),
+      model: v.number(),
+      phoneticCue: v.number(),
+      directCorrection: v.number(),
+    })),
+    positionAccuracy: v.optional(v.array(v.object({
+      sound: v.string(),
+      position: v.union(
+        v.literal("initial"),
+        v.literal("medial"),
+        v.literal("final"),
+        v.literal("unknown")
+      ),
+      correct: v.number(),
+      total: v.number(),
+    }))),
+    iepNoteDraft: v.optional(v.string()),
   })
     .index("by_patientId", ["patientId"])
     .index("by_sessionId", ["sessionId"])
