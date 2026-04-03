@@ -80,6 +80,9 @@ const agent = defineAgent({
       captureUserInputTranscription(transcriptBuffer, event);
     });
 
+    const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL ?? process.env.CONVEX_URL ?? "";
+    const runtimeSecret = process.env.SPEECH_COACH_RUNTIME_SECRET ?? "";
+
     ctx.addShutdownCallback(async () => {
       if (!sessionId) {
         console.warn("[speech-coach] skipping transcript persistence: sessionId missing");
@@ -92,10 +95,9 @@ const agent = defineAgent({
         return;
       }
 
-      const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL ?? process.env.CONVEX_URL;
-      const runtimeSecret = process.env.SPEECH_COACH_RUNTIME_SECRET;
       if (!convexUrl || !runtimeSecret) {
-        throw new Error("Speech coach transcript persistence env vars are missing");
+        console.error("[speech-coach] missing env vars — cannot persist transcript");
+        return;
       }
 
       const convex = new ConvexHttpClient(convexUrl);
@@ -115,16 +117,15 @@ const agent = defineAgent({
       sessionId,
     });
 
-    const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL ?? process.env.CONVEX_URL ?? "";
-    const runtimeSecret = process.env.SPEECH_COACH_RUNTIME_SECRET ?? "";
-
     await session.start({
-      room: ctx.room,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      room: ctx.room as any,
       agent: createSpeechCoachAgent({
         instructions:
           metadata.instructions ??
           "You are a helpful speech coach. Guide the child through articulation practice with patience and encouragement.",
-        room: ctx.room,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        room: ctx.room as any,
         sessionId: sessionId ?? "",
         convexUrl,
         runtimeSecret,
