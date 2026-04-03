@@ -1,7 +1,9 @@
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
+import { useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 
-import { ActiveSession, getCelebrationMode } from "../active-session";
+import { ActiveSession, getCelebrationMode, processAgentMessage } from "../active-session";
+import type { SessionVisualState } from "../active-session";
 
 // LiveKit components are browser-only and don't render meaningfully in jsdom.
 vi.mock("@livekit/components-react", () => ({
@@ -79,5 +81,77 @@ describe("active session UI elements", () => {
       />
     );
     expect(screen.getByText("Listen carefully")).toBeInTheDocument();
+  });
+});
+
+describe("data channel → visual state", () => {
+  it("updates visual state when agent sends visual_state message with your_turn promptState", () => {
+    // Use a minimal test harness component that drives processAgentMessage via a button click.
+    function TestHarness() {
+      const [visual, setVisual] = useState<SessionVisualState>({
+        targetLabel: "sun",
+        promptState: "listen",
+        totalCorrect: 0,
+      });
+      return (
+        <>
+          <button
+            data-testid="trigger"
+            onClick={() =>
+              processAgentMessage(
+                { type: "visual_state", targetLabel: "sun", promptState: "your_turn", totalCorrect: 0 },
+                setVisual,
+              )
+            }
+          />
+          <span data-testid="state">{visual.promptState}</span>
+        </>
+      );
+    }
+
+    render(<TestHarness />);
+    expect(screen.getByTestId("state").textContent).toBe("listen");
+
+    act(() => {
+      screen.getByTestId("trigger").click();
+    });
+
+    expect(screen.getByTestId("state").textContent).toBe("your_turn");
+  });
+
+  it("processAgentMessage: visual_state sets all fields correctly", () => {
+    const calls: unknown[] = [];
+    const setVisual = vi.fn((updater: unknown) => calls.push(updater));
+
+    processAgentMessage(
+      { type: "visual_state", targetLabel: "sock", targetImageUrl: "/sock.png", promptState: "your_turn", totalCorrect: 3 },
+      setVisual as Parameters<typeof processAgentMessage>[1],
+    );
+
+    expect(setVisual).toHaveBeenCalledOnce();
+    expect(setVisual).toHaveBeenCalledWith({
+      targetLabel: "sock",
+      targetVisualUrl: "/sock.png",
+      promptState: "your_turn",
+      totalCorrect: 3,
+    });
+  });
+
+  it("processAgentMessage: advance_target updates label and resets promptState to listen", () => {
+    const updates: unknown[] = [];
+    const setVisual = vi.fn((updater: unknown) => {
+      if (typeof updater === "function") {
+        // Simulate functional update with a mock prev state
+        updates.push((updater as (prev: object) => object)({ targetLabel: "sun", promptState: "your_turn", totalCorrect: 1 }));
+      }
+    });
+
+    processAgentMessage(
+      { type: "advance_target", nextLabel: "moon" },
+      setVisual as Parameters<typeof processAgentMessage>[1],
+    );
+
+    expect(setVisual).toHaveBeenCalledOnce();
+    expect(updates[0]).toMatchObject({ targetLabel: "moon", promptState: "listen" });
   });
 });

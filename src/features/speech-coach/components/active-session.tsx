@@ -3,7 +3,7 @@
 import { LiveKitRoom, RoomAudioRenderer, useRoomContext } from "@livekit/components-react";
 import Image from "next/image";
 import { RoomEvent } from "livekit-client";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { type Dispatch, type SetStateAction, useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { cn } from "@/core/utils";
@@ -67,6 +67,23 @@ function AgentDataListener({ onMessage }: { onMessage: (msg: AgentVisualMessage)
     };
   }, [room, onMessage]);
   return null;
+}
+
+/** Pure message handler — exported for unit testing the data channel → visual state path. */
+export function processAgentMessage(
+  msg: AgentVisualMessage,
+  setVisual: Dispatch<SetStateAction<SessionVisualState>>,
+) {
+  if (msg.type === "visual_state") {
+    setVisual({
+      targetLabel: msg.targetLabel,
+      targetVisualUrl: msg.targetImageUrl,
+      promptState: msg.promptState,
+      totalCorrect: msg.totalCorrect,
+    });
+  } else if (msg.type === "advance_target") {
+    setVisual((prev) => ({ ...prev, targetLabel: msg.nextLabel, promptState: "listen" }));
+  }
 }
 
 export function ActiveSession(props: Props) {
@@ -208,7 +225,7 @@ function ActiveSessionInner({
             onConversationStarted(runtimeSession.roomName);
           }}
           onDisconnected={() => {
-            if (wasConnected.current) onEnd();
+            if (wasConnected.current) onEndRef.current();
           }}
         >
           <RoomAudioRenderer />
