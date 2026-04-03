@@ -43,11 +43,11 @@ export const update = mutation({
     goalTags: v.optional(v.array(v.string())), // new: IEP goal tags
   },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) throw new Error("Unauthenticated");
+    const slpUserId = await getAuthUserId(ctx);
+    if (!slpUserId) throw new Error("Unauthenticated");
     const instance = await ctx.db.get(args.id);
     if (!instance) throw new Error("Not found");
-    if (instance.slpUserId !== identity.subject) throw new Error("Forbidden");
+    if (instance.slpUserId !== slpUserId) throw new Error("Forbidden");
 
     await ctx.db.patch(args.id, {
       ...(args.configJson !== undefined ? { configJson: args.configJson } : {}),
@@ -61,11 +61,11 @@ export const update = mutation({
 export const publish = mutation({
   args: { id: v.id("app_instances") },
   handler: async (ctx, args): Promise<{ shareToken: string }> => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) throw new Error("Unauthenticated");
+    const slpUserId = await getAuthUserId(ctx);
+    if (!slpUserId) throw new Error("Unauthenticated");
     const instance = await ctx.db.get(args.id);
     if (!instance) throw new Error("Not found");
-    if (instance.slpUserId !== identity.subject) throw new Error("Forbidden");
+    if (instance.slpUserId !== slpUserId) throw new Error("Forbidden");
 
     const shareToken = crypto.randomUUID();
     const now = Date.now();
@@ -94,8 +94,8 @@ export const get = query({
     const instance = await ctx.db.get(args.id);
     if (!instance) return null;
     if (instance.status === "published") return instance;
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity || instance.slpUserId !== identity.subject) return null;
+    const slpUserId = await getAuthUserId(ctx);
+    if (!slpUserId || instance.slpUserId !== slpUserId) return null;
     return instance;
   },
 });
@@ -123,11 +123,11 @@ export const getByShareToken = query({
 export const listBySLP = query({
   args: {},
   handler: async (ctx) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) return [];
+    const slpUserId = await getAuthUserId(ctx);
+    if (!slpUserId) return [];
     return ctx.db
       .query("app_instances")
-      .withIndex("by_slpUserId", (q) => q.eq("slpUserId", identity.subject))
+      .withIndex("by_slpUserId", (q) => q.eq("slpUserId", slpUserId))
       .collect();
   },
 });
@@ -135,15 +135,15 @@ export const listBySLP = query({
 export const listRecentBySLP = query({
   args: { limit: v.optional(v.number()) },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) return [];
+    const slpUserId = await getAuthUserId(ctx);
+    if (!slpUserId) return [];
 
     const limit = Math.min(args.limit ?? 5, 10);
 
     // .order("desc") sorts by _creationTime within the slpUserId partition (most recently created first)
     return ctx.db
       .query("app_instances")
-      .withIndex("by_slpUserId", (q) => q.eq("slpUserId", identity.subject))
+      .withIndex("by_slpUserId", (q) => q.eq("slpUserId", slpUserId))
       .order("desc")
       .take(limit);
   },
@@ -157,15 +157,15 @@ export const listPageBySLP = query({
     sortBy: v.union(v.literal("recent"), v.literal("alphabetical")),
   },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
+    const slpUserId = await getAuthUserId(ctx);
+    if (!slpUserId) {
       return { items: [], totalCount: 0, page: 1, pageSize: args.pageSize };
     }
 
     // Single query — no silent .take() cap. Filter archived in JS.
     const all = await ctx.db
       .query("app_instances")
-      .withIndex("by_slpUserId", (q) => q.eq("slpUserId", identity.subject))
+      .withIndex("by_slpUserId", (q) => q.eq("slpUserId", slpUserId))
       .collect();
 
     let items = all.filter((item) => item.status !== "archived");
@@ -306,11 +306,11 @@ export const duplicate = mutation({
 export const archive = mutation({
   args: { id: v.id("app_instances") },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) throw new Error("Unauthenticated");
+    const slpUserId = await getAuthUserId(ctx);
+    if (!slpUserId) throw new Error("Unauthenticated");
     const instance = await ctx.db.get(args.id);
     if (!instance) throw new Error("Not found");
-    if (instance.slpUserId !== identity.subject) throw new Error("Forbidden");
+    if (instance.slpUserId !== slpUserId) throw new Error("Forbidden");
     await ctx.db.patch(args.id, { status: "archived" });
   },
 });
@@ -318,11 +318,11 @@ export const archive = mutation({
 export const unpublish = mutation({
   args: { id: v.id("app_instances") },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) throw new Error("Unauthenticated");
+    const slpUserId = await getAuthUserId(ctx);
+    if (!slpUserId) throw new Error("Unauthenticated");
     const instance = await ctx.db.get(args.id);
     if (!instance) throw new Error("Not found");
-    if (instance.slpUserId !== identity.subject) throw new Error("Forbidden");
+    if (instance.slpUserId !== slpUserId) throw new Error("Forbidden");
     await ctx.db.patch(args.id, { status: "draft", shareToken: undefined });
   },
 });

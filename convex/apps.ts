@@ -73,11 +73,11 @@ export const update = mutation({
     description: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) throw new Error("Not authenticated");
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
     const app = await ctx.db.get(args.appId);
     if (!app) throw new Error("App not found");
-    if (!app.userId || app.userId !== identity.subject) throw new Error("Not authorized");
+    if (!app.userId || app.userId !== userId) throw new Error("Not authorized");
 
     const { appId, ...fields } = args;
     const patch: Record<string, unknown> = { updatedAt: Date.now() };
@@ -91,11 +91,11 @@ export const update = mutation({
 export const list = query({
   args: {},
   handler: async (ctx) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) return [];
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return [];
     return await ctx.db
       .query("apps")
-      .withIndex("by_user", (q) => q.eq("userId", identity.subject))
+      .withIndex("by_user", (q) => q.eq("userId", userId))
       .order("desc")
       .take(50);
   },
