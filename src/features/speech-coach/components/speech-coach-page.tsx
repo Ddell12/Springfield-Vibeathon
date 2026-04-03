@@ -12,6 +12,7 @@ import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 import { useSpeechSession } from "../hooks/use-speech-session";
 import { ActiveSession } from "./active-session";
+import { CaregiverProgressCard } from "./caregiver-progress-card";
 import { ProgressCard } from "./progress-card";
 import { SessionConfig } from "./session-config";
 import { SessionHistory } from "./session-history";
@@ -110,7 +111,7 @@ export function SpeechCoachPage({ patientId, homeProgramId }: Props) {
             <p className="text-4xl mb-2" aria-hidden="true">🎉</p>
             <h2 className="font-headline text-2xl font-bold text-foreground">Session complete!</h2>
           </div>
-          <ProgressCard progress={progress} />
+          <CaregiverProgressCard progress={progress} />
           <button
             type="button"
             onClick={() => { session.reset(); setActiveTab("history"); }}

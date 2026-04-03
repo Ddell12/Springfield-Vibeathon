@@ -11,6 +11,7 @@ import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 import { getSessionStatusLabel } from "../lib/session-analysis";
 import { ProgressCard } from "./progress-card";
+import { SlpProgressCard } from "./slp-progress-card";
 
 const STATUS_STYLES = {
   configuring: "bg-muted text-muted-foreground",
@@ -240,7 +241,7 @@ function ExpandedDetail({ sessionId }: { sessionId: Id<"speechCoachSessions"> })
           Template v{snapshot.templateVersion} · {snapshot.voiceKey}
         </p>
       ) : null}
-      <ProgressCard progress={detail.progress} />
+      <SlpProgressCard progress={detail.progress} />
       {transcriptPanel ? <div className="mt-4">{transcriptPanel}</div> : null}
     </div>
   );
