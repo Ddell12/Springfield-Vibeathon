@@ -53,3 +53,19 @@ export const seedTestCaregiverLink = internalMutation({
     return { status: "seeded", patientId };
   },
 });
+
+export const setUserRoleByEmail = internalMutation({
+  args: {
+    email: v.string(),
+    role: v.union(v.literal("slp"), v.literal("caregiver")),
+  },
+  handler: async (ctx, args) => {
+    const user = await ctx.db
+      .query("users")
+      .withIndex("email", (q) => q.eq("email", args.email))
+      .first();
+    if (!user) throw new Error(`User not found for email: ${args.email}`);
+    await ctx.db.patch(user._id, { role: args.role });
+    console.log(`Set role "${args.role}" for ${args.email}`);
+  },
+});
