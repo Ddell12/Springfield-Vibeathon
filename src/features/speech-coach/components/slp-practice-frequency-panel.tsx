@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { cn } from "@/core/utils";
 import { Button } from "@/shared/components/ui/button";
 
 type FrequencyData = {
@@ -64,7 +65,7 @@ export function SlpPracticeFrequencyPanel({ frequency, adjustHref }: Props) {
         </div>
         <div className="rounded-lg bg-background p-3 text-center">
           <p
-            className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${CONSISTENCY_COLORS[frequency.consistencyLabel]}`}
+            className={cn("inline-block rounded-full px-2 py-0.5 text-xs font-medium", CONSISTENCY_COLORS[frequency.consistencyLabel])}
           >
             {frequency.consistencyLabel}
           </p>
