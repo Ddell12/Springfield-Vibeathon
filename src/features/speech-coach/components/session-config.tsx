@@ -28,9 +28,13 @@ export function SessionConfig({ speechCoachConfig, onStart, lastRecommended, isL
     lastRecommended ?? speechCoachConfig.targetSounds
   );
   const [ageRange, setAgeRange] = useState<"2-4" | "5-7">(speechCoachConfig.ageRange);
-  const [duration, setDuration] = useState<5 | 10>(
-    speechCoachConfig.defaultDurationMinutes <= 5 ? 5 : 10
-  );
+  const [duration, setDuration] = useState<5 | 8 | 10 | 15>(() => {
+    const d = speechCoachConfig.defaultDurationMinutes;
+    if (d <= 5) return 5;
+    if (d <= 8) return 8;
+    if (d <= 10) return 10;
+    return 15;
+  });
   const [focusArea, setFocusArea] = useState("");
 
   const toggleSound = (id: string) => {
@@ -120,7 +124,7 @@ export function SessionConfig({ speechCoachConfig, onStart, lastRecommended, isL
           How long?
         </h3>
         <div className="mt-3 flex gap-3">
-          {([5, 10] as const).map((mins) => (
+          {([5, 8, 10, 15] as const).map((mins) => (
             <label
               key={mins}
               className={cn(
@@ -137,6 +141,7 @@ export function SessionConfig({ speechCoachConfig, onStart, lastRecommended, isL
                 value={mins}
                 checked={duration === mins}
                 onChange={() => setDuration(mins)}
+                aria-label={`${mins} minutes`}
               />
               {mins} minutes
             </label>

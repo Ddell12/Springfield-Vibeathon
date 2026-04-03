@@ -47,4 +47,10 @@ describe("SessionConfig", () => {
     );
     expect(screen.getByText("Start Session")).toBeDisabled();
   });
+
+  it("offers 4 duration options including 8 and 15 minutes", () => {
+    render(<SessionConfig speechCoachConfig={DEFAULT_CONFIG} onStart={vi.fn()} />);
+    expect(screen.getByLabelText("8 minutes")).toBeInTheDocument();
+    expect(screen.getByLabelText("15 minutes")).toBeInTheDocument();
+  });
 });
