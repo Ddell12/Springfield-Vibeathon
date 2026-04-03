@@ -173,7 +173,7 @@ export const analyzeSession = internalAction({
       // Compute cue distribution from rawAttempts (no Claude needed)
       let cueDistribution: { spontaneous: number; model: number; phoneticCue: number; directCorrection: number } | undefined;
       if (session.rawAttempts?.length) {
-        const { computeCueDistribution } = await import("../src/features/speech-coach/lib/analysis-compute");
+        const { computeCueDistribution } = await import("./speech_coach_analysis_compute");
         cueDistribution = computeCueDistribution(session.rawAttempts);
       }
 
@@ -193,8 +193,8 @@ export const analyzeSession = internalAction({
           ? { ...slpResult.insights, homePracticeNotes: caregiverResult.homePracticeNotes ?? slpResult.insights.homePracticeNotes ?? [] }
           : undefined,
         cueDistribution,
-        positionAccuracy: (slpResult as any).positionAccuracy,
-        iepNoteDraft: (slpResult as any).iepNoteDraft,
+        positionAccuracy: slpResult.positionAccuracy,
+        iepNoteDraft: slpResult.iepNoteDraft,
       });
 
       if (session.patientId && session.homeProgramId) {
