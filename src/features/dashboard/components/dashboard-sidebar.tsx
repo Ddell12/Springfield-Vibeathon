@@ -1,14 +1,15 @@
 "use client";
 
-import { Show,useClerk, useUser } from "@clerk/nextjs";
+import { useAuthActions } from "@convex-dev/auth/react";
 import { useQuery } from "convex/react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+
+import { useCurrentUser } from "@/features/auth/hooks/use-current-user";
 
 import { ROUTES } from "@/core/routes";
 import { cn } from "@/core/utils";
-import { AUTH_SIGN_OUT_URL } from "@/features/auth/lib/auth-content";
 import { NotificationBell } from "@/features/sessions/components/notification-bell";
 import { useUnreadNotificationsCount } from "@/features/sessions/hooks/use-unread-notifications-count";
 import { MaterialIcon } from "@/shared/components/material-icon";
@@ -19,12 +20,19 @@ import { api } from "../../../../convex/_generated/api";
 
 export function DashboardSidebar() {
   const pathname = usePathname();
-  const { user } = useUser();
-  const { signOut } = useClerk();
+  const user = useCurrentUser();
+  const { signOut } = useAuthActions();
+  const router = useRouter();
 
-  const role = (user?.publicMetadata as { role?: string } | undefined)?.role;
+  const role = user?.role;
   const isCaregiver = role === "caregiver";
   const navItems = isCaregiver ? CAREGIVER_NAV_ITEMS : NAV_ITEMS;
+
+  useEffect(() => {
+    if (user?.role === "caregiver") {
+      router.replace("/family");
+    }
+  }, [user?.role, router]);
 
   const [collapsed, setCollapsed] = useState(
     () => typeof window !== "undefined" && localStorage.getItem("vocali_sidebar_collapsed") === "true",
@@ -40,12 +48,9 @@ export function DashboardSidebar() {
   const recentTools = useQuery(api.tools.listRecentBySLP, { limit: 5 }) ?? [];
   const { unreadCount } = useUnreadNotificationsCount();
 
-  const initials = [user?.firstName?.[0], user?.lastName?.[0]]
-    .filter(Boolean)
-    .join("")
-    .toUpperCase() || "U";
+  const initials = user?.name?.[0]?.toUpperCase() ?? user?.email?.[0]?.toUpperCase() ?? "U";
 
-  const planLabel = (user?.publicMetadata as { plan?: string } | undefined)?.plan ?? "Free";
+  const planLabel = "Free";
 
   return (
     <aside
@@ -142,7 +147,7 @@ export function DashboardSidebar() {
 
       {/* User menu */}
       <div className="mt-auto shrink-0 border-t border-outline-variant/10 p-2">
-        <Show when="signed-in">
+        {user ? (
           <Popover>
             <PopoverTrigger asChild>
               <button
@@ -159,7 +164,7 @@ export function DashboardSidebar() {
                   <>
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-xs font-semibold text-on-surface">
-                        {user?.firstName} {user?.lastName}
+                        {user?.name ?? "User"}
                       </p>
                       <p className="text-[10px] text-on-surface-variant/60">{planLabel} plan</p>
                     </div>
@@ -175,10 +180,10 @@ export function DashboardSidebar() {
                 </div>
                 <div className="min-w-0">
                   <p className="truncate text-sm font-semibold text-on-surface">
-                    {user?.firstName} {user?.lastName}
+                    {user?.name ?? "User"}
                   </p>
                   <p className="truncate text-xs text-on-surface-variant">
-                    {user?.primaryEmailAddress?.emailAddress}
+                    {user?.email}
                   </p>
                 </div>
               </div>
@@ -193,7 +198,10 @@ export function DashboardSidebar() {
               <div className="my-1 border-t border-outline-variant/20" />
               <button
                 type="button"
-                onClick={() => signOut({ redirectUrl: AUTH_SIGN_OUT_URL })}
+                onClick={async () => {
+                  await signOut();
+                  router.push("/sign-in");
+                }}
                 className="flex w-full items-center gap-2 rounded-2xl px-3 py-2 text-sm text-on-surface hover:bg-surface-container-high transition-colors"
               >
                 <MaterialIcon icon="logout" size="sm" />
@@ -201,8 +209,8 @@ export function DashboardSidebar() {
               </button>
             </PopoverContent>
           </Popover>
-        </Show>
-        <Show when="signed-out">
+        ) : null}
+        {user === null ? (
           <Link
             href="/sign-in"
             className="flex items-center gap-2 rounded-xl px-2 py-2 text-sm text-on-surface-variant hover:bg-surface-container-high transition-colors"
@@ -210,7 +218,7 @@ export function DashboardSidebar() {
             <MaterialIcon icon="login" size="sm" />
             {!collapsed && <span>Sign in</span>}
           </Link>
-        </Show>
+        ) : null}
       </div>
     </aside>
   );
