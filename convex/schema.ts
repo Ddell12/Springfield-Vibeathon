@@ -729,6 +729,17 @@ export default defineSchema({
     endedAt: v.optional(v.number()),
     transcriptStorageId: v.optional(v.id("_storage")),
     transcriptCapturedAt: v.optional(v.number()),
+    rawAttempts: v.optional(v.array(v.object({
+      targetLabel: v.string(),
+      outcome: v.union(
+        v.literal("correct"),
+        v.literal("approximate"),
+        v.literal("incorrect"),
+        v.literal("no_response")
+      ),
+      retryCount: v.number(),
+      timestampMs: v.number(),
+    }))),
     rawTranscriptTurns: v.optional(v.array(
       v.object({
         speaker: v.union(v.literal("coach"), v.literal("child"), v.literal("system")),
