@@ -1,10 +1,11 @@
 import "./globals.css";
 
-import { ClerkProvider } from "@clerk/nextjs";
+import { ConvexAuthProvider } from "@convex-dev/auth/react";
 import type { Metadata } from "next";
+import { ThemeProvider } from "next-themes";
+import { ConvexReactClient } from "convex/react";
 
 import { APP_BRAND, APP_DESCRIPTION, APP_TAGLINE } from "@/core/config";
-import { ConvexClientProvider } from "@/core/providers";
 import { SkipToContent } from "@/shared/components/skip-to-content";
 import { Toaster } from "@/shared/components/ui/sonner";
 
@@ -27,6 +28,10 @@ export const metadata: Metadata = {
     description: APP_DESCRIPTION,
   },
 };
+
+const convex = new ConvexReactClient(
+  process.env.NEXT_PUBLIC_CONVEX_URL ?? "https://placeholder.convex.cloud"
+);
 
 export default function RootLayout({
   children,
@@ -55,12 +60,12 @@ export default function RootLayout({
       {/* eslint-enable @next/next/no-page-custom-font */}
       <body className="min-h-full flex flex-col antialiased">
         <SkipToContent />
-        <ClerkProvider signInFallbackRedirectUrl="/builder" signUpFallbackRedirectUrl="/builder">
-          <ConvexClientProvider>
+        <ConvexAuthProvider client={convex}>
+          <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
             {children}
             <Toaster />
-          </ConvexClientProvider>
-        </ClerkProvider>
+          </ThemeProvider>
+        </ConvexAuthProvider>
       </body>
     </html>
   );
