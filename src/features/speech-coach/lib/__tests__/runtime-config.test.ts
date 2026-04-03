@@ -5,6 +5,54 @@ import {
   resolveSpeechCoachRuntimeConfig,
 } from "../runtime-config";
 
+describe("clinical protocol prompt", () => {
+  it("includes the cueing hierarchy in all instructions", () => {
+    const resolved = resolveSpeechCoachRuntimeConfig({
+      template: { name: "T", voice: { provider: "elevenlabs", voiceKey: "k" } },
+      childOverrides: { targetSounds: ["/s/"] },
+    });
+    const instructions = buildSpeechCoachRuntimeInstructions({ resolvedConfig: resolved });
+    expect(instructions).toContain("CUEING HIERARCHY");
+    expect(instructions).toContain("Elicit spontaneously");
+  });
+
+  it("includes wait time guidance for autism", () => {
+    const resolved = resolveSpeechCoachRuntimeConfig({
+      template: { name: "T", voice: { provider: "elevenlabs", voiceKey: "k" } },
+      childOverrides: { targetSounds: ["/s/"] },
+    });
+    const instructions = buildSpeechCoachRuntimeInstructions({ resolvedConfig: resolved });
+    expect(instructions).toContain("5-10");
+  });
+
+  it("injects enabled skill clinical modules", () => {
+    const resolved = resolveSpeechCoachRuntimeConfig({
+      template: {
+        name: "T",
+        voice: { provider: "elevenlabs", voiceKey: "k" },
+        skills: [
+          { key: "auditory-bombardment", enabled: true },
+          { key: "carryover-conversation", enabled: false },
+        ],
+      },
+      childOverrides: { targetSounds: ["/s/"] },
+    });
+    const instructions = buildSpeechCoachRuntimeInstructions({ resolvedConfig: resolved });
+    expect(instructions).toContain("5-8 times");          // auditory-bombardment text
+    expect(instructions).not.toContain("Embed target words naturally in simple conversation"); // disabled skill
+  });
+
+  it("includes tool call instructions", () => {
+    const resolved = resolveSpeechCoachRuntimeConfig({
+      template: { name: "T", voice: { provider: "elevenlabs", voiceKey: "k" } },
+      childOverrides: { targetSounds: ["/s/"] },
+    });
+    const instructions = buildSpeechCoachRuntimeInstructions({ resolvedConfig: resolved });
+    expect(instructions).toContain("signal_state");
+    expect(instructions).toContain("log_attempt");
+  });
+});
+
 describe("resolveSpeechCoachRuntimeConfig", () => {
   it("merges base runtime, template, and child overrides", () => {
     const resolved = resolveSpeechCoachRuntimeConfig({
