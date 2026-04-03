@@ -84,6 +84,10 @@ function ActiveSessionInner({
   const wasConnected = useRef(false);
   const hasStarted = useRef(false);
   const sessionStartTime = useRef<number | null>(null);
+  const lastMilestoneRef = useRef(0);
+  const onEndRef = useRef(onEnd);
+
+  useEffect(() => { onEndRef.current = onEnd; });
 
   const [token, setToken] = useState<string | null>(null);
   const [serverUrl, setServerUrl] = useState<string | null>(null);
@@ -91,6 +95,7 @@ function ActiveSessionInner({
   const [isConnected, setIsConnected] = useState(false);
   const [showGuidance, setShowGuidance] = useState(true);
   const [elapsedMs, setElapsedMs] = useState(0);
+  const [showConfetti, setShowConfetti] = useState(false);
 
   const reducedMotion = speechCoachConfig?.reducedMotion ?? false;
 
@@ -108,6 +113,11 @@ function ActiveSessionInner({
         promptState: msg.promptState,
         totalCorrect: msg.totalCorrect,
       });
+      if (msg.totalCorrect > 0 && msg.totalCorrect % 5 === 0 && msg.totalCorrect !== lastMilestoneRef.current) {
+        lastMilestoneRef.current = msg.totalCorrect;
+        setShowConfetti(true);
+        setTimeout(() => setShowConfetti(false), 1500);
+      }
     } else if (msg.type === "advance_target") {
       setVisual((prev) => ({ ...prev, targetLabel: msg.nextLabel, promptState: "listen" }));
     }
@@ -155,7 +165,7 @@ function ActiveSessionInner({
       toast.error("Couldn't reach speech coach", {
         description: "Check your internet connection and try again.",
       });
-      onEnd();
+      onEndRef.current();
       return;
     }
     const timeout = setTimeout(() => {
@@ -163,23 +173,22 @@ function ActiveSessionInner({
         toast.error("Couldn't reach speech coach", {
           description: "Check your internet connection and try again.",
         });
-        onEnd();
+        onEndRef.current();
       }
     }, 15_000);
     return () => clearTimeout(timeout);
-  }, [fetchError, onEnd]);
+  }, [fetchError]);
 
   // Auto-stop after session duration
   useEffect(() => {
-    const timeout = setTimeout(() => onEnd(), durationMinutes * 60 * 1000);
+    const timeout = setTimeout(() => onEndRef.current(), durationMinutes * 60 * 1000);
     return () => clearTimeout(timeout);
-  }, [durationMinutes, onEnd]);
+  }, [durationMinutes]);
 
   const handleStop = useCallback(() => {
-    onEnd();
-  }, [onEnd]);
+    onEndRef.current();
+  }, []);
 
-  const isMilestone = getCelebrationMode({ totalCorrect: visual.totalCorrect }) === "milestone";
   const attemptDotsFilled = visual.totalCorrect % 5;
 
   return (
@@ -208,7 +217,7 @@ function ActiveSessionInner({
       )}
 
       {/* Milestone confetti overlay — CSS only, skipped when reducedMotion */}
-      {isMilestone && !reducedMotion && (
+      {showConfetti && !reducedMotion && (
         <div
           aria-hidden="true"
           className="pointer-events-none absolute inset-0 z-10 animate-confetti-burst"
