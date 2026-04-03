@@ -2,7 +2,7 @@ import { v } from "convex/values";
 import { ConvexError } from "convex/values";
 
 import { internal } from "./_generated/api";
-import { mutation, query } from "./_generated/server";
+import { internalMutation, mutation, query } from "./_generated/server";
 import { assertCaregiverAccess, assertPatientAccess, getAuthUserId } from "./lib/auth";
 import { authedMutation, authedQuery } from "./lib/customFunctions";
 
@@ -399,3 +399,33 @@ export const getLatestProgress = query({
   },
 });
 
+export const logAttempt = internalMutation({
+  args: {
+    sessionId: v.id("speechCoachSessions"),
+    targetLabel: v.string(),
+    outcome: v.union(
+      v.literal("correct"),
+      v.literal("approximate"),
+      v.literal("incorrect"),
+      v.literal("no_response")
+    ),
+    retryCount: v.number(),
+    timestampMs: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const session = await ctx.db.get(args.sessionId);
+    if (!session) throw new ConvexError("Session not found");
+    const existing = session.rawAttempts ?? [];
+    await ctx.db.patch(args.sessionId, {
+      rawAttempts: [
+        ...existing,
+        {
+          targetLabel: args.targetLabel,
+          outcome: args.outcome,
+          retryCount: args.retryCount,
+          timestampMs: args.timestampMs,
+        },
+      ],
+    });
+  },
+});

@@ -84,18 +84,17 @@ describe("POST /api/livekit/token", () => {
     expect(json.error).toContain("not joinable");
   });
 
-  it("returns 403 when user has no relationship to appointment", async () => {
+  it("returns 404 when appointment lookup is hidden from an unauthorized user", async () => {
     mockAuthenticate.mockResolvedValue({
       userId: "random-user-999",
       convex: { setAuth: vi.fn(), query: mockQuery },
     });
-    // appointments.get throws for unauthorized users; route catch block maps to 403
-    mockQuery.mockRejectedValueOnce(new Error("Not authorized"));
+    mockQuery.mockResolvedValueOnce(null);
 
     const res = await POST(makeRequest({ appointmentId: "appt-1" }));
-    expect(res.status).toBe(403);
+    expect(res.status).toBe(404);
     const json = await res.json();
-    expect(json.error).toContain("Not authorized");
+    expect(json.error).toContain("Appointment not found");
   });
 
   it("returns token when user is the SLP", async () => {

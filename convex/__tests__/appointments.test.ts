@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { api } from "../_generated/api";
 import schema from "../schema";
-import { suppressSchedulerErrors } from "./testHelpers";
+import { createTestPatient, suppressSchedulerErrors } from "./testHelpers";
 
 suppressSchedulerErrors();
 
@@ -74,5 +74,57 @@ describe("appointments developer gate", () => {
     expect(appointment?.status).toBe("scheduled");
     expect(appointment?.joinLink).toBe(`/sessions/${appointmentId}/call`);
     expect(patient?.testMetadata?.source).toBe("developer-shortcut");
+  });
+});
+
+describe("appointments access fallbacks", () => {
+  it("returns null from get when the signed-in user cannot access the patient", async () => {
+    const t = convexTest(schema, modules);
+    const patientId = await createTestPatient(t, { slpUserId: "slp-owner-123" });
+    const appointmentId = await t.run((ctx) =>
+      ctx.db.insert("appointments", {
+        slpId: "slp-owner-123",
+        patientId,
+        scheduledAt: Date.now() + 60_000,
+        duration: 30,
+        status: "scheduled",
+        joinLink: "/sessions/test/call",
+      })
+    );
+
+    const outsider = t.withIdentity({
+      subject: "different-user-456",
+      issuer: "clerk",
+      email: "outsider@bridges.ai",
+    });
+
+    await expect(
+      outsider.query(api.appointments.get, { appointmentId })
+    ).resolves.toBeNull();
+  });
+
+  it("returns an empty list from listByPatient when the signed-in user cannot access the patient", async () => {
+    const t = convexTest(schema, modules);
+    const patientId = await createTestPatient(t, { slpUserId: "slp-owner-123" });
+    await t.run((ctx) =>
+      ctx.db.insert("appointments", {
+        slpId: "slp-owner-123",
+        patientId,
+        scheduledAt: Date.now() + 60_000,
+        duration: 30,
+        status: "scheduled",
+        joinLink: "/sessions/test/call",
+      })
+    );
+
+    const outsider = t.withIdentity({
+      subject: "different-user-456",
+      issuer: "clerk",
+      email: "outsider@bridges.ai",
+    });
+
+    await expect(
+      outsider.query(api.appointments.listByPatient, { patientId })
+    ).resolves.toEqual([]);
   });
 });
