@@ -7,6 +7,8 @@ export function AuthArtPanel() {
         src="/vocali-auth-slp.png"
         alt="Speech therapist working with a child using communication cards"
         fill
+        priority
+        sizes="(max-width: 1024px) 0px, 50vw"
         className="object-cover"
       />
     </div>

@@ -174,7 +174,11 @@ export const listByPatient = query({
     patientId: v.id("patients"),
   },
   handler: async (ctx, args) => {
-    await assertPatientAccess(ctx, args.patientId);
+    try {
+      await assertPatientAccess(ctx, args.patientId);
+    } catch {
+      return [];
+    }
 
     return await ctx.db
       .query("appointments")
@@ -191,7 +195,11 @@ export const get = authedQuery({
     const appointment = await ctx.db.get(args.appointmentId);
     if (!appointment) return null;
 
-    await assertPatientAccess(ctx, appointment.patientId);
+    try {
+      await assertPatientAccess(ctx, appointment.patientId);
+    } catch {
+      return null;
+    }
 
     const patient = await ctx.db.get(appointment.patientId);
     return { ...appointment, patient };
