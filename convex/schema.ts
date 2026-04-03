@@ -239,8 +239,11 @@ export default defineSchema({
       v.literal("archived")
     ),
     version: v.number(),
+    originalDescription: v.optional(v.string()),
     shareToken: v.optional(v.string()),
     publishedAt: v.optional(v.number()),
+    goalTags: v.optional(v.array(v.string())),
+    lastActivityAt: v.optional(v.number()),
   })
     .index("by_slpUserId", ["slpUserId"])
     .index("by_slpUserId_status", ["slpUserId", "status"])
