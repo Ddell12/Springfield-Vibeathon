@@ -7,9 +7,8 @@ import schema from "../schema";
 const modules = import.meta.glob("../**/*.*s");
 
 describe("logAttemptFromRuntime", () => {
-  it("rejects calls with wrong agentSecret", async () => {
+  it("rejects calls with wrong runtimeSecret", async () => {
     const t = convexTest(schema, modules);
-    vi.stubEnv("LIVEKIT_AGENT_SECRET", "correct-agent-secret");
     vi.stubEnv("SPEECH_COACH_RUNTIME_SECRET", "runtime-secret");
 
     const sessionId = await t.run((ctx) =>
@@ -27,20 +26,18 @@ describe("logAttemptFromRuntime", () => {
     await expect(
       t.action(api.speechCoachRuntimeActions.logAttemptFromRuntime, {
         sessionId,
-        runtimeSecret: "runtime-secret",
-        agentSecret: "wrong-secret",
+        runtimeSecret: "wrong-secret",
         targetLabel: "sun",
         outcome: "correct" as const,
         retryCount: 0,
         timestampMs: Date.now(),
       })
-    ).rejects.toThrow("Unauthorized");
+    ).rejects.toThrow("Invalid runtime secret");
   });
 
-  it("rejects calls when LIVEKIT_AGENT_SECRET env var is not set", async () => {
+  it("allows calls with correct runtimeSecret", async () => {
     const t = convexTest(schema, modules);
-    // Do not stub LIVEKIT_AGENT_SECRET — simulates misconfigured deployment
-    vi.stubEnv("SPEECH_COACH_RUNTIME_SECRET", "runtime-secret");
+    vi.stubEnv("SPEECH_COACH_RUNTIME_SECRET", "correct-secret");
 
     const sessionId = await t.run((ctx) =>
       ctx.db.insert("speechCoachSessions", {
@@ -54,16 +51,15 @@ describe("logAttemptFromRuntime", () => {
       })
     );
 
-    await expect(
-      t.action(api.speechCoachRuntimeActions.logAttemptFromRuntime, {
-        sessionId,
-        runtimeSecret: "runtime-secret",
-        agentSecret: "any-secret",
-        targetLabel: "sun",
-        outcome: "correct" as const,
-        retryCount: 0,
-        timestampMs: Date.now(),
-      })
-    ).rejects.toThrow("Unauthorized");
+    const result = await t.action(api.speechCoachRuntimeActions.logAttemptFromRuntime, {
+      sessionId,
+      runtimeSecret: "correct-secret",
+      targetLabel: "sun",
+      outcome: "correct" as const,
+      retryCount: 0,
+      timestampMs: Date.now(),
+    });
+
+    expect(result.ok).toBe(true);
   });
 });
