@@ -130,7 +130,7 @@ export const acceptInvite = authedMutation({
       timestamp: Date.now(),
     });
 
-    await ctx.scheduler.runAfter(0, internal.clerkActions.setCaregiverRole, {
+    await ctx.scheduler.runAfter(0, internal.users.setCaregiverRole, {
       userId,
     });
   },
