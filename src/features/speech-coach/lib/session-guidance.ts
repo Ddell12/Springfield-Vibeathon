@@ -40,7 +40,9 @@ export function buildSessionGuidance(
 
   const lines = [
     "Session guidance for Vocali Speech Coach.",
-    `Child age range: ${sessionConfig.ageRange}.`,
+    speechCoachConfig?.childAge
+      ? `Child age: ${speechCoachConfig.childAge} years old.`
+      : `Child age range: ${sessionConfig.ageRange}.`,
     `Practice sounds: ${sessionConfig.targetSounds.join(", ")}.`,
     `Target positions: ${targetPositions}.`,
     `Session goal: ${labelFor(SESSION_GOAL_OPTIONS, coachSetup.sessionGoal)}.`,

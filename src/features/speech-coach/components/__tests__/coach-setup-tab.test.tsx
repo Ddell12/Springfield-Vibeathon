@@ -32,7 +32,7 @@ describe("SlpSpeechCoachPage", () => {
     render(
       <SlpSpeechCoachPage patientId={"patient" as never} homeProgramId={"program1" as never} />
     );
-    expect(await screen.findByRole("heading", { name: "Speech Coach" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Speech Coach Setup" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Template" })).not.toBeInTheDocument();
   });
 });

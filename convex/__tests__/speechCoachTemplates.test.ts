@@ -40,4 +40,34 @@ describe("speechCoachTemplates CRUD", () => {
     const templates = await slp.query(api.speechCoachTemplates.listMine, {});
     expect(templates.map((t) => t._id)).toContain(templateId);
   });
+
+  it("duplicates an existing speech coach template", async () => {
+    const t = convexTest(schema, modules);
+    const slp = t.withIdentity(SLP_IDENTITY);
+
+    const templateId = await slp.mutation(api.speechCoachTemplates.create, {
+      template: {
+        name: "Articulation Warmup",
+        description: "Short playful articulation practice",
+        status: "active",
+        voice: { provider: "elevenlabs", voiceKey: "friendly-coach" },
+        prompt: {},
+        tools: [],
+        skills: [],
+        knowledgePackIds: [],
+        customKnowledgeSnippets: [],
+        sessionDefaults: { ageRange: "5-7", defaultDurationMinutes: 5 },
+        version: 1,
+      },
+    });
+
+    const copyId = await slp.mutation(api.speechCoachTemplates.duplicate, {
+      templateId,
+    });
+
+    const templates = await slp.query(api.speechCoachTemplates.listMine, {});
+    const copy = templates.find((template) => template._id === copyId);
+
+    expect(copy?.name).toBe("Articulation Warmup (copy)");
+  });
 });

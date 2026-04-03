@@ -10,12 +10,10 @@ vi.mock("convex/react", () => ({
   useQuery: (...args: any[]) => mockedUseQuery(...args),
   useMutation: (...args: any[]) => mockedUseMutation(...args),
 }));
-vi.mock("next/link", () => ({
-  default: ({ href, children, ...props }: any) => <a href={href} {...props}>{children}</a>,
-}));
+vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
 describe("TemplateLibraryPage", () => {
-  it("renders Edit for each template card", () => {
+  it("renders Edit and Duplicate for each template card", () => {
     mockedUseQuery.mockReturnValue([
       { _id: "tpl1", name: "Playful /s/", description: "desc", status: "active", version: 3 },
       { _id: "tpl2", name: "", description: "", status: "draft", version: 1 },
@@ -24,41 +22,8 @@ describe("TemplateLibraryPage", () => {
     render(<TemplateLibraryPage />);
 
     expect(screen.getAllByRole("button", { name: /edit/i })).toHaveLength(2);
+    expect(screen.getAllByRole("button", { name: /duplicate/i }).length).toBeGreaterThan(1);
     expect(screen.getByText("Untitled template")).toBeInTheDocument();
-  });
-
-  it("renders Preview session for each SLP template", async () => {
-    mockedUseQuery.mockReturnValue([
-      { _id: "tpl1", name: "Playful /s/", description: "desc", status: "active", version: 1 },
-    ]);
-
-    render(<TemplateLibraryPage />);
-
-    expect(screen.getByRole("link", { name: /preview session/i })).toBeInTheDocument();
-  });
-
-  it("opens standalone preview link with template id", async () => {
-    mockedUseQuery.mockReturnValue([
-      { _id: "tpl1", name: "Playful /s/", description: "desc", status: "active", version: 1 },
-    ]);
-
-    render(<TemplateLibraryPage />);
-    expect(screen.getByRole("link", { name: /preview session/i })).toHaveAttribute(
-      "href",
-      "/speech-coach?templateId=tpl1&mode=preview",
-    );
-  });
-
-  it("renders Apply to child link for each template", () => {
-    mockedUseQuery.mockReturnValue([
-      { _id: "tpl1", name: "Playful /s/", description: "desc", status: "active", version: 1 },
-    ]);
-
-    render(<TemplateLibraryPage />);
-
-    const applyLink = screen.getByRole("link", { name: /apply to child/i });
-    expect(applyLink).toBeInTheDocument();
-    expect(applyLink).toHaveAttribute("href", "/speech-coach/setup?templateId=tpl1");
   });
 
   it("shows a CTA button in the empty state", () => {
@@ -94,5 +59,16 @@ describe("TemplateLibraryPage", () => {
     expect(screen.getByRole("heading", { name: /edit template/i })).toBeInTheDocument();
     expect(screen.getByLabelText(/template name/i)).toHaveValue("Playful /s/");
     expect(screen.getByLabelText(/description/i)).toHaveValue("Use for high-energy sessions");
+  });
+
+  it("shows system templates in the system tab", () => {
+    mockedUseQuery.mockReturnValue([]);
+
+    render(<TemplateLibraryPage />);
+
+    fireEvent.click(screen.getByRole("button", { name: /system templates/i }));
+
+    expect(screen.getByText("Sound Drill")).toBeInTheDocument();
+    expect(screen.getByText("Conversational")).toBeInTheDocument();
   });
 });

@@ -66,3 +66,31 @@ export const update = slpMutation({
     });
   },
 });
+
+export const duplicate = slpMutation({
+  args: { templateId: v.id("speechCoachTemplates") },
+  handler: async (ctx, args) => {
+    const existing = await ctx.db.get(args.templateId);
+    if (!existing) {
+      throw new ConvexError("Template not found");
+    }
+
+    const now = Date.now();
+    const {
+      _id: _templateId,
+      _creationTime: _createdAt,
+      slpUserId: _ownerId,
+      createdAt: _recordCreatedAt,
+      updatedAt: _recordUpdatedAt,
+      ...fields
+    } = existing;
+
+    return await ctx.db.insert("speechCoachTemplates", {
+      ...fields,
+      name: `${fields.name} (copy)`,
+      slpUserId: ctx.slpUserId,
+      createdAt: now,
+      updatedAt: now,
+    });
+  },
+});

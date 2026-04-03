@@ -88,8 +88,16 @@ export type SpeechCoachConfig = {
   targetSounds: string[];
   ageRange: "2-4" | "5-7";
   defaultDurationMinutes: number;
+  childAge?: number;
+  reducedMotion?: boolean;
+  assignedTemplateId?: string;
+  lastSyncedTemplateVersion?: number;
   coachSetup?: CoachSetup;
 };
+
+export function ageRangeFromAge(age: number): "2-4" | "5-7" {
+  return age <= 4 ? "2-4" : "5-7";
+}
 
 export const DEFAULT_COACH_SETUP: CoachSetup = {
   targetPositions: ["initial"],
