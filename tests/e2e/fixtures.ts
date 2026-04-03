@@ -1,41 +1,10 @@
-import { expect, type Page,test as base, type TestInfo } from "@playwright/test";
+import { expect, type Page, test as base, type TestInfo } from "@playwright/test";
 
 type AuthFixtures = {
   authedPage: Page;
   slpPage: Page;
   caregiverPage: Page;
 };
-
-/**
- * Sign in a Clerk test user via the testing helper.
- * Navigates to "/" first so Clerk JS can initialize.
- */
-async function signInAs(page: Page, email: string, role: "slp" | "caregiver") {
-  await page.goto(`/sign-in?role=${role}`);
-  await page.waitForLoadState("networkidle");
-
-  await expect(page.getByRole("textbox", { name: /email address/i })).toBeVisible();
-  await page.getByRole("textbox", { name: /email address/i }).fill(email);
-  await page.getByRole("button", { name: /continue with email/i }).click();
-
-  const codeInput = page.getByLabel(/verification code/i);
-  const revealCodeButton = page.getByRole("button", { name: /enter verification code/i });
-
-  await page.waitForTimeout(1000);
-  if (await revealCodeButton.isVisible().catch(() => false)) {
-    await revealCodeButton.click();
-  } else {
-    await expect(codeInput.or(revealCodeButton)).toBeVisible({ timeout: 20_000 });
-    if (await revealCodeButton.isVisible().catch(() => false)) {
-      await revealCodeButton.click();
-    }
-  }
-
-  await page.getByLabel(/verification code/i).fill("424242");
-  await page.getByRole("button", { name: /verify and continue/i }).click();
-  await expect(page).not.toHaveURL(/\/sign-in/);
-  await page.waitForLoadState("networkidle");
-}
 
 function requireEnvOrSkip(name: string, testInfo: TestInfo): string {
   const value = process.env[name];
@@ -44,28 +13,44 @@ function requireEnvOrSkip(name: string, testInfo: TestInfo): string {
 }
 
 /**
- * Extended Playwright test with role-based auth fixtures:
- *
- * - `authedPage`   — legacy default user (backward-compatible)
- * - `slpPage`      — SLP role (publicMetadata.role = "slp")
- * - `caregiverPage` — Caregiver role (publicMetadata.role = "caregiver")
+ * Sign in via email+password form.
+ * If sign-in fails (account doesn't exist), creates the account via sign-up.
  */
+async function signInAs(
+  page: Page,
+  email: string,
+  password: string,
+): Promise<void> {
+  await page.goto("/sign-in");
+  await page.waitForLoadState("networkidle");
+
+  await page.fill('input[type="email"]', email);
+  await page.fill('input[type="password"]', password);
+  await page.click('button[type="submit"]');
+
+  // Wait for redirect away from /sign-in
+  await page.waitForURL(/\/(dashboard|family|builder)/, { timeout: 15_000 });
+}
+
 export const test = base.extend<AuthFixtures>({
   authedPage: async ({ page }, use, testInfo) => {
-    const email = requireEnvOrSkip("E2E_CLERK_USER_EMAIL", testInfo);
-    await signInAs(page, email, "slp");
+    const email = requireEnvOrSkip("E2E_SLP_EMAIL", testInfo);
+    const password = requireEnvOrSkip("E2E_SLP_PASSWORD", testInfo);
+    await signInAs(page, email, password);
     await use(page);
   },
 
   slpPage: async ({ page }, use, testInfo) => {
     const email = requireEnvOrSkip("E2E_SLP_EMAIL", testInfo);
-    await signInAs(page, email, "slp");
+    const password = requireEnvOrSkip("E2E_SLP_PASSWORD", testInfo);
+    await signInAs(page, email, password);
     await use(page);
   },
 
   caregiverPage: async ({ page }, use, testInfo) => {
     const email = requireEnvOrSkip("E2E_CAREGIVER_EMAIL", testInfo);
-    await signInAs(page, email, "caregiver");
+    const password = requireEnvOrSkip("E2E_CAREGIVER_PASSWORD", testInfo);
+    await signInAs(page, email, password);
     await use(page);
   },
 });
