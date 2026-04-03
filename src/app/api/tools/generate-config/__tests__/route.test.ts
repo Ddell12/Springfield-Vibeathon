@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
-vi.mock("@clerk/nextjs/server", () => ({
-  auth: vi.fn().mockResolvedValue({ userId: "user_test123" }),
+vi.mock("@convex-dev/auth/nextjs/server", () => ({
+  convexAuthNextjsToken: vi.fn().mockResolvedValue("fake-token"),
 }));
 
 vi.mock("ai", () => ({

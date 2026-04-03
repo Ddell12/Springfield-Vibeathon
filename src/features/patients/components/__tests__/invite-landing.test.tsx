@@ -17,8 +17,10 @@ vi.mock("next/link", () => ({
   ),
 }));
 
-vi.mock("@clerk/nextjs", () => ({
-  useUser: vi.fn(() => ({ isSignedIn: false, isLoaded: true })),
+const mockUseCurrentUser = vi.fn(() => null);
+
+vi.mock("@/features/auth/hooks/use-current-user", () => ({
+  useCurrentUser: () => mockUseCurrentUser(),
 }));
 
 vi.mock("../../hooks/use-invite", () => ({
@@ -43,8 +45,6 @@ vi.mock("@/shared/components/material-icon", () => ({
   MaterialIcon: ({ icon }: { icon: string }) => <span data-testid="material-icon">{icon}</span>,
 }));
 
-// Import after mocks
-const { useUser } = await import("@clerk/nextjs");
 const { toast } = await import("sonner");
 
 async function renderWithSuspense(token: string) {
@@ -67,12 +67,8 @@ async function renderWithSuspense(token: string) {
 describe("InviteLanding", () => {
   afterEach(() => {
     vi.clearAllMocks();
-    // Reset useUser to default (not signed in) after tests that override it
-    vi.mocked(useUser).mockReturnValue({
-      isSignedIn: false,
-      isLoaded: true,
-      user: undefined,
-    } as ReturnType<typeof useUser>);
+    // Reset to default (not signed in) after tests that override it
+    mockUseCurrentUser.mockReturnValue(null);
   });
 
   it("shows loading state when invite info is undefined", async () => {
@@ -93,6 +89,7 @@ describe("InviteLanding", () => {
   });
 
   it("shows sign-in prompt when user is not signed in and invite is valid", async () => {
+    mockUseCurrentUser.mockReturnValue(null);
     mockInviteInfo.mockReturnValue({ patientFirstName: "Alex" });
     await renderWithSuspense("valid-token");
 
@@ -108,11 +105,7 @@ describe("InviteLanding", () => {
   });
 
   it("shows SLP guard when therapist visits invite link", async () => {
-    vi.mocked(useUser).mockReturnValue({
-      isSignedIn: true,
-      isLoaded: true,
-      user: { id: "user_1", publicMetadata: { role: "slp" } },
-    } as ReturnType<typeof useUser>);
+    mockUseCurrentUser.mockReturnValue({ _id: "user_1", role: "slp", email: "slp@test.com", name: "Test SLP" });
 
     mockInviteInfo.mockReturnValue({ patientFirstName: "Alex" });
     await renderWithSuspense("valid-token");
@@ -122,11 +115,7 @@ describe("InviteLanding", () => {
   });
 
   it("auto-accepts for users with no role set (new sign-ups)", async () => {
-    vi.mocked(useUser).mockReturnValue({
-      isSignedIn: true,
-      isLoaded: true,
-      user: { id: "user_1", publicMetadata: {} },
-    } as ReturnType<typeof useUser>);
+    mockUseCurrentUser.mockReturnValue({ _id: "user_1", role: undefined, email: "user@test.com", name: "User" });
 
     mockInviteInfo.mockReturnValue({ patientFirstName: "Alex" });
     mockAcceptInvite.mockResolvedValue(undefined);
@@ -139,11 +128,7 @@ describe("InviteLanding", () => {
   });
 
   it("auto-accepts invite when caregiver is signed in and invite is valid", async () => {
-    vi.mocked(useUser).mockReturnValue({
-      isSignedIn: true,
-      isLoaded: true,
-      user: { id: "user_1", publicMetadata: { role: "caregiver" } },
-    } as ReturnType<typeof useUser>);
+    mockUseCurrentUser.mockReturnValue({ _id: "user_1", role: "caregiver", email: "caregiver@test.com", name: "Parent" });
 
     mockInviteInfo.mockReturnValue({ patientFirstName: "Alex" });
     mockAcceptInvite.mockResolvedValue(undefined);
@@ -161,11 +146,7 @@ describe("InviteLanding", () => {
   });
 
   it("shows error toast when accept invite fails", async () => {
-    vi.mocked(useUser).mockReturnValue({
-      isSignedIn: true,
-      isLoaded: true,
-      user: { id: "user_1", publicMetadata: { role: "caregiver" } },
-    } as ReturnType<typeof useUser>);
+    mockUseCurrentUser.mockReturnValue({ _id: "user_1", role: "caregiver", email: "caregiver@test.com", name: "Parent" });
 
     mockInviteInfo.mockReturnValue({ patientFirstName: "Alex" });
     mockAcceptInvite.mockRejectedValue(new Error("Network error"));
@@ -180,11 +161,7 @@ describe("InviteLanding", () => {
   });
 
   it("shows accepting state while invite is being processed", async () => {
-    vi.mocked(useUser).mockReturnValue({
-      isSignedIn: true,
-      isLoaded: true,
-      user: { id: "user_1", publicMetadata: { role: "caregiver" } },
-    } as ReturnType<typeof useUser>);
+    mockUseCurrentUser.mockReturnValue({ _id: "user_1", role: "caregiver", email: "caregiver@test.com", name: "Parent" });
 
     mockInviteInfo.mockReturnValue({ patientFirstName: "Alex" });
     // Never-resolving promise to keep it in accepting state
@@ -198,6 +175,7 @@ describe("InviteLanding", () => {
   });
 
   it("renders learn more link", async () => {
+    mockUseCurrentUser.mockReturnValue(null);
     mockInviteInfo.mockReturnValue({ patientFirstName: "Alex" });
     await renderWithSuspense("valid-token");
 

@@ -6,14 +6,18 @@ import { DashboardSidebar } from "../dashboard-sidebar";
 let mockPathnameValue = "/sessions";
 
 vi.mock("convex/react", () => ({ useQuery: () => [] }));
-vi.mock("@clerk/nextjs", () => ({
-  useUser: () => ({ user: { firstName: "Parent", lastName: "User", publicMetadata: { role: "caregiver" } } }),
-  useClerk: () => ({ signOut: vi.fn() }),
-  Show: ({ when, children }: any) => (when === "signed-in" ? <>{children}</> : null),
+vi.mock("@convex-dev/auth/react", () => ({
+  useAuthActions: () => ({ signOut: vi.fn() }),
 }));
+
+vi.mock("@/features/auth/hooks/use-current-user", () => ({
+  useCurrentUser: () => ({ _id: "user_1", name: "Parent User", email: "parent@test.com", role: "caregiver" }),
+}));
+
 vi.mock("next/navigation", () => ({
   usePathname: () => mockPathnameValue,
   useSearchParams: () => ({ get: () => null }),
+  useRouter: () => ({ replace: vi.fn(), push: vi.fn() }),
 }));
 vi.mock("next/link", () => ({ default: ({ href, children, ...props }: any) => <a href={href} {...props}>{children}</a> }));
 vi.mock("@/features/sessions/components/notification-bell", () => ({

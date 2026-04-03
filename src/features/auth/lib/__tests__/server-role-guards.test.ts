@@ -1,10 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const mockCurrentUser = vi.fn();
+const mockFetchQuery = vi.fn();
+const mockToken = vi.fn();
 const mockRedirect = vi.fn();
 
-vi.mock("@clerk/nextjs/server", () => ({
-  currentUser: () => mockCurrentUser(),
+vi.mock("@convex-dev/auth/nextjs/server", () => ({
+  convexAuthNextjsToken: () => mockToken(),
+}));
+
+vi.mock("convex/nextjs", () => ({
+  fetchQuery: (...args: unknown[]) => mockFetchQuery(...args),
 }));
 
 vi.mock("next/navigation", () => ({
@@ -13,14 +18,14 @@ vi.mock("next/navigation", () => ({
 
 beforeEach(() => {
   mockRedirect.mockClear();
-  mockCurrentUser.mockReset();
+  mockFetchQuery.mockReset();
+  mockToken.mockReset();
 });
 
 describe("requireSlpUser", () => {
   it("redirects caregivers to /family", async () => {
-    mockCurrentUser.mockResolvedValue({
-      publicMetadata: { role: "caregiver" },
-    });
+    mockToken.mockResolvedValue("fake-token");
+    mockFetchQuery.mockResolvedValue({ _id: "user_1", role: "caregiver" });
 
     const { requireSlpUser } = await import("../server-role-guards");
     await requireSlpUser();
@@ -29,7 +34,7 @@ describe("requireSlpUser", () => {
   });
 
   it("redirects unauthenticated users to /sign-in", async () => {
-    mockCurrentUser.mockResolvedValue(null);
+    mockToken.mockResolvedValue(null);
     mockRedirect.mockClear();
 
     const { requireSlpUser } = await import("../server-role-guards");
@@ -39,9 +44,8 @@ describe("requireSlpUser", () => {
   });
 
   it("allows therapist users through", async () => {
-    mockCurrentUser.mockResolvedValue({
-      publicMetadata: { role: "slp" },
-    });
+    mockToken.mockResolvedValue("fake-token");
+    mockFetchQuery.mockResolvedValue({ _id: "user_1", role: "slp" });
 
     const { requireSlpUser } = await import("../server-role-guards");
     const user = await requireSlpUser();

@@ -1,15 +1,16 @@
 "use client";
 
-import { useUser } from "@clerk/nextjs";
 import { useMutation, useQuery } from "convex/react";
+
+import { useCurrentUser } from "@/features/auth/hooks/use-current-user";
 
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 
 export function useAppointments(weekStart?: number) {
-  const { user, isLoaded } = useUser();
-  const role = user?.publicMetadata?.role as string | undefined;
-  const isCaregiver = role === "caregiver";
+  const user = useCurrentUser();
+  const isLoaded = user !== undefined;
+  const isCaregiver = user?.role === "caregiver";
 
   const slpArgs = weekStart !== undefined ? { weekStart } : {};
   const caregiverArgs = weekStart !== undefined ? { weekStart } : {};

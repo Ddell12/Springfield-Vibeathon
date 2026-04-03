@@ -1,15 +1,19 @@
 "use client";
 
-import { useUser } from "@clerk/nextjs";
+import { useMutation } from "convex/react";
 import { useEffect, useState } from "react";
 
+import { useCurrentUser } from "@/features/auth/hooks/use-current-user";
 import { MaterialIcon } from "@/shared/components/material-icon";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
 
+import { api } from "../../../../convex/_generated/api";
+
 export function ProfileSection() {
-  const { user, isLoaded } = useUser();
+  const user = useCurrentUser();
+  const updateName = useMutation(api.users.updateName);
   const [displayName, setDisplayName] = useState("");
   const [nameInitialized, setNameInitialized] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -17,18 +21,18 @@ export function ProfileSection() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (isLoaded && user && !nameInitialized) {
-      setDisplayName(user.firstName ?? user.fullName ?? "");
+    if (user !== undefined && user && !nameInitialized) {
+      setDisplayName(user.name ?? "");
       setNameInitialized(true);
     }
-  }, [isLoaded, user, nameInitialized]);
+  }, [user, nameInitialized]);
 
   const handleSave = async () => {
     if (!user || !displayName.trim()) return;
     setSaving(true);
     setError("");
     try {
-      await user.update({ firstName: displayName.trim() });
+      await updateName({ name: displayName.trim() });
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     } catch {
@@ -39,7 +43,7 @@ export function ProfileSection() {
   };
 
   const initial = displayName.charAt(0)?.toUpperCase() || "?";
-  const email = user?.primaryEmailAddress?.emailAddress ?? "";
+  const email = user?.email ?? "";
 
   return (
     <div className="flex flex-col gap-12">

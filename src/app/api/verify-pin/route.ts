@@ -1,4 +1,4 @@
-import { auth } from "@clerk/nextjs/server";
+import { convexAuthNextjsToken } from "@convex-dev/auth/nextjs/server";
 import { ConvexHttpClient } from "convex/browser";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -8,8 +8,7 @@ import type { Id } from "../../../../convex/_generated/dataModel";
 const CONVEX_URL = process.env.NEXT_PUBLIC_CONVEX_URL!;
 
 export async function POST(request: NextRequest) {
-  const { getToken } = await auth();
-  const token = await getToken({ template: "convex" });
+  const token = await convexAuthNextjsToken();
   if (!token) {
     return NextResponse.json({ valid: false }, { status: 401 });
   }

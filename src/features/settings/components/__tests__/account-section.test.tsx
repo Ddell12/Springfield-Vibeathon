@@ -2,8 +2,12 @@ import { render, screen } from "@testing-library/react";
 
 import { AccountSection } from "../account-section";
 
-vi.mock("@clerk/nextjs", () => ({
-  useClerk: () => ({ signOut: vi.fn() }),
+vi.mock("@convex-dev/auth/react", () => ({
+  useAuthActions: () => ({ signOut: vi.fn() }),
+}));
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: vi.fn() }),
 }));
 
 vi.mock("@/shared/components/material-icon", () => ({

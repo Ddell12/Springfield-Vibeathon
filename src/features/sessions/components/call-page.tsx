@@ -1,12 +1,12 @@
 "use client";
 
-import { useUser } from "@clerk/nextjs";
 import { useConvexAuth, useMutation, useQuery } from "convex/react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { use, useCallback, useEffect } from "react";
 import { toast } from "sonner";
 
+import { useCurrentUser } from "@/features/auth/hooks/use-current-user";
 import { TelehealthConsentGate } from "@/features/intake/components/telehealth-consent-gate";
 
 import { api } from "../../../../convex/_generated/api";
@@ -25,7 +25,7 @@ interface CallPageProps {
 
 export function CallPage({ paramsPromise }: CallPageProps) {
   const { id } = use(paramsPromise);
-  const { user } = useUser();
+  const user = useCurrentUser();
   const router = useRouter();
 
   // Load LiveKit component styles client-side to avoid Tailwind v4 CSS resolution issues
@@ -37,9 +37,8 @@ export function CallPage({ paramsPromise }: CallPageProps) {
     return () => { document.head.removeChild(link); };
   }, []);
 
-  const role = user?.publicMetadata?.role as string | undefined;
-  const isSLP = role !== "caregiver";
-  const isCaregiver = role === "caregiver";
+  const isSLP = user?.role !== "caregiver";
+  const isCaregiver = user?.role === "caregiver";
 
   const { isAuthenticated } = useConvexAuth();
   const appointment = useQuery(

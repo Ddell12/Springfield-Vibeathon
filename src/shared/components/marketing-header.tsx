@@ -1,9 +1,11 @@
 "use client";
 
-import { Show, UserButton } from "@clerk/nextjs";
+import { useAuthActions } from "@convex-dev/auth/react";
 import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
+
+import { useCurrentUser } from "@/features/auth/hooks/use-current-user";
 
 import { APP_BRAND, APP_CONTACT_EMAIL, APP_SIGN_IN_CTA } from "@/core/config";
 import { cn } from "@/core/utils";
@@ -28,6 +30,9 @@ const navLinks = [
 function MarketingHeaderContent() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const user = useCurrentUser();
+  const { signOut } = useAuthActions();
+  const router = useRouter();
 
   const isActiveLink = (href: string) => {
     const [targetPath, targetQuery] = href.split("?");
@@ -68,25 +73,35 @@ function MarketingHeaderContent() {
         </div>
 
         <div className="flex items-center gap-3">
-          <Show when="signed-out">
+          {user === null ? (
             <Link
               href={`mailto:${APP_CONTACT_EMAIL}`}
               className="hidden min-h-[44px] items-center rounded-xl border border-border bg-surface px-4 text-sm font-medium text-on-surface transition-colors hover:bg-surface-container-low md:flex"
             >
               Contact sales
             </Link>
-          </Show>
+          ) : null}
           <Link
             href="/sign-in?role=slp"
             className="hidden min-h-[44px] items-center gap-2 rounded-xl bg-on-surface px-5 py-2.5 text-sm font-semibold text-background transition-opacity hover:opacity-92 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 md:flex"
           >
             {APP_SIGN_IN_CTA}
           </Link>
-          <Show when="signed-in">
+          {user ? (
             <div className="hidden md:flex">
-              <UserButton />
+              <button
+                type="button"
+                onClick={async () => {
+                  await signOut();
+                  router.push("/sign-in");
+                }}
+                aria-label="Sign out"
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-fixed text-sm font-semibold text-primary"
+              >
+                {user?.name?.[0]?.toUpperCase() ?? user?.email?.[0]?.toUpperCase() ?? "?"}
+              </button>
             </div>
-          </Show>
+          ) : null}
 
           {/* Mobile hamburger */}
           <div className="md:hidden">
@@ -120,19 +135,29 @@ function MarketingHeaderContent() {
                   >
                     Contact sales
                   </Link>
-                  <Show when="signed-out">
+                  {user === null ? (
                     <Link
                       href="/sign-in?role=slp"
                       className="mt-2 rounded-lg bg-on-surface px-6 py-3 text-center text-sm font-semibold text-background"
                     >
                       {APP_SIGN_IN_CTA}
                     </Link>
-                  </Show>
-                  <Show when="signed-in">
+                  ) : null}
+                  {user ? (
                     <div className="mt-4 flex justify-center">
-                      <UserButton />
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          await signOut();
+                          router.push("/sign-in");
+                        }}
+                        aria-label="Sign out"
+                        className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-fixed text-sm font-semibold text-primary"
+                      >
+                        {user?.name?.[0]?.toUpperCase() ?? user?.email?.[0]?.toUpperCase() ?? "?"}
+                      </button>
                     </div>
-                  </Show>
+                  ) : null}
                 </nav>
               </SheetContent>
             </Sheet>

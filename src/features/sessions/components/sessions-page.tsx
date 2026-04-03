@@ -1,12 +1,12 @@
 "use client";
 
-import { useUser } from "@clerk/nextjs";
 import { useQuery } from "convex/react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 
+import { useCurrentUser } from "@/features/auth/hooks/use-current-user";
 import { usePatients } from "@/features/patients/hooks/use-patients";
 import { MaterialIcon } from "@/shared/components/material-icon";
 import { Button } from "@/shared/components/ui/button";
@@ -28,9 +28,9 @@ import type { AppointmentListItem } from "./appointment-card";
 import { CalendarView } from "./calendar-view";
 
 export function SessionsPage() {
-  const { user, isLoaded } = useUser();
-  const role = user?.publicMetadata?.role as string | undefined;
-  const isCaregiver = role === "caregiver";
+  const user = useCurrentUser();
+  const isLoaded = user !== undefined;
+  const isCaregiver = user?.role === "caregiver";
   const isSLP = !isCaregiver;
 
   const {
@@ -48,19 +48,19 @@ export function SessionsPage() {
 
   const availableSlots = useQuery(
     api.appointments.getAvailableSlots,
-    isLoaded && isSLP && user?.id
-      ? { slpId: user.id, weekStart }
+    isLoaded && isSLP && user?._id
+      ? { slpId: user._id, weekStart }
       : "skip",
   );
 
   const { slots: availabilitySlots, createSlot, removeSlot } = useAvailability(
-    isSLP ? user?.id : undefined,
+    isSLP ? user?._id : undefined,
   );
 
   const { create, startDeveloperTestCall } = useAppointmentActions();
   const router = useRouter();
   const showDeveloperAccelerators = canShowDeveloperAccelerators(
-    user?.primaryEmailAddress?.emailAddress ?? null,
+    user?.email ?? null,
   );
 
   const [bookingOpen, setBookingOpen] = useState(false);
@@ -232,7 +232,7 @@ export function SessionsPage() {
 
       <InviteEmailModal open={inviteOpen} onOpenChange={setInviteOpen} />
 
-      {isSLP && user?.id && (
+      {isSLP && user?._id && (
         <AvailabilityEditor
           open={availabilityOpen}
           onOpenChange={setAvailabilityOpen}

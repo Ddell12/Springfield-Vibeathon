@@ -15,10 +15,12 @@ vi.mock("convex/react", () => ({
         ]
       : [],
 }));
-vi.mock("@clerk/nextjs", () => ({
-  useUser: () => ({ user: { firstName: "Jane", lastName: "SLP", email: "jane@test.com", publicMetadata: { role: "slp" } } }),
-  useClerk: () => ({ signOut: vi.fn() }),
-  Show: ({ when, children }: any) => (when === "signed-in" ? <>{children}</> : null),
+vi.mock("@convex-dev/auth/react", () => ({
+  useAuthActions: () => ({ signOut: vi.fn() }),
+}));
+
+vi.mock("@/features/auth/hooks/use-current-user", () => ({
+  useCurrentUser: () => ({ _id: "user_1", name: "Jane SLP", email: "jane@test.com", role: "slp" }),
 }));
 vi.mock("next/navigation", () => ({
   usePathname: () => "/builder",
@@ -85,8 +87,7 @@ describe("DashboardSidebar (SLP)", () => {
   });
   it("shows user name in user menu trigger when expanded", () => {
     render(<DashboardSidebar />);
-    // firstName and lastName are in separate text nodes; use a function matcher
-    const nameElements = screen.getAllByText((_, el) => el?.textContent === "Jane SLP" && el?.tagName === "P");
+    const nameElements = screen.getAllByText("Jane SLP");
     expect(nameElements.length).toBeGreaterThanOrEqual(1);
   });
   it("keeps Speech Coach as the top-level nav item for SLPs", () => {

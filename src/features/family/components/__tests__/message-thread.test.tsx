@@ -10,12 +10,8 @@ vi.mock("next/link", () => ({
   ),
 }));
 
-vi.mock("@clerk/nextjs", () => ({
-  useUser: () => ({
-    user: { id: "user1", fullName: "Test Therapist" },
-    isLoaded: true,
-    isSignedIn: true,
-  }),
+vi.mock("@/features/auth/hooks/use-current-user", () => ({
+  useCurrentUser: () => ({ _id: "user1", name: "Test Therapist", email: "therapist@test.com", role: "slp" }),
 }));
 
 vi.mock("@/core/utils", () => ({

@@ -1,6 +1,5 @@
 "use client";
 
-import { useUser } from "@clerk/nextjs";
 import { useMutation,useQuery } from "convex/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -8,6 +7,7 @@ import { use } from "react";
 import { toast } from "sonner";
 
 import { cn } from "@/core/utils";
+import { useCurrentUser } from "@/features/auth/hooks/use-current-user";
 import { MaterialIcon } from "@/shared/components/material-icon";
 import { Button } from "@/shared/components/ui/button";
 
@@ -36,11 +36,11 @@ const STATUS_COLORS: Record<string, string> = {
 
 export function AppointmentDetailPage({ paramsPromise }: AppointmentDetailPageProps) {
   const { id } = use(paramsPromise);
-  const { user, isLoaded } = useUser();
+  const user = useCurrentUser();
+  const isLoaded = user !== undefined;
   const router = useRouter();
 
-  const role = user?.publicMetadata?.role as string | undefined;
-  const isCaregiver = role === "caregiver";
+  const isCaregiver = user?.role === "caregiver";
   const isSLP = !isCaregiver;
 
   const appointment = useQuery(
