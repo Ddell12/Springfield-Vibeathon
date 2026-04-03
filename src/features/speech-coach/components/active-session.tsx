@@ -1,7 +1,8 @@
 "use client";
 
-import { LiveKitRoom, RoomAudioRenderer } from "@livekit/components-react";
+import { LiveKitRoom, RoomAudioRenderer, useRoomContext } from "@livekit/components-react";
 import Image from "next/image";
+import { RoomEvent } from "livekit-client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -9,6 +10,9 @@ import { cn } from "@/core/utils";
 import { Button } from "@/shared/components/ui/button";
 
 import type { SpeechCoachConfig } from "../lib/config";
+import type { AgentVisualMessage } from "../livekit/tools";
+import { CaregiverGuidanceStrip } from "./caregiver-guidance-strip";
+import { PromptStateCard } from "./prompt-state-card";
 
 type SessionConfig = {
   targetSounds: string[];
@@ -38,7 +42,6 @@ export type SessionVisualState = {
   targetLabel: string;
   targetVisualUrl?: string;
   promptState: "listen" | "your_turn" | "try_again" | "nice_job";
-  attemptOutcome?: "correct" | "approximate" | "incorrect" | "no_response";
   totalCorrect: number;
 };
 
@@ -46,15 +49,27 @@ export function getCelebrationMode({ totalCorrect }: { totalCorrect: number }) {
   return totalCorrect > 0 && totalCorrect % 5 === 0 ? "milestone" : "check";
 }
 
-const promptCopy: Record<SessionVisualState["promptState"], string> = {
-  listen: "Listen carefully",
-  your_turn: "Your turn — give it a try!",
-  try_again: "Good effort — let's try once more",
-  nice_job: "Nice job",
-};
+/** Receives data channel messages from the LiveKit agent and fires onMessage. Must be inside LiveKitRoom. */
+function AgentDataListener({ onMessage }: { onMessage: (msg: AgentVisualMessage) => void }) {
+  const room = useRoomContext();
+  useEffect(() => {
+    function handleData(payload: Uint8Array) {
+      try {
+        const msg = JSON.parse(new TextDecoder().decode(payload)) as AgentVisualMessage;
+        onMessage(msg);
+      } catch {
+        // Ignore malformed data
+      }
+    }
+    room.on(RoomEvent.DataReceived, handleData);
+    return () => {
+      room.off(RoomEvent.DataReceived, handleData);
+    };
+  }, [room, onMessage]);
+  return null;
+}
 
 export function ActiveSession(props: Props) {
-  // LiveKit agent runtime — voice session managed by LiveKit Cloud worker.
   return <ActiveSessionInner {...props} />;
 }
 
@@ -64,26 +79,52 @@ function ActiveSessionInner({
   onEnd,
   durationMinutes,
   sessionConfig,
+  speechCoachConfig,
 }: Props) {
-  // Refs for timeout guards — do not trigger re-renders.
   const wasConnected = useRef(false);
   const hasStarted = useRef(false);
+  const sessionStartTime = useRef<number | null>(null);
 
-  // State for token fetch result.
   const [token, setToken] = useState<string | null>(null);
   const [serverUrl, setServerUrl] = useState<string | null>(null);
   const [fetchError, setFetchError] = useState(false);
-  // isConnected drives JSX — wasConnected.current is a ref and won't re-render.
   const [isConnected, setIsConnected] = useState(false);
+  const [showGuidance, setShowGuidance] = useState(true);
+  const [elapsedMs, setElapsedMs] = useState(0);
 
-  // TODO: wire to LiveKit data-channel events for real-time target state updates
-  const [visual] = useState<SessionVisualState>({
+  const reducedMotion = speechCoachConfig?.reducedMotion ?? false;
+
+  const [visual, setVisual] = useState<SessionVisualState>({
     targetLabel: sessionConfig?.targetSounds?.[0] ?? "Practice sound",
     promptState: "listen",
     totalCorrect: 0,
   });
 
-  // Fetch LiveKit token from the speech coach token route.
+  const handleAgentMessage = useCallback((msg: AgentVisualMessage) => {
+    if (msg.type === "visual_state") {
+      setVisual({
+        targetLabel: msg.targetLabel,
+        targetVisualUrl: msg.targetImageUrl,
+        promptState: msg.promptState,
+        totalCorrect: msg.totalCorrect,
+      });
+    } else if (msg.type === "advance_target") {
+      setVisual((prev) => ({ ...prev, targetLabel: msg.nextLabel, promptState: "listen" }));
+    }
+  }, []);
+
+  // Tick elapsed time every second while connected (for caregiver guidance strip)
+  useEffect(() => {
+    if (!isConnected) return;
+    const id = setInterval(() => {
+      if (sessionStartTime.current) {
+        setElapsedMs(Date.now() - sessionStartTime.current);
+      }
+    }, 1000);
+    return () => clearInterval(id);
+  }, [isConnected]);
+
+  // Fetch LiveKit token
   useEffect(() => {
     if (hasStarted.current) return;
     hasStarted.current = true;
@@ -117,7 +158,6 @@ function ActiveSessionInner({
       onEnd();
       return;
     }
-
     const timeout = setTimeout(() => {
       if (!wasConnected.current) {
         toast.error("Couldn't reach speech coach", {
@@ -129,7 +169,7 @@ function ActiveSessionInner({
     return () => clearTimeout(timeout);
   }, [fetchError, onEnd]);
 
-  // Auto-stop after configured session duration.
+  // Auto-stop after session duration
   useEffect(() => {
     const timeout = setTimeout(() => onEnd(), durationMinutes * 60 * 1000);
     return () => clearTimeout(timeout);
@@ -139,9 +179,12 @@ function ActiveSessionInner({
     onEnd();
   }, [onEnd]);
 
+  const isMilestone = getCelebrationMode({ totalCorrect: visual.totalCorrect }) === "milestone";
+  const attemptDotsFilled = visual.totalCorrect % 5;
+
   return (
-    <div className="flex h-full flex-col items-center justify-center gap-8 p-8">
-      {/* LiveKit room — invisible in DOM, provides audio context for the agent. */}
+    <div className="relative flex h-full flex-col items-center justify-center gap-6 p-6">
+      {/* LiveKit room — invisible in DOM, provides audio */}
       {token && serverUrl && (
         <LiveKitRoom
           token={token}
@@ -151,6 +194,7 @@ function ActiveSessionInner({
           video={false}
           onConnected={() => {
             wasConnected.current = true;
+            sessionStartTime.current = Date.now();
             setIsConnected(true);
             onConversationStarted(runtimeSession.roomName);
           }}
@@ -159,21 +203,44 @@ function ActiveSessionInner({
           }}
         >
           <RoomAudioRenderer />
+          <AgentDataListener onMessage={handleAgentMessage} />
         </LiveKitRoom>
       )}
 
-      {/* Target card — shows current practice item and connection status. */}
-      <div className="mx-auto flex w-full max-w-3xl flex-col items-center gap-6">
+      {/* Milestone confetti overlay — CSS only, skipped when reducedMotion */}
+      {isMilestone && !reducedMotion && (
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 z-10 animate-confetti-burst"
+        />
+      )}
+
+      {/* Target card */}
+      <div className="mx-auto flex w-full max-w-md flex-col items-center gap-4">
+        {/* 5-dot progress row */}
+        <div className="flex gap-2" aria-label={`${attemptDotsFilled} of 5 attempts`}>
+          {Array.from({ length: 5 }).map((_, i) => (
+            <span
+              key={i}
+              data-testid="progress-dot"
+              aria-hidden="true"
+              className={cn(
+                "h-3 w-3 rounded-full",
+                !reducedMotion && "transition-colors duration-300",
+                i < attemptDotsFilled ? "bg-primary" : "bg-muted"
+              )}
+            />
+          ))}
+        </div>
+
+        {/* Target image and label */}
         <div className="w-full rounded-3xl bg-background p-6 shadow-sm">
-          <p className="text-xs uppercase tracking-[0.12em] text-muted-foreground">
-            Current practice
-          </p>
-          <div className="mt-4 flex flex-col items-center gap-4">
+          <div className="flex flex-col items-center gap-4">
             <div
               className={cn(
                 "flex h-48 w-48 items-center justify-center overflow-hidden rounded-3xl bg-muted/40",
-                "transition-opacity duration-300",
-                isConnected ? "opacity-100" : "opacity-50",
+                !reducedMotion && "transition-opacity duration-300",
+                isConnected ? "opacity-100" : "opacity-50"
               )}
             >
               {visual.targetVisualUrl ? (
@@ -185,33 +252,32 @@ function ActiveSessionInner({
                   className="h-full w-full object-cover"
                 />
               ) : (
-                <span className="font-headline text-5xl text-foreground">
-                  {visual.targetLabel}
-                </span>
+                <span className="font-headline text-5xl text-foreground">{visual.targetLabel}</span>
               )}
             </div>
             <p className="font-headline text-3xl text-foreground">{visual.targetLabel}</p>
-            <p className="text-sm text-muted-foreground">
-              {promptCopy[visual.promptState]}
-            </p>
             {!isConnected && (
-              <p className="text-xs text-muted-foreground/60">Connecting...</p>
+              <p className="text-xs text-muted-foreground/60">Connecting…</p>
             )}
-            {visual.attemptOutcome === "correct" ? (
-              <div aria-label="correct-attempt">Nice job</div>
-            ) : null}
-            {getCelebrationMode({ totalCorrect: visual.totalCorrect }) === "milestone" ? (
-              <>
-                {/* TODO: replace with animation component */}
-                <div aria-hidden="true">Fireworks</div>
-              </>
-            ) : null}
           </div>
         </div>
+
+        {/* Prompt state card */}
+        <PromptStateCard state={visual.promptState} reducedMotion={reducedMotion} />
       </div>
 
-      {/* Always-enabled stop button */}
-      <Button onClick={handleStop} variant="outline" size="lg" className="mt-4">
+      {/* Caregiver guidance strip */}
+      {showGuidance && (
+        <div className="w-full max-w-md">
+          <CaregiverGuidanceStrip
+            elapsedMs={elapsedMs}
+            durationMs={durationMinutes * 60 * 1000}
+            onDismiss={() => setShowGuidance(false)}
+          />
+        </div>
+      )}
+
+      <Button onClick={handleStop} variant="outline" size="lg">
         Stop Session
       </Button>
     </div>
