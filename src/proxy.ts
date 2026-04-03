@@ -1,5 +1,9 @@
-import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
-import { NextResponse } from "next/server";
+import {
+  convexAuthNextjsMiddleware,
+  createRouteMatcher,
+  isAuthenticatedNextjs,
+  nextjsMiddlewareRedirect,
+} from "@convex-dev/auth/nextjs/server";
 
 const isProtectedRoute = createRouteMatcher([
   "/dashboard(.*)",
@@ -18,20 +22,18 @@ const isPublicApiRoute = createRouteMatcher([
   "/apps/(.*)",
 ]);
 
-export default clerkMiddleware(async (auth, req) => {
-  // Public API routes bypass Clerk entirely (shared tool HTML serving)
-  if (isPublicApiRoute(req)) return;
+export default convexAuthNextjsMiddleware(
+  async (request, { convexAuth }) => {
+    if (isPublicApiRoute(request)) return;
 
-  // Server-side redirect: caregivers landing on /dashboard go straight to /family.
-  // Avoids the client-side flash where the SLP builder briefly renders.
-  const { sessionClaims } = await auth();
-  const role = (sessionClaims?.publicMetadata as { role?: string } | undefined)?.role;
-  if (role === "caregiver" && req.nextUrl.pathname === "/dashboard") {
-    return NextResponse.redirect(new URL("/family", req.url));
+    if (
+      isProtectedRoute(request) &&
+      !(await isAuthenticatedNextjs(convexAuth))
+    ) {
+      return nextjsMiddlewareRedirect(request, "/sign-in");
+    }
   }
-
-  if (isProtectedRoute(req)) await auth.protect();
-});
+);
 
 export const config = {
   matcher: [
