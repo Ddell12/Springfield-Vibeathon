@@ -14,10 +14,9 @@ test.describe("Shared tool page", () => {
     await page.screenshot({ path: "test-results/shared-tool-not-found.png" });
   });
 
-  test.fixme("valid slug renders tool iframe", async ({ page }) => {
-    // Requires TEST_SHARE_SLUG env var pointing to a seeded share slug in Convex
-    const slug = process.env.TEST_SHARE_SLUG;
-    if (!slug) throw new Error("TEST_SHARE_SLUG env var required");
+  test("valid slug renders tool iframe", async ({ page }) => {
+    test.skip(!process.env.TEST_SHARE_SLUG, "Set TEST_SHARE_SLUG to a seeded share slug to run this test");
+    const slug = process.env.TEST_SHARE_SLUG!;
 
     await page.goto(`/tool/${slug}`);
 
@@ -26,10 +25,9 @@ test.describe("Shared tool page", () => {
     await expect(iframe).toBeVisible({ timeout: 15_000 });
   });
 
-  test.fixme("shared tool footer has 'Create Tool' CTA", async ({ page }) => {
-    // Requires a valid tool loaded — depends on TEST_SHARE_SLUG and seeded Convex data
-    const slug = process.env.TEST_SHARE_SLUG;
-    if (!slug) throw new Error("TEST_SHARE_SLUG env var required");
+  test("shared tool footer has 'Create Tool' CTA", async ({ page }) => {
+    test.skip(!process.env.TEST_SHARE_SLUG, "Set TEST_SHARE_SLUG to a seeded share slug to run this test");
+    const slug = process.env.TEST_SHARE_SLUG!;
 
     await page.goto(`/tool/${slug}`);
 
