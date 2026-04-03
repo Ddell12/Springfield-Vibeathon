@@ -170,6 +170,7 @@ export const logAttemptFromRuntime = action({
   args: {
     sessionId: v.id("speechCoachSessions"),
     runtimeSecret: v.string(),
+    agentSecret: v.string(),
     targetLabel: v.string(),
     outcome: v.union(
       v.literal("correct"),
@@ -181,9 +182,14 @@ export const logAttemptFromRuntime = action({
     timestampMs: v.number(),
   },
   handler: async (ctx, args) => {
-    const expectedSecret = process.env.SPEECH_COACH_RUNTIME_SECRET;
-    if (!expectedSecret) throw new ConvexError("SPEECH_COACH_RUNTIME_SECRET not configured");
-    if (args.runtimeSecret !== expectedSecret) throw new ConvexError("Invalid runtime secret");
+    const expectedSecret = process.env.LIVEKIT_AGENT_SECRET;
+    if (!expectedSecret || args.agentSecret !== expectedSecret) {
+      throw new Error("Unauthorized: invalid agent secret");
+    }
+
+    const expectedRuntimeSecret = process.env.SPEECH_COACH_RUNTIME_SECRET;
+    if (!expectedRuntimeSecret) throw new ConvexError("SPEECH_COACH_RUNTIME_SECRET not configured");
+    if (args.runtimeSecret !== expectedRuntimeSecret) throw new ConvexError("Invalid runtime secret");
 
     await ctx.runMutation(internal.speechCoach.logAttempt, {
       sessionId: args.sessionId,
