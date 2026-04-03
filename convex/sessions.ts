@@ -39,11 +39,11 @@ export const get = query({
 export const list = query({
   args: {},
   handler: async (ctx) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) return [];
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return [];
     const sessions = await ctx.db
       .query("sessions")
-      .withIndex("by_user", (q) => q.eq("userId", identity.subject))
+      .withIndex("by_user", (q) => q.eq("userId", userId))
       .order("desc")
       .take(100);
     // Post-filter: existing sessions may not have `archived` field (undefined !== true passes)
@@ -120,10 +120,10 @@ export const listByState = authedQuery({
 export const remove = mutation({
   args: { sessionId: v.id("sessions") },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) throw new Error("Not authenticated");
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
     const session = await ctx.db.get(args.sessionId);
-    if (!session || session.userId !== identity.subject) {
+    if (!session || session.userId !== userId) {
       throw new Error("Not authorized");
     }
 
@@ -294,11 +294,11 @@ export const recoverStuckSessions = authedMutation({
 export const listRecent = query({
   args: {},
   handler: async (ctx) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) return [];
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return [];
     const sessions = await ctx.db
       .query("sessions")
-      .withIndex("by_user", (q) => q.eq("userId", identity.subject))
+      .withIndex("by_user", (q) => q.eq("userId", userId))
       .order("desc")
       .take(20);
     // Post-filter: archived field may be undefined on legacy docs (undefined !== true passes)
