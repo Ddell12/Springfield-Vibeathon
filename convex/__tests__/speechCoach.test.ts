@@ -514,6 +514,59 @@ describe("speechCoach queries", () => {
   });
 });
 
+// ── getSessionDetail PHI guard — rawAttempts ────────────────────────────────
+
+describe("speechCoach.getSessionDetail rawAttempts PHI guard", () => {
+  it("omits rawAttempts for caregiver callers", async () => {
+    const t = convexTest(schema, modules);
+    const { patientId, programId } = await setupSpeechCoachProgram(t);
+    const caregiver = t.withIdentity(CAREGIVER_IDENTITY);
+
+    const sessionId = await caregiver.mutation(api.speechCoach.createSession, {
+      homeProgramId: programId,
+      config: { targetSounds: ["/s/"], ageRange: "2-4" as const, durationMinutes: 5 },
+    });
+
+    // Inject rawAttempts directly (simulates data written by the runtime agent)
+    await t.run(async (ctx) => {
+      await ctx.db.patch(sessionId, {
+        rawAttempts: [
+          { targetLabel: "sad", outcome: "correct", retryCount: 0, timestampMs: 1000 },
+        ],
+      });
+    });
+
+    const detail = await caregiver.query(api.speechCoach.getSessionDetail, { sessionId });
+    expect(detail.session.rawAttempts).toBeUndefined();
+  });
+
+  it("includes rawAttempts for SLP callers", async () => {
+    const t = convexTest(schema, modules);
+    const { patientId, programId } = await setupSpeechCoachProgram(t);
+    const caregiver = t.withIdentity(CAREGIVER_IDENTITY);
+    const slp = t.withIdentity(SLP_IDENTITY);
+
+    const sessionId = await caregiver.mutation(api.speechCoach.createSession, {
+      homeProgramId: programId,
+      config: { targetSounds: ["/s/"], ageRange: "2-4" as const, durationMinutes: 5 },
+    });
+
+    // Inject rawAttempts directly
+    await t.run(async (ctx) => {
+      await ctx.db.patch(sessionId, {
+        rawAttempts: [
+          { targetLabel: "sad", outcome: "correct", retryCount: 0, timestampMs: 1000 },
+          { targetLabel: "sun", outcome: "incorrect", retryCount: 1, timestampMs: 2000 },
+        ],
+      });
+    });
+
+    const detail = await slp.query(api.speechCoach.getSessionDetail, { sessionId });
+    expect(detail.session.rawAttempts).toHaveLength(2);
+    expect(detail.session.rawAttempts![0].targetLabel).toBe("sad");
+  });
+});
+
 // ── review failure / retry states ───────────────────────────────────────────
 
 describe("speechCoach markReviewFailed / retryReview", () => {

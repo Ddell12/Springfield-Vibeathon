@@ -3,7 +3,7 @@ import { ConvexError } from "convex/values";
 
 import { internal } from "./_generated/api";
 import { internalMutation, mutation, query } from "./_generated/server";
-import { assertCaregiverAccess, assertPatientAccess, getAuthUserId } from "./lib/auth";
+import { assertCaregiverAccess, assertPatientAccess, getAuthRole, getAuthUserId } from "./lib/auth";
 import { authedMutation, authedQuery } from "./lib/customFunctions";
 
 const SPEECH_COACH_AGENT_ID = "speech-coach";
@@ -176,13 +176,17 @@ export const getSessionDetail = query({
 
     // Standalone sessions: verify userId ownership
     // Clinical sessions: verify patient access (SLP or caregiver)
+    let callerRole: "slp" | "caregiver" | null = null;
     if (session.patientId) {
-      await assertPatientAccess(ctx, session.patientId);
+      const access = await assertPatientAccess(ctx, session.patientId);
+      callerRole = access.role;
     } else {
       const userId = await getAuthUserId(ctx);
       if (!userId || session.userId !== userId) {
         throw new ConvexError("Not authorized");
       }
+      // For standalone sessions, resolve role from JWT
+      callerRole = await getAuthRole(ctx);
     }
 
     const progress = await ctx.db
@@ -190,7 +194,13 @@ export const getSessionDetail = query({
       .withIndex("by_sessionId", (q) => q.eq("sessionId", args.sessionId))
       .first();
 
-    return { session, progress };
+    // Strip rawAttempts for non-SLP callers — rawAttempts contains PHI (target word labels)
+    const safeSession =
+      callerRole !== "slp"
+        ? { ...session, rawAttempts: undefined }
+        : session;
+
+    return { session: safeSession, progress };
   },
 });
 
