@@ -6,10 +6,10 @@ import { SessionDotCalendar } from "../session-dot-calendar";
 const NOW = new Date("2026-04-02T12:00:00Z").getTime();
 
 describe("SessionDotCalendar", () => {
-  it("renders 7 day slots", () => {
+  it("renders 30 day slots", () => {
     render(<SessionDotCalendar sessionTimestamps={[]} nowMs={NOW} />);
     const dots = document.querySelectorAll('[data-testid="calendar-day"]');
-    expect(dots.length).toBe(7);
+    expect(dots.length).toBe(30);
   });
 
   it("shows filled dot for a day that had a session", () => {
@@ -22,6 +22,6 @@ describe("SessionDotCalendar", () => {
   it("shows empty dot for days without sessions", () => {
     render(<SessionDotCalendar sessionTimestamps={[]} nowMs={NOW} />);
     const emptyDots = document.querySelectorAll('[data-filled="false"]');
-    expect(emptyDots.length).toBe(7);
+    expect(emptyDots.length).toBe(30);
   });
 });

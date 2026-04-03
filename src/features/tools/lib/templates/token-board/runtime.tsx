@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { cn } from "@/core/utils";
 
@@ -15,6 +15,26 @@ export function TokenBoardRuntime({
   const [completed, setCompleted] = useState(false);
   const [justFilledIndex, setJustFilledIndex] = useState<number | null>(null);
   const fillTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const confettiPieces = useMemo(
+    () =>
+      Array.from({ length: 20 }, (_, i) => ({
+        id: i,
+        left: (i * 17) % 100,
+        size: 8 + (i % 4) * 2,
+        delayMs: i * 45,
+        durationMs: 700 + (i % 5) * 90,
+        rotationDeg: 240 + (i % 6) * 70,
+        colorClass: [
+          "bg-primary",
+          "bg-primary-container",
+          "bg-tertiary",
+          "bg-domain-pink",
+          "bg-domain-blue",
+        ][i % 5],
+        roundedClass: i % 2 === 0 ? "rounded-full" : "rounded-[3px]",
+      })),
+    []
+  );
 
   useEffect(() => { onEvent("app_opened"); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -52,9 +72,24 @@ export function TokenBoardRuntime({
       {/* Celebration overlay */}
       {completed && (
         <div className={cn(
-          "fixed inset-0 z-50 flex flex-col items-center justify-center gap-6 px-8",
+          "fixed inset-0 z-50 flex flex-col items-center justify-center gap-6 overflow-hidden px-8",
           config.highContrast ? "bg-black" : "bg-primary/95"
         )}>
+          {!config.highContrast &&
+            confettiPieces.map((piece) => (
+              <span
+                key={piece.id}
+                aria-hidden="true"
+                className={cn("absolute top-0 opacity-0", piece.colorClass, piece.roundedClass)}
+                style={{
+                  left: `${piece.left}%`,
+                  width: `${piece.size}px`,
+                  height: `${piece.size}px`,
+                  animation: `confetti-fall ${piece.durationMs}ms cubic-bezier(0.4, 0, 0.2, 1) ${piece.delayMs}ms both`,
+                  transform: `translateY(-40px) rotate(${piece.rotationDeg}deg)`,
+                }}
+              />
+            ))}
           {config.rewardImageUrl && (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={config.rewardImageUrl} alt="reward"

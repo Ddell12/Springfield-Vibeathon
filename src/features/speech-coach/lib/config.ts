@@ -1,3 +1,5 @@
+import type { Id } from "../../../../convex/_generated/dataModel";
+
 export const TARGET_SOUNDS = [
   { id: "/s/", label: "/s/ & /z/" },
   { id: "/r/", label: "/r/" },
@@ -90,7 +92,7 @@ export type SpeechCoachConfig = {
   defaultDurationMinutes: number;
   childAge?: number;
   reducedMotion?: boolean;
-  assignedTemplateId?: string;
+  assignedTemplateId?: Id<"speechCoachTemplates">;
   lastSyncedTemplateVersion?: number;
   coachSetup?: CoachSetup;
 };

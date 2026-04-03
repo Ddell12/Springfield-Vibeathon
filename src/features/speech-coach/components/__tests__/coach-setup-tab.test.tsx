@@ -4,19 +4,12 @@ import { describe, expect, it, vi } from "vitest";
 import { CoachSetupTab } from "../coach-setup-tab";
 import { SlpSpeechCoachPage } from "../slp-speech-coach-page";
 
+const mockedUseQuery = vi.fn();
+
 vi.mock("convex/react", () => ({
   useConvexAuth: () => ({ isAuthenticated: true }),
   useMutation: () => vi.fn(),
-  useQuery: () => [
-    {
-      _id: "program1",
-      speechCoachConfig: {
-        targetSounds: ["/s/"],
-        ageRange: "5-7",
-        defaultDurationMinutes: 5,
-      },
-    },
-  ],
+  useQuery: (...args: any[]) => mockedUseQuery(...args),
 }));
 
 vi.mock("../../../../convex/_generated/api", () => ({ api: {} }));
@@ -29,6 +22,26 @@ const DEFAULT_CONFIG = {
 
 describe("SlpSpeechCoachPage", () => {
   it("renders setup inside the shared route layout instead of local tabs", async () => {
+    mockedUseQuery
+      .mockReturnValueOnce([
+        {
+          _id: "program1",
+          speechCoachConfig: {
+            targetSounds: ["/s/"],
+            ageRange: "5-7",
+            defaultDurationMinutes: 5,
+          },
+        },
+      ])
+      .mockReturnValueOnce([])
+      .mockReturnValueOnce({
+        sessionsLast30Days: 0,
+        avgPerWeek: 0,
+        lastSessionAt: null,
+        soundsSummary: [],
+      })
+      .mockReturnValueOnce([]);
+
     render(
       <SlpSpeechCoachPage patientId={"patient" as never} homeProgramId={"program1" as never} />
     );

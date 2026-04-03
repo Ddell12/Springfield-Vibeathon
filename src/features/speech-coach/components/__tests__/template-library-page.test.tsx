@@ -7,6 +7,7 @@ const mockedUseQuery = vi.fn();
 const mockedUseMutation = vi.fn(() => vi.fn());
 
 vi.mock("convex/react", () => ({
+  useConvexAuth: () => ({ isAuthenticated: true }),
   useQuery: (...args: any[]) => mockedUseQuery(...args),
   useMutation: (...args: any[]) => mockedUseMutation(...args),
 }));
@@ -15,8 +16,8 @@ vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 describe("TemplateLibraryPage", () => {
   it("renders Edit and Duplicate for each template card", () => {
     mockedUseQuery.mockReturnValue([
-      { _id: "tpl1", name: "Playful /s/", description: "desc", status: "active", version: 3 },
-      { _id: "tpl2", name: "", description: "", status: "draft", version: 1 },
+      { _id: "tpl1", name: "Playful /s/", description: "desc", status: "active", version: 3, isSystemTemplate: false },
+      { _id: "tpl2", name: "", description: "", status: "draft", version: 1, isSystemTemplate: false },
     ]);
 
     render(<TemplateLibraryPage />);
@@ -42,6 +43,7 @@ describe("TemplateLibraryPage", () => {
         description: "Use for high-energy sessions",
         status: "active",
         version: 4,
+        isSystemTemplate: false,
         voice: { provider: "elevenlabs", voiceKey: "friendly-coach" },
         prompt: {},
         tools: [],
@@ -62,7 +64,38 @@ describe("TemplateLibraryPage", () => {
   });
 
   it("shows system templates in the system tab", () => {
-    mockedUseQuery.mockReturnValue([]);
+    mockedUseQuery.mockReturnValue([
+      {
+        _id: "system1",
+        name: "Sound Drill",
+        description: "desc",
+        status: "active",
+        version: 1,
+        isSystemTemplate: true,
+        voice: { provider: "elevenlabs", voiceKey: "friendly-coach" },
+        prompt: {},
+        tools: [],
+        skills: [],
+        knowledgePackIds: [],
+        customKnowledgeSnippets: [],
+        sessionDefaults: { ageRange: "5-7", defaultDurationMinutes: 10 },
+      },
+      {
+        _id: "system2",
+        name: "Conversational",
+        description: "desc",
+        status: "active",
+        version: 1,
+        isSystemTemplate: true,
+        voice: { provider: "elevenlabs", voiceKey: "friendly-coach" },
+        prompt: {},
+        tools: [],
+        skills: [],
+        knowledgePackIds: [],
+        customKnowledgeSnippets: [],
+        sessionDefaults: { ageRange: "5-7", defaultDurationMinutes: 10 },
+      },
+    ]);
 
     render(<TemplateLibraryPage />);
 

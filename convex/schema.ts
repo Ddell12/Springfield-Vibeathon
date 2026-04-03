@@ -243,6 +243,7 @@ export default defineSchema({
     shareToken: v.optional(v.string()),
     publishedAt: v.optional(v.number()),
     goalTags: v.optional(v.array(v.string())),
+    sessionMode: v.optional(v.boolean()),
     lastActivityAt: v.optional(v.number()),
   })
     .index("by_slpUserId", ["slpUserId"])
@@ -1077,12 +1078,14 @@ export default defineSchema({
 
   speechCoachTemplates: defineTable({
     slpUserId: v.string(),
+    isSystemTemplate: v.optional(v.boolean()),
     ...speechCoachTemplateValidator.fields,
     createdAt: v.number(),
     updatedAt: v.number(),
   })
     .index("by_slpUserId_status", ["slpUserId", "status"])
-    .index("by_slpUserId_updatedAt", ["slpUserId", "updatedAt"]),
+    .index("by_slpUserId_updatedAt", ["slpUserId", "updatedAt"])
+    .index("by_isSystemTemplate", ["isSystemTemplate"]),
 });
 
 /** Active session states used by current code. Legacy states are read-only. */

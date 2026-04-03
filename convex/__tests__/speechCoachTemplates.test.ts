@@ -17,6 +17,34 @@ describe("speech coach template schema", () => {
 const SLP_IDENTITY = { subject: "slp-user-123", issuer: "clerk" };
 
 describe("speechCoachTemplates CRUD", () => {
+  it("seeds system templates and lists them ahead of custom templates", async () => {
+    const t = convexTest(schema, modules);
+    const slp = t.withIdentity(SLP_IDENTITY);
+
+    await slp.mutation(api.speechCoachTemplates.ensureSystemTemplates, {});
+    const templateId = await slp.mutation(api.speechCoachTemplates.create, {
+      template: {
+        name: "Articulation Warmup",
+        description: "Short playful articulation practice",
+        status: "active",
+        voice: { provider: "elevenlabs", voiceKey: "friendly-coach" },
+        prompt: {},
+        tools: [],
+        skills: [],
+        knowledgePackIds: [],
+        customKnowledgeSnippets: [],
+        sessionDefaults: { ageRange: "5-7", defaultDurationMinutes: 5 },
+        version: 1,
+      },
+    });
+
+    const templates = await slp.query(api.speechCoachTemplates.listMine, {});
+
+    expect(templates[0]?.isSystemTemplate).toBe(true);
+    expect(templates.some((template) => template._id === templateId)).toBe(true);
+    expect(templates.filter((template) => template.isSystemTemplate).length).toBe(4);
+  });
+
   it("allows an SLP to create and list their speech coach templates", async () => {
     const t = convexTest(schema, modules);
     const slp = t.withIdentity(SLP_IDENTITY);
@@ -69,5 +97,33 @@ describe("speechCoachTemplates CRUD", () => {
     const copy = templates.find((template) => template._id === copyId);
 
     expect(copy?.name).toBe("Articulation Warmup (copy)");
+  });
+
+  it("blocks direct edits to system templates", async () => {
+    const t = convexTest(schema, modules);
+    const slp = t.withIdentity(SLP_IDENTITY);
+
+    await slp.mutation(api.speechCoachTemplates.ensureSystemTemplates, {});
+    const templates = await slp.query(api.speechCoachTemplates.listMine, {});
+    const systemTemplate = templates.find((template) => template.isSystemTemplate);
+
+    await expect(
+      slp.mutation(api.speechCoachTemplates.update, {
+        templateId: systemTemplate!._id,
+        template: {
+          name: "Updated",
+          description: "desc",
+          status: "active",
+          voice: { provider: "elevenlabs", voiceKey: "friendly-coach" },
+          prompt: {},
+          tools: [],
+          skills: [],
+          knowledgePackIds: [],
+          customKnowledgeSnippets: [],
+          sessionDefaults: { ageRange: "5-7", defaultDurationMinutes: 5 },
+          version: 1,
+        },
+      })
+    ).rejects.toThrow(/duplicate first/i);
   });
 });

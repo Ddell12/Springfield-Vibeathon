@@ -683,6 +683,11 @@ describe("speechCoachActions.analyzeSession", () => {
         runtimeProvider: "livekit",
         status: "analyzing",
         transcriptStorageId,
+        rawAttempts: [
+          { targetLabel: "sad", outcome: "correct", retryCount: 0, timestampMs: 1000 },
+          { targetLabel: "sun", outcome: "approximate", retryCount: 1, timestampMs: 2000 },
+          { targetLabel: "sock", outcome: "correct", retryCount: 0, timestampMs: 3000 },
+        ],
         rawTranscriptTurns: [
           { speaker: "coach", text: "Say sad", timestampMs: 1000 },
           { speaker: "child", text: "sad", timestampMs: 2000 },
@@ -701,7 +706,7 @@ describe("speechCoachActions.analyzeSession", () => {
     );
     expect(session?.status).toBe("analyzed");
     expect(progress?.summary).toContain("Strong effort");
-    expect(progress?.transcriptTurns).toHaveLength(1);
+    expect(progress?.transcriptTurns).toBeUndefined();
   });
 
   it("keeps the legacy ElevenLabs fetch path for explicit elevenlabs sessions", async () => {
@@ -765,6 +770,11 @@ describe("speechCoachActions.analyzeSession", () => {
         conversationId: "conv_legacy_123",
         status: "analyzing",
         analysisAttempts: 1,
+        rawAttempts: [
+          { targetLabel: "red", outcome: "incorrect", retryCount: 1, timestampMs: 1000 },
+          { targetLabel: "rope", outcome: "approximate", retryCount: 1, timestampMs: 2000 },
+          { targetLabel: "rain", outcome: "correct", retryCount: 0, timestampMs: 3000 },
+        ],
         config: { targetSounds: ["/r/"], ageRange: "5-7", durationMinutes: 5 },
       })
     );

@@ -21,9 +21,9 @@ const MOCK_FREQUENCY = {
 };
 
 describe("SlpPracticeFrequencyPanel", () => {
-  it("shows sessions this week", () => {
+  it("shows sessions completed", () => {
     render(<SlpPracticeFrequencyPanel frequency={MOCK_FREQUENCY} />);
-    expect(screen.getByText("3")).toBeInTheDocument();
+    expect(screen.getByText("8")).toBeInTheDocument();
   });
 
   it("shows average per week", () => {
@@ -31,18 +31,13 @@ describe("SlpPracticeFrequencyPanel", () => {
     expect(screen.getByText("2.1")).toBeInTheDocument();
   });
 
-  it("shows consistency label", () => {
-    render(<SlpPracticeFrequencyPanel frequency={MOCK_FREQUENCY} />);
-    expect(screen.getByText("Medium")).toBeInTheDocument();
-  });
-
   it("shows last session sounds", () => {
     render(<SlpPracticeFrequencyPanel frequency={MOCK_FREQUENCY} />);
-    expect(screen.getByText("/s/")).toBeInTheDocument();
+    expect(screen.getByText(/\/s\//)).toBeInTheDocument();
   });
 
   it("handles null frequency gracefully", () => {
     render(<SlpPracticeFrequencyPanel frequency={null} />);
-    expect(screen.getByText(/No sessions yet/i)).toBeInTheDocument();
+    expect(screen.getByText(/No home practice yet/i)).toBeInTheDocument();
   });
 });

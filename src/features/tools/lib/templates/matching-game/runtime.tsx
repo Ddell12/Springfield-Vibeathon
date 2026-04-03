@@ -19,7 +19,7 @@ function shuffleArray<T>(arr: T[]): T[] {
 }
 
 export function MatchingGameRuntime({
-  config, mode: _mode, onEvent, voice: _voice,
+  config, mode: _mode, onEvent, voice,
 }: RuntimeProps<MatchingGameConfig>) {
   const shellState = useShellState();
   const difficulty = shellState?.difficulty ?? "hard";
@@ -68,6 +68,9 @@ export function MatchingGameRuntime({
     const isCorrect = selectedPromptId === answerId;
     const payloadJson = JSON.stringify({ promptId: selectedPromptId, answerId });
     if (isCorrect) {
+      if (shellState?.soundsEnabled !== false) {
+        void voice?.speak?.({ text: "Great match!" });
+      }
       onEvent("answer_correct", payloadJson);
       const newMatched = new Set(matchedPairIds);
       newMatched.add(answerId);

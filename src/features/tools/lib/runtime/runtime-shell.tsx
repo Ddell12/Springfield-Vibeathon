@@ -1,10 +1,17 @@
 "use client";
 
-import { X } from "lucide-react";
-import { useMemo } from "react";
+import { CircleHelp, X } from "lucide-react";
+import { useMemo, useState } from "react";
 
 import { cn } from "@/core/utils";
 import { Button } from "@/shared/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/shared/components/ui/dialog";
 
 import type { AppShellConfig } from "./app-shell-types";
 import { ShellStateContext } from "./shell-state-context";
@@ -23,6 +30,7 @@ export function RuntimeShell({
   onExit?: () => void;
   children: React.ReactNode;
 }) {
+  const [instructionsOpen, setInstructionsOpen] = useState(false);
   const state = useAppShellState({
     storageKey: `${mode}:${title}`,
     shell,
@@ -45,16 +53,30 @@ export function RuntimeShell({
           </p>
           <h2 className="mt-1 text-sm font-semibold text-foreground">{title}</h2>
         </div>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={onExit}
-          aria-label={mode === "preview" ? "Exit fullscreen" : "Exit app"}
-        >
-          <X className="mr-1 h-4 w-4" />
-          Exit
-        </Button>
+        <div className="flex items-center gap-2">
+          {shell.enableInstructions && shell.instructionsText ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setInstructionsOpen(true)}
+              aria-label="Open instructions"
+            >
+              <CircleHelp className="h-4 w-4" />
+              <span className="sr-only">Instructions</span>
+            </Button>
+          ) : null}
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={onExit}
+            aria-label={mode === "preview" ? "Exit fullscreen" : "Exit app"}
+          >
+            <X className="mr-1 h-4 w-4" />
+            Exit
+          </Button>
+        </div>
       </header>
       <div
         className={cn(
@@ -134,6 +156,24 @@ export function RuntimeShell({
           <div>{children}</div>
         </ShellStateContext.Provider>
       </div>
+      <Dialog open={instructionsOpen} onOpenChange={setInstructionsOpen}>
+        <DialogContent className="max-w-lg rounded-2xl">
+          <DialogHeader>
+            <DialogTitle>How to use this app</DialogTitle>
+            <DialogDescription className="sr-only">
+              Instructions for the current app.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 text-sm leading-6 text-muted-foreground">
+            {shell.instructionsText
+              ?.split("\n")
+              .filter((line) => line.trim().length > 0)
+              .map((line) => (
+                <p key={line}>{line}</p>
+              ))}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

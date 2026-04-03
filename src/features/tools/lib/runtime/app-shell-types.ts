@@ -4,6 +4,7 @@ export type AppShellConfig = {
   themePreset: ThemePreset;
   accentColor: string;
   enableInstructions: boolean;
+  instructionsText?: string;
   enableSounds: boolean;
   enableDifficulty: boolean;
   enableProgress: boolean;

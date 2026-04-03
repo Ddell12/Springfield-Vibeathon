@@ -2,26 +2,34 @@
 
 import { api } from "@convex/_generated/api";
 import type { Doc } from "@convex/_generated/dataModel";
-import { useMutation, useQuery } from "convex/react";
-import { useState } from "react";
+import { useConvexAuth, useMutation, useQuery } from "convex/react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { cn } from "@/core/utils";
 import { Button } from "@/shared/components/ui/button";
 
-import { buildTemplateFormFromSystemTemplate, SYSTEM_TEMPLATES } from "../lib/system-templates";
 import { type SpeechCoachTemplateForm,TemplateEditor } from "./template-editor";
 
 type Section = "mine" | "system";
 
 export function TemplateLibraryPage() {
+  const { isAuthenticated } = useConvexAuth();
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<Doc<"speechCoachTemplates">["_id"] | null>(null);
   const [activeSection, setActiveSection] = useState<Section>("mine");
   const templates = useQuery(api.speechCoachTemplates.listMine, {});
+  const ensureSystemTemplates = useMutation(api.speechCoachTemplates.ensureSystemTemplates);
   const createTemplate = useMutation(api.speechCoachTemplates.create);
   const updateTemplate = useMutation(api.speechCoachTemplates.update);
   const duplicateTemplate = useMutation(api.speechCoachTemplates.duplicate);
+  const myTemplates = (templates ?? []).filter((template) => !template.isSystemTemplate);
+  const systemTemplates = (templates ?? []).filter((template) => template.isSystemTemplate);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    void ensureSystemTemplates({});
+  }, [ensureSystemTemplates, isAuthenticated]);
 
   async function handleSave(template: SpeechCoachTemplateForm) {
     await createTemplate({ template });
@@ -38,18 +46,6 @@ export function TemplateLibraryPage() {
   async function handleDuplicate(templateId: Doc<"speechCoachTemplates">["_id"]) {
     await duplicateTemplate({ templateId });
     toast.success("Template duplicated");
-  }
-
-  async function handleCreateFromSystemTemplate(systemTemplateId: string) {
-    const template = SYSTEM_TEMPLATES.find((item) => item.id === systemTemplateId);
-    if (!template) {
-      toast.error("That system template could not be loaded.");
-      return;
-    }
-
-    await createTemplate({ template: buildTemplateFormFromSystemTemplate(template) });
-    setActiveSection("mine");
-    toast.success("System template duplicated into My Templates");
   }
 
   return (
@@ -113,7 +109,7 @@ export function TemplateLibraryPage() {
         <p className="text-sm text-muted-foreground">Loading templates…</p>
       )}
 
-      {activeSection === "mine" && templates?.length === 0 && !creating && (
+      {activeSection === "mine" && myTemplates.length === 0 && !creating && (
         <div className="rounded-xl bg-muted px-6 py-10 text-center">
           <p className="text-sm text-muted-foreground">
             No templates yet. Create one or duplicate a system template to get started.
@@ -124,9 +120,9 @@ export function TemplateLibraryPage() {
         </div>
       )}
 
-      {activeSection === "mine" && templates && templates.length > 0 && (
+      {activeSection === "mine" && myTemplates.length > 0 && (
         <ul className="flex flex-col gap-3">
-          {templates.map((t: Doc<"speechCoachTemplates">) => (
+          {myTemplates.map((t: Doc<"speechCoachTemplates">) => (
             <li key={t._id} className="rounded-xl bg-card p-4">
               <div className="flex items-start justify-between gap-4">
                 <div>
@@ -190,9 +186,9 @@ export function TemplateLibraryPage() {
           <p className="text-sm text-muted-foreground">
             Built-in starting points. Duplicate one into My Templates, then edit it for your caseload.
           </p>
-          {SYSTEM_TEMPLATES.map((template) => (
+          {systemTemplates.map((template) => (
             <div
-              key={template.id}
+              key={template._id}
               className="flex items-start justify-between gap-4 rounded-xl bg-card p-4"
             >
               <div>
@@ -209,7 +205,7 @@ export function TemplateLibraryPage() {
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => void handleCreateFromSystemTemplate(template.id)}
+                onClick={() => void handleDuplicate(template._id)}
               >
                 Duplicate
               </Button>

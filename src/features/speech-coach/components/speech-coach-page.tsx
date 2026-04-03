@@ -13,6 +13,7 @@ import type { Id } from "../../../../convex/_generated/dataModel";
 import { useSpeechSession } from "../hooks/use-speech-session";
 import { ActiveSession } from "./active-session";
 import { CaregiverProgressCard } from "./caregiver-progress-card";
+import { SessionDotCalendar } from "./session-dot-calendar";
 import { SessionConfig } from "./session-config";
 import { SessionHistory } from "./session-history";
 
@@ -53,6 +54,10 @@ export function SpeechCoachPage({ patientId, homeProgramId }: Props) {
   const progress = useQuery(
     api.speechCoach.getProgress,
     isAuthenticated ? { patientId } : "skip"
+  );
+  const recentSessions = useQuery(
+    api.speechCoachHistory.getRecentPatientSessions,
+    isAuthenticated ? { patientId, limitDays: 30 } : "skip"
   );
   const lastRecommended = progress?.[progress.length - 1]?.recommendedNextFocus;
 
@@ -253,7 +258,21 @@ export function SpeechCoachPage({ patientId, homeProgramId }: Props) {
             </div>
           </div>
         )}
-        {activeTab === "history" ? <SessionHistory patientId={patientId} /> : null}
+        {activeTab === "history" ? (
+          <div className="flex flex-col gap-4">
+            <SessionDotCalendar
+              sessions={(recentSessions ?? [])
+                .filter((session) => session.status === "analyzed" || session.status === "completed")
+                .map((session) => ({
+                  startedAt: session.startedAt ?? session._creationTime,
+                  endedAt: session.endedAt,
+                  summary: session.config.focusArea,
+                  targetSounds: session.config.targetSounds,
+                }))}
+            />
+            <SessionHistory patientId={patientId} />
+          </div>
+        ) : null}
       </div>
     </div>
   );

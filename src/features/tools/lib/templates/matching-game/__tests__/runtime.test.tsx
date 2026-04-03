@@ -12,6 +12,7 @@ import { MatchingGameRuntime } from "../runtime";
 import type { MatchingGameConfig } from "../schema";
 
 const mockOnEvent = vi.fn();
+const mockVoice = { speak: vi.fn(), stop: vi.fn(), status: "idle" as const };
 
 const mockConfig: MatchingGameConfig = {
   title: "Animal Sounds",
@@ -27,14 +28,24 @@ const mockConfig: MatchingGameConfig = {
 describe("MatchingGameRuntime", () => {
   it("renders the title", () => {
     render(
-      <MatchingGameRuntime config={mockConfig} shareToken="tok" onEvent={mockOnEvent} />
+      <MatchingGameRuntime
+        config={mockConfig}
+        mode="preview"
+        onEvent={mockOnEvent}
+        voice={mockVoice}
+      />
     );
     expect(screen.getByText("Animal Sounds")).toBeInTheDocument();
   });
 
   it("renders all prompt cards", () => {
     render(
-      <MatchingGameRuntime config={mockConfig} shareToken="tok" onEvent={mockOnEvent} />
+      <MatchingGameRuntime
+        config={mockConfig}
+        mode="preview"
+        onEvent={mockOnEvent}
+        voice={mockVoice}
+      />
     );
     expect(screen.getByText("Dog")).toBeInTheDocument();
     expect(screen.getByText("Cat")).toBeInTheDocument();
@@ -42,7 +53,12 @@ describe("MatchingGameRuntime", () => {
 
   it("renders all answer cards", () => {
     render(
-      <MatchingGameRuntime config={mockConfig} shareToken="tok" onEvent={mockOnEvent} />
+      <MatchingGameRuntime
+        config={mockConfig}
+        mode="preview"
+        onEvent={mockOnEvent}
+        voice={mockVoice}
+      />
     );
     expect(screen.getByText("Woof")).toBeInTheDocument();
     expect(screen.getByText("Meow")).toBeInTheDocument();
@@ -51,7 +67,12 @@ describe("MatchingGameRuntime", () => {
   it("logs answer_correct when correct match is made", () => {
     mockOnEvent.mockClear();
     render(
-      <MatchingGameRuntime config={mockConfig} shareToken="tok" onEvent={mockOnEvent} />
+      <MatchingGameRuntime
+        config={mockConfig}
+        mode="preview"
+        onEvent={mockOnEvent}
+        voice={mockVoice}
+      />
     );
     // Select a prompt then its correct answer
     fireEvent.click(screen.getByText("Dog"));
@@ -62,7 +83,12 @@ describe("MatchingGameRuntime", () => {
   it("logs answer_incorrect when wrong match is made", () => {
     mockOnEvent.mockClear();
     render(
-      <MatchingGameRuntime config={mockConfig} shareToken="tok" onEvent={mockOnEvent} />
+      <MatchingGameRuntime
+        config={mockConfig}
+        mode="preview"
+        onEvent={mockOnEvent}
+        voice={mockVoice}
+      />
     );
     // Select a prompt then wrong answer
     fireEvent.click(screen.getByText("Dog"));
@@ -73,7 +99,12 @@ describe("MatchingGameRuntime", () => {
   it("logs activity_completed when all pairs are matched", () => {
     mockOnEvent.mockClear();
     render(
-      <MatchingGameRuntime config={mockConfig} shareToken="tok" onEvent={mockOnEvent} />
+      <MatchingGameRuntime
+        config={mockConfig}
+        mode="preview"
+        onEvent={mockOnEvent}
+        voice={mockVoice}
+      />
     );
     fireEvent.click(screen.getByText("Dog"));
     fireEvent.click(screen.getByText("Woof"));
