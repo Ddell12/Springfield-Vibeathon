@@ -28,7 +28,6 @@ if (!process.env.LIVEKIT_URL && process.env.NEXT_PUBLIC_LIVEKIT_URL) {
 type RoomMetadata = {
   sessionId?: string;
   instructions?: string;
-  tools?: string[];
   targetItems?: Array<{ id: string; label: string; visualUrl?: string }>;
 };
 
@@ -116,13 +115,19 @@ const agent = defineAgent({
       sessionId,
     });
 
+    const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL ?? process.env.CONVEX_URL ?? "";
+    const runtimeSecret = process.env.SPEECH_COACH_RUNTIME_SECRET ?? "";
+
     await session.start({
       room: ctx.room,
       agent: createSpeechCoachAgent({
         instructions:
           metadata.instructions ??
           "You are a helpful speech coach. Guide the child through articulation practice with patience and encouragement.",
-        tools: metadata.tools ?? [],
+        room: ctx.room,
+        sessionId: sessionId ?? "",
+        convexUrl,
+        runtimeSecret,
         targetItems: metadata.targetItems,
       }),
     });
