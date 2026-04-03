@@ -167,6 +167,24 @@ export const saveProgress = internalMutation({
     transcriptTurns: v.optional(v.array(transcriptTurnValidator)),
     scoreCards: v.optional(scoreCardsValidator),
     insights: v.optional(insightsValidator),
+    cueDistribution: v.optional(v.object({
+      spontaneous: v.number(),
+      model: v.number(),
+      phoneticCue: v.number(),
+      directCorrection: v.number(),
+    })),
+    positionAccuracy: v.optional(v.array(v.object({
+      sound: v.string(),
+      position: v.union(
+        v.literal("initial"),
+        v.literal("medial"),
+        v.literal("final"),
+        v.literal("unknown")
+      ),
+      correct: v.number(),
+      total: v.number(),
+    }))),
+    iepNoteDraft: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const existing = await ctx.db
@@ -179,6 +197,9 @@ export const saveProgress = internalMutation({
         transcriptTurns: args.transcriptTurns,
         scoreCards: args.scoreCards,
         insights: args.insights,
+        cueDistribution: args.cueDistribution,
+        positionAccuracy: args.positionAccuracy,
+        iepNoteDraft: args.iepNoteDraft,
         soundsAttempted: args.soundsAttempted,
         overallEngagement: args.overallEngagement,
         recommendedNextFocus: args.recommendedNextFocus,
@@ -194,6 +215,9 @@ export const saveProgress = internalMutation({
         transcriptTurns: args.transcriptTurns,
         scoreCards: args.scoreCards,
         insights: args.insights,
+        cueDistribution: args.cueDistribution,
+        positionAccuracy: args.positionAccuracy,
+        iepNoteDraft: args.iepNoteDraft,
         soundsAttempted: args.soundsAttempted,
         overallEngagement: args.overallEngagement,
         recommendedNextFocus: args.recommendedNextFocus,

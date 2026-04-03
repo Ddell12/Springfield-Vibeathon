@@ -346,3 +346,56 @@ export const getStandaloneProgress = authedQuery({
   },
 });
 
+export const getPracticeFrequency = query({
+  args: { patientId: v.id("patients") },
+  handler: async (ctx, args) => {
+    await assertPatientAccess(ctx, args.patientId);
+
+    const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
+    const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+
+    const allSessions = await ctx.db
+      .query("speechCoachSessions")
+      .withIndex("by_patientId_startedAt", (q) =>
+        q.eq("patientId", args.patientId).gte("startedAt", thirtyDaysAgo)
+      )
+      .collect();
+
+    const completedSessions = allSessions.filter(
+      (s) => s.status === "analyzed" || s.status === "completed"
+    );
+
+    const last7 = completedSessions.filter(
+      (s) => (s.startedAt ?? 0) >= sevenDaysAgo
+    );
+    const last30 = completedSessions;
+    const avgPerWeek = last30.length > 0 ? Math.round((last30.length / 30) * 7 * 10) / 10 : 0;
+
+    const lastSession = completedSessions[completedSessions.length - 1];
+    return {
+      last7Count: last7.length,
+      last30Count: last30.length,
+      avgPerWeek,
+      consistencyLabel:
+        avgPerWeek >= 3 ? "High" : avgPerWeek >= 1.5 ? "Medium" : "Low",
+      lastSessionAt: lastSession?.endedAt ?? null,
+      lastSessionSounds: lastSession?.config.targetSounds ?? [],
+    };
+  },
+});
+
+export const getLatestProgress = query({
+  args: { patientId: v.id("patients") },
+  handler: async (ctx, args) => {
+    await assertPatientAccess(ctx, args.patientId);
+
+    const record = await ctx.db
+      .query("speechCoachProgress")
+      .withIndex("by_patientId", (q) => q.eq("patientId", args.patientId))
+      .order("desc")
+      .first();
+
+    return record ?? null;
+  },
+});
+
