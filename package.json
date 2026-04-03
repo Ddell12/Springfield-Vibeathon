@@ -25,7 +25,6 @@
     "@ai-sdk/google": "^3.0.53",
     "@anthropic-ai/sdk": "^0.80.0",
     "@auth/core": "^0.37.0",
-    "@clerk/nextjs": "^7.0.7",
     "@convex-dev/auth": "^0.0.91",
     "@convex-dev/rag": "^0.7.2",
     "@convex-dev/rate-limiter": "^0.3.2",
@@ -78,7 +77,6 @@
     "zustand": "^5.0.12"
   },
   "devDependencies": {
-    "@clerk/testing": "^2.0.6",
     "@edge-runtime/vm": "^5.0.0",
     "@faker-js/faker": "^10.3.0",
     "@mswjs/interceptors": "^0.41.3",
