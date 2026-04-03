@@ -52,7 +52,33 @@ const LONG_TRANSCRIPT = [
   "Child: ssad.",
 ].join("\n");
 
-function makeFullAnalysisResponse() {
+/** Response for the caregiver analysis Claude call (call #1). */
+function makeCaregiverAnalysisResponse() {
+  return {
+    content: [
+      {
+        type: "text",
+        text: JSON.stringify({
+          soundsAttempted: [
+            {
+              sound: "/s/",
+              wordsAttempted: 6,
+              approximateSuccessRate: "medium",
+              notes: "Improved with direct modeling",
+            },
+          ],
+          overallEngagement: "high",
+          recommendedNextFocus: ["/s/"],
+          homePracticeNotes: ["Practice 5 /s/ words with a visual card: sun, sat, sad, sock, soap"],
+          summary: "Great effort on /s/ sounds. Responds well to direct modeling and stays engaged throughout.",
+        }),
+      },
+    ],
+  };
+}
+
+/** Response for the SLP analysis Claude call (call #2, only runs when session has patientId). */
+function makeSlpAnalysisResponse() {
   return {
     content: [
       {
@@ -108,43 +134,55 @@ function makeFullAnalysisResponse() {
             recommendedNextTargets: ["/s/", "/z/"],
             homePracticeNotes: ["Practice 5 /s/ words with a visual card: sun, sat, sad, sock, soap"],
           },
-          soundsAttempted: [
-            {
-              sound: "/s/",
-              wordsAttempted: 6,
-              approximateSuccessRate: "medium",
-              notes: "Improved with direct modeling",
-            },
+          positionAccuracy: [
+            { sound: "/s/", position: "initial", correct: 4, total: 6 },
           ],
-          overallEngagement: "high",
-          recommendedNextFocus: ["/s/"],
-          summary: "Great effort on /s/ sounds. Responds well to direct modeling and stays engaged throughout.",
+          iepNoteDraft: "Student produced /s/ in initial position with approximately 67% accuracy across 6 trials.",
         }),
       },
     ],
   };
 }
 
+/** @deprecated Use makeCaregiverAnalysisResponse() + makeSlpAnalysisResponse() instead */
+function makeFullAnalysisResponse() {
+  return makeSlpAnalysisResponse();
+}
+
 async function insertAnalyzingSession(
   t: ReturnType<typeof convexTest>,
   transcriptText: string,
+  opts: { withPatientId?: boolean } = {},
 ): Promise<{ sessionId: ReturnType<typeof t.run> extends Promise<infer T> ? T : never; transcriptStorageId: string }> {
   const transcriptStorageId = await t.run((ctx) =>
     ctx.storage.store(new Blob([transcriptText], { type: "text/plain" }))
   );
 
-  const sessionId = await t.run((ctx) =>
-    ctx.db.insert("speechCoachSessions", {
+  const sessionId = await t.run(async (ctx) => {
+    // Insert a dummy patient so the foreign-key reference is valid when patientId is set
+    const patientId = opts.withPatientId
+      ? await ctx.db.insert("patients", {
+          slpUserId: "slp-eval-001",
+          firstName: "Eval",
+          lastName: "Patient",
+          dateOfBirth: "2020-01-01",
+          diagnosis: "articulation" as const,
+          status: "active" as const,
+        })
+      : undefined;
+
+    return ctx.db.insert("speechCoachSessions", {
       caregiverUserId: "caregiver-eval-001",
       userId: "caregiver-eval-001",
-      mode: "standalone",
+      mode: opts.withPatientId ? "clinical" : "standalone",
       agentId: "speech-coach",
       runtimeProvider: "livekit",
       status: "analyzing",
       transcriptStorageId,
+      patientId,
       config: { targetSounds: ["/s/"], ageRange: "2-4", durationMinutes: 10 },
-    })
-  );
+    });
+  });
 
   return { sessionId, transcriptStorageId } as never;
 }
@@ -155,9 +193,12 @@ describe("speechCoachAnalysis eval — happy path", () => {
   it("saves full output contract when Claude returns a rich response", async () => {
     const t = convexTest(schema, modules);
     vi.stubEnv("ANTHROPIC_API_KEY", "test-key");
-    mockAnthropicCreate.mockResolvedValue(makeFullAnalysisResponse());
+    // Two Claude calls: caregiver analysis first, then SLP analysis (patientId present)
+    mockAnthropicCreate
+      .mockResolvedValueOnce(makeCaregiverAnalysisResponse())
+      .mockResolvedValueOnce(makeSlpAnalysisResponse());
 
-    const { sessionId } = await insertAnalyzingSession(t, LONG_TRANSCRIPT);
+    const { sessionId } = await insertAnalyzingSession(t, LONG_TRANSCRIPT, { withPatientId: true });
     await t.action(internal.speechCoachActions.analyzeSession, { sessionId });
 
     const session = await t.run((ctx) => ctx.db.get(sessionId));
@@ -184,7 +225,19 @@ describe("speechCoachAnalysis eval — happy path", () => {
     const t = convexTest(schema, modules);
     vi.stubEnv("ANTHROPIC_API_KEY", "test-key");
 
-    const rawJson = JSON.stringify({
+    // Caregiver call response (call #1) — wrapped in markdown fences to verify stripping
+    const caregiverRawJson = JSON.stringify({
+      soundsAttempted: [
+        { sound: "/s/", wordsAttempted: 3, approximateSuccessRate: "high", notes: "Consistent" },
+      ],
+      overallEngagement: "high",
+      recommendedNextFocus: ["/s/"],
+      homePracticeNotes: ["Practice /s/ words at home"],
+      summary: "Strong session with consistent /s/ production.",
+    });
+
+    // SLP call response (call #2) — also wrapped in markdown fences
+    const slpRawJson = JSON.stringify({
       transcriptTurns: [
         { speaker: "coach", text: "Say sun", retryCount: 0, timestampMs: 500 },
       ],
@@ -202,19 +255,19 @@ describe("speechCoachAnalysis eval — happy path", () => {
         recommendedNextTargets: ["/s/"],
         homePracticeNotes: [],
       },
-      soundsAttempted: [
-        { sound: "/s/", wordsAttempted: 3, approximateSuccessRate: "high", notes: "Consistent" },
-      ],
-      overallEngagement: "high",
-      recommendedNextFocus: ["/s/"],
-      summary: "Strong session with consistent /s/ production.",
+      positionAccuracy: [{ sound: "/s/", position: "initial", correct: 3, total: 3 }],
+      iepNoteDraft: "Student produced /s/ in initial position with 100% accuracy across 3 trials.",
     });
 
-    mockAnthropicCreate.mockResolvedValue({
-      content: [{ type: "text", text: "```json\n" + rawJson + "\n```" }],
-    });
+    mockAnthropicCreate
+      .mockResolvedValueOnce({
+        content: [{ type: "text", text: "```json\n" + caregiverRawJson + "\n```" }],
+      })
+      .mockResolvedValueOnce({
+        content: [{ type: "text", text: "```json\n" + slpRawJson + "\n```" }],
+      });
 
-    const { sessionId } = await insertAnalyzingSession(t, LONG_TRANSCRIPT);
+    const { sessionId } = await insertAnalyzingSession(t, LONG_TRANSCRIPT, { withPatientId: true });
     await t.action(internal.speechCoachActions.analyzeSession, { sessionId });
 
     const session = await t.run((ctx) => ctx.db.get(sessionId));
@@ -233,7 +286,8 @@ describe("speechCoachAnalysis eval — happy path", () => {
   it("upserts progress idempotently — second analyzeSession patches not duplicates", async () => {
     const t = convexTest(schema, modules);
     vi.stubEnv("ANTHROPIC_API_KEY", "test-key");
-    mockAnthropicCreate.mockResolvedValue(makeFullAnalysisResponse());
+    // Standalone session (no patientId) — only caregiver analysis runs (one Claude call per analyzeSession)
+    mockAnthropicCreate.mockResolvedValue(makeCaregiverAnalysisResponse());
 
     const { sessionId } = await insertAnalyzingSession(t, LONG_TRANSCRIPT);
     await t.action(internal.speechCoachActions.analyzeSession, { sessionId });
