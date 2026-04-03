@@ -1,18 +1,16 @@
-import { currentUser } from "@clerk/nextjs/server";
+import { convexAuthNextjsToken } from "@convex-dev/auth/nextjs/server";
+import { fetchQuery } from "convex/nextjs";
 import { redirect } from "next/navigation";
 
+import { api } from "@/convex/_generated/api";
+
 export async function requireSlpUser() {
-  const user = await currentUser();
+  const token = await convexAuthNextjsToken();
+  if (!token) redirect("/sign-in");
 
-  if (!user) {
-    redirect("/sign-in");
-  }
-
-  const role = (user?.publicMetadata as { role?: string } | undefined)?.role;
-
-  if (role === "caregiver") {
-    redirect("/family");
-  }
+  const user = await fetchQuery(api.users.currentUser, {}, { token });
+  if (!user) redirect("/sign-in");
+  if (user.role === "caregiver") redirect("/family");
 
   return user;
 }
