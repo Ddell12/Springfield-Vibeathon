@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { cn } from "@/core/utils";
 import { Button } from "@/shared/components/ui/button";
@@ -64,11 +64,16 @@ const RATE_STYLES: Record<string, string> = {
 export function SlpProgressCard({ progress }: { progress: ProgressData }) {
   const [copied, setCopied] = useState(false);
 
+  useEffect(() => {
+    if (!copied) return;
+    const timer = setTimeout(() => setCopied(false), 2000);
+    return () => clearTimeout(timer);
+  }, [copied]);
+
   async function handleCopy() {
     if (!progress.iepNoteDraft) return;
     await navigator.clipboard.writeText(progress.iepNoteDraft);
     setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
   }
 
   return (
