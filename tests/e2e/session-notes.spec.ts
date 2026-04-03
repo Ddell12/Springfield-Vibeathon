@@ -6,8 +6,8 @@ const SOAP_GENERATION_TIMEOUT = 30_000;
 
 test.describe("Session Notes — create, generate, sign flow", () => {
   test.skip(
-    !process.env.E2E_CLERK_USER_EMAIL || !process.env.E2E_CLERK_USER_PASSWORD,
-    "E2E Clerk creds not set"
+    !process.env.E2E_SESSION_NOTES_ENABLED,
+    "Set E2E_SESSION_NOTES_ENABLED=1 to run session-notes E2E tests"
   );
 
   test("full lifecycle: create session, generate SOAP, sign note", async ({

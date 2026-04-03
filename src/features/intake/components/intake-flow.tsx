@@ -38,7 +38,7 @@ export function IntakeFlow({ patientId }: IntakeFlowProps) {
     isAuthenticated ? { patientId } : "skip",
   );
   const practiceProfile = useQuery(
-    api.practiceProfile.getBySlpId,
+    api.practiceProfiles.getBySlpId,
     patient ? { slpUserId: patient.slpUserId } : "skip",
   );
 

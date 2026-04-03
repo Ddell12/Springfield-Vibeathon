@@ -4,7 +4,7 @@ import { mutation, query } from "./_generated/server";
 
 export const get = query({
   args: {
-    appId: v.string(),
+    appId: v.id("app_instances"),
     key: v.string(),
   },
   handler: async (ctx, args) => {
@@ -19,11 +19,14 @@ export const get = query({
 
 export const set = mutation({
   args: {
-    appId: v.string(),
+    appId: v.id("app_instances"),
     key: v.string(),
-    value: v.any(), // Generic KV store — value shape varies by key, validated in application code
+    value: v.any(), // Intentional: sandbox KV, value shape varies by key
   },
   handler: async (ctx, args) => {
+    const app = await ctx.db.get(args.appId);
+    if (!app) throw new Error("Unknown app");
+
     const existing = await ctx.db
       .query("appState")
       .withIndex("by_appKey", (q) =>
@@ -48,7 +51,7 @@ export const set = mutation({
 });
 
 export const getAll = query({
-  args: { appId: v.string() },
+  args: { appId: v.id("app_instances") },
   handler: async (ctx, args) => {
     return await ctx.db
       .query("appState")

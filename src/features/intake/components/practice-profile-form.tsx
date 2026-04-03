@@ -34,8 +34,8 @@ const EMPTY_FIELDS: FormFields = {
 };
 
 export function PracticeProfileForm() {
-  const profile = useQuery(api.practiceProfile.get, {});
-  const updateProfile = useMutation(api.practiceProfile.update);
+  const profile = useQuery(api.practiceProfiles.get, {});
+  const updateProfile = useMutation(api.practiceProfiles.upsert);
   const [fields, setFields] = useState<FormFields>(EMPTY_FIELDS);
   const [isSaving, setIsSaving] = useState(false);
   const [initialized, setInitialized] = useState(false);
@@ -72,8 +72,8 @@ export function PracticeProfileForm() {
     try {
       await updateProfile({
         practiceName: fields.practiceName || undefined,
-        practiceAddress: fields.practiceAddress || undefined,
-        practicePhone: fields.practicePhone || undefined,
+        address: fields.practiceAddress || undefined,
+        phone: fields.practicePhone || undefined,
         npiNumber: fields.npiNumber || undefined,
         licenseNumber: fields.licenseNumber || undefined,
         licenseState: fields.licenseState || undefined,

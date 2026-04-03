@@ -6,8 +6,8 @@ const TEST_PROMPT =
 
 test.describe("Builder — authenticated", () => {
   test.skip(
-    !process.env.E2E_CLERK_USER_EMAIL || !process.env.E2E_CLERK_USER_PASSWORD,
-    "E2E Clerk creds not set"
+    !process.env.E2E_BUILDER_ENABLED,
+    "Set E2E_BUILDER_ENABLED=1 to run builder E2E tests"
   );
 
   test("prompt screen shows heading and input", async ({ authedPage }) => {
@@ -27,9 +27,10 @@ test.describe("Builder — authenticated", () => {
     ).toBeVisible();
   });
 
-  test.fixme(
+  test(
     "continue card appears if recent session",
     async ({ authedPage }) => {
+      test.skip(!process.env.E2E_BUILDER_DATA, "Set E2E_BUILDER_DATA=1 to run tests that need seeded backend data");
       // Needs backend data (existing session)
       await authedPage.goto("/builder");
       await expect(authedPage.getByText(/continue/i)).toBeVisible();
@@ -76,9 +77,10 @@ test.describe("Builder — authenticated", () => {
     await expectPreviewReady(authedPage);
   });
 
-  test.fixme(
+  test(
     "view toggle has Preview and Code tabs",
     async ({ authedPage }) => {
+      test.skip(!process.env.E2E_BUILDER_DATA, "Set E2E_BUILDER_DATA=1 to run tests that need an active generated session");
       // Needs active session with generated content
       await authedPage.goto("/builder?new=1");
       await expect(authedPage.getByRole("tab", { name: /preview/i })).toBeVisible();
@@ -86,9 +88,10 @@ test.describe("Builder — authenticated", () => {
     }
   );
 
-  test.fixme(
+  test(
     "device selector has Mobile and Desktop",
     async ({ authedPage }) => {
+      test.skip(!process.env.E2E_BUILDER_DATA, "Set E2E_BUILDER_DATA=1 to run tests that need an active generated session");
       // Needs active session with generated content
       await authedPage.goto("/builder?new=1");
       await expect(authedPage.getByRole("button", { name: /mobile/i })).toBeVisible();
@@ -96,7 +99,8 @@ test.describe("Builder — authenticated", () => {
     }
   );
 
-  test.fixme("Share button in toolbar", async ({ authedPage }) => {
+  test("Share button in toolbar", async ({ authedPage }) => {
+    test.skip(!process.env.E2E_BUILDER_DATA, "Set E2E_BUILDER_DATA=1 to run tests that need an active generated session");
     // Needs active session with generated content
     await authedPage.goto("/builder?new=1");
     await expect(authedPage.getByRole("button", { name: /share/i })).toBeVisible();

@@ -48,7 +48,7 @@ export const createLiveSession = action({
       ),
     );
 
-    const launchContext: RuntimeLaunchContext = await ctx.runQuery(internal.speechCoach.getRuntimeLaunchContext, {
+    const launchContext: RuntimeLaunchContext = await ctx.runQuery(internal.speechCoach_lifecycle.getRuntimeLaunchContext, {
       sessionId: args.sessionId,
     });
     if (!launchContext) throw new ConvexError("Session not found");
@@ -132,7 +132,7 @@ export const persistTranscript = action({
     if (!expectedSecret) throw new ConvexError("SPEECH_COACH_RUNTIME_SECRET not configured");
     if (args.runtimeSecret !== expectedSecret) throw new ConvexError("Invalid runtime secret");
 
-    const session = await ctx.runQuery(internal.speechCoach.getSessionById, {
+    const session = await ctx.runQuery(internal.speechCoach_lifecycle.getSessionById, {
       sessionId: args.sessionId,
     }) as SpeechCoachSessionDoc | null;
     if (!session) throw new ConvexError("Session not found");
@@ -150,7 +150,7 @@ export const persistTranscript = action({
       await ctx.storage.delete(session.transcriptStorageId).catch(() => undefined);
     }
 
-    await ctx.runMutation(internal.speechCoach.saveRuntimeTranscriptCapture, {
+    await ctx.runMutation(internal.speechCoach_lifecycle.saveRuntimeTranscriptCapture, {
       sessionId: args.sessionId,
       storageId,
       capturedAt: args.capturedAt,

@@ -3,8 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { notFound } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { toast } from "sonner";
+import { useState } from "react";
 
 import { cn } from "@/core/utils";
 import { usePatient } from "@/shared/clinical";
@@ -25,27 +24,18 @@ import {
 
 import type { Id } from "../../../../convex/_generated/dataModel";
 import {
-  useCreateGroupSessionNote,
-  useCreateSessionNote,
-  useSessionNote,
-  useSignSessionNote,
-  useUnsignSessionNote,
-  useUpdateSessionNote,
-  useUpdateSessionNoteStatus,
-  useUpdateSoap,
-} from "../hooks/use-session-notes";
-import { useSoapGeneration } from "../hooks/use-soap-generation";
-import {
   getSignatureDelayDays,
   isLateSignature,
 } from "../lib/session-utils";
+import { useSessionNoteAutosave } from "../hooks/use-session-note-autosave";
+import { useSessionNoteLifecycle } from "../hooks/use-session-note-lifecycle";
+import { useSessionNoteSigning } from "../hooks/use-session-note-signing";
 import { DurationPresetInput } from "./duration-preset-input";
 import { GroupPatientPicker } from "./group-patient-picker";
-import { type SoapNote,SoapPreview } from "./soap-preview";
+import { type SoapNote, SoapPreview } from "./soap-preview";
 import {
   SESSION_TYPE_OPTIONS,
   type SessionType,
-  type StructuredData,
   StructuredDataForm,
 } from "./structured-data-form";
 
@@ -54,177 +44,46 @@ interface SessionNoteEditorProps {
   noteId?: string; // undefined = create mode
 }
 
-function todayString(): string {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-}
-
-const EMPTY_STRUCTURED_DATA: StructuredData = {
-  targetsWorkedOn: [{ target: "" }],
-};
-
 export function SessionNoteEditor({
   patientId,
   noteId,
 }: SessionNoteEditorProps) {
-  const router = useRouter();
   const typedPatientId = patientId as Id<"patients">;
-  const typedNoteId = noteId
-    ? (noteId as Id<"sessionNotes">)
-    : null;
+  const typedNoteId = noteId ? (noteId as Id<"sessionNotes">) : null;
 
   // ── Data loading ───────────────────────────────────────────────────────────
   const patient = usePatient(typedPatientId);
-  const existingNote = useSessionNote(typedNoteId);
-
-  // ── Mutations ──────────────────────────────────────────────────────────────
-  const createNote = useCreateSessionNote();
-  const updateNote = useUpdateSessionNote();
-  const updateSoap = useUpdateSoap();
-  const updateStatus = useUpdateSessionNoteStatus();
-  const signNote = useSignSessionNote();
-  const unsignNote = useUnsignSessionNote();
-
-  // ── SOAP generation ────────────────────────────────────────────────────────
-  const soap = useSoapGeneration();
-  const createGroupNote = useCreateGroupSessionNote();
 
   // ── Group session state ────────────────────────────────────────────────────
   const [isGroupMode, setIsGroupMode] = useState(false);
   const [groupPatientIds, setGroupPatientIds] = useState<Id<"patients">[]>([]);
 
-  // ── Local form state ───────────────────────────────────────────────────────
-  const [sessionDate, setSessionDate] = useState(todayString);
-  const [sessionDuration, setSessionDuration] = useState(30);
-  const [sessionType, setSessionType] = useState<SessionType>("in-person");
-  const [structuredData, setStructuredData] = useState<StructuredData>(
-    EMPTY_STRUCTURED_DATA
-  );
+  // ── Lifecycle hook: form state + existing note data ────────────────────────
+  const {
+    existingNote,
+    sessionDate, setSessionDate,
+    sessionDuration, setSessionDuration,
+    sessionType, setSessionType,
+    structuredData, setStructuredData,
+  } = useSessionNoteLifecycle(typedNoteId);
 
-  // Track the current note ID (may start null in create mode, then get set after first save)
-  const [currentNoteId, setCurrentNoteId] = useState<Id<"sessionNotes"> | null>(
-    typedNoteId
-  );
-  // Ref to avoid stale closure in setTimeout-based auto-save
-  const currentNoteIdRef = useRef(currentNoteId);
-  useEffect(() => { currentNoteIdRef.current = currentNoteId; }, [currentNoteId]);
+  // ── Autosave hook ──────────────────────────────────────────────────────────
+  const { currentNoteId, scheduleAutoSave } = useSessionNoteAutosave({
+    patientId: typedPatientId,
+    initialNoteId: typedNoteId,
+    isGroupMode,
+    groupPatientIds,
+  });
 
-  // ── Initialize from existing note ──────────────────────────────────────────
-  const hasInitialized = useRef(false);
-
-  useEffect(() => {
-    if (hasInitialized.current || !existingNote) return;
-    hasInitialized.current = true;
-
-    setSessionDate(existingNote.sessionDate);
-    setSessionDuration(existingNote.sessionDuration);
-    setSessionType(existingNote.sessionType as SessionType);
-    setStructuredData(existingNote.structuredData as StructuredData);
-
-    // If note already has a SOAP, load it into the soap generation state
-    if (existingNote.soapNote) {
-      soap.reset();
-    }
-  }, [existingNote, soap]);
-
-  // ── Auto-save ──────────────────────────────────────────────────────────────
-  const autoSaveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const isSaving = useRef(false);
-
-  const doSave = useCallback(
-    async (
-      date: string,
-      duration: number,
-      type: SessionType,
-      data: StructuredData,
-      existingId: Id<"sessionNotes"> | null
-    ) => {
-      if (isSaving.current) return;
-
-      // Don't save if all targets are empty (nothing meaningful to persist)
-      const hasContent = data.targetsWorkedOn.some(
-        (t) => t.target.trim().length > 0
-      );
-      if (!hasContent && !existingId) return;
-
-      isSaving.current = true;
-
-      try {
-        if (existingId) {
-          await updateNote({
-            noteId: existingId,
-            sessionDate: date,
-            sessionDuration: duration,
-            sessionType: type,
-            structuredData: data,
-          });
-        } else if (isGroupMode && groupPatientIds.length >= 2) {
-          // Group mode: include the current patient + selected group patients
-          const allPatientIds = [typedPatientId, ...groupPatientIds.filter(
-            (id) => id !== typedPatientId,
-          )];
-          const noteIds = await createGroupNote({
-            patientIds: allPatientIds,
-            sessionDate: date,
-            sessionDuration: duration,
-            sessionType: type,
-            structuredData: data,
-          });
-          // Navigate to the first note (for the current patient)
-          const firstNoteId = noteIds[0];
-          setCurrentNoteId(firstNoteId);
-          router.replace(`/patients/${patientId}/sessions/${firstNoteId}`);
-          toast.success(`Created group session notes for ${allPatientIds.length} patients`);
-        } else {
-          const newId = await createNote({
-            patientId: typedPatientId,
-            sessionDate: date,
-            sessionDuration: duration,
-            sessionType: type,
-            structuredData: data,
-          });
-          setCurrentNoteId(newId);
-          // Update URL to include the new note ID without a full navigation
-          router.replace(
-            `/patients/${patientId}/sessions/${newId}`
-          );
-        }
-      } catch (err) {
-        toast.error(
-          err instanceof Error ? err.message : "Failed to save session note"
-        );
-      } finally {
-        isSaving.current = false;
-      }
-    },
-    [createNote, createGroupNote, updateNote, typedPatientId, patientId, router, isGroupMode, groupPatientIds]
-  );
-
-  const scheduleAutoSave = useCallback(
-    (
-      date: string,
-      duration: number,
-      type: SessionType,
-      data: StructuredData
-    ) => {
-      if (autoSaveTimeout.current) {
-        clearTimeout(autoSaveTimeout.current);
-      }
-      autoSaveTimeout.current = setTimeout(() => {
-        doSave(date, duration, type, data, currentNoteIdRef.current);
-      }, 1000);
-    },
-    [doSave]
-  );
-
-  // Clean up timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (autoSaveTimeout.current) {
-        clearTimeout(autoSaveTimeout.current);
-      }
-    };
-  }, []);
+  // ── Signing hook ───────────────────────────────────────────────────────────
+  const {
+    soap,
+    handleGenerateSoap,
+    handleSoapEdit,
+    handleMarkComplete,
+    handleSign,
+    handleUnsign,
+  } = useSessionNoteSigning(currentNoteId);
 
   // ── Change handlers (trigger auto-save) ────────────────────────────────────
   const isSigned = existingNote?.status === "signed";
@@ -244,76 +103,9 @@ export function SessionNoteEditor({
     scheduleAutoSave(sessionDate, sessionDuration, type, structuredData);
   }
 
-  function handleStructuredDataChange(data: StructuredData) {
+  function handleStructuredDataChange(data: typeof structuredData) {
     setStructuredData(data);
     scheduleAutoSave(sessionDate, sessionDuration, sessionType, data);
-  }
-
-  // ── SOAP generation ────────────────────────────────────────────────────────
-  async function handleGenerateSoap() {
-    if (!currentNoteId) {
-      toast.error("Please add at least one target before generating a SOAP note");
-      return;
-    }
-    try {
-      await soap.generate(currentNoteId);
-    } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Failed to generate SOAP note"
-      );
-    }
-  }
-
-  // ── SOAP editing ───────────────────────────────────────────────────────────
-  async function handleSoapEdit(updatedSoap: SoapNote) {
-    if (!currentNoteId) return;
-    try {
-      await updateSoap({
-        noteId: currentNoteId,
-        soapNote: updatedSoap,
-      });
-    } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Failed to update SOAP note"
-      );
-    }
-  }
-
-  // ── Status management ──────────────────────────────────────────────────────
-  async function handleMarkComplete() {
-    if (!currentNoteId) return;
-    try {
-      await updateStatus({ noteId: currentNoteId, status: "complete" });
-      toast.success("Note marked as complete");
-    } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Failed to mark note complete"
-      );
-    }
-  }
-
-  async function handleSign() {
-    if (!currentNoteId) return;
-    try {
-      await signNote({ noteId: currentNoteId });
-      toast.success("Session note signed. Billing record is ready for review.");
-    } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Failed to sign note"
-      );
-    }
-  }
-
-  async function handleUnsign() {
-    if (!currentNoteId) return;
-    try {
-      await unsignNote({ noteId: currentNoteId });
-      toast.success("Note unsigned");
-    } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Failed to unsign note"
-      );
-    }
   }
 
   // ── Loading / not found ────────────────────────────────────────────────────

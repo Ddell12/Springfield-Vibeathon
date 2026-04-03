@@ -2,7 +2,7 @@ import { v } from "convex/values";
 
 import type { Id } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
-import { assertPatientAccess } from "./lib/auth";
+import { assertPatientAccess, getAuthUserId } from "./lib/auth";
 
 function normalizeTitle(title: string) {
   return title.trim().toLowerCase();
@@ -17,15 +17,15 @@ export const create = mutation({
     originalDescription: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) throw new Error("Unauthenticated");
+    const slpUserId = await getAuthUserId(ctx);
+    if (!slpUserId) throw new Error("Unauthenticated");
 
     return ctx.db.insert("app_instances", {
       templateType: args.templateType,
       title: args.title,
       titleLower: normalizeTitle(args.title),
       ...(args.patientId !== undefined ? { patientId: args.patientId } : {}),
-      slpUserId: identity.subject,
+      slpUserId,
       configJson: args.configJson,
       originalDescription: args.originalDescription,
       status: "draft",
@@ -90,7 +90,14 @@ export const publish = mutation({
 
 export const get = query({
   args: { id: v.id("app_instances") },
-  handler: async (ctx, args) => ctx.db.get(args.id),
+  handler: async (ctx, args) => {
+    const instance = await ctx.db.get(args.id);
+    if (!instance) return null;
+    if (instance.status === "published") return instance;
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity || instance.slpUserId !== identity.subject) return null;
+    return instance;
+  },
 });
 
 export const getByShareToken = query({
@@ -277,18 +284,18 @@ export const duplicate = mutation({
     title: v.optional(v.string()),
   },
   handler: async (ctx, args): Promise<Id<"app_instances">> => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) throw new Error("Unauthenticated");
+    const slpUserId = await getAuthUserId(ctx);
+    if (!slpUserId) throw new Error("Unauthenticated");
     const original = await ctx.db.get(args.id);
     if (!original) throw new Error("Not found");
-    if (original.slpUserId !== identity.subject) throw new Error("Forbidden");
+    if (original.slpUserId !== slpUserId) throw new Error("Forbidden");
     const title = args.title ?? `Copy of ${original.title}`;
     return ctx.db.insert("app_instances", {
       templateType: original.templateType,
       title,
       titleLower: normalizeTitle(title),
       patientId: args.patientId,
-      slpUserId: identity.subject,
+      slpUserId,
       configJson: original.configJson,
       status: "draft",
       version: 1,

@@ -102,7 +102,7 @@ export const getTranscriptText = action({
 export const analyzeSession = internalAction({
   args: { sessionId: v.id("speechCoachSessions") },
   handler: async (ctx, args) => {
-    const session = await ctx.runQuery(internal.speechCoach.getSessionById, {
+    const session = await ctx.runQuery(internal.speechCoach_lifecycle.getSessionById, {
       sessionId: args.sessionId,
     });
     if (!session) {
@@ -114,7 +114,7 @@ export const analyzeSession = internalAction({
     if (!anthropicKey) {
       const msg = "Missing ANTHROPIC_API_KEY for analysis";
       console.error("[SpeechCoach]", msg);
-      await ctx.runMutation(internal.speechCoach.markReviewFailed, {
+      await ctx.runMutation(internal.speechCoach_lifecycle.markReviewFailed, {
         sessionId: args.sessionId,
         errorMessage: msg,
       });
@@ -128,7 +128,7 @@ export const analyzeSession = internalAction({
         : await loadStoredTranscript(ctx, session);
 
       if (analysisInput.transcript.trim().length < 100) {
-        await ctx.runMutation(internal.speechCoach.markReviewFailed, {
+        await ctx.runMutation(internal.speechCoach_lifecycle.markReviewFailed, {
           sessionId: args.sessionId,
           errorMessage: "Transcript too short to analyze",
         });
@@ -146,7 +146,7 @@ export const analyzeSession = internalAction({
         analysis = await callClaude(anthropic, analysisPrompt);
       }
 
-      await ctx.runMutation(internal.speechCoach.saveProgress, {
+      await ctx.runMutation(internal.speechCoach_lifecycle.saveProgress, {
         sessionId: args.sessionId,
         patientId: session.patientId,
         caregiverUserId: session.caregiverUserId,
@@ -168,7 +168,7 @@ export const analyzeSession = internalAction({
         const soundsList = analysis.soundsAttempted.map((sound) => sound.sound).join(", ");
 
         try {
-          await ctx.runMutation(internal.speechCoach.savePracticeLog, {
+          await ctx.runMutation(internal.speechCoach_lifecycle.savePracticeLog, {
             homeProgramId: session.homeProgramId,
             patientId: session.patientId,
             caregiverUserId: session.caregiverUserId,
@@ -181,7 +181,7 @@ export const analyzeSession = internalAction({
         }
 
         try {
-          await ctx.runMutation(internal.speechCoach.saveGoalProgress, {
+          await ctx.runMutation(internal.speechCoach_lifecycle.saveGoalProgress, {
             homeProgramId: session.homeProgramId,
             patientId: session.patientId,
             sourceId: args.sessionId as string,
@@ -195,7 +195,7 @@ export const analyzeSession = internalAction({
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       console.error("[SpeechCoach] analyzeSession failed:", errorMessage);
-      await ctx.runMutation(internal.speechCoach.markReviewFailed, {
+      await ctx.runMutation(internal.speechCoach_lifecycle.markReviewFailed, {
         sessionId: args.sessionId,
         errorMessage,
       });
@@ -244,7 +244,7 @@ async function loadElevenLabsTranscript(
   const transcriptBlob = new Blob([transcript], { type: "text/plain" });
   const storageId = await ctx.storage.store(transcriptBlob);
 
-  await ctx.runMutation(internal.speechCoach.saveRuntimeTranscriptCapture, {
+  await ctx.runMutation(internal.speechCoach_lifecycle.saveRuntimeTranscriptCapture, {
     sessionId: session._id,
     storageId,
     capturedAt: Date.now(),
@@ -356,12 +356,12 @@ function computeAverageAccuracy(
 export const checkSessionTimeout = internalAction({
   args: { sessionId: v.id("speechCoachSessions") },
   handler: async (ctx, args) => {
-    const session = await ctx.runQuery(internal.speechCoach.getSessionById, {
+    const session = await ctx.runQuery(internal.speechCoach_lifecycle.getSessionById, {
       sessionId: args.sessionId,
     });
     // Only mark failed if still stuck in analyzing after 90s
     if (session?.status === "analyzing") {
-      await ctx.runMutation(internal.speechCoach.markReviewFailed, {
+      await ctx.runMutation(internal.speechCoach_lifecycle.markReviewFailed, {
         sessionId: args.sessionId,
         errorMessage: "Review timed out after 90 seconds. You can retry below.",
       });

@@ -3,8 +3,8 @@ import { TIMEOUTS } from "./helpers";
 
 test.describe("Flashcards — authenticated", () => {
   test.skip(
-    !process.env.E2E_CLERK_USER_EMAIL || !process.env.E2E_CLERK_USER_PASSWORD,
-    "E2E Clerk creds not set"
+    !process.env.E2E_FLASHCARDS_ENABLED,
+    "Set E2E_FLASHCARDS_ENABLED=1 to run flashcard E2E tests"
   );
 
   test("prompt screen heading visible", async ({ authedPage }) => {
@@ -29,8 +29,8 @@ test.describe("Flashcards — authenticated", () => {
     await expect(input).toHaveValue("Farm animals flashcard deck");
   });
 
-  test.fixme("submitting prompt starts generation", async ({ authedPage }) => {
-    // Needs AI backend (Anthropic API key)
+  test("submitting prompt starts generation", async ({ authedPage }) => {
+    test.skip(!process.env.E2E_FLASHCARDS_AI, "Set E2E_FLASHCARDS_AI=1 to run tests that require AI backend (Anthropic API key)");
     test.setTimeout(TIMEOUTS.SSE_GENERATION);
     await authedPage.goto("/flashcards");
     const input = authedPage.getByRole("textbox").first();
@@ -41,16 +41,18 @@ test.describe("Flashcards — authenticated", () => {
     });
   });
 
-  test.fixme(
+  test(
     "generated deck appears in preview",
     async ({ authedPage }) => {
+      test.skip(!process.env.E2E_FLASHCARDS_AI, "Set E2E_FLASHCARDS_AI=1 to run tests that require completed generation");
       // Needs completed generation
       await authedPage.goto("/flashcards");
       await expect(authedPage.locator("[data-testid='flashcard-preview']")).toBeVisible();
     }
   );
 
-  test.fixme("deck sheet opens listing decks", async ({ authedPage }) => {
+  test("deck sheet opens listing decks", async ({ authedPage }) => {
+    test.skip(!process.env.E2E_FLASHCARDS_AI, "Set E2E_FLASHCARDS_AI=1 to run tests that require generated decks in the session");
     // Needs generated decks in the session
     await authedPage.goto("/flashcards");
     await authedPage.getByRole("button", { name: /deck|decks/i }).click();
