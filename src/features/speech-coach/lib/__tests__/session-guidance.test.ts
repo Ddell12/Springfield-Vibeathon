@@ -72,3 +72,21 @@ describe("buildSessionGuidance", () => {
     expect(guidance).toContain("Child age range: 2-4.");
   });
 });
+
+describe("age-appropriate language tier", () => {
+  it("includes early childhood tier for ages 2-5", () => {
+    const guidance = buildSessionGuidance(
+      { targetSounds: ["/s/"], ageRange: "2-4", durationMinutes: 5 },
+      { targetSounds: ["/s/"], ageRange: "2-4", defaultDurationMinutes: 5, childAge: 3 }
+    );
+    expect(guidance).toContain("1-2 word models");
+  });
+
+  it("includes school-age tier for ages 8+", () => {
+    const guidance = buildSessionGuidance(
+      { targetSounds: ["/s/"], ageRange: "5-7", durationMinutes: 10 },
+      { targetSounds: ["/s/"], ageRange: "5-7", defaultDurationMinutes: 10, childAge: 9 }
+    );
+    expect(guidance).toContain("capable partner");
+  });
+});

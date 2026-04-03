@@ -165,3 +165,34 @@ export const persistTranscript = action({
     return { ok: true as const, storageId };
   },
 });
+
+export const logAttemptFromRuntime = action({
+  args: {
+    sessionId: v.id("speechCoachSessions"),
+    runtimeSecret: v.string(),
+    targetLabel: v.string(),
+    outcome: v.union(
+      v.literal("correct"),
+      v.literal("approximate"),
+      v.literal("incorrect"),
+      v.literal("no_response")
+    ),
+    retryCount: v.number(),
+    timestampMs: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const expectedSecret = process.env.SPEECH_COACH_RUNTIME_SECRET;
+    if (!expectedSecret) throw new ConvexError("SPEECH_COACH_RUNTIME_SECRET not configured");
+    if (args.runtimeSecret !== expectedSecret) throw new ConvexError("Invalid runtime secret");
+
+    await ctx.runMutation(internal.speechCoach.logAttempt, {
+      sessionId: args.sessionId,
+      targetLabel: args.targetLabel,
+      outcome: args.outcome,
+      retryCount: args.retryCount,
+      timestampMs: args.timestampMs,
+    });
+
+    return { ok: true as const };
+  },
+});

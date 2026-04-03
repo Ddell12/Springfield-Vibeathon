@@ -56,6 +56,18 @@ export function buildSessionGuidance(
     "Keep language child-friendly, warm, and concrete. Celebrate attempts without sounding overexcited or harsh.",
   ];
 
+  // Age-appropriate language tier
+  const age = speechCoachConfig?.childAge;
+  if (age !== undefined) {
+    if (age <= 4) {
+      lines.push("Language tier (ages 2-4): Use 1-2 word models. Lots of repetition. Songs and silly sounds are welcome.");
+    } else if (age <= 7) {
+      lines.push("Language tier (ages 5-7): Simple sentences. Playful but structured. Minimal explanation.");
+    } else {
+      lines.push(`Language tier (ages 8+): Child is ${age} years old. Can handle brief explanation of why we practice sounds. Treat as a capable partner.`);
+    }
+  }
+
   if (sessionConfig.focusArea) {
     lines.push(`Specific focus area for this session: ${sessionConfig.focusArea}.`);
   }
