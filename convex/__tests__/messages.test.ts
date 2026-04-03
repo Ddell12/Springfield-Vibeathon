@@ -7,8 +7,8 @@ import schema from "../schema";
 
 const modules = import.meta.glob("../**/*.*s"); // REQUIRED for convex-test
 
-const TEST_IDENTITY = { subject: "test-user-123", issuer: "clerk" };
-const OTHER_IDENTITY = { subject: "other-user-456", issuer: "clerk" };
+const TEST_IDENTITY = { subject: "test-user-123", issuer: "https://test.convex.dev" };
+const OTHER_IDENTITY = { subject: "other-user-456", issuer: "https://test.convex.dev" };
 
 describe("messages", () => {
   it("create and list roundtrip", async () => {

@@ -5,8 +5,8 @@ import { api } from "../_generated/api";
 import schema from "../schema";
 
 const modules = import.meta.glob("../**/*.*s");
-const SLP_IDENTITY = { subject: "slp-user-123", issuer: "clerk" };
-const OTHER_SLP = { subject: "other-slp-456", issuer: "clerk" };
+const SLP_IDENTITY = { subject: "slp-user-123", issuer: "https://test.convex.dev" };
+const OTHER_SLP = { subject: "other-slp-456", issuer: "https://test.convex.dev" };
 
 const VALID_PATIENT = {
   firstName: "Alex",

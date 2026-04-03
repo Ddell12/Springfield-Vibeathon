@@ -3,20 +3,15 @@ import { describe, expect, it } from "vitest";
 
 import { api } from "../_generated/api";
 import schema from "../schema";
+import { createTestUser } from "./testHelpers";
 
 const modules = import.meta.glob("../**/*.*s");
-
-const SLP_IDENTITY = { subject: "slp-user-123", issuer: "clerk" };
-const CAREGIVER_IDENTITY = {
-  subject: "caregiver-789",
-  issuer: "clerk",
-  public_metadata: JSON.stringify({ role: "caregiver" }),
-};
 
 describe("practiceProfile.update", () => {
   it("creates a new practice profile for SLP", async () => {
     const t = convexTest(schema, modules);
-    const slp = t.withIdentity(SLP_IDENTITY);
+    const { identity: slpIdentity } = await createTestUser(t, "slp");
+    const slp = t.withIdentity(slpIdentity);
 
     await slp.mutation(api.practiceProfile.update, {
       practiceName: "Springfield Speech Center",
@@ -33,7 +28,8 @@ describe("practiceProfile.update", () => {
 
   it("updates an existing practice profile", async () => {
     const t = convexTest(schema, modules);
-    const slp = t.withIdentity(SLP_IDENTITY);
+    const { identity: slpIdentity } = await createTestUser(t, "slp");
+    const slp = t.withIdentity(slpIdentity);
 
     await slp.mutation(api.practiceProfile.update, {
       practiceName: "Old Name",
@@ -50,7 +46,9 @@ describe("practiceProfile.update", () => {
 
   it("rejects caregiver users", async () => {
     const t = convexTest(schema, modules);
-    const caregiver = t.withIdentity(CAREGIVER_IDENTITY);
+    // Must be a real users row with role: "caregiver" so assertSLP throws
+    const { identity: caregiverIdentity } = await createTestUser(t, "caregiver");
+    const caregiver = t.withIdentity(caregiverIdentity);
 
     await expect(
       caregiver.mutation(api.practiceProfile.update, {
@@ -63,7 +61,8 @@ describe("practiceProfile.update", () => {
 describe("practiceProfile.get", () => {
   it("returns null when no profile exists", async () => {
     const t = convexTest(schema, modules);
-    const slp = t.withIdentity(SLP_IDENTITY);
+    const { identity: slpIdentity } = await createTestUser(t, "slp");
+    const slp = t.withIdentity(slpIdentity);
 
     const profile = await slp.query(api.practiceProfile.get, {});
     expect(profile).toBeNull();
@@ -73,14 +72,15 @@ describe("practiceProfile.get", () => {
 describe("practiceProfile.getBySlpId", () => {
   it("returns profile for given SLP user ID", async () => {
     const t = convexTest(schema, modules);
-    const slp = t.withIdentity(SLP_IDENTITY);
+    const { userId: slpUserId, identity: slpIdentity } = await createTestUser(t, "slp");
+    const slp = t.withIdentity(slpIdentity);
 
     await slp.mutation(api.practiceProfile.update, {
       practiceName: "Springfield Speech Center",
     });
 
     const profile = await t.query(api.practiceProfile.getBySlpId, {
-      slpUserId: "slp-user-123",
+      slpUserId,
     });
     expect(profile).not.toBeNull();
     expect(profile!.practiceName).toBe("Springfield Speech Center");

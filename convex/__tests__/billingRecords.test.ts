@@ -17,7 +17,7 @@ describe("billingRecords schema", () => {
 
 import { api, internal } from "../_generated/api";
 
-const SLP_IDENTITY = { subject: "slp-user-billing", issuer: "clerk" };
+const SLP_IDENTITY = { subject: "slp-user-billing", issuer: "https://test.convex.dev" };
 
 const VALID_PATIENT = {
   firstName: "Alex",
@@ -237,7 +237,7 @@ describe("billingRecords.get", () => {
   it("rejects access by different SLP", async () => {
     const t = convexTest(schema, modules);
     const slp1 = t.withIdentity(SLP_IDENTITY);
-    const slp2 = t.withIdentity({ subject: "other-slp-456", issuer: "clerk" });
+    const slp2 = t.withIdentity({ subject: "other-slp-456", issuer: "https://test.convex.dev" });
 
     const { patientId } = await slp1.mutation(api.patients.create, VALID_PATIENT);
     const noteId = await slp1.mutation(api.sessionNotes.create, {
@@ -425,7 +425,7 @@ describe("billingRecords.create", () => {
   it("cross-SLP rejection: SLP cannot create a record for a patient belonging to a different SLP", async () => {
     const t = convexTest(schema, modules);
     const slp1 = t.withIdentity(SLP_IDENTITY);
-    const slp2 = t.withIdentity({ subject: "other-slp-create-test", issuer: "clerk" });
+    const slp2 = t.withIdentity({ subject: "other-slp-create-test", issuer: "https://test.convex.dev" });
 
     const { patientId } = await slp1.mutation(api.patients.create, VALID_PATIENT);
 
@@ -440,7 +440,7 @@ describe("billingRecords.create", () => {
   it("non-SLP rejection: unauthenticated caller cannot create a billing record", async () => {
     const t = convexTest(schema, modules);
     // withIdentity with a caregiver role — slpMutation checks ctx.slpUserId
-    const caregiver = t.withIdentity({ subject: "caregiver-create-test", issuer: "clerk" });
+    const caregiver = t.withIdentity({ subject: "caregiver-create-test", issuer: "https://test.convex.dev" });
 
     // We need a patient to attempt creation; create one via an SLP first
     const slp = t.withIdentity(SLP_IDENTITY);
@@ -471,7 +471,7 @@ describe("billingRecords.create", () => {
 describe("testMetadata filtering", () => {
   it("excludes testMetadata-tagged billing records from listBySlp", async () => {
     const t = convexTest(schema, modules);
-    const slp = t.withIdentity({ subject: "slp-user-123", issuer: "clerk" });
+    const slp = t.withIdentity({ subject: "slp-user-123", issuer: "https://test.convex.dev" });
 
     // Create a patient
     const { patientId } = await slp.mutation(api.patients.create, {

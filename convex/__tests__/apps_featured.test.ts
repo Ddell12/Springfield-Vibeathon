@@ -7,7 +7,7 @@ import schema from "../schema";
 
 const modules = import.meta.glob("../**/*.*s");
 
-const TEST_IDENTITY = { subject: "admin-user-001", issuer: "clerk" };
+const TEST_IDENTITY = { subject: "admin-user-001", issuer: "https://test.convex.dev" };
 
 describe("apps.listFeatured — public featured apps query", () => {
   it("returns featured apps ordered by featuredOrder", async () => {

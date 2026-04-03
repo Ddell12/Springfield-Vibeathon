@@ -20,7 +20,7 @@ describe("subscriptions.getEntitlements", () => {
   // t.registerComponent("stripe") — not yet supported by convex-test.
   it.skip("returns free plan for authenticated user with no subscription", async () => {
     const t = convexTest(schema, modules);
-    const asUser = t.withIdentity({ subject: "user_123", issuer: "clerk" });
+    const asUser = t.withIdentity({ subject: "user_123", issuer: "https://test.convex.dev" });
     const result = await asUser.query(api.entitlements.getEntitlements, {});
     expect(result.plan).toBe("free");
   });

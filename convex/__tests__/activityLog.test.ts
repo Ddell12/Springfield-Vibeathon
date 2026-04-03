@@ -3,27 +3,25 @@ import { describe, expect, it } from "vitest";
 
 import { api, internal } from "../_generated/api";
 import schema from "../schema";
-import { createTestPatient } from "./testHelpers";
+import { createTestPatient, createTestUser } from "./testHelpers";
 
 const modules = import.meta.glob("../**/*.*s");
-
-const SLP_IDENTITY = { subject: "slp-user-123", issuer: "clerk" };
-const OTHER_IDENTITY = { subject: "other-user-456", issuer: "clerk" };
 
 describe("activityLog", () => {
   it("log writes an activity entry", async () => {
     const t = convexTest(schema, modules);
-    const patientId = await createTestPatient(t);
+    const { userId: slpUserId, identity: slpIdentity } = await createTestUser(t, "slp");
+    const patientId = await createTestPatient(t, { slpUserId });
 
     await t.mutation(internal.activityLog.log, {
       patientId,
-      actorUserId: "slp-user-123",
+      actorUserId: slpUserId,
       action: "patient-created",
       details: "Created patient Alex Smith",
       timestamp: Date.now(),
     });
 
-    const entries = await t.withIdentity(SLP_IDENTITY).query(
+    const entries = await t.withIdentity(slpIdentity).query(
       api.activityLog.listByPatient,
       { patientId }
     );
@@ -33,19 +31,20 @@ describe("activityLog", () => {
 
   it("listByPatient respects limit", async () => {
     const t = convexTest(schema, modules);
-    const patientId = await createTestPatient(t);
+    const { userId: slpUserId, identity: slpIdentity } = await createTestUser(t, "slp");
+    const patientId = await createTestPatient(t, { slpUserId });
     const now = Date.now();
 
     for (let i = 0; i < 5; i++) {
       await t.mutation(internal.activityLog.log, {
         patientId,
-        actorUserId: "slp-user-123",
+        actorUserId: slpUserId,
         action: "profile-updated",
         timestamp: now + i,
       });
     }
 
-    const entries = await t.withIdentity(SLP_IDENTITY).query(
+    const entries = await t.withIdentity(slpIdentity).query(
       api.activityLog.listByPatient,
       { patientId, limit: 3 }
     );
@@ -54,10 +53,12 @@ describe("activityLog", () => {
 
   it("listByPatient rejects unauthorized user", async () => {
     const t = convexTest(schema, modules);
-    const patientId = await createTestPatient(t);
+    const { userId: slpUserId } = await createTestUser(t, "slp");
+    const { identity: otherIdentity } = await createTestUser(t, "slp");
+    const patientId = await createTestPatient(t, { slpUserId });
 
     await expect(
-      t.withIdentity(OTHER_IDENTITY).query(
+      t.withIdentity(otherIdentity).query(
         api.activityLog.listByPatient,
         { patientId }
       )
@@ -68,7 +69,8 @@ describe("activityLog", () => {
 describe("shared test helpers", () => {
   it("creates a patient through shared test helpers", async () => {
     const t = convexTest(schema, modules);
-    const patientId = await createTestPatient(t, { slpUserId: "slp-user-123" });
+    const { userId: slpUserId } = await createTestUser(t, "slp");
+    const patientId = await createTestPatient(t, { slpUserId });
     expect(patientId).toBeTruthy();
   });
 });

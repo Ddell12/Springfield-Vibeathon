@@ -6,7 +6,7 @@ import schema from "../schema";
 
 const modules = import.meta.glob("../**/*.*s");
 
-const SLP_IDENTITY = { subject: "slp-user-123", issuer: "clerk" };
+const SLP_IDENTITY = { subject: "slp-user-123", issuer: "https://test.convex.dev" };
 
 const PATIENT_FIELDS = {
   firstName: "Liam",
@@ -309,7 +309,7 @@ describe("duplicate", () => {
       configJson: SAMPLE_CONFIG,
     });
 
-    const otherSlp = t.withIdentity({ subject: "other-slp", issuer: "clerk" });
+    const otherSlp = t.withIdentity({ subject: "other-slp", issuer: "https://test.convex.dev" });
     await expect(
       otherSlp.mutation(api.tools.duplicate, { id: originalId, patientId })
     ).rejects.toThrow("Forbidden");
@@ -425,7 +425,7 @@ describe("listPublishedByPatient", () => {
     // A different user has no access to this patient
     const otherT = convexTest(schema, modules).withIdentity({
       subject: "other-user-999",
-      issuer: "clerk",
+      issuer: "https://test.convex.dev",
     });
 
     await expect(

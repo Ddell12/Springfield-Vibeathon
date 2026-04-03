@@ -9,11 +9,10 @@ const modules = import.meta.glob("../**/*.*s");
 
 suppressSchedulerErrors();
 
-const SLP_IDENTITY = { subject: "slp-user-123", issuer: "clerk" };
+const SLP_IDENTITY = { subject: "slp-user-123", issuer: "https://test.convex.dev" };
 const CAREGIVER_IDENTITY = {
   subject: "caregiver-789",
-  issuer: "clerk",
-  public_metadata: JSON.stringify({ role: "caregiver" }),
+  issuer: "https://test.convex.dev",
 };
 
 const VALID_PATIENT = {
@@ -117,9 +116,8 @@ describe("speechCoach.createSession", () => {
     const t = convexTest(schema, modules);
     const caregiverIdentity = {
       subject: "caregiver-user-123",
-      tokenIdentifier: "https://clerk.example|caregiver-user-123",
-      issuer: "clerk",
-      public_metadata: JSON.stringify({ role: "caregiver" }),
+      tokenIdentifier: "https://convex.dev|caregiver-user-123",
+      issuer: "https://test.convex.dev",
     };
 
     const slp = t.withIdentity(SLP_IDENTITY);
@@ -339,9 +337,8 @@ describe("speechCoachRuntimeActions.createLiveSession", () => {
     const t = convexTest(schema, modules);
     const caregiverIdentity = {
       subject: "caregiver-user-123",
-      tokenIdentifier: "https://clerk.example|caregiver-user-123",
-      issuer: "clerk",
-      public_metadata: JSON.stringify({ role: "caregiver" }),
+      tokenIdentifier: "https://convex.dev|caregiver-user-123",
+      issuer: "https://test.convex.dev",
     };
     const { patientId, programId } = await createSpeechCoachFixture(t, {
       slpIdentity: SLP_IDENTITY,
@@ -395,7 +392,7 @@ describe("speechCoach queries", () => {
   it("getSessionHistory returns empty for unauthorized user", async () => {
     const t = convexTest(schema, modules);
     const { patientId } = await setupSpeechCoachProgram(t);
-    const stranger = t.withIdentity({ subject: "stranger-000", issuer: "clerk" });
+    const stranger = t.withIdentity({ subject: "stranger-000", issuer: "https://test.convex.dev" });
 
     await expect(
       stranger.query(api.speechCoach.getSessionHistory, { patientId })
