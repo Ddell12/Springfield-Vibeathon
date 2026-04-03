@@ -13,7 +13,10 @@ vi.mock("convex/nextjs", () => ({
 }));
 
 vi.mock("next/navigation", () => ({
-  redirect: (url: string) => mockRedirect(url),
+  redirect: (url: string) => {
+    mockRedirect(url);
+    throw new Error(`NEXT_REDIRECT: ${url}`);
+  },
 }));
 
 beforeEach(() => {
@@ -28,7 +31,7 @@ describe("requireSlpUser", () => {
     mockFetchQuery.mockResolvedValue({ _id: "user_1", role: "caregiver" });
 
     const { requireSlpUser } = await import("../server-role-guards");
-    await requireSlpUser();
+    await expect(requireSlpUser()).rejects.toThrow("NEXT_REDIRECT: /family");
 
     expect(mockRedirect).toHaveBeenCalledWith("/family");
   });
@@ -38,7 +41,7 @@ describe("requireSlpUser", () => {
     mockRedirect.mockClear();
 
     const { requireSlpUser } = await import("../server-role-guards");
-    await requireSlpUser();
+    await expect(requireSlpUser()).rejects.toThrow("NEXT_REDIRECT: /sign-in");
 
     expect(mockRedirect).toHaveBeenCalledWith("/sign-in");
   });

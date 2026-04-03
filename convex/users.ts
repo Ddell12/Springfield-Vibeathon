@@ -24,7 +24,7 @@ export const updateName = mutation({
 export const setCaregiverRole = internalMutation({
   args: { userId: v.string() },
   handler: async (ctx, args) => {
-    const user = await ctx.db.get(args.userId as any);
+    const user = await ctx.db.get(args.userId as any) as { role?: string } | null;
     if (!user) throw new Error(`User not found: ${args.userId}`);
     if (user.role) {
       console.warn(

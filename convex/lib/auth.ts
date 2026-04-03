@@ -70,7 +70,7 @@ export async function getAuthRole(
 ): Promise<UserRole | null> {
   const userId = await getAuthUserId(ctx);
   if (!userId) return null;
-  const user = await ctx.db.get(userId as any);
+  const user = await ctx.db.get(userId as any) as { role?: string } | null;
   return (user?.role as UserRole) ?? null;
 }
 

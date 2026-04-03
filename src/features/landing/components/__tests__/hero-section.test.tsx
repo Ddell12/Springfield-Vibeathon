@@ -49,7 +49,7 @@ describe("HeroSection", () => {
     expect(
       screen.getByRole("button", { name: /Continue with Google/i })
     ).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Continue with email/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^Sign in$/i })).toBeInTheDocument();
   });
 
   it("renders clear sign-in paths for therapists and caregivers", () => {
