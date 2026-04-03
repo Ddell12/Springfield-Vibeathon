@@ -52,6 +52,13 @@ type AnalysisResult = {
   overallEngagement: "high" | "medium" | "low";
   recommendedNextFocus: string[];
   summary: string;
+  positionAccuracy?: Array<{
+    sound: string;
+    position: "initial" | "medial" | "final" | "unknown";
+    correct: number;
+    total: number;
+  }>;
+  iepNoteDraft?: string;
 };
 
 export const getSignedUrl = action({
@@ -127,23 +134,47 @@ export const analyzeSession = internalAction({
         ? await loadElevenLabsTranscript(ctx, session)
         : await loadStoredTranscript(ctx, session);
 
-      if (analysisInput.transcript.trim().length < 100) {
+      // Raise minimum: 300 chars OR 3 logged attempts (OR condition)
+      const hasRawAttempts = (session.rawAttempts?.length ?? 0) >= 3;
+      const hasMinTranscript = analysisInput.transcript.trim().length >= 300;
+
+      if (!hasRawAttempts && !hasMinTranscript) {
         await ctx.runMutation(internal.speechCoach_lifecycle.markReviewFailed, {
           sessionId: args.sessionId,
-          errorMessage: "Transcript too short to analyze",
+          errorMessage: "Session too short to analyze (less than 300 chars of transcript and fewer than 3 logged attempts)",
         });
         return;
       }
 
       const anthropic = new Anthropic({ apiKey: anthropicKey });
-      const analysisPrompt = buildAnalysisPrompt(session, analysisInput);
 
-      let analysis: AnalysisResult;
+      // Always: caregiver analysis
+      const caregiverPrompt = buildCaregiverAnalysisPrompt(session, analysisInput);
+      let caregiverResult: any;
       try {
-        analysis = await callClaude(anthropic, analysisPrompt);
+        caregiverResult = await callClaude(anthropic, caregiverPrompt);
       } catch (error) {
-        console.error("[SpeechCoach] Claude analysis failed, retrying:", error);
-        analysis = await callClaude(anthropic, analysisPrompt);
+        console.error("[SpeechCoach] Caregiver analysis failed, retrying:", error);
+        caregiverResult = await callClaude(anthropic, caregiverPrompt);
+      }
+
+      // Only for clinical sessions with a patientId: SLP analysis
+      let slpResult: Partial<AnalysisResult> = {};
+      if (session.patientId) {
+        const slpPrompt = buildSlpAnalysisPrompt(session, analysisInput);
+        try {
+          slpResult = await callClaude(anthropic, slpPrompt) as Partial<AnalysisResult>;
+        } catch (error) {
+          // SLP analysis failure is non-critical — caregiver view still saves
+          console.warn("[SpeechCoach] SLP analysis failed (non-critical):", error);
+        }
+      }
+
+      // Compute cue distribution from rawAttempts (no Claude needed)
+      let cueDistribution: { spontaneous: number; model: number; phoneticCue: number; directCorrection: number } | undefined;
+      if (session.rawAttempts?.length) {
+        const { computeCueDistribution } = await import("../src/features/speech-coach/lib/analysis-compute");
+        cueDistribution = computeCueDistribution(session.rawAttempts);
       }
 
       await ctx.runMutation(internal.speechCoach_lifecycle.saveProgress, {
@@ -151,21 +182,26 @@ export const analyzeSession = internalAction({
         patientId: session.patientId,
         caregiverUserId: session.caregiverUserId,
         userId: session.userId,
-        transcriptTurns: analysis.transcriptTurns,
-        scoreCards: analysis.scoreCards,
-        insights: analysis.insights,
-        soundsAttempted: analysis.soundsAttempted,
-        overallEngagement: analysis.overallEngagement,
-        recommendedNextFocus: analysis.recommendedNextFocus,
-        summary: analysis.summary,
+        soundsAttempted: caregiverResult.soundsAttempted,
+        overallEngagement: caregiverResult.overallEngagement,
+        recommendedNextFocus: caregiverResult.recommendedNextFocus,
+        summary: caregiverResult.summary,
         analyzedAt: Date.now(),
+        transcriptTurns: slpResult.transcriptTurns,
+        scoreCards: slpResult.scoreCards,
+        insights: slpResult.insights
+          ? { ...slpResult.insights, homePracticeNotes: caregiverResult.homePracticeNotes ?? slpResult.insights.homePracticeNotes ?? [] }
+          : undefined,
+        cueDistribution,
+        positionAccuracy: (slpResult as any).positionAccuracy,
+        iepNoteDraft: (slpResult as any).iepNoteDraft,
       });
 
       if (session.patientId && session.homeProgramId) {
         const sessionDuration = session.startedAt && session.endedAt
           ? Math.round((session.endedAt - session.startedAt) / 60000)
           : undefined;
-        const soundsList = analysis.soundsAttempted.map((sound) => sound.sound).join(", ");
+        const soundsList = (caregiverResult.soundsAttempted as Array<{ sound: string }>).map((sound) => sound.sound).join(", ");
 
         try {
           await ctx.runMutation(internal.speechCoach_lifecycle.savePracticeLog, {
@@ -185,7 +221,7 @@ export const analyzeSession = internalAction({
             homeProgramId: session.homeProgramId,
             patientId: session.patientId,
             sourceId: args.sessionId as string,
-            accuracy: computeAverageAccuracy(analysis.soundsAttempted),
+            accuracy: computeAverageAccuracy(caregiverResult.soundsAttempted),
             date: new Date().toISOString().slice(0, 10),
           });
         } catch (error) {
@@ -255,43 +291,61 @@ async function loadElevenLabsTranscript(
   return { transcript };
 }
 
-function buildAnalysisPrompt(
+/** Caregiver-facing analysis — always runs. Parent-friendly language, no clinical terms. */
+function buildCaregiverAnalysisPrompt(
   session: Doc<"speechCoachSessions">,
   analysisInput: AnalysisInput,
 ): string {
   const targetSounds = session.config.targetSounds.join(", ");
-  const ageRange = session.config.ageRange;
-  const runtimeSnapshot = session.config.runtimeSnapshot;
   const rawTurnsContext = analysisInput.rawTranscriptTurns?.length
-    ? `\nNORMALIZED TRANSCRIPT TURNS:\n${JSON.stringify(analysisInput.rawTranscriptTurns, null, 2)}\n`
+    ? `\nRAW TURNS:\n${JSON.stringify(analysisInput.rawTranscriptTurns, null, 2)}\n`
     : "";
 
-  return `You are analyzing a speech therapy session transcript between a voice coach and a child (age range: ${ageRange}).
+  return `You are analyzing a speech practice session between an AI coach and a child. Write for the child's parent — warm, encouraging, no clinical terminology.
 
-The session targeted these sounds: ${targetSounds}
+The session practiced these sounds: ${targetSounds}
 ${session.config.focusArea ? `Focus area: ${session.config.focusArea}` : ""}
-Voice provider: ${runtimeSnapshot?.voiceProvider ?? "unknown"}
-Enabled tools: ${(runtimeSnapshot?.tools ?? []).join(", ") || "none"}
-Enabled skills: ${(runtimeSnapshot?.skills ?? []).join(", ") || "none"}
-
-From the transcript below, produce a detailed analysis for the caregiver.
 ${rawTurnsContext}
 TRANSCRIPT:
 ${analysisInput.transcript}
 
-Respond with a JSON object matching this EXACT shape (no extra keys, no markdown fences):
+Respond with a JSON object matching this EXACT shape (no markdown fences):
 {
-  "transcriptTurns": [
-    {
-      "speaker": "coach",
-      "text": "Say sad",
-      "targetItemId": "sad",
-      "targetLabel": "sad",
-      "attemptOutcome": "incorrect",
-      "retryCount": 0,
-      "timestampMs": 1200
-    }
-  ],
+  "summary": "2-3 encouraging sentences for the parent. Say what sounds were practiced and give a positive observation. Never use terms like 'phoneme', 'articulation', 'percent correct', or cue level names.",
+  "soundsAttempted": [{"sound": "/s/", "wordsAttempted": 8, "approximateSuccessRate": "high", "notes": "Parent-friendly note, e.g. 'Getting this sound well at the start of words'"}],
+  "overallEngagement": "high",
+  "recommendedNextFocus": ["/s/"],
+  "homePracticeNotes": ["A simple home tip the parent can actually do, e.g. 'Point to things that start with S on your next walk'"]
+}
+
+Rules:
+- approximateSuccessRate must be "high", "medium", or "low"
+- overallEngagement must be "high", "medium", or "low"
+- homePracticeNotes: 1-3 concrete, specific activities parents can do at home
+- summary: NEVER mention accuracy numbers, percentages, cue levels, or clinical metrics`;
+}
+
+/** SLP-facing analysis — only runs when session has a patientId. Clinical language, structured metrics. */
+function buildSlpAnalysisPrompt(
+  session: Doc<"speechCoachSessions">,
+  analysisInput: AnalysisInput,
+): string {
+  const targetSounds = session.config.targetSounds.join(", ");
+  const rawTurnsContext = analysisInput.rawTranscriptTurns?.length
+    ? `\nRAW TURNS:\n${JSON.stringify(analysisInput.rawTranscriptTurns, null, 2)}\n`
+    : "";
+
+  return `You are analyzing a speech therapy session transcript. Write for a licensed speech-language pathologist. Use clinical terminology.
+
+Session targeted sounds: ${targetSounds}
+Age range: ${session.config.ageRange}
+${session.config.focusArea ? `Focus area: ${session.config.focusArea}` : ""}
+${rawTurnsContext}
+TRANSCRIPT:
+${analysisInput.transcript}
+
+Respond with a JSON object matching this EXACT shape (no markdown fences):
+{
   "scoreCards": {
     "overall": 72,
     "productionAccuracy": 68,
@@ -300,25 +354,24 @@ Respond with a JSON object matching this EXACT shape (no extra keys, no markdown
     "engagement": 80
   },
   "insights": {
-    "strengths": ["..."],
-    "patterns": ["..."],
-    "notableCueingPatterns": ["..."],
-    "recommendedNextTargets": ["/s/"],
-    "homePracticeNotes": ["..."]
+    "strengths": ["Observable strength statement"],
+    "patterns": ["Error pattern observed, e.g. final consonant deletion on /s/"],
+    "notableCueingPatterns": ["Cue level observation"],
+    "recommendedNextTargets": ["/s/ medial position"],
+    "homePracticeNotes": ["Clinical recommendation for home carryover"]
   },
-  "soundsAttempted": [{ "sound": "/s/", "wordsAttempted": 8, "approximateSuccessRate": "high", "notes": "..." }],
-  "overallEngagement": "high",
-  "recommendedNextFocus": ["/r/"],
-  "summary": "A 2-3 sentence parent-friendly summary. Be encouraging."
+  "positionAccuracy": [
+    {"sound": "/s/", "position": "initial", "correct": 9, "total": 11},
+    {"sound": "/s/", "position": "medial", "correct": 4, "total": 9}
+  ],
+  "errorPatterns": ["Pattern 1", "Pattern 2"],
+  "iepNoteDraft": "Student produced /s/ in initial position with X% accuracy across N trials. [Continue with clinical observations. Max 3 sentences.]"
 }
 
-Rules for transcriptTurns:
-- speaker must be "coach", "child", or "system"
-- attemptOutcome must be "correct", "approximate", "incorrect", or "no_response" (omit if not applicable)
-- retryCount and timestampMs are required numbers (use 0 if unknown)
-
-Rules for scoreCards: all values are 0-100 integers.
-Rules for overallEngagement: must be "high", "medium", or "low".`;
+Rules:
+- scoreCards: all values 0-100 integers
+- positionAccuracy: include each sound/position combination attempted; position must be "initial", "medial", "final", or "unknown"
+- iepNoteDraft: clinical, concise, IEP-ready. Do NOT include phrases like 'the AI noted' or 'according to the session'. Write as if you observed it.`;
 }
 
 async function callClaude(
