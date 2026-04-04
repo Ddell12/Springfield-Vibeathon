@@ -7,7 +7,7 @@
  * Requires: NEXT_PUBLIC_CONVEX_URL in .env.local (CONVEX_SITE_URL is derived automatically)
  */
 
-import { execSync } from "child_process";
+import { spawnSync } from "child_process";
 import * as fs from "fs";
 import * as path from "path";
 
@@ -69,25 +69,37 @@ async function signUpAccount(siteUrl: string, email: string, password: string, n
   if (res.status >= 500) {
     throw new Error(`Auth sign-up failed: ${res.status} ${await res.text()}`);
   }
+  if (res.status >= 400 && res.status < 500) {
+    const body = await res.clone().text();
+    if (!/already.?exists|duplicate/i.test(body)) {
+      console.warn(`  sign-up for ${email} returned ${res.status}: ${body}`);
+    }
+  }
   console.log(`  Sign-up for ${email}: ${res.status}`);
 }
 
 function convexRunJson(fn: string, args: Record<string, unknown>): Record<string, unknown> | null {
+  const result = spawnSync("npx", ["convex", "run", fn, JSON.stringify(args)], {
+    encoding: "utf-8",
+  });
+  if (result.status !== 0) {
+    console.error(`convexRunJson(${fn}) failed:`, result.stderr || result.error);
+    return null;
+  }
   try {
-    const output = execSync(`npx convex run ${fn} '${JSON.stringify(args)}'`, {
-      encoding: "utf-8",
-    });
-    return JSON.parse(output) as Record<string, unknown>;
+    return JSON.parse(result.stdout) as Record<string, unknown>;
   } catch {
+    console.error(`convexRunJson(${fn}): could not parse output:`, result.stdout);
     return null;
   }
 }
 
 function convexRun(fn: string, args: Record<string, unknown>) {
-  try {
-    execSync(`npx convex run ${fn} '${JSON.stringify(args)}'`, { stdio: "inherit" });
-  } catch {
-    // Non-zero exit on "skipped" is not a fatal error
+  const result = spawnSync("npx", ["convex", "run", fn, JSON.stringify(args)], {
+    stdio: "inherit",
+  });
+  if (result.status !== 0) {
+    console.warn(`convexRun(${fn}) exited non-zero:`, result.error?.message ?? result.status);
   }
 }
 
@@ -101,6 +113,7 @@ async function main() {
     console.error("❌  Could not determine CONVEX_SITE_URL. Add it to .env.local");
     process.exit(1);
   }
+  console.log(`  Convex site URL: ${siteUrl}\n`);
 
   const reset = process.argv.includes("--reset");
   if (reset) console.log("⚠️   --reset: existing demo data will be wiped and reseeded\n");
