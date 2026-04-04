@@ -49,4 +49,22 @@ describe("template runtime contract", () => {
       )
     ).not.toThrow();
   });
+
+  it("each template registration has pages with pages[0].id === 'main'", () => {
+    Object.entries(templateRegistry).forEach(([key, registration]) => {
+      expect(registration.pages, `${key} missing pages`).toBeDefined();
+      expect(
+        Array.isArray(registration.pages),
+        `${key} pages is not an array`
+      ).toBe(true);
+      expect(
+        registration.pages.length,
+        `${key} has no pages`
+      ).toBeGreaterThan(0);
+      expect(
+        registration.pages[0].id,
+        `${key} pages[0].id must be "main"`
+      ).toBe("main");
+    });
+  });
 });

@@ -1,25 +1,45 @@
 import type { ComponentType } from "react";
+import type { LucideIcon } from "lucide-react";
+import { BarChart3, BookOpen, LayoutGrid, Settings2 } from "lucide-react";
 import { z } from "zod";
 
 import { type AppShellConfig, DEFAULT_APP_SHELL } from "./runtime/app-shell-types";
+import type { TemplateDataStore } from "./runtime/page-types";
 import { AACBoardEditor } from "./templates/aac-board/editor";
+import { AACBoardHistoryPage } from "./templates/aac-board/history-page";
+import { AACBoardMainPage } from "./templates/aac-board/main-page";
 import { AACBoardRuntime } from "./templates/aac-board/runtime";
 import { type AACBoardConfig,AACBoardConfigSchema } from "./templates/aac-board/schema";
+import { AACBoardSettingsPage } from "./templates/aac-board/settings-page";
+import { AACBoardWordBankPage } from "./templates/aac-board/word-bank-page";
 import { FirstThenBoardEditor } from "./templates/first-then-board/editor";
+import { FirstThenBoardHistoryPage } from "./templates/first-then-board/history-page";
+import { FirstThenBoardMainPage } from "./templates/first-then-board/main-page";
 import { FirstThenBoardRuntime } from "./templates/first-then-board/runtime";
 import { type FirstThenBoardConfig,FirstThenBoardConfigSchema } from "./templates/first-then-board/schema";
+import { FirstThenBoardSettingsPage } from "./templates/first-then-board/settings-page";
 import { MatchingGameEditor } from "./templates/matching-game/editor";
+import { MatchingGameHistoryPage } from "./templates/matching-game/history-page";
+import { MatchingGameMainPage } from "./templates/matching-game/main-page";
 import { MatchingGameRuntime } from "./templates/matching-game/runtime";
+import { MatchingGameSettingsPage } from "./templates/matching-game/settings-page";
 import { type MatchingGameConfig,MatchingGameConfigSchema } from "./templates/matching-game/schema";
 import { TokenBoardEditor } from "./templates/token-board/editor";
+import { TokenBoardHistoryPage } from "./templates/token-board/history-page";
+import { TokenBoardMainPage } from "./templates/token-board/main-page";
 import { TokenBoardRuntime } from "./templates/token-board/runtime";
+import { TokenBoardSettingsPage } from "./templates/token-board/settings-page";
 import { type TokenBoardConfig,TokenBoardConfigSchema } from "./templates/token-board/schema";
 import { VisualScheduleEditor } from "./templates/visual-schedule/editor";
+import { VisualScheduleHistoryPage } from "./templates/visual-schedule/history-page";
+import { VisualScheduleMainPage } from "./templates/visual-schedule/main-page";
 import { VisualScheduleRuntime } from "./templates/visual-schedule/runtime";
 import { type VisualScheduleConfig,VisualScheduleConfigSchema } from "./templates/visual-schedule/schema";
+import { VisualScheduleSettingsPage } from "./templates/visual-schedule/settings-page";
 
 export interface RuntimeProps<TConfig = unknown> {
   config: TConfig;
+  appInstanceId?: string;           // NEW — optional to avoid breaking existing tests
   mode: "preview" | "published";
   onEvent: (type: string, payloadJson?: string) => void;
   voice: {
@@ -32,6 +52,18 @@ export interface RuntimeProps<TConfig = unknown> {
 export interface EditorProps<TConfig = unknown> {
   config: TConfig;
   onChange: (config: TConfig) => void;
+}
+
+export interface PageDefinition<TConfig = unknown> {
+  id: string;
+  label: string;
+  icon: LucideIcon;
+  audience: "slp" | "child" | "both";
+  component: ComponentType<PageProps<TConfig>>;
+}
+
+export interface PageProps<TConfig = unknown> extends RuntimeProps<TConfig> {
+  data: TemplateDataStore;
 }
 
 export interface TemplateMeta {
@@ -53,6 +85,8 @@ export interface TemplateRegistration {
   shell: AppShellConfig;
   aiConfigSchema: z.ZodTypeAny;
   schemaPrompt: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  pages: PageDefinition<any>[];
 }
 
 const DEFAULT_AAC_CONFIG: AACBoardConfig = {
@@ -167,6 +201,12 @@ export const templateRegistry: Record<string, TemplateRegistration> = {
 - Use vocabulary appropriate for the child's age range and interests
 - Set autoSpeak: true unless the request implies sentence building
 - Set sentenceStripEnabled: true if the request mentions sentence building or combining words`,
+    pages: [
+      { id: "main", label: "Board", icon: LayoutGrid, audience: "both", component: AACBoardMainPage },
+      { id: "settings", label: "Settings", icon: Settings2, audience: "slp", component: AACBoardSettingsPage },
+      { id: "history", label: "History", icon: BarChart3, audience: "slp", component: AACBoardHistoryPage },
+      { id: "word-bank", label: "Word Bank", icon: BookOpen, audience: "slp", component: AACBoardWordBankPage },
+    ],
   },
   first_then_board: {
     meta: {
@@ -203,6 +243,11 @@ export const templateRegistry: Record<string, TemplateRegistration> = {
 - If child interests are provided, weave them into the thenLabel
 - firstColor and thenColor should be visually distinct bright hex values
 - showCheckmark: true by default`,
+    pages: [
+      { id: "main", label: "Board", icon: LayoutGrid, audience: "both", component: FirstThenBoardMainPage },
+      { id: "settings", label: "Settings", icon: Settings2, audience: "slp", component: FirstThenBoardSettingsPage },
+      { id: "history", label: "History", icon: BarChart3, audience: "slp", component: FirstThenBoardHistoryPage },
+    ],
   },
   token_board: {
     meta: {
@@ -237,6 +282,11 @@ export const templateRegistry: Record<string, TemplateRegistration> = {
 - tokenCount: 3–5 for young children (ages 3–5), 5–8 for older children
 - tokenShape: "star" by default; "circle" for simpler visual needs
 - tokenColor should be bright and positive — gold (#FBBF24), green (#22c55e), or aligned with child interests`,
+    pages: [
+      { id: "main", label: "Board", icon: LayoutGrid, audience: "both", component: TokenBoardMainPage },
+      { id: "settings", label: "Settings", icon: Settings2, audience: "slp", component: TokenBoardSettingsPage },
+      { id: "history", label: "History", icon: BarChart3, audience: "slp", component: TokenBoardHistoryPage },
+    ],
   },
   visual_schedule: {
     meta: {
@@ -276,6 +326,11 @@ export const templateRegistry: Record<string, TemplateRegistration> = {
 - durationMinutes should reflect realistic times for the age range
 - Items should follow a logical sequential order appropriate to the context
 - showCheckmarks: true and showDuration: true by default`,
+    pages: [
+      { id: "main", label: "Schedule", icon: LayoutGrid, audience: "both", component: VisualScheduleMainPage },
+      { id: "settings", label: "Settings", icon: Settings2, audience: "slp", component: VisualScheduleSettingsPage },
+      { id: "history", label: "History", icon: BarChart3, audience: "slp", component: VisualScheduleHistoryPage },
+    ],
   },
   matching_game: {
     meta: {
@@ -316,5 +371,10 @@ export const templateRegistry: Record<string, TemplateRegistration> = {
 - Pairs should be meaningfully related and appropriately challenging for the age range
 - Avoid trivially easy pairs (dog/cat) unless the request is explicitly for beginners
 - celebrateCorrect: true for engagement`,
+    pages: [
+      { id: "main", label: "Game", icon: LayoutGrid, audience: "both", component: MatchingGameMainPage },
+      { id: "settings", label: "Settings", icon: Settings2, audience: "slp", component: MatchingGameSettingsPage },
+      { id: "history", label: "History", icon: BarChart3, audience: "slp", component: MatchingGameHistoryPage },
+    ],
   },
 };

@@ -1,3 +1,4 @@
+// src/features/tools/lib/runtime/runtime-shell.tsx
 "use client";
 
 import { CircleHelp, X } from "lucide-react";
@@ -14,8 +15,38 @@ import {
 } from "@/shared/components/ui/dialog";
 
 import type { AppShellConfig } from "./app-shell-types";
+import type { PageDefinition, RuntimeProps } from "../registry";
+import type { TemplateDataStore } from "./page-types";
 import { ShellStateContext } from "./shell-state-context";
 import { useAppShellState } from "./use-app-shell-state";
+
+// --- Children-based props (builder preview, contract tests) ---
+interface ChildrenShellProps {
+  mode: "preview" | "published";
+  shell: AppShellConfig;
+  title: string;
+  onExit?: () => void;
+  children: React.ReactNode;
+  pages?: never;
+  runtimeProps?: never;
+  data?: never;
+}
+
+// --- Pages-based props (live runtime with tabs) ---
+interface PagesShellProps {
+  mode: "preview" | "published";
+  shell: AppShellConfig;
+  title: string;
+  onExit?: () => void;
+  children?: never;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  pages: PageDefinition<any>[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  runtimeProps: RuntimeProps<any>;
+  data: TemplateDataStore;
+}
+
+type RuntimeShellProps = ChildrenShellProps | PagesShellProps;
 
 export function RuntimeShell({
   mode,
@@ -23,29 +54,37 @@ export function RuntimeShell({
   title,
   onExit,
   children,
-}: {
-  mode: "preview" | "published";
-  shell: AppShellConfig;
-  title: string;
-  onExit?: () => void;
-  children: React.ReactNode;
-}) {
+  pages,
+  runtimeProps,
+  data,
+}: RuntimeShellProps) {
   const [instructionsOpen, setInstructionsOpen] = useState(false);
+  const [activePage, setActivePage] = useState("main");
+
   const state = useAppShellState({
     storageKey: `${mode}:${title}`,
     shell,
   });
-
-  const hasSidebar =
-    shell.enableDifficulty || shell.enableSounds || shell.enableProgress;
 
   const shellContextValue = useMemo(
     () => ({ difficulty: state.difficulty, soundsEnabled: state.soundsEnabled }),
     [state.difficulty, state.soundsEnabled]
   );
 
+  // Audience filter: hide slp-only pages in published mode
+  const visiblePages = useMemo(
+    () =>
+      pages?.filter((p) =>
+        p.audience === "slp" ? mode !== "published" : true
+      ) ?? [],
+    [pages, mode]
+  );
+
+  const currentPage = visiblePages.find((p) => p.id === activePage) ?? visiblePages[0];
+
   return (
     <div className="min-h-screen bg-background text-foreground">
+      {/* Header — unchanged */}
       <header className="sticky top-0 z-10 flex items-center justify-between bg-background/95 px-4 py-3 backdrop-blur">
         <div>
           <p className="font-mono text-xs uppercase tracking-[0.1em] text-muted-foreground">
@@ -78,84 +117,50 @@ export function RuntimeShell({
           </Button>
         </div>
       </header>
-      <div
-        className={cn(
-          "gap-4 px-4 pb-6 pt-4",
-          hasSidebar ? "grid lg:grid-cols-[280px_minmax(0,1fr)]" : "block"
+
+      {/* Tab bar — only shown when pages provided and more than 1 visible */}
+      {visiblePages.length > 1 && (
+        <nav role="tablist" className="sticky top-[57px] z-10 flex border-b border-border bg-background/95 backdrop-blur">
+          {visiblePages.map((page) => {
+            const Icon = page.icon;
+            const isActive = page.id === (currentPage?.id ?? "main");
+            return (
+              <button
+                key={page.id}
+                type="button"
+                onClick={() => setActivePage(page.id)}
+                className={cn(
+                  "flex flex-1 items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-medium transition-colors",
+                  isActive
+                    ? "border-b-2 border-primary text-primary"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+                aria-selected={isActive}
+                role="tab"
+              >
+                <Icon className="h-3.5 w-3.5" />
+                {page.label}
+              </button>
+            );
+          })}
+        </nav>
+      )}
+
+      {/* Content */}
+      <ShellStateContext.Provider value={shellContextValue}>
+        {/* Children-based (builder preview / contract tests) */}
+        {children !== undefined && (
+          <div className="px-4 pb-6 pt-4">{children}</div>
         )}
-      >
-        {hasSidebar && (
-          <aside className="flex flex-col gap-4 rounded-2xl bg-muted/30 p-4">
-            {shell.enableDifficulty && (
-              <div className="flex flex-col gap-1.5">
-                <label
-                  htmlFor="shell-difficulty"
-                  className="text-xs font-medium uppercase tracking-wide text-muted-foreground"
-                >
-                  Difficulty
-                </label>
-                <select
-                  id="shell-difficulty"
-                  value={state.difficulty}
-                  onChange={(e) =>
-                    state.setDifficulty(
-                      e.target.value as "easy" | "medium" | "hard"
-                    )
-                  }
-                  className="rounded-lg border border-border bg-background px-3 py-2 text-sm"
-                >
-                  <option value="easy">Easy</option>
-                  <option value="medium">Medium</option>
-                  <option value="hard">Hard</option>
-                </select>
-              </div>
-            )}
-            {shell.enableSounds && (
-              <div className="flex items-center justify-between">
-                <label
-                  htmlFor="shell-sounds"
-                  className="text-sm font-medium text-foreground"
-                >
-                  Sounds
-                </label>
-                <input
-                  id="shell-sounds"
-                  type="checkbox"
-                  checked={state.soundsEnabled}
-                  onChange={(e) => state.setSoundsEnabled(e.target.checked)}
-                  className="h-4 w-4 accent-primary"
-                />
-              </div>
-            )}
-            {shell.enableProgress && (
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  Progress
-                </label>
-                <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
-                  <div
-                    className="h-full rounded-full bg-primary"
-                    style={{
-                      width: `${state.progress}%`,
-                      transition: "width 300ms cubic-bezier(0.4, 0, 0.2, 1)",
-                    }}
-                    role="progressbar"
-                    aria-valuenow={state.progress}
-                    aria-valuemin={0}
-                    aria-valuemax={100}
-                  />
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  {state.progress}% complete
-                </p>
-              </div>
-            )}
-          </aside>
+
+        {/* Pages-based (live runtime) */}
+        {currentPage && runtimeProps && data && (
+          <div className="pb-6">
+            <currentPage.component {...runtimeProps} data={data} />
+          </div>
         )}
-        <ShellStateContext.Provider value={shellContextValue}>
-          <div>{children}</div>
-        </ShellStateContext.Provider>
-      </div>
+      </ShellStateContext.Provider>
+
       <Dialog open={instructionsOpen} onOpenChange={setInstructionsOpen}>
         <DialogContent className="max-w-lg rounded-2xl">
           <DialogHeader>

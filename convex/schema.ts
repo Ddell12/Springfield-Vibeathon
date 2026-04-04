@@ -274,6 +274,15 @@ export default defineSchema({
   })
     .index("by_appInstanceId", ["appInstanceId"]),
 
+  app_instance_data: defineTable({
+    appInstanceId: v.id("app_instances"),
+    key: v.string(),
+    valueJson: v.string(),
+    updatedAt: v.number(),
+  })
+    .index("by_appInstanceId", ["appInstanceId"])
+    .index("by_appInstanceId_key", ["appInstanceId", "key"]),
+
   tool_events: defineTable({
     appInstanceId: v.id("app_instances"),
     patientId: v.optional(v.id("patients")),
