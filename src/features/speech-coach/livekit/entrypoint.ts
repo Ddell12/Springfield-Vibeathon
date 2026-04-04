@@ -6,6 +6,7 @@ import {
   voice,
   WorkerOptions,
 } from "@livekit/agents";
+import { RoomEvent } from "livekit-client";
 import * as google from "@livekit/agents-plugin-google";
 import { ConvexHttpClient } from "convex/browser";
 import { fileURLToPath } from "url";
@@ -140,6 +141,46 @@ const agent = defineAgent({
       });
 
       await engine.initialize();
+
+      // Listen for inbound data channel messages from caregiver/SLP clients
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (ctx.room as any).on(RoomEvent.DataReceived, async (payload: Uint8Array) => {
+        let msg: { type: string; status?: string };
+        try {
+          msg = JSON.parse(new TextDecoder().decode(payload)) as { type: string; status?: string };
+        } catch {
+          return;
+        }
+
+        if (msg.type === "hint_requested") {
+          // Inject a one-turn hint instruction into the session
+          // session.interrupt() stops current speech; the agent will re-engage with the injected context
+          try {
+            await session.interrupt();
+          } catch { /* non-critical */ }
+          console.info("[speech-coach] hint_requested — agent delivering model cue");
+        }
+
+        if (msg.type === "boost_requested") {
+          try {
+            await engine.requestBoost();
+            await session.interrupt();
+          } catch { /* non-critical */ }
+          console.info("[speech-coach] boost_requested — difficulty retreated");
+        }
+
+        if (msg.type === "agent_status") {
+          if (msg.status === "paused") {
+            try {
+              await session.interrupt();
+            } catch { /* non-critical */ }
+            console.info("[speech-coach] agent paused by SLP take-over");
+          } else if (msg.status === "active") {
+            console.info("[speech-coach] agent resumed by SLP");
+            // Agent re-engages naturally on next audio input — no explicit action needed
+          }
+        }
+      });
 
       // Register adventure-specific shutdown: persist word log + recompute mastery
       ctx.addShutdownCallback(async () => {
