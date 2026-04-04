@@ -139,6 +139,13 @@ export function AACBoardEditor({ config, onChange }: EditorProps<AACBoardConfig>
             </div>
           </div>
         ))}
+
+        {config.buttons.length > config.gridCols * config.gridRows && (
+          <p className="text-sm text-amber-700 bg-amber-50 rounded-lg px-3 py-2">
+            {config.buttons.length - config.gridCols * config.gridRows} button(s) exceed
+            the {config.gridCols}×{config.gridRows} grid and won&apos;t be visible.
+          </p>
+        )}
       </div>
     </div>
   );

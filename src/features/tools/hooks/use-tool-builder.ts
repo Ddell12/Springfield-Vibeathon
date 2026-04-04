@@ -84,10 +84,25 @@ export function useToolBuilder(initialId?: Id<"app_instances"> | null) {
   }, [state]);
 
   useEffect(() => {
-    return () => {
-      if (saveTimer.current) clearTimeout(saveTimer.current);
+    const flush = () => {
+      if (saveTimer.current) {
+        clearTimeout(saveTimer.current);
+        saveTimer.current = null;
+        const s = stateRef.current;
+        if (s.instanceId && latestConfigRef.current !== null) {
+          void updateInstance({
+            id: s.instanceId,
+            configJson: JSON.stringify(latestConfigRef.current),
+          });
+        }
+      }
     };
-  }, []);
+    window.addEventListener("beforeunload", flush);
+    return () => {
+      window.removeEventListener("beforeunload", flush);
+      flush();
+    };
+  }, [updateInstance]);
 
   const selectPatient = useCallback(
     async (patientId: Id<"patients">) => {

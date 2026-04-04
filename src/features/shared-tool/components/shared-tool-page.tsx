@@ -5,15 +5,19 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 
 import { MaterialIcon } from "@/shared/components/material-icon";
+import { ToolRuntimePage } from "@/features/tools/components/runtime/tool-runtime-page";
 
 import { api } from "../../../../convex/_generated/api";
 
 export function SharedToolPage() {
   const params = useParams();
-  const slug = typeof params?.toolId === "string" ? params.toolId : "";
-  const app = useQuery(api.apps.getByShareSlug, slug ? { shareSlug: slug } : "skip");
+  const shareToken = typeof params?.toolId === "string" ? params.toolId : "";
+  const result = useQuery(
+    api.tools.getByShareToken,
+    shareToken ? { shareToken } : "skip"
+  );
 
-  if (app === undefined) {
+  if (result === undefined) {
     return (
       <div className="bg-surface font-body text-on-surface min-h-screen flex flex-col items-center justify-center">
         <div data-testid="loading-skeleton" className="animate-pulse space-y-4 max-w-4xl w-full px-8">
@@ -24,7 +28,7 @@ export function SharedToolPage() {
     );
   }
 
-  if (app === null) {
+  if (result === null) {
     return (
       <div className="bg-surface font-body text-on-surface min-h-screen flex flex-col items-center justify-center gap-6 text-center px-4">
         <MaterialIcon icon="search_off" className="text-6xl text-primary/40" />
@@ -44,41 +48,15 @@ export function SharedToolPage() {
     );
   }
 
-  const bundleUrl = app.sessionId ? `/api/tool/${slug}` : null;
+  const { instance, configJson } = result;
 
   return (
-    <div className="bg-surface font-body text-on-surface min-h-screen flex flex-col">
-      <header className="flex justify-center items-center w-full px-6 py-4 bg-surface">
-        <div className="max-w-7xl w-full flex justify-between items-center">
-          <Link href="/" className="text-primary-container font-medium tracking-tight text-lg">
-            Vocali
-          </Link>
-          <span className="hidden md:block text-on-surface-variant font-label text-sm">
-            {app.title}
-          </span>
-        </div>
-      </header>
-
-      <main className="flex-1 flex flex-col items-center px-4 py-6">
-        {bundleUrl ? (
-          <div className="w-full max-w-5xl flex-1">
-            <iframe
-              src={bundleUrl}
-              title={app.title}
-              className="w-full h-[70vh] rounded-xl border border-outline-variant/20 shadow-lg"
-              sandbox="allow-scripts"
-            />
-          </div>
-        ) : (
-          <div className="flex-1 flex flex-col items-center justify-center gap-4 text-center">
-            <MaterialIcon icon="construction" className="text-5xl text-primary/60" />
-            <p className="text-on-surface-variant text-lg">This tool is still being built.</p>
-            <p className="text-on-surface-variant text-sm">Check back soon!</p>
-          </div>
-        )}
-      </main>
-
-      <div className="h-24" />
+    <div className="min-h-screen flex flex-col">
+      <ToolRuntimePage
+        shareToken={shareToken}
+        templateType={instance.templateType}
+        configJson={configJson}
+      />
 
       <footer className="fixed bottom-0 inset-x-0 z-50 bg-surface/80 backdrop-blur-md border-t border-outline-variant/10">
         <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">

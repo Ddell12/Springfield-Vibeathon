@@ -30,7 +30,10 @@ export function seedStateFromInstance(
     onSeed({
       patientId: instance.patientId ?? null,
       templateType: instance.templateType,
-      config: JSON.parse(instance.configJson),
+      config: (() => {
+        try { return JSON.parse(instance.configJson); }
+        catch (err) { console.error("[seedState] bad configJson:", err); return {}; }
+      })(),
       instanceId: instance._id,
       publishedShareToken: instance.shareToken ?? null,
     });

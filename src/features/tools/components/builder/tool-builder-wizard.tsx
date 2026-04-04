@@ -2,8 +2,13 @@
 
 import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
+import { useState } from "react";
 
 import { Button } from "@/shared/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+} from "@/shared/components/ui/dialog";
 import {
   Tabs,
   TabsContent,
@@ -28,6 +33,7 @@ interface ToolBuilderWizardProps {
 }
 
 export function ToolBuilderWizard({ builder }: ToolBuilderWizardProps) {
+  const [showMobilePreview, setShowMobilePreview] = useState(false);
   const config = builder.config as Record<string, unknown> | null;
   const title = (config?.title as string) ?? "Untitled";
 
@@ -73,8 +79,8 @@ export function ToolBuilderWizard({ builder }: ToolBuilderWizardProps) {
       {/* Editor body */}
       {builder.templateType ? (
         <div className="flex flex-1 overflow-hidden">
-          {/* Left panel — 40% */}
-          <div className="w-[40%] min-w-[300px] border-r border-border flex flex-col overflow-hidden">
+          {/* Left panel — full on mobile, 40% on tablet+ */}
+          <div className="w-full md:w-[40%] md:min-w-[300px] border-r border-border flex flex-col overflow-hidden">
             {/* AI Refine — always visible at top */}
             <div className="p-4 border-b border-border shrink-0">
               <AIAssistPanel
@@ -131,10 +137,17 @@ export function ToolBuilderWizard({ builder }: ToolBuilderWizardProps) {
                 />
               </TabsContent>
             </Tabs>
+
+            {/* Mobile preview button */}
+            <div className="md:hidden p-4 border-t border-border shrink-0">
+              <Button variant="outline" className="w-full" onClick={() => setShowMobilePreview(true)}>
+                Preview
+              </Button>
+            </div>
           </div>
 
-          {/* Right panel — 60% */}
-          <div className="flex-1 flex flex-col overflow-hidden">
+          {/* Right panel — hidden on mobile, 60% on tablet+ */}
+          <div className="hidden md:flex flex-1 flex-col overflow-hidden">
             <div className="flex items-center gap-2 px-4 py-2 border-b border-border bg-muted/20 shrink-0">
               <span className="text-xs text-muted-foreground font-mono uppercase tracking-wide">
                 Preview
@@ -152,6 +165,20 @@ export function ToolBuilderWizard({ builder }: ToolBuilderWizardProps) {
         <div className="flex-1 flex items-center justify-center">
           <p className="text-muted-foreground text-sm">Select a tool type to begin editing.</p>
         </div>
+      )}
+
+      {/* Mobile preview dialog */}
+      {builder.templateType && (
+        <Dialog open={showMobilePreview} onOpenChange={setShowMobilePreview}>
+          <DialogContent className="max-w-full w-full h-[90vh] p-0 md:hidden">
+            <div className="h-full overflow-auto">
+              <PreviewPanel
+                templateType={builder.templateType}
+                config={builder.config}
+              />
+            </div>
+          </DialogContent>
+        </Dialog>
       )}
 
       {/* Publish sheet */}

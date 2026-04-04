@@ -4,11 +4,13 @@ import { describe, expect, test, vi } from "vitest";
 // Mock convex/react — useQuery is the main seam for this component
 vi.mock("convex/react", () => ({
   useQuery: vi.fn(),
+  useMutation: vi.fn(() => vi.fn()),
 }));
 
 // Mock next/navigation — component reads the slug from URL params
 vi.mock("next/navigation", () => ({
-  useParams: () => ({ toolId: "abc123" }),
+  useParams: () => ({ toolId: "4cb10199-5417-46d0-b00e-a3366f11b74c" }),
+  useSearchParams: () => new URLSearchParams(),
 }));
 
 // Mock next/link as plain anchor
@@ -29,85 +31,82 @@ vi.mock("@/shared/components/material-icon", () => ({
   ),
 }));
 
+// Mock ToolRuntimePage to isolate SharedToolPage tests
+vi.mock("@/features/tools/components/runtime/tool-runtime-page", () => ({
+  ToolRuntimePage: (props: { shareToken: string; templateType: string; configJson: string }) => (
+    <div data-testid="tool-runtime" data-share-token={props.shareToken} data-template-type={props.templateType}>
+      Runtime: {props.templateType}
+    </div>
+  ),
+}));
+
 import * as convexReact from "convex/react";
 
 import { SharedToolPage } from "../shared-tool-page";
 
-const mockProject = {
-  _id: "project1",
-  _creationTime: Date.now(),
-  title: "Emma's Feelings Board",
-  description: "Tap an emoji to express how you're feeling today",
-  shareSlug: "abc123",
-  sessionId: "session123",
-  fragment: {
-    title: "Emma's Feelings Board",
-    description: "Feelings board",
-    template: "nextjs-developer",
-    code: "export default function App() { return <div>Feelings Board</div>; }",
-    file_path: "app/page.tsx",
-    has_additional_dependencies: false,
-    port: 3000,
+const mockResult = {
+  instance: {
+    _id: "qx79hnypcfy3vxcvkrnnpcexvn846806",
+    _creationTime: Date.now(),
+    templateType: "token_board",
+    title: "Dinosaur Stars",
+    titleLower: "dinosaur stars",
+    slpUserId: "s579a5emg",
+    status: "published" as const,
+    version: 2,
+    shareToken: "4cb10199-5417-46d0-b00e-a3366f11b74c",
+    publishedAt: Date.now(),
+    configJson: '{"title":"Dinosaur Stars","tokenCount":7}',
   },
-  createdAt: Date.now(),
-  updatedAt: Date.now(),
+  configJson: '{"title":"Dinosaur Stars","tokenCount":7,"rewardLabel":"10 min iPad time","tokenShape":"star","tokenColor":"#FBBF24","highContrast":false}',
 };
 
 describe("SharedToolPage", () => {
-  test("shows loading state when getBySlug returns undefined", () => {
+  test("shows loading skeleton when query returns undefined", () => {
     vi.mocked(convexReact.useQuery).mockReturnValue(undefined);
 
     render(<SharedToolPage />);
 
-    // Loading state: loading skeleton should be present
-    const loadingEl =
-      screen.queryByRole("status") ||
-      screen.queryByText(/loading/i) ||
-      document.querySelector(".animate-pulse") ||
-      document.querySelector("[data-testid='loading-skeleton']");
+    const loadingEl = document.querySelector("[data-testid='loading-skeleton']");
     expect(loadingEl).not.toBeNull();
   });
 
-  test("shows not-found state with link to /builder when getBySlug returns null", () => {
+  test("shows not-found state with link to /builder when query returns null", () => {
     vi.mocked(convexReact.useQuery).mockReturnValue(null);
 
     render(<SharedToolPage />);
 
-    // Not-found state should be shown
-    // Should have a link to the builder
-    const builderLink = screen.getByRole("link", { name: /build|create|builder/i });
+    const builderLink = screen.getByRole("link", { name: /build your own/i });
     expect(builderLink).toHaveAttribute("href", "/builder");
   });
 
-  test("renders project title when project data is returned", () => {
-    vi.mocked(convexReact.useQuery).mockReturnValue(mockProject);
+  test("renders ToolRuntimePage with correct props when tool is found", () => {
+    vi.mocked(convexReact.useQuery).mockReturnValue(mockResult);
 
     render(<SharedToolPage />);
 
-    expect(screen.getByText("Emma's Feelings Board")).toBeInTheDocument();
+    const runtime = screen.getByTestId("tool-runtime");
+    expect(runtime).toBeInTheDocument();
+    expect(runtime).toHaveAttribute("data-share-token", "4cb10199-5417-46d0-b00e-a3366f11b74c");
+    expect(runtime).toHaveAttribute("data-template-type", "token_board");
   });
 
-  test("not-found state shows Build your own CTA", () => {
+  test("not-found state shows Build Your Own CTA", () => {
     vi.mocked(convexReact.useQuery).mockReturnValue(null);
 
     render(<SharedToolPage />);
 
-    // CTA link should be present
-    const ctaLinks = screen.getAllByRole("link", { name: /build your own|create|builder/i });
+    const ctaLinks = screen.getAllByRole("link", { name: /build your own|create/i });
     expect(ctaLinks.length).toBeGreaterThanOrEqual(1);
     expect(ctaLinks[0]).toHaveAttribute("href", "/builder");
   });
 
-  test("renders iframe with /api/tool/{slug} src when app exists", () => {
-    vi.mocked(convexReact.useQuery).mockReturnValue({
-      ...mockProject,
-      sessionId: "session123",
-    });
+  test("shows Vocali CTA footer when tool renders", () => {
+    vi.mocked(convexReact.useQuery).mockReturnValue(mockResult);
 
     render(<SharedToolPage />);
 
-    const iframe = document.querySelector("iframe");
-    expect(iframe).not.toBeNull();
-    expect(iframe?.getAttribute("src")).toBe("/api/tool/abc123");
+    expect(screen.getByText(/build your own/i)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /create tool/i })).toHaveAttribute("href", "/builder");
   });
 });

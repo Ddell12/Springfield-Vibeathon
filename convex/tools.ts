@@ -128,7 +128,7 @@ export const listBySLP = query({
     return ctx.db
       .query("app_instances")
       .withIndex("by_slpUserId", (q) => q.eq("slpUserId", slpUserId))
-      .collect();
+      .take(200);
   },
 });
 
@@ -166,7 +166,7 @@ export const listPageBySLP = query({
     const all = await ctx.db
       .query("app_instances")
       .withIndex("by_slpUserId", (q) => q.eq("slpUserId", slpUserId))
-      .collect();
+      .take(500);
 
     let items = all.filter((item) => item.status !== "archived");
 
@@ -245,7 +245,7 @@ export const getEventSummaryByPatient = query({
           .withIndex("by_appInstanceId", (q) =>
             q.eq("appInstanceId", instance._id)
           )
-          .collect();
+          .take(1000);
 
         const completions = events.filter(
           (e) => e.eventType === "activity_completed"
@@ -327,6 +327,10 @@ export const unpublish = mutation({
   },
 });
 
+/**
+ * Public mutation — shareToken acts as bearer credential.
+ * Read-side queries cap results with .take() to prevent memory exhaustion.
+ */
 export const logEvent = mutation({
   args: {
     shareToken: v.string(),
