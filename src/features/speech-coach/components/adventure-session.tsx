@@ -3,7 +3,7 @@
 import { LiveKitRoom, RoomAudioRenderer, useRoomContext } from "@livekit/components-react";
 import { RoomEvent } from "livekit-client";
 import Image from "next/image";
-import { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { cn } from "@/core/utils";
@@ -37,6 +37,7 @@ type Props = {
   durationMinutes: number;
   sessionConfig?: SessionConfig;
   speechCoachConfig?: SpeechCoachConfig;
+  viewerRole?: "child" | "caregiver" | "slp";
 };
 
 type SessionVisualState = {
@@ -103,6 +104,23 @@ function AgentDataListener({ onMessage }: { onMessage: (msg: AgentVisualMessage)
   return null;
 }
 
+type PublishRef = { publish: (msg: { type: string }) => void };
+
+function LiveKitPublisher({ publishRef }: { publishRef: React.RefObject<PublishRef | null> }) {
+  const room = useRoomContext();
+  useEffect(() => {
+    publishRef.current = {
+      publish: (msg) => {
+        void room.localParticipant
+          .publishData(new TextEncoder().encode(JSON.stringify(msg)), { reliable: true })
+          .catch((err) => console.warn("[speech-coach] publishData failed:", err));
+      },
+    };
+    return () => { publishRef.current = null; };
+  }, [room, publishRef]);
+  return null;
+}
+
 export function AdventureSession(props: Props) {
   return <AdventureSessionInner {...props} />;
 }
@@ -114,6 +132,7 @@ function AdventureSessionInner({
   durationMinutes,
   sessionConfig,
   speechCoachConfig,
+  viewerRole = "child",
 }: Props) {
   const wasConnected = useRef(false);
   const hasStarted = useRef(false);
@@ -121,6 +140,7 @@ function AdventureSessionInner({
   const confettiTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const milestoneTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const onEndRef = useRef(onEnd);
+  const publishRef = useRef<PublishRef | null>(null);
   useEffect(() => { onEndRef.current = onEnd; });
   useEffect(() => () => { clearTimeout(confettiTimer.current); clearTimeout(milestoneTimer.current); }, []);
 
@@ -243,6 +263,7 @@ function AdventureSessionInner({
         >
           <RoomAudioRenderer />
           <AgentDataListener onMessage={handleAgentMessage} />
+          <LiveKitPublisher publishRef={publishRef} />
         </LiveKitRoom>
       )}
 
@@ -371,6 +392,34 @@ function AdventureSessionInner({
           ))}
         </div>
       </div>
+
+      {/* Caregiver overlay — hint and boost buttons */}
+      {viewerRole === "caregiver" && (
+        <div className="px-4 pb-4">
+          <div className="flex items-center gap-3 rounded-2xl bg-muted/30 px-4 py-3">
+            <p className="flex-1 text-sm text-muted-foreground">
+              Tap <strong className="text-foreground">Hint</strong> if they're stuck,{" "}
+              <strong className="text-foreground">Boost</strong> if they need encouragement.
+            </p>
+            <button
+              type="button"
+              onClick={() => publishRef.current?.publish({ type: "hint_requested" })}
+              className="rounded-xl bg-primary/10 px-3 py-2 text-xs font-semibold text-primary hover:bg-primary/20 transition-colors"
+              aria-label="Request a hint from the coach"
+            >
+              Hint
+            </button>
+            <button
+              type="button"
+              onClick={() => publishRef.current?.publish({ type: "boost_requested" })}
+              className="rounded-xl bg-amber-100 px-3 py-2 text-xs font-semibold text-amber-800 hover:bg-amber-200 transition-colors"
+              aria-label="Request an encouragement boost from the coach"
+            >
+              Boost
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
