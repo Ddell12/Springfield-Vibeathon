@@ -1120,6 +1120,7 @@ export default defineSchema({
     description: v.string(),
     imagePrompt: v.string(),
     ageRanges: v.array(v.union(v.literal("2-4"), v.literal("5-7"))),
+    bannerUrl: v.optional(v.string()),
   }).index("by_slug", ["slug"]),
 
   adventureWords: defineTable({
