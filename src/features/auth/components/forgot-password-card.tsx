@@ -55,7 +55,7 @@ export function ForgotPasswordCard() {
         <form onSubmit={handleRequest} className="space-y-3">
           <h2 className="text-lg font-semibold text-on-surface">Reset your password</h2>
           <p className="text-sm text-on-surface-variant">
-            Enter your email and we&apos;ll send a reset code.
+            Enter your email and, if we find an account, we&apos;ll send a reset code.
           </p>
           <Input
             type="email"

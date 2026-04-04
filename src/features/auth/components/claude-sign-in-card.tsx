@@ -29,13 +29,22 @@ export function ClaudeSignInCard({ role }: { role: AuthRole }) {
     setIsBusy(true);
 
     try {
-      await signIn("password", {
+      const result = await signIn("password", {
         email,
         password,
         flow,
         ...(flow === "signUp" && name.trim() ? { name: name.trim() } : {}),
       });
-      router.push(AUTH_REDIRECT_URL);
+      if (result.signingIn) {
+        router.push(AUTH_REDIRECT_URL);
+        return;
+      }
+
+      setFormError(
+        flow === "signIn"
+          ? "Invalid email or password."
+          : ROLE_COPY[role].pendingHelper,
+      );
     } catch (err) {
       const message =
         err instanceof Error ? mapAuthError(err.message) : "Something went wrong. Please try again.";
