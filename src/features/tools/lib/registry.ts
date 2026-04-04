@@ -85,7 +85,8 @@ export interface TemplateRegistration {
   shell: AppShellConfig;
   aiConfigSchema: z.ZodTypeAny;
   schemaPrompt: string;
-  pages: PageDefinition[];          // NEW
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  pages: PageDefinition<any>[];
 }
 
 const DEFAULT_AAC_CONFIG: AACBoardConfig = {
