@@ -49,6 +49,14 @@ export function getCelebrationMode({ totalCorrect }: { totalCorrect: number }) {
   return totalCorrect > 0 && totalCorrect % 5 === 0 ? "milestone" : "check";
 }
 
+/** Maps promptState to ring class applied to the image card border. */
+const FEEDBACK_RING_CLASS: Record<SessionVisualState["promptState"], string> = {
+  listen: "",
+  your_turn: "ring-2 ring-primary/40",
+  nice_job: "ring-2 ring-green-400",
+  try_again: "ring-2 ring-amber-400",
+};
+
 /** Receives data channel messages from the LiveKit agent and fires onMessage. Must be inside LiveKitRoom. */
 function AgentDataListener({ onMessage }: { onMessage: (msg: AgentVisualMessage) => void }) {
   const room = useRoomContext();
@@ -273,8 +281,9 @@ function ActiveSessionInner({
             <div
               className={cn(
                 "flex h-48 w-48 items-center justify-center overflow-hidden rounded-3xl bg-muted/40",
-                !reducedMotion && "transition-opacity duration-300",
-                isConnected ? "opacity-100" : "opacity-50"
+                !reducedMotion && "transition-all duration-300",
+                isConnected ? "opacity-100" : "opacity-50",
+                FEEDBACK_RING_CLASS[visual.promptState],
               )}
             >
               {visual.targetVisualUrl ? (
@@ -289,7 +298,15 @@ function ActiveSessionInner({
                 <span className="font-headline text-5xl text-foreground">{visual.targetLabel}</span>
               )}
             </div>
-            <p className="font-headline text-3xl text-foreground">{visual.targetLabel}</p>
+            <p
+              className={cn(
+                "font-headline text-3xl text-foreground",
+                !reducedMotion && "transition-all duration-300",
+                visual.promptState === "try_again" && "scale-105",
+              )}
+            >
+              {visual.targetLabel}
+            </p>
             {!isConnected && (
               <p className="text-xs text-muted-foreground/60">Connecting…</p>
             )}

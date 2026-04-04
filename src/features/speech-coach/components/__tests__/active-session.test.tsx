@@ -1,4 +1,4 @@
-import { act, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -153,5 +153,47 @@ describe("data channel → visual state", () => {
 
     expect(setVisual).toHaveBeenCalledOnce();
     expect(updates[0]).toMatchObject({ targetLabel: "moon", promptState: "listen" });
+  });
+});
+
+describe("feedback ring on image card", () => {
+  it("applies green ring class when promptState is nice_job", () => {
+    function TestHarness() {
+      const [visual, setVisual] = useState<SessionVisualState>({
+        targetLabel: "sun",
+        promptState: "nice_job",
+        totalCorrect: 1,
+      });
+      return (
+        <>
+          <button
+            data-testid="trigger"
+            onClick={() =>
+              processAgentMessage(
+                { type: "visual_state", targetLabel: "sun", promptState: "nice_job", totalCorrect: 1 },
+                setVisual,
+              )
+            }
+          />
+          <div data-testid="card" data-prompt={visual.promptState} />
+        </>
+      );
+    }
+    render(<TestHarness />);
+    fireEvent.click(screen.getByTestId("trigger"));
+    expect(screen.getByTestId("card").dataset.prompt).toBe("nice_job");
+  });
+
+  it("applies amber ring class when promptState is try_again", () => {
+    function TestHarness() {
+      const [visual, setVisual] = useState<SessionVisualState>({
+        targetLabel: "sun",
+        promptState: "try_again",
+        totalCorrect: 0,
+      });
+      return <div data-testid="card" data-prompt={visual.promptState} />;
+    }
+    render(<TestHarness />);
+    expect(screen.getByTestId("card").dataset.prompt).toBe("try_again");
   });
 });
