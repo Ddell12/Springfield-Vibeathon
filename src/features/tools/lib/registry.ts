@@ -1,12 +1,17 @@
 import type { ComponentType } from "react";
 import type { LucideIcon } from "lucide-react";
+import { BarChart3, BookOpen, LayoutGrid, Settings2 } from "lucide-react";
 import { z } from "zod";
 
 import { type AppShellConfig, DEFAULT_APP_SHELL } from "./runtime/app-shell-types";
 import type { TemplateDataStore } from "./runtime/page-types";
 import { AACBoardEditor } from "./templates/aac-board/editor";
+import { AACBoardHistoryPage } from "./templates/aac-board/history-page";
+import { AACBoardMainPage } from "./templates/aac-board/main-page";
 import { AACBoardRuntime } from "./templates/aac-board/runtime";
 import { type AACBoardConfig,AACBoardConfigSchema } from "./templates/aac-board/schema";
+import { AACBoardSettingsPage } from "./templates/aac-board/settings-page";
+import { AACBoardWordBankPage } from "./templates/aac-board/word-bank-page";
 import { FirstThenBoardEditor } from "./templates/first-then-board/editor";
 import { FirstThenBoardRuntime } from "./templates/first-then-board/runtime";
 import { type FirstThenBoardConfig,FirstThenBoardConfigSchema } from "./templates/first-then-board/schema";
@@ -183,7 +188,12 @@ export const templateRegistry: Record<string, TemplateRegistration> = {
 - Use vocabulary appropriate for the child's age range and interests
 - Set autoSpeak: true unless the request implies sentence building
 - Set sentenceStripEnabled: true if the request mentions sentence building or combining words`,
-    pages: [],
+    pages: [
+      { id: "main", label: "Board", icon: LayoutGrid, audience: "both", component: AACBoardMainPage },
+      { id: "settings", label: "Settings", icon: Settings2, audience: "slp", component: AACBoardSettingsPage },
+      { id: "history", label: "History", icon: BarChart3, audience: "slp", component: AACBoardHistoryPage },
+      { id: "word-bank", label: "Word Bank", icon: BookOpen, audience: "slp", component: AACBoardWordBankPage },
+    ],
   },
   first_then_board: {
     meta: {
