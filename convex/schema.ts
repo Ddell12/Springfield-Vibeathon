@@ -7,7 +7,7 @@ import { testMetadataValidator } from "./lib/testMetadata";
 
 export default defineSchema({
   ...authTables,
-  // Override the users table from authTables to add the role field.
+  // Override the users table from authTables to add custom role field.
   users: defineTable({
     email: v.optional(v.string()),
     emailVerificationTime: v.optional(v.number()),
@@ -16,12 +16,10 @@ export default defineSchema({
     isAnonymous: v.optional(v.boolean()),
     name: v.optional(v.string()),
     image: v.optional(v.string()),
-    // custom field — replaces Clerk's publicMetadata.role
     role: v.optional(v.union(v.literal("slp"), v.literal("caregiver"))),
   })
     .index("email", ["email"])
     .index("phone", ["phone"]),
-
   sessions: defineTable({
     userId: v.optional(v.string()),
     title: v.string(),
@@ -38,7 +36,7 @@ export default defineSchema({
     ),
     stateMessage: v.optional(v.string()),
     error: v.optional(v.string()),
-    blueprint: v.optional(v.any()), // Validated via Zod at app layer
+    blueprint: v.optional(v.any()), // Structured therapy PRD from SSE pipeline, validated at app layer
     sandboxId: v.optional(v.string()),
     previewUrl: v.optional(v.string()),
     publishedUrl: v.optional(v.string()),
@@ -86,9 +84,9 @@ export default defineSchema({
     .index("by_featured_order", ["featured", "featuredOrder"]),
 
   appState: defineTable({
-    appId: v.string(),
+    appId: v.id("app_instances"), // Scoped to a valid app instance — closes free-string abuse surface
     key: v.string(),
-    value: v.any(), // Generic KV store — value shape varies by key, validated in application code
+    value: v.any(), // Intentional: sandbox KV, value shape varies by key
     updatedAt: v.number(),
   }).index("by_appKey", ["appId", "key"]),
 
@@ -256,8 +254,12 @@ export default defineSchema({
       v.literal("archived")
     ),
     version: v.number(),
+    originalDescription: v.optional(v.string()),
     shareToken: v.optional(v.string()),
     publishedAt: v.optional(v.number()),
+    goalTags: v.optional(v.array(v.string())),
+    sessionMode: v.optional(v.boolean()),
+    lastActivityAt: v.optional(v.number()),
   })
     .index("by_slpUserId", ["slpUserId"])
     .index("by_slpUserId_status", ["slpUserId", "status"])
@@ -286,6 +288,8 @@ export default defineSchema({
       v.literal("app_closed")
     ),
     eventPayloadJson: v.optional(v.string()),
+    sessionId: v.optional(v.string()),
+    eventSource: v.optional(v.union(v.literal("child"), v.literal("slp"))),
   })
     .index("by_appInstanceId", ["appInstanceId"])
     .index("by_patientId", ["patientId"]),
@@ -611,6 +615,8 @@ export default defineSchema({
       targetSounds: v.array(v.string()),
       ageRange: v.union(v.literal("2-4"), v.literal("5-7")),
       defaultDurationMinutes: v.number(),
+      childAge: v.optional(v.number()),
+      reducedMotion: v.optional(v.boolean()),
       assignedTemplateId: v.optional(v.id("speechCoachTemplates")),
       lastSyncedTemplateVersion: v.optional(v.number()),
       childOverrides: v.optional(v.object({
@@ -705,6 +711,7 @@ export default defineSchema({
     userId: v.optional(v.string()),
     mode: v.optional(v.union(v.literal("standalone"), v.literal("clinical"))),
     agentId: v.string(),
+    runtimeProvider: v.optional(v.union(v.literal("livekit"), v.literal("elevenlabs"))),
     conversationId: v.optional(v.string()),
     status: v.union(
       v.literal("configuring"),
@@ -737,6 +744,25 @@ export default defineSchema({
     startedAt: v.optional(v.number()),
     endedAt: v.optional(v.number()),
     transcriptStorageId: v.optional(v.id("_storage")),
+    transcriptCapturedAt: v.optional(v.number()),
+    rawAttempts: v.optional(v.array(v.object({
+      targetLabel: v.string(),
+      outcome: v.union(
+        v.literal("correct"),
+        v.literal("approximate"),
+        v.literal("incorrect"),
+        v.literal("no_response")
+      ),
+      retryCount: v.number(),
+      timestampMs: v.number(),
+    }))),
+    rawTranscriptTurns: v.optional(v.array(
+      v.object({
+        speaker: v.union(v.literal("coach"), v.literal("child"), v.literal("system")),
+        text: v.string(),
+        timestampMs: v.number(),
+      })
+    )),
     errorMessage: v.optional(v.string()),
     testMetadata: v.optional(testMetadataValidator),
   })
@@ -803,6 +829,24 @@ export default defineSchema({
       recommendedNextTargets: v.array(v.string()),
       homePracticeNotes: v.array(v.string()),
     })),
+    cueDistribution: v.optional(v.object({
+      spontaneous: v.number(),
+      model: v.number(),
+      phoneticCue: v.number(),
+      directCorrection: v.number(),
+    })),
+    positionAccuracy: v.optional(v.array(v.object({
+      sound: v.string(),
+      position: v.union(
+        v.literal("initial"),
+        v.literal("medial"),
+        v.literal("final"),
+        v.literal("unknown")
+      ),
+      correct: v.number(),
+      total: v.number(),
+    }))),
+    iepNoteDraft: v.optional(v.string()),
   })
     .index("by_patientId", ["patientId"])
     .index("by_sessionId", ["sessionId"])
@@ -1049,12 +1093,14 @@ export default defineSchema({
 
   speechCoachTemplates: defineTable({
     slpUserId: v.string(),
+    isSystemTemplate: v.optional(v.boolean()),
     ...speechCoachTemplateValidator.fields,
     createdAt: v.number(),
     updatedAt: v.number(),
   })
     .index("by_slpUserId_status", ["slpUserId", "status"])
-    .index("by_slpUserId_updatedAt", ["slpUserId", "updatedAt"]),
+    .index("by_slpUserId_updatedAt", ["slpUserId", "updatedAt"])
+    .index("by_isSystemTemplate", ["isSystemTemplate"]),
 });
 
 /** Active session states used by current code. Legacy states are read-only. */
