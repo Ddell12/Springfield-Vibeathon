@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 
+import type { Id } from "./_generated/dataModel";
 import { internalMutation, internalQuery, mutation, query } from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
 
@@ -24,7 +25,8 @@ export const updateName = mutation({
 export const setCaregiverRole = internalMutation({
   args: { userId: v.string() },
   handler: async (ctx, args) => {
-    const user = await ctx.db.get(args.userId as any) as { role?: string } | null;
+    const id = args.userId as Id<"users">;
+    const user = await ctx.db.get(id);
     if (!user) throw new Error(`User not found: ${args.userId}`);
     if (user.role) {
       console.warn(
@@ -32,7 +34,7 @@ export const setCaregiverRole = internalMutation({
       );
       return;
     }
-    await ctx.db.patch(args.userId as any, { role: "caregiver" });
+    await ctx.db.patch(id, { role: "caregiver" });
   },
 });
 
@@ -42,7 +44,7 @@ export const setUserRole = internalMutation({
     role: v.union(v.literal("slp"), v.literal("caregiver")),
   },
   handler: async (ctx, args) => {
-    await ctx.db.patch(args.userId as any, { role: args.role });
+    await ctx.db.patch(args.userId as Id<"users">, { role: args.role });
   },
 });
 

@@ -1,33 +1,29 @@
 import { ConvexError } from "convex/values";
+import { getAuthUserId } from "@convex-dev/auth/server";
 
 import type { Id } from "../_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "../_generated/server";
 
-function getAuthIdentifiers(
-  identity: { subject?: string | null; tokenIdentifier?: string | null } | null,
-): string[] {
+// Re-export so all existing `import { getAuthUserId } from "./lib/auth"` work
+export { getAuthUserId } from "@convex-dev/auth/server";
+
+/**
+ * Build a set of all identifiers for the current user — the Convex user ID,
+ * the Clerk subject, and the tokenIdentifier. Used for ownership checks on
+ * records that may store any of these formats.
+ */
+async function getAuthIdentifierSet(
+  ctx: QueryCtx | MutationCtx,
+): Promise<string[]> {
+  const userId = await getAuthUserId(ctx);
+  const identity = await ctx.auth.getUserIdentity();
   return Array.from(
     new Set(
-      [identity?.subject, identity?.tokenIdentifier].filter(
-        (value): value is string => typeof value === "string" && value.length > 0,
+      [userId as string | null, identity?.subject, identity?.tokenIdentifier].filter(
+        (v): v is string => typeof v === "string" && v.length > 0,
       ),
     ),
   );
-}
-
-async function getCurrentAuthIdentifiers(
-  ctx: QueryCtx | MutationCtx,
-): Promise<string[]> {
-  const identity = await ctx.auth.getUserIdentity();
-  return getAuthIdentifiers(identity);
-}
-
-/** Returns the preferred auth user id or null (for queries that return null on auth failure). */
-export async function getAuthUserId(
-  ctx: QueryCtx | MutationCtx,
-): Promise<string | null> {
-  const identity = await ctx.auth.getUserIdentity();
-  return identity?.subject ?? identity?.tokenIdentifier ?? null;
 }
 
 /**
@@ -54,10 +50,10 @@ export async function assertSessionOwner(
     throw new Error("Session has no owner — legacy session access denied");
   }
 
-  const authIdentifiers = await getCurrentAuthIdentifiers(ctx);
-  if (authIdentifiers.length === 0 || !authIdentifiers.includes(session.userId)) {
+  const authIds = await getAuthIdentifierSet(ctx);
+  if (authIds.length === 0 || !authIds.includes(session.userId)) {
     if (opts?.soft) return null;
-    throw new Error(authIdentifiers.length > 0 ? "Not authorized" : "Not authenticated");
+    throw new Error(authIds.length > 0 ? "Not authorized" : "Not authenticated");
   }
 
   return session;
@@ -70,8 +66,8 @@ export async function getAuthRole(
 ): Promise<UserRole | null> {
   const userId = await getAuthUserId(ctx);
   if (!userId) return null;
-  const user = await ctx.db.get(userId as any) as { role?: string } | null;
-  return (user?.role as UserRole) ?? null;
+  const user = await ctx.db.get(userId);
+  return ((user as { role?: string } | null)?.role as UserRole) ?? null;
 }
 
 /**
@@ -97,48 +93,46 @@ export async function assertCaregiverAccess(
   ctx: QueryCtx | MutationCtx,
   patientId: Id<"patients">,
 ): Promise<string> {
-  const authIdentifiers = await getCurrentAuthIdentifiers(ctx);
-  if (authIdentifiers.length === 0) throw new ConvexError("Not authenticated");
+  const authIds = await getAuthIdentifierSet(ctx);
+  if (authIds.length === 0) throw new ConvexError("Not authenticated");
 
-  for (const authIdentifier of authIdentifiers) {
+  for (const authId of authIds) {
     const link = await ctx.db
       .query("caregiverLinks")
       .withIndex("by_caregiverUserId_patientId", (q) =>
-        q.eq("caregiverUserId", authIdentifier).eq("patientId", patientId)
+        q.eq("caregiverUserId", authId).eq("patientId", patientId)
       )
       .first();
     if (link?.inviteStatus === "accepted") {
-      return link.caregiverUserId ?? authIdentifier;
+      return link.caregiverUserId ?? authId;
     }
   }
 
-  {
-    throw new ConvexError("Not authorized to access this patient");
-  }
+  throw new ConvexError("Not authorized to access this patient");
 }
 
 export async function assertPatientAccess(
   ctx: QueryCtx | MutationCtx,
   patientId: Id<"patients">,
 ): Promise<{ userId: string; role: UserRole }> {
-  const authIdentifiers = await getCurrentAuthIdentifiers(ctx);
-  if (authIdentifiers.length === 0) throw new ConvexError("Not authenticated");
+  const authIds = await getAuthIdentifierSet(ctx);
+  if (authIds.length === 0) throw new ConvexError("Not authenticated");
   const patient = await ctx.db.get(patientId);
   if (!patient) throw new ConvexError("Patient not found");
 
-  if (authIdentifiers.includes(patient.slpUserId)) {
+  if (authIds.includes(patient.slpUserId)) {
     return { userId: patient.slpUserId, role: "slp" };
   }
 
-  for (const authIdentifier of authIdentifiers) {
+  for (const authId of authIds) {
     const link = await ctx.db
       .query("caregiverLinks")
       .withIndex("by_caregiverUserId_patientId", (q) =>
-        q.eq("caregiverUserId", authIdentifier).eq("patientId", patientId)
+        q.eq("caregiverUserId", authId).eq("patientId", patientId)
       )
       .first();
     if (link?.inviteStatus === "accepted") {
-      return { userId: link.caregiverUserId ?? authIdentifier, role: "caregiver" };
+      return { userId: link.caregiverUserId ?? authId, role: "caregiver" };
     }
   }
 

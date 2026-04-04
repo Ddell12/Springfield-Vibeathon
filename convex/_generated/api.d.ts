@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as ResendOTPPasswordReset from "../ResendOTPPasswordReset.js";
 import type * as __tests___testHelpers from "../__tests__/testHelpers.js";
 import type * as activityLog from "../activityLog.js";
 import type * as ai from "../ai.js";
@@ -22,7 +23,6 @@ import type * as billingActions from "../billingActions.js";
 import type * as billingRecords from "../billingRecords.js";
 import type * as caregivers from "../caregivers.js";
 import type * as childApps from "../childApps.js";
-import type * as clerkActions from "../clerkActions.js";
 import type * as crons from "../crons.js";
 import type * as demo_seed from "../demo_seed.js";
 import type * as dischargeSummaries from "../dischargeSummaries.js";
@@ -95,6 +95,7 @@ import type * as testData from "../testData.js";
 import type * as therapy_templates from "../therapy_templates.js";
 import type * as tools from "../tools.js";
 import type * as usage from "../usage.js";
+import type * as users from "../users.js";
 
 import type {
   ApiFromModules,
@@ -103,6 +104,7 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  ResendOTPPasswordReset: typeof ResendOTPPasswordReset;
   "__tests__/testHelpers": typeof __tests___testHelpers;
   activityLog: typeof activityLog;
   ai: typeof ai;
@@ -117,7 +119,6 @@ declare const fullApi: ApiFromModules<{
   billingRecords: typeof billingRecords;
   caregivers: typeof caregivers;
   childApps: typeof childApps;
-  clerkActions: typeof clerkActions;
   crons: typeof crons;
   demo_seed: typeof demo_seed;
   dischargeSummaries: typeof dischargeSummaries;
@@ -190,6 +191,7 @@ declare const fullApi: ApiFromModules<{
   therapy_templates: typeof therapy_templates;
   tools: typeof tools;
   usage: typeof usage;
+  users: typeof users;
 }>;
 
 /**

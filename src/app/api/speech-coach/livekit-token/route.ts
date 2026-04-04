@@ -62,8 +62,10 @@ export async function POST(req: Request): Promise<Response> {
     }
   }
 
+  const sanitizedName = participantName.replace(/[^a-zA-Z0-9_-]/g, "_").slice(0, 128);
+
   const at = new AccessToken(apiKey, apiSecret, {
-    identity: participantName,
+    identity: sanitizedName,
     ttl: "30m",
   });
 

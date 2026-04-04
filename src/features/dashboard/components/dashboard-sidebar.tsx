@@ -4,7 +4,7 @@ import { useAuthActions } from "@convex-dev/auth/react";
 import { useQuery } from "convex/react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { useCurrentUser } from "@/features/auth/hooks/use-current-user";
 
@@ -27,12 +27,6 @@ export function DashboardSidebar() {
   const role = user?.role;
   const isCaregiver = role === "caregiver";
   const navItems = isCaregiver ? CAREGIVER_NAV_ITEMS : NAV_ITEMS;
-
-  useEffect(() => {
-    if (user?.role === "caregiver") {
-      router.replace("/family");
-    }
-  }, [user?.role, router]);
 
   const [collapsed, setCollapsed] = useState(
     () => typeof window !== "undefined" && localStorage.getItem("vocali_sidebar_collapsed") === "true",
