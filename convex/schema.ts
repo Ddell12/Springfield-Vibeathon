@@ -731,6 +731,8 @@ export default defineSchema({
       ageRange: v.union(v.literal("2-4"), v.literal("5-7")),
       durationMinutes: v.number(),
       focusArea: v.optional(v.string()),
+      mode: v.optional(v.union(v.literal("classic"), v.literal("adventure"))),
+      themeSlug: v.optional(v.string()),
       runtimeSnapshot: v.optional(v.object({
         templateId: v.optional(v.id("speechCoachTemplates")),
         templateVersion: v.optional(v.number()),
@@ -1101,6 +1103,52 @@ export default defineSchema({
     .index("by_slpUserId_status", ["slpUserId", "status"])
     .index("by_slpUserId_updatedAt", ["slpUserId", "updatedAt"])
     .index("by_isSystemTemplate", ["isSystemTemplate"]),
+
+  // Adventure Mode tables
+  adventureThemes: defineTable({
+    name: v.string(),
+    slug: v.string(),
+    description: v.string(),
+    imagePrompt: v.string(),
+    ageRanges: v.array(v.union(v.literal("2-4"), v.literal("5-7"))),
+  }).index("by_slug", ["slug"]),
+
+  adventureWords: defineTable({
+    themeSlug: v.string(),
+    targetSound: v.string(),
+    tier: v.union(v.literal("word"), v.literal("phrase"), v.literal("sentence")),
+    content: v.string(),
+    imagePrompt: v.string(),
+    difficulty: v.number(),
+  }).index("by_themeSlug_targetSound_tier", ["themeSlug", "targetSound", "tier"]),
+
+  adventureProgress: defineTable({
+    patientId: v.id("patients"),
+    themeSlug: v.string(),
+    targetSound: v.string(),
+    tier: v.union(v.literal("word"), v.literal("phrase"), v.literal("sentence")),
+    masteryPct: v.number(),
+    attemptCount: v.number(),
+    lastSessionId: v.optional(v.id("adventureSessions")),
+    unlockedAt: v.optional(v.number()),
+  }).index("by_patient_theme", ["patientId", "themeSlug"]),
+
+  adventureSessions: defineTable({
+    sessionId: v.id("speechCoachSessions"),
+    patientId: v.id("patients"),
+    themeSlug: v.string(),
+    targetSounds: v.array(v.string()),
+    startTier: v.union(v.literal("word"), v.literal("phrase"), v.literal("sentence")),
+    endTier: v.union(v.literal("word"), v.literal("phrase"), v.literal("sentence")),
+    totalAttempts: v.number(),
+    correctAttempts: v.number(),
+    wordLog: v.array(v.object({
+      content: v.string(),
+      tier: v.union(v.literal("word"), v.literal("phrase"), v.literal("sentence")),
+      correct: v.boolean(),
+      timestamp: v.number(),
+    })),
+  }).index("by_patient", ["patientId"]),
 });
 
 /** Active session states used by current code. Legacy states are read-only. */

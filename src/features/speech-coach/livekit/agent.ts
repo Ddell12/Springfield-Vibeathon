@@ -1,7 +1,9 @@
 import { voice } from "@livekit/agents";
 import type { Room } from "livekit-client";
 
-import { createSpeechCoachTools } from "./tools";
+import { buildAdventureSystemPromptAddendum } from "./model-config";
+import { createAdventureTools, createSpeechCoachTools } from "./tools";
+import type { AdventureSessionEngine } from "./adventure-engine";
 
 type SpeechCoachAgentConfig = {
   instructions: string;
@@ -28,6 +30,31 @@ export function createSpeechCoachAgent(config: SpeechCoachAgentConfig): voice.Ag
     targetSummary.length > 0
       ? `${config.instructions}\nUse only these planned target items during prompting: ${targetSummary}`
       : config.instructions;
+
+  return new voice.Agent({ instructions, tools });
+}
+
+type AdventureAgentConfig = {
+  themeSlug: string;
+  baseInstructions: string;
+  room: Room;
+  sessionId: string;
+  convexUrl: string;
+  runtimeSecret: string;
+  engine: AdventureSessionEngine;
+};
+
+export function createAdventureAgent(config: AdventureAgentConfig): voice.Agent {
+  const tools = createAdventureTools({
+    room: config.room,
+    sessionId: config.sessionId,
+    convexUrl: config.convexUrl,
+    runtimeSecret: config.runtimeSecret,
+    engine: config.engine,
+  });
+
+  const adventureAddendum = buildAdventureSystemPromptAddendum(config.themeSlug);
+  const instructions = `${config.baseInstructions}\n\n${adventureAddendum}`;
 
   return new voice.Agent({ instructions, tools });
 }

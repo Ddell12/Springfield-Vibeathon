@@ -12,6 +12,7 @@ import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 import { useSpeechSession } from "../hooks/use-speech-session";
 import { ActiveSession } from "./active-session";
+import { AdventureSession } from "./adventure-session";
 import { CaregiverProgressCard } from "./caregiver-progress-card";
 import { SessionDotCalendar } from "./session-dot-calendar";
 import { SessionConfig } from "./session-config";
@@ -80,6 +81,18 @@ export function SpeechCoachPage({ patientId, homeProgramId }: Props) {
 
   // Active session takes over the whole screen
   if (session.phase === "active" && session.runtimeSession) {
+    if (session.sessionConfig?.mode === "adventure") {
+      return (
+        <AdventureSession
+          runtimeSession={session.runtimeSession}
+          onConversationStarted={(id) => session.markActive(id)}
+          onEnd={() => session.endSession()}
+          durationMinutes={session.durationMinutes}
+          sessionConfig={session.sessionConfig}
+          speechCoachConfig={program.speechCoachConfig}
+        />
+      );
+    }
     return (
       <ActiveSession
         runtimeSession={session.runtimeSession}

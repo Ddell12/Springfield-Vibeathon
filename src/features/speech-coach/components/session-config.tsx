@@ -7,12 +7,15 @@ import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
 
 import { type SpeechCoachConfig,TARGET_SOUNDS } from "../lib/config";
+import { ThemePicker } from "./theme-picker";
 
 type SessionConfigData = {
   targetSounds: string[];
   ageRange: "2-4" | "5-7";
   durationMinutes: number;
   focusArea?: string;
+  mode?: "classic" | "adventure";
+  themeSlug?: string;
 };
 
 type Props = {
@@ -36,6 +39,8 @@ export function SessionConfig({ speechCoachConfig, onStart, lastRecommended, isL
     return 15;
   });
   const [focusArea, setFocusArea] = useState("");
+  const [mode, setMode] = useState<"classic" | "adventure">("classic");
+  const [themeSlug, setThemeSlug] = useState<string | null>(null);
 
   const toggleSound = (id: string) => {
     setSelectedSounds((prev) =>
@@ -49,11 +54,60 @@ export function SessionConfig({ speechCoachConfig, onStart, lastRecommended, isL
       ageRange,
       durationMinutes: duration,
       focusArea: focusArea.trim() || undefined,
+      mode,
+      themeSlug: mode === "adventure" ? (themeSlug ?? undefined) : undefined,
     });
   };
 
+  const adventureReady = mode === "adventure" && themeSlug;
+
   return (
     <div className="flex flex-col gap-8">
+      {/* Mode selector */}
+      <div>
+        <h3 className="font-body text-lg font-semibold text-foreground">
+          Session mode
+        </h3>
+        <div className="mt-3 flex gap-2">
+          {(["classic", "adventure"] as const).map((m) => (
+            <button
+              key={m}
+              type="button"
+              onClick={() => setMode(m)}
+              className={cn(
+                "flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-medium transition-colors duration-300",
+                mode === m
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-surface-container-high text-on-surface-variant hover:bg-surface-container-highest"
+              )}
+            >
+              {m === "classic" ? "🎯 Classic" : "🗺️ Adventure"}
+            </button>
+          ))}
+        </div>
+        {mode === "adventure" && (
+          <p className="mt-2 text-xs text-muted-foreground">
+            Your coach will play a character in a story world, embedding speech practice into the narrative.
+          </p>
+        )}
+      </div>
+
+      {/* Theme picker — adventure only */}
+      {mode === "adventure" && (
+        <div>
+          <h3 className="font-body text-lg font-semibold text-foreground">
+            Pick a world
+          </h3>
+          <div className="mt-3">
+            <ThemePicker
+              selectedSlug={themeSlug}
+              ageRange={ageRange}
+              onSelect={setThemeSlug}
+            />
+          </div>
+        </div>
+      )}
+
       {/* Target sounds */}
       <div>
         <h3 className="font-body text-lg font-semibold text-foreground">
@@ -180,10 +234,16 @@ export function SessionConfig({ speechCoachConfig, onStart, lastRecommended, isL
       {/* Start */}
       <Button
         onClick={handleStart}
-        disabled={selectedSounds.length === 0 || isLoading}
+        disabled={selectedSounds.length === 0 || isLoading || (mode === "adventure" && !adventureReady)}
         className="w-full bg-gradient-to-br from-[#00595c] to-[#0d7377] py-6 text-lg font-semibold"
       >
-        {isLoading ? "Connecting..." : "Start Session"}
+        {isLoading
+          ? "Connecting..."
+          : mode === "adventure"
+          ? adventureReady
+            ? "Start Adventure"
+            : "Pick a world to continue"
+          : "Start Session"}
       </Button>
     </div>
   );

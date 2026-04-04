@@ -11,6 +11,8 @@ export type SessionConfig = {
   ageRange: "2-4" | "5-7";
   durationMinutes: number;
   focusArea?: string;
+  mode?: "classic" | "adventure";
+  themeSlug?: string;
 };
 
 export type LiveKitRuntimeSession = {

@@ -12,7 +12,8 @@ import { fileURLToPath } from "url";
 
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
-import { createSpeechCoachAgent } from "./agent";
+import { AdventureSessionEngine } from "./adventure-engine";
+import { createAdventureAgent, createSpeechCoachAgent } from "./agent";
 import { SPEECH_COACH_REALTIME_MODEL, SPEECH_COACH_VOICE_MODE } from "./model-config";
 import {
   bufferConversationItem,
@@ -29,6 +30,11 @@ type RoomMetadata = {
   sessionId?: string;
   instructions?: string;
   targetItems?: Array<{ id: string; label: string; visualUrl?: string }>;
+  // Adventure mode
+  mode?: "classic" | "adventure";
+  themeSlug?: string;
+  targetSounds?: string[];
+  patientId?: string;
 };
 
 export function createSpeechCoachRealtimeModelOptions(): ConstructorParameters<
@@ -115,23 +121,83 @@ const agent = defineAgent({
       voiceMode: SPEECH_COACH_VOICE_MODE,
       roomName: ctx.room.name,
       sessionId,
+      mode: metadata.mode ?? "classic",
     });
 
-    await session.start({
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      room: ctx.room as any,
-      agent: createSpeechCoachAgent({
-        instructions:
-          metadata.instructions ??
-          "You are a helpful speech coach. Guide the child through articulation practice with patience and encouragement.",
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        room: ctx.room as any,
-        sessionId: sessionId ?? "",
+    if (
+      metadata.mode === "adventure" &&
+      metadata.patientId &&
+      metadata.themeSlug &&
+      sessionId
+    ) {
+      // Adventure mode: initialize the adaptive engine and start the adventure agent
+      const engine = new AdventureSessionEngine({
+        patientId: metadata.patientId,
+        themeSlug: metadata.themeSlug,
+        targetSounds: metadata.targetSounds ?? [],
         convexUrl,
         runtimeSecret,
-        targetItems: metadata.targetItems,
-      }),
-    });
+      });
+
+      await engine.initialize();
+
+      // Register adventure-specific shutdown: persist word log + recompute mastery
+      ctx.addShutdownCallback(async () => {
+        const payload = engine.buildSessionPayload();
+        if (payload.totalAttempts === 0) return;
+
+        if (!convexUrl || !runtimeSecret) {
+          console.error("[speech-coach] missing env vars — cannot persist adventure session");
+          return;
+        }
+
+        try {
+          const convexClient = new ConvexHttpClient(convexUrl);
+          await convexClient.action(api.adventureSessionActions.persistAdventureSession, {
+            runtimeSecret,
+            sessionId: sessionId as Id<"speechCoachSessions">,
+            patientId: metadata.patientId! as Id<"patients">,
+            ...payload,
+          });
+        } catch (err) {
+          console.error("[speech-coach] adventure session persistence failed:", err);
+        }
+      });
+
+      await session.start({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        room: ctx.room as any,
+        agent: createAdventureAgent({
+          themeSlug: metadata.themeSlug,
+          baseInstructions:
+            metadata.instructions ??
+            "You are a friendly speech coach helping a child practice speech sounds through interactive storytelling.",
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          room: ctx.room as any,
+          sessionId,
+          convexUrl,
+          runtimeSecret,
+          engine,
+        }),
+      });
+    } else {
+      // Classic mode (unchanged)
+      await session.start({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        room: ctx.room as any,
+        agent: createSpeechCoachAgent({
+          instructions:
+            metadata.instructions ??
+            "You are a helpful speech coach. Guide the child through articulation practice with patience and encouragement.",
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          room: ctx.room as any,
+          sessionId: sessionId ?? "",
+          convexUrl,
+          runtimeSecret,
+          targetItems: metadata.targetItems,
+        }),
+      });
+    }
   },
 });
 

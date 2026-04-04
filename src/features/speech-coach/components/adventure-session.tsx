@@ -1,0 +1,372 @@
+"use client";
+
+import { LiveKitRoom, RoomAudioRenderer, useRoomContext } from "@livekit/components-react";
+import Image from "next/image";
+import { RoomEvent } from "livekit-client";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
+
+import { cn } from "@/core/utils";
+import { Button } from "@/shared/components/ui/button";
+
+import type { SpeechCoachConfig } from "../lib/config";
+import type { AgentVisualMessage } from "../livekit/tools";
+
+type SessionConfig = {
+  targetSounds: string[];
+  ageRange: "2-4" | "5-7";
+  durationMinutes: number;
+  focusArea?: string;
+  mode?: "classic" | "adventure";
+  themeSlug?: string;
+};
+
+type LiveKitRuntimeSession = {
+  runtime: "livekit-agent";
+  serverUrl: string;
+  tokenPath: string;
+  roomName: string;
+  roomMetadata?: string;
+};
+
+type Props = {
+  runtimeSession: LiveKitRuntimeSession;
+  onConversationStarted: (conversationId: string) => void;
+  onEnd: () => void;
+  durationMinutes: number;
+  sessionConfig?: SessionConfig;
+  speechCoachConfig?: SpeechCoachConfig;
+};
+
+type SessionVisualState = {
+  targetLabel: string;
+  targetVisualUrl?: string;
+  promptState: "listen" | "your_turn" | "try_again" | "nice_job";
+  totalCorrect: number;
+};
+
+const THEME_COLORS: Record<string, { banner: string; accent: string }> = {
+  dinosaurs: { banner: "from-green-800 to-emerald-600", accent: "text-emerald-300" },
+  ocean: { banner: "from-blue-700 to-cyan-500", accent: "text-cyan-300" },
+  space: { banner: "from-indigo-900 to-violet-700", accent: "text-violet-300" },
+  safari: { banner: "from-amber-700 to-yellow-500", accent: "text-yellow-300" },
+  fairy: { banner: "from-pink-600 to-purple-400", accent: "text-pink-200" },
+  farm: { banner: "from-lime-700 to-yellow-500", accent: "text-lime-300" },
+  pirates: { banner: "from-blue-900 to-teal-700", accent: "text-teal-300" },
+  superheroes: { banner: "from-red-700 to-orange-500", accent: "text-orange-300" },
+  arctic: { banner: "from-sky-400 to-blue-200", accent: "text-sky-100" },
+  trains: { banner: "from-orange-700 to-red-500", accent: "text-orange-200" },
+};
+
+const THEME_EMOJI: Record<string, string> = {
+  dinosaurs: "🦕",
+  ocean: "🐠",
+  space: "🚀",
+  safari: "🦁",
+  fairy: "🧚",
+  farm: "🐑",
+  pirates: "🏴‍☠️",
+  superheroes: "🦸",
+  arctic: "🐧",
+  trains: "🚂",
+};
+
+const PROMPT_STATE_CONFIG = {
+  listen: { label: "Listen...", bg: "bg-muted/40", text: "text-muted-foreground" },
+  your_turn: { label: "Your turn!", bg: "bg-primary/10", text: "text-primary" },
+  nice_job: { label: "Nice job! ⭐", bg: "bg-green-100", text: "text-green-700" },
+  try_again: { label: "Try again!", bg: "bg-amber-100", text: "text-amber-700" },
+};
+
+function AgentDataListener({ onMessage }: { onMessage: (msg: AgentVisualMessage) => void }) {
+  const room = useRoomContext();
+  useEffect(() => {
+    function handleData(payload: Uint8Array) {
+      try {
+        const msg = JSON.parse(new TextDecoder().decode(payload)) as AgentVisualMessage;
+        onMessage(msg);
+      } catch {
+        // Ignore malformed data
+      }
+    }
+    room.on(RoomEvent.DataReceived, handleData);
+    return () => { room.off(RoomEvent.DataReceived, handleData); };
+  }, [room, onMessage]);
+  return null;
+}
+
+export function AdventureSession(props: Props) {
+  return <AdventureSessionInner {...props} />;
+}
+
+function AdventureSessionInner({
+  runtimeSession,
+  onConversationStarted,
+  onEnd,
+  durationMinutes,
+  sessionConfig,
+  speechCoachConfig,
+}: Props) {
+  const wasConnected = useRef(false);
+  const hasStarted = useRef(false);
+  const lastMilestoneRef = useRef(0);
+  const onEndRef = useRef(onEnd);
+  useEffect(() => { onEndRef.current = onEnd; });
+
+  const [token, setToken] = useState<string | null>(null);
+  const [serverUrl, setServerUrl] = useState<string | null>(null);
+  const [fetchError, setFetchError] = useState(false);
+  const [isConnected, setIsConnected] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [showMilestone, setShowMilestone] = useState<{ tier: string; masteryPct: number } | null>(null);
+  const [slpSpeaking, setSlpSpeaking] = useState(false);
+
+  // Per-session attempt trail — icons for bottom progress trail
+  const [attemptTrail, setAttemptTrail] = useState<{ correct: boolean; label: string }[]>([]);
+
+  const reducedMotion = speechCoachConfig?.reducedMotion ?? false;
+  const themeSlug = sessionConfig?.themeSlug ?? "dinosaurs";
+  const themeColors = THEME_COLORS[themeSlug] ?? { banner: "from-primary to-primary/60", accent: "text-white" };
+  const themeEmoji = THEME_EMOJI[themeSlug] ?? "🌟";
+
+  const [visual, setVisual] = useState<SessionVisualState>({
+    targetLabel: sessionConfig?.targetSounds?.[0] ?? "Practice sound",
+    promptState: "listen",
+    totalCorrect: 0,
+  });
+
+  const handleAgentMessage = useCallback((msg: AgentVisualMessage) => {
+    if (msg.type === "visual_state") {
+      setVisual({
+        targetLabel: msg.targetLabel,
+        targetVisualUrl: msg.targetImageUrl,
+        promptState: msg.promptState,
+        totalCorrect: msg.totalCorrect,
+      });
+      if (msg.promptState === "nice_job") {
+        setAttemptTrail((prev) => [...prev, { correct: true, label: msg.targetLabel }]);
+      } else if (msg.promptState === "try_again") {
+        setAttemptTrail((prev) => [...prev, { correct: false, label: msg.targetLabel }]);
+      }
+      // Confetti at every 5 correct
+      if (msg.totalCorrect > 0 && msg.totalCorrect % 5 === 0 && msg.totalCorrect !== lastMilestoneRef.current) {
+        lastMilestoneRef.current = msg.totalCorrect;
+        setShowConfetti(true);
+        setTimeout(() => setShowConfetti(false), 1500);
+      }
+    } else if (msg.type === "advance_target") {
+      setVisual((prev) => ({ ...prev, targetLabel: msg.nextLabel, promptState: "listen" }));
+    } else if (msg.type === "session_milestone") {
+      setShowMilestone({ tier: msg.tier, masteryPct: msg.masteryPct });
+      setTimeout(() => setShowMilestone(null), 3000);
+    } else if (msg.type === "agent_status") {
+      setSlpSpeaking(msg.status === "paused");
+    }
+  }, []);
+
+  // Fetch LiveKit token
+  useEffect(() => {
+    if (hasStarted.current) return;
+    hasStarted.current = true;
+
+    fetch(runtimeSession.tokenPath, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        roomName: runtimeSession.roomName,
+        participantName: "participant",
+        roomMetadata: runtimeSession.roomMetadata,
+      }),
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error(`${res.status}`);
+        return res.json() as Promise<{ token: string; serverUrl: string }>;
+      })
+      .then(({ token, serverUrl }) => { setToken(token); setServerUrl(serverUrl); })
+      .catch(() => setFetchError(true));
+  }, [runtimeSession.roomMetadata, runtimeSession.roomName, runtimeSession.tokenPath]);
+
+  // Connection timeout
+  useEffect(() => {
+    if (fetchError) {
+      toast.error("Couldn't reach speech coach", { description: "Check your internet connection and try again." });
+      onEndRef.current();
+      return;
+    }
+    const timeout = setTimeout(() => {
+      if (!wasConnected.current) {
+        toast.error("Couldn't reach speech coach", { description: "Check your internet connection and try again." });
+        onEndRef.current();
+      }
+    }, 15_000);
+    return () => clearTimeout(timeout);
+  }, [fetchError]);
+
+  // Auto-stop after duration
+  useEffect(() => {
+    const timeout = setTimeout(() => onEndRef.current(), durationMinutes * 60 * 1000);
+    return () => clearTimeout(timeout);
+  }, [durationMinutes]);
+
+  const promptConfig = PROMPT_STATE_CONFIG[visual.promptState];
+
+  // Show last 10 trail nodes, newer on right
+  const trailNodes = attemptTrail.slice(-10);
+
+  return (
+    <div className="relative flex h-full flex-col overflow-hidden">
+      {/* LiveKit room */}
+      {token && serverUrl && (
+        <LiveKitRoom
+          token={token}
+          serverUrl={serverUrl}
+          connect={true}
+          audio={true}
+          video={false}
+          onConnected={() => {
+            wasConnected.current = true;
+            setIsConnected(true);
+            onConversationStarted(runtimeSession.roomName);
+          }}
+          onDisconnected={() => { if (wasConnected.current) onEndRef.current(); }}
+        >
+          <RoomAudioRenderer />
+          <AgentDataListener onMessage={handleAgentMessage} />
+        </LiveKitRoom>
+      )}
+
+      {/* Confetti overlay */}
+      {showConfetti && !reducedMotion && (
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-20 animate-confetti-burst" />
+      )}
+
+      {/* Milestone overlay */}
+      {showMilestone && (
+        <div
+          aria-live="polite"
+          className={cn(
+            "absolute inset-0 z-30 flex flex-col items-center justify-center gap-4 pointer-events-none",
+            !reducedMotion && "animate-in fade-in duration-300"
+          )}
+        >
+          <div className="rounded-3xl bg-white/90 px-8 py-6 shadow-xl text-center">
+            <p className="text-4xl mb-2" aria-hidden="true">🎉</p>
+            <p className="font-headline text-xl font-bold text-foreground">
+              {showMilestone.tier.charAt(0).toUpperCase() + showMilestone.tier.slice(1)} tier unlocked!
+            </p>
+            <p className="text-sm text-muted-foreground mt-1">
+              {Math.round(showMilestone.masteryPct * 100)}% mastery
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* SLP speaking badge */}
+      {slpSpeaking && (
+        <div className="absolute top-16 left-1/2 -translate-x-1/2 z-10 rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-800 shadow">
+          SLP is speaking
+        </div>
+      )}
+
+      {/* Top — World strip */}
+      <div className={cn("flex items-center gap-3 px-4 py-3 bg-gradient-to-r text-white", themeColors.banner)}>
+        <span className="text-2xl" aria-hidden="true">{themeEmoji}</span>
+        <div className="flex-1">
+          <p className={cn("text-xs font-medium uppercase tracking-wide opacity-80", themeColors.accent)}>
+            Adventure Mode
+          </p>
+          <p className="text-sm font-semibold leading-tight">
+            {sessionConfig?.themeSlug
+              ? sessionConfig.themeSlug.charAt(0).toUpperCase() + sessionConfig.themeSlug.slice(1)
+              : "Adventure"}
+          </p>
+        </div>
+        {/* Stop button — top right, small */}
+        <Button
+          onClick={() => onEndRef.current()}
+          variant="ghost"
+          size="sm"
+          className="text-white/80 hover:text-white hover:bg-white/10 h-8 w-8 p-0 rounded-full"
+          aria-label="Stop session"
+        >
+          ✕
+        </Button>
+      </div>
+
+      {/* Center — Stage */}
+      <div className="flex-1 flex flex-col items-center justify-center gap-4 px-4 py-6">
+        <div className="w-full max-w-sm flex flex-col items-center gap-4">
+          {/* Target image card */}
+          <div className="w-full rounded-3xl bg-background p-6 shadow-sm">
+            <div className="flex flex-col items-center gap-4">
+              <div
+                className={cn(
+                  "flex h-44 w-44 items-center justify-center overflow-hidden rounded-3xl bg-muted/40",
+                  !reducedMotion && "transition-opacity duration-300",
+                  isConnected ? "opacity-100" : "opacity-50"
+                )}
+              >
+                {visual.targetVisualUrl ? (
+                  <Image
+                    src={visual.targetVisualUrl}
+                    alt={visual.targetLabel}
+                    width={176}
+                    height={176}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <span className="font-headline text-4xl text-foreground">{visual.targetLabel}</span>
+                )}
+              </div>
+              <p className="font-headline text-2xl text-foreground text-center">{visual.targetLabel}</p>
+              {!isConnected && (
+                <p className="text-xs text-muted-foreground/60">Connecting…</p>
+              )}
+            </div>
+          </div>
+
+          {/* Prompt state bubble */}
+          <div
+            className={cn(
+              "w-full rounded-2xl px-4 py-3 text-center",
+              promptConfig.bg,
+              !reducedMotion && "transition-all duration-300"
+            )}
+          >
+            <p className={cn("font-body text-base font-semibold", promptConfig.text)}>
+              {promptConfig.label}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Bottom — Progress trail */}
+      <div className="px-4 pb-6">
+        <div className="flex items-center gap-1.5 justify-center overflow-x-auto py-2">
+          {trailNodes.length === 0 ? (
+            <div className="flex gap-1.5">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <span key={i} aria-hidden="true" className="h-2.5 w-2.5 rounded-full bg-muted" />
+              ))}
+            </div>
+          ) : (
+            trailNodes.map((node, i) => (
+              <span
+                key={i}
+                title={node.label}
+                aria-hidden="true"
+                className={cn(
+                  "h-3 w-3 rounded-full flex-shrink-0",
+                  !reducedMotion && "transition-all duration-300",
+                  node.correct
+                    ? "bg-primary shadow-sm shadow-primary/40"
+                    : "bg-muted"
+                )}
+              />
+            ))
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
