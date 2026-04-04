@@ -177,6 +177,89 @@ const ADVENTURE_WORDS: WordSeed[] = [
   { themeSlug: "farm", targetSound: "/l/", tier: "sentence", content: "The lemon tree has lots of leaves.", imagePrompt: "lemon tree with many green leaves", difficulty: 3 },
   { themeSlug: "farm", targetSound: "/l/", tier: "sentence", content: "Lily the lamb loves to play in the field.", imagePrompt: "lamb running and playing in flowers", difficulty: 4 },
   { themeSlug: "farm", targetSound: "/l/", tier: "sentence", content: "The llama leaped over the ladder on the long lane.", imagePrompt: "llama jumping over a ladder in a long path", difficulty: 5 },
+
+  // /s/ sound — Dino Valley — words
+  { themeSlug: "dinosaurs", targetSound: "/s/", tier: "word", content: "sun", imagePrompt: "bright cartoon sun shining over dino valley", difficulty: 1 },
+  { themeSlug: "dinosaurs", targetSound: "/s/", tier: "word", content: "sock", imagePrompt: "cartoon sock next to a dinosaur egg", difficulty: 1 },
+  { themeSlug: "dinosaurs", targetSound: "/s/", tier: "word", content: "soap", imagePrompt: "bar of soap next to a baby dinosaur in a bath", difficulty: 1 },
+  { themeSlug: "dinosaurs", targetSound: "/s/", tier: "word", content: "seal", imagePrompt: "cartoon seal sitting next to a dinosaur", difficulty: 1 },
+  { themeSlug: "dinosaurs", targetSound: "/s/", tier: "word", content: "sand", imagePrompt: "sandy desert with dinosaur footprints", difficulty: 2 },
+  { themeSlug: "dinosaurs", targetSound: "/s/", tier: "word", content: "swim", imagePrompt: "cartoon dinosaur swimming in a river", difficulty: 2 },
+  { themeSlug: "dinosaurs", targetSound: "/s/", tier: "word", content: "stone", imagePrompt: "large smooth stone with dinosaur fossil markings", difficulty: 2 },
+  { themeSlug: "dinosaurs", targetSound: "/s/", tier: "word", content: "seven", imagePrompt: "seven colorful cartoon dinosaur eggs in a nest", difficulty: 3 },
+  { themeSlug: "dinosaurs", targetSound: "/s/", tier: "word", content: "snake", imagePrompt: "cartoon snake coiled near a dinosaur nest", difficulty: 3 },
+  { themeSlug: "dinosaurs", targetSound: "/s/", tier: "word", content: "stegosaurus", imagePrompt: "friendly cartoon stegosaurus with spiky back plates", difficulty: 4 },
+  { themeSlug: "dinosaurs", targetSound: "/s/", tier: "word", content: "skeleton", imagePrompt: "friendly cartoon dinosaur skeleton in a museum", difficulty: 5 },
+  // /s/ sound — Dino Valley — phrases
+  { themeSlug: "dinosaurs", targetSound: "/s/", tier: "phrase", content: "sunny sky", imagePrompt: "bright sun in a blue sky over dino valley", difficulty: 1 },
+  { themeSlug: "dinosaurs", targetSound: "/s/", tier: "phrase", content: "soft sand", imagePrompt: "soft sandy ground with small dinosaur tracks", difficulty: 1 },
+  { themeSlug: "dinosaurs", targetSound: "/s/", tier: "phrase", content: "seven stones", imagePrompt: "seven round stones arranged in a circle in dino valley", difficulty: 2 },
+  { themeSlug: "dinosaurs", targetSound: "/s/", tier: "phrase", content: "swimming stegosaurus", imagePrompt: "cartoon stegosaurus paddling in a river", difficulty: 3 },
+  { themeSlug: "dinosaurs", targetSound: "/s/", tier: "phrase", content: "snake in the sand", imagePrompt: "cartoon snake slithering through sandy dino valley", difficulty: 4 },
+  { themeSlug: "dinosaurs", targetSound: "/s/", tier: "phrase", content: "super speedy stegosaurus", imagePrompt: "stegosaurus running very fast leaving dust clouds", difficulty: 5 },
+  // /s/ sound — Dino Valley — sentences
+  { themeSlug: "dinosaurs", targetSound: "/s/", tier: "sentence", content: "The stegosaurus sat in the sun.", imagePrompt: "stegosaurus sitting contentedly under bright sunshine", difficulty: 1 },
+  { themeSlug: "dinosaurs", targetSound: "/s/", tier: "sentence", content: "Seven small dinosaurs swim in the stream.", imagePrompt: "seven baby dinosaurs splashing in a stream", difficulty: 2 },
+  { themeSlug: "dinosaurs", targetSound: "/s/", tier: "sentence", content: "The snake slides across the soft sand.", imagePrompt: "cartoon snake gliding gracefully over sandy ground", difficulty: 3 },
+  { themeSlug: "dinosaurs", targetSound: "/s/", tier: "sentence", content: "Stacy the stegosaurus collects smooth stones by the stream.", imagePrompt: "stegosaurus carefully picking up stones near a stream", difficulty: 5 },
+
+  // /l/ sound — Dino Valley — words
+  { themeSlug: "dinosaurs", targetSound: "/l/", tier: "word", content: "lava", imagePrompt: "glowing orange lava flow near a prehistoric volcano", difficulty: 1 },
+  { themeSlug: "dinosaurs", targetSound: "/l/", tier: "word", content: "leaf", imagePrompt: "large green leaf in the prehistoric jungle", difficulty: 1 },
+  { themeSlug: "dinosaurs", targetSound: "/l/", tier: "word", content: "log", imagePrompt: "big fallen log in the dino valley forest", difficulty: 1 },
+  { themeSlug: "dinosaurs", targetSound: "/l/", tier: "word", content: "loud", imagePrompt: "cartoon dinosaur roaring very loudly with sound waves", difficulty: 1 },
+  { themeSlug: "dinosaurs", targetSound: "/l/", tier: "word", content: "light", imagePrompt: "beam of sunlight shining through jungle trees onto a dinosaur", difficulty: 2 },
+  { themeSlug: "dinosaurs", targetSound: "/l/", tier: "word", content: "lake", imagePrompt: "shimmering prehistoric lake surrounded by ferns", difficulty: 2 },
+  { themeSlug: "dinosaurs", targetSound: "/l/", tier: "word", content: "little", imagePrompt: "tiny baby dinosaur standing next to a large adult", difficulty: 2 },
+  { themeSlug: "dinosaurs", targetSound: "/l/", tier: "word", content: "leap", imagePrompt: "cartoon dinosaur leaping over a log", difficulty: 3 },
+  { themeSlug: "dinosaurs", targetSound: "/l/", tier: "word", content: "long", imagePrompt: "very long-necked brachiosaurus stretching up to eat leaves", difficulty: 3 },
+  { themeSlug: "dinosaurs", targetSound: "/l/", tier: "word", content: "lightning", imagePrompt: "lightning bolt striking near a sleeping dinosaur", difficulty: 4 },
+  // /l/ sound — Dino Valley — phrases
+  { themeSlug: "dinosaurs", targetSound: "/l/", tier: "phrase", content: "little leaf", imagePrompt: "tiny green leaf on a large prehistoric plant", difficulty: 1 },
+  { themeSlug: "dinosaurs", targetSound: "/l/", tier: "phrase", content: "lava lake", imagePrompt: "steaming lava lake in the center of dino valley", difficulty: 2 },
+  { themeSlug: "dinosaurs", targetSound: "/l/", tier: "phrase", content: "long legs", imagePrompt: "brachiosaurus with very long legs walking through jungle", difficulty: 2 },
+  { themeSlug: "dinosaurs", targetSound: "/l/", tier: "phrase", content: "leaping lizard", imagePrompt: "cartoon lizard leaping between rocks in dino valley", difficulty: 3 },
+  { themeSlug: "dinosaurs", targetSound: "/l/", tier: "phrase", content: "lightning lights the lake", imagePrompt: "lightning reflecting off a prehistoric lake at night", difficulty: 5 },
+  // /l/ sound — Dino Valley — sentences
+  { themeSlug: "dinosaurs", targetSound: "/l/", tier: "sentence", content: "The little dinosaur leaps over the log.", imagePrompt: "baby dinosaur jumping over a fallen log", difficulty: 1 },
+  { themeSlug: "dinosaurs", targetSound: "/l/", tier: "sentence", content: "Long-neck looks for leaves by the lake.", imagePrompt: "brachiosaurus eating leaves near a lake", difficulty: 2 },
+  { themeSlug: "dinosaurs", targetSound: "/l/", tier: "sentence", content: "Lightning lit up the lava lake last night.", imagePrompt: "dramatic lightning over a glowing lava lake", difficulty: 4 },
+
+  // /sh/ sound — Dino Valley — words
+  { themeSlug: "dinosaurs", targetSound: "/sh/", tier: "word", content: "shell", imagePrompt: "shiny prehistoric shell found near a dinosaur nest", difficulty: 1 },
+  { themeSlug: "dinosaurs", targetSound: "/sh/", tier: "word", content: "shake", imagePrompt: "cartoon dinosaur shaking water off after a swim", difficulty: 1 },
+  { themeSlug: "dinosaurs", targetSound: "/sh/", tier: "word", content: "shine", imagePrompt: "the sun shining brightly over dino valley", difficulty: 1 },
+  { themeSlug: "dinosaurs", targetSound: "/sh/", tier: "word", content: "sharp", imagePrompt: "sharp triceratops horns gleaming", difficulty: 2 },
+  { themeSlug: "dinosaurs", targetSound: "/sh/", tier: "word", content: "short", imagePrompt: "a small stubby-armed cartoon dinosaur looking proud", difficulty: 2 },
+  { themeSlug: "dinosaurs", targetSound: "/sh/", tier: "word", content: "shower", imagePrompt: "cartoon dinosaur standing in a waterfall shower", difficulty: 2 },
+  { themeSlug: "dinosaurs", targetSound: "/sh/", tier: "word", content: "shadow", imagePrompt: "large dinosaur shadow cast on a cave wall", difficulty: 3 },
+  { themeSlug: "dinosaurs", targetSound: "/sh/", tier: "word", content: "shield", imagePrompt: "ankylosaurus using its armored back as a shield", difficulty: 3 },
+  { themeSlug: "dinosaurs", targetSound: "/sh/", tier: "word", content: "shrub", imagePrompt: "small bushy shrub in a prehistoric forest", difficulty: 4 },
+  // /sh/ sound — Dino Valley — phrases
+  { themeSlug: "dinosaurs", targetSound: "/sh/", tier: "phrase", content: "shiny shell", imagePrompt: "gleaming prehistoric shell sitting on a rock", difficulty: 1 },
+  { themeSlug: "dinosaurs", targetSound: "/sh/", tier: "phrase", content: "sharp shield", imagePrompt: "ankylosaurus with sharp armored plates", difficulty: 2 },
+  { themeSlug: "dinosaurs", targetSound: "/sh/", tier: "phrase", content: "shadow in the shrubs", imagePrompt: "mysterious dinosaur shadow visible through jungle shrubs", difficulty: 4 },
+  // /sh/ sound — Dino Valley — sentences
+  { themeSlug: "dinosaurs", targetSound: "/sh/", tier: "sentence", content: "The dinosaur shakes the shell in the shower.", imagePrompt: "happy dinosaur shaking a shell under a waterfall", difficulty: 2 },
+  { themeSlug: "dinosaurs", targetSound: "/sh/", tier: "sentence", content: "Sharp shells shine in the shallow stream.", imagePrompt: "sparkling shells visible in clear shallow water", difficulty: 4 },
+
+  // /ch/ sound — Dino Valley — words
+  { themeSlug: "dinosaurs", targetSound: "/ch/", tier: "word", content: "chase", imagePrompt: "one cartoon dinosaur playfully chasing another", difficulty: 1 },
+  { themeSlug: "dinosaurs", targetSound: "/ch/", tier: "word", content: "chew", imagePrompt: "cartoon dinosaur happily chewing on leaves", difficulty: 1 },
+  { themeSlug: "dinosaurs", targetSound: "/ch/", tier: "word", content: "chin", imagePrompt: "cartoon dinosaur with a funny pointed chin", difficulty: 1 },
+  { themeSlug: "dinosaurs", targetSound: "/ch/", tier: "word", content: "chest", imagePrompt: "proud dinosaur puffing out its chest", difficulty: 2 },
+  { themeSlug: "dinosaurs", targetSound: "/ch/", tier: "word", content: "cheer", imagePrompt: "group of cartoon dinosaurs cheering and celebrating", difficulty: 2 },
+  { themeSlug: "dinosaurs", targetSound: "/ch/", tier: "word", content: "chunk", imagePrompt: "dinosaur holding a big chunk of food", difficulty: 2 },
+  { themeSlug: "dinosaurs", targetSound: "/ch/", tier: "word", content: "choice", imagePrompt: "baby dinosaur choosing between two different colored eggs", difficulty: 3 },
+  { themeSlug: "dinosaurs", targetSound: "/ch/", tier: "word", content: "channel", imagePrompt: "water channel carved through dino valley rock", difficulty: 4 },
+  // /ch/ sound — Dino Valley — phrases
+  { themeSlug: "dinosaurs", targetSound: "/ch/", tier: "phrase", content: "chew and chase", imagePrompt: "dinosaur pausing mid-chase to chew a leaf", difficulty: 1 },
+  { themeSlug: "dinosaurs", targetSound: "/ch/", tier: "phrase", content: "cheerful chicks", imagePrompt: "two happy baby dinosaurs chirping cheerfully", difficulty: 2 },
+  { themeSlug: "dinosaurs", targetSound: "/ch/", tier: "phrase", content: "chunk of cheese", imagePrompt: "cartoon dinosaur finding a giant piece of cheese", difficulty: 3 },
+  // /ch/ sound — Dino Valley — sentences
+  { themeSlug: "dinosaurs", targetSound: "/ch/", tier: "sentence", content: "The chicken-sized dinosaur chews on a branch.", imagePrompt: "tiny feathered dinosaur happily eating a leafy branch", difficulty: 1 },
+  { themeSlug: "dinosaurs", targetSound: "/ch/", tier: "sentence", content: "The children cheer as the triceratops charges.", imagePrompt: "children waving as a friendly triceratops runs toward them", difficulty: 3 },
+  { themeSlug: "dinosaurs", targetSound: "/ch/", tier: "sentence", content: "Each baby dinosaur chose a different colored chunk of chalk.", imagePrompt: "baby dinosaurs picking up different colored rocks", difficulty: 5 },
 ];
 
 export const seedAdventureData = internalMutation({
