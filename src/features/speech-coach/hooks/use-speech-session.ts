@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
+import { shouldBypassSpeechCoachMicrophoneCheck } from "../lib/microphone-gate";
 
 export type SessionConfig = {
   targetSounds: string[];
@@ -63,13 +64,15 @@ export function useSpeechSession(homeProgramId: Id<"homePrograms">) {
       setError(null);
 
       // Check mic permission first
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        stream.getTracks().forEach((t) => t.stop());
-      } catch {
-        setError("We need your microphone so the coach can hear your child. Please allow microphone access and try again.");
-        setPhase("error");
-        return;
+      if (!shouldBypassSpeechCoachMicrophoneCheck()) {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          stream.getTracks().forEach((t) => t.stop());
+        } catch {
+          setError("We need your microphone so the coach can hear your child. Please allow microphone access and try again.");
+          setPhase("error");
+          return;
+        }
       }
 
       // Create session record
