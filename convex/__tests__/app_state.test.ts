@@ -7,7 +7,10 @@ import schema from "../schema";
 
 const modules = import.meta.glob("../**/*.*s");
 
-const SLP_IDENTITY = { subject: "slp-user-123", issuer: "clerk" };
+const SLP_IDENTITY = {
+  subject: "slp-user-123",
+  issuer: "https://test.convex.dev",
+};
 
 async function createAppInstance(t: ReturnType<typeof convexTest>) {
   return t.withIdentity(SLP_IDENTITY).mutation(api.tools.create, {

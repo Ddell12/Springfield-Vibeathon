@@ -8,11 +8,6 @@ test("caregiver cannot open therapist-only routes", async ({ caregiverPage }) =>
 });
 
 test.describe("Navigation — authenticated", () => {
-  test.skip(
-    !process.env.E2E_CLERK_USER_EMAIL || !process.env.E2E_CLERK_USER_PASSWORD,
-    "E2E Clerk creds not set"
-  );
-
   test("sidebar is visible on desktop viewport", async ({ authedPage }) => {
     await authedPage.goto("/builder");
     await expect(authedPage.locator("aside")).toBeVisible();
@@ -70,10 +65,10 @@ test.describe("Navigation — authenticated", () => {
     expect(typeof isActive).toBe("boolean");
   });
 
-  test("UserButton or sign-in link visible", async ({ authedPage }) => {
+  test("user menu or sign-in link visible", async ({ authedPage }) => {
     await authedPage.goto("/builder");
     const userIndicator = authedPage.locator(
-      "[data-clerk-component], .cl-userButtonTrigger, a[href='/sign-in']"
+      'button[aria-label="Open user menu"], button[aria-haspopup="menu"], a[href="/sign-in"]'
     );
     await expect(userIndicator.first()).toBeVisible();
   });

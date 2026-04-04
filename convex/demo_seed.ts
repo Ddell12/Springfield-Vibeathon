@@ -3,7 +3,7 @@ import { v } from "convex/values";
 import { internalMutation } from "./_generated/server";
 
 /**
- * Seeds a complete demo dataset for two pre-created Clerk users.
+ * Seeds a complete demo dataset for two existing auth users.
  *
  * Run via: npx tsx scripts/seed-demo.ts
  *   or:    npx convex run demo_seed:seedDemoData \

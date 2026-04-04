@@ -14,7 +14,7 @@ When working in this repo, optimize for:
 ## Stack
 
 - Frontend: Next.js 16 App Router, React, Tailwind v4, shadcn/ui
-- Auth: Clerk v7 with Convex integration
+- Auth: Convex Auth with Next.js integration
 - Backend: Convex
 - AI generation: Anthropic Claude via streaming SSE
 - RAG / embeddings: Google Gemini via `@convex-dev/rag`
@@ -67,9 +67,9 @@ Key files:
 
 Auth spans three layers:
 
-- `src/app/layout.tsx`: Clerk app wrapper
-- `src/core/providers.tsx`: Clerk to Convex bridge
-- `convex/auth.config.ts`: Clerk JWT verification for backend access
+- `src/app/layout.tsx`: root auth/app wrapper
+- `src/core/providers.tsx`: Convex Auth provider bridge
+- `convex/auth.config.ts`: auth provider configuration for backend access
 
 Protected backend access must derive identity server-side. Do not trust client-provided user identifiers for authorization.
 
@@ -163,10 +163,10 @@ Read the smallest relevant set before large edits:
 
 Common env vars include:
 
-- Next.js: `NEXT_PUBLIC_CONVEX_URL`, `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`, `ANTHROPIC_API_KEY`
-- Convex: `ANTHROPIC_API_KEY`, `CLERK_JWT_ISSUER_DOMAIN`, `GOOGLE_GENERATIVE_AI_API_KEY`, `ELEVENLABS_API_KEY`, `VERCEL_TOKEN`, `VERCEL_PROJECT_ID`
+- Next.js: `NEXT_PUBLIC_CONVEX_URL`, `SITE_URL`, `CONVEX_SITE_URL`, `ANTHROPIC_API_KEY`
+- Convex: `ANTHROPIC_API_KEY`, `GOOGLE_GENERATIVE_AI_API_KEY`, `ELEVENLABS_API_KEY`, `VERCEL_TOKEN`, `VERCEL_PROJECT_ID`
 
-Expect integrations with Clerk, Convex, Anthropic, Gemini, ElevenLabs, and Vercel to be part of normal feature work.
+Expect integrations with Convex Auth, Convex, Anthropic, Gemini, ElevenLabs, and Vercel to be part of normal feature work.
 
 ## Deployment And Verification
 

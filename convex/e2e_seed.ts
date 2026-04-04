@@ -9,7 +9,7 @@ import {
 
 /** Seed a patient + accepted caregiver link for E2E testing.
  *  Run via: npx convex run e2e_seed:seedTestCaregiverLink \
- *    '{"slpUserId":"...","caregiverUserId":"...","caregiverEmail":"e2e+clerk_test+caregiver@bridges.ai"}' */
+ *    '{"slpUserId":"...","caregiverUserId":"...","caregiverEmail":"caregiver@example.com"}' */
 export const seedTestCaregiverLink = internalMutation({
   args: {
     slpUserId: v.string(),

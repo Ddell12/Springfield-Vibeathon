@@ -1,6 +1,6 @@
 import { beforeEach,describe, expect, it, vi } from "vitest";
 
-// Mock the authenticate helper (used by the route instead of calling Clerk directly)
+// Mock the shared auth helper used by the route.
 const mockQuery = vi.fn();
 const mockAuthenticate = vi.fn();
 vi.mock("@/app/api/lib/authenticate", () => ({
@@ -39,7 +39,7 @@ describe("POST /api/livekit/token", () => {
   it("returns 401 when user is not authenticated", async () => {
     mockAuthenticate.mockResolvedValue({
       convex: { setAuth: vi.fn(), query: mockQuery },
-      userId: null,
+      userId: undefined,
     });
 
     const res = await POST(makeRequest({ appointmentId: "appt-1" }));

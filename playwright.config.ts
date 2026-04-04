@@ -14,7 +14,7 @@ export default defineConfig({
     trace: "on-first-retry",
   },
   projects: [
-    // Clerk global setup — obtains Testing Token to bypass bot detection
+    // Shared setup project for app-level preconditions.
     { name: "setup", testMatch: /global-setup\.ts/ },
     {
       name: "chromium",

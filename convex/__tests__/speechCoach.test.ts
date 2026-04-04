@@ -837,7 +837,10 @@ describe("speechCoachActions.analyzeSession", () => {
     const result = await caregiver.action(api.speechCoachActions.getTranscriptText, { sessionId });
     expect(result.transcript).toBe("Coach: Say sad\nChild: sad");
 
-    const stranger = t.withIdentity({ subject: "stranger-000", issuer: "clerk" });
+    const stranger = t.withIdentity({
+      subject: "stranger-000",
+      issuer: "https://test.convex.dev",
+    });
     await expect(
       stranger.action(api.speechCoachActions.getTranscriptText, { sessionId })
     ).rejects.toThrow();

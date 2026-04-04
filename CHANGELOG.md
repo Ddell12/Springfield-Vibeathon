@@ -7,7 +7,7 @@ All notable changes to this project are documented here.
 ## 2026-03-26 — Authentication, Final Polish & Submission
 
 ### Added
-- **Clerk v7 authentication** — Full sign-in/sign-up flow with `ClerkProvider`, `ConvexProviderWithClerk`, and JWT-verified Convex sessions via `convex/auth.config.ts`
+- **Convex Auth authentication** — Full sign-in/sign-up flow with Next.js auth providers and Convex-backed sessions
 - Dedicated `/sign-in` and `/sign-up` pages
 - `UserButton` integrated into dashboard sidebar and marketing header for account management
 - Graceful auth degradation — unauthenticated users can still explore templates and the builder

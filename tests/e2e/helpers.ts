@@ -2,8 +2,8 @@
 import { expect, type Page } from "@playwright/test";
 
 export const TIMEOUTS = {
-  /** Time for Clerk JS to initialize on page load */
-  CLERK_INIT: 10_000,
+  /** Time for auth state to initialize on page load */
+  AUTH_INIT: 10_000,
   /** Time for Convex queries to resolve and hydrate UI */
   CONVEX_QUERY: 15_000,
   /** Time for full SSE generation cycle (Claude streaming) */

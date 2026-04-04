@@ -4,11 +4,6 @@ import { MOBILE_VIEWPORT } from "./helpers";
 test.describe("Mobile — authenticated", () => {
   test.use({ viewport: MOBILE_VIEWPORT });
 
-  test.skip(
-    !process.env.E2E_CLERK_USER_EMAIL || !process.env.E2E_CLERK_USER_PASSWORD,
-    "E2E Clerk creds not set"
-  );
-
   test("sidebar hidden on mobile", async ({ authedPage }) => {
     await authedPage.goto("/builder");
     // Sidebar has `hidden md:flex` — at mobile width it must not be visible

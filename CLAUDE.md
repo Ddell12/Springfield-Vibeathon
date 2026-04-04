@@ -7,7 +7,7 @@ Bridges is an AI-powered therapy app builder where ABA therapists, speech therap
 ## Stack
 
 - **Frontend:** Next.js 16 (App Router) + shadcn/ui + Tailwind v4
-- **Auth:** Clerk v7 (`@clerk/nextjs`) — sign-in/sign-up, JWT sessions, Convex integration via `ConvexProviderWithClerk`
+- **Auth:** Convex Auth — email/password auth with Next.js provider and Convex-backed users
 - **Backend:** Convex (real-time, TypeScript, built-in vector search)
 - **AI Code Generation:** Claude Sonnet via `@anthropic-ai/sdk` — streaming SSE pipeline
 - **Knowledge Base:** Google Gemini embeddings (768-dim) via `@convex-dev/rag`
@@ -43,8 +43,8 @@ Key files:
 - `src/app/api/generate/route.ts` — SSE streaming endpoint with multi-turn tool loop
 - `src/features/builder/lib/agent-prompt.ts` — Agent system prompt with component library and design rules
 - `src/features/builder/hooks/use-postmessage-bridge.ts` — TTS/STT bridge between parent and iframe
-- `src/core/providers.tsx` — Clerk + Convex provider bridge
-- `convex/auth.config.ts` — Clerk JWT verification for backend auth
+- `src/core/providers.tsx` — Convex Auth + Convex provider bridge
+- `convex/auth.config.ts` — auth provider configuration for backend access
 - `convex/sessions.ts` — Session state machine
 - `convex/image_generation.ts` — Therapy image generation with caching
 - `convex/aiActions.ts` — TTS action with voice caching
@@ -114,31 +114,24 @@ npx playwright test   # E2E tests
 
 ## Authentication
 
-Clerk v7 handles all user authentication. The integration spans three layers:
+Convex Auth handles sign-in, session state, and Next.js route protection. The integration spans three layers:
 
-- **Frontend:** `ClerkProvider` wraps the app in `src/app/layout.tsx`. `ConvexProviderWithClerk` in `src/core/providers.tsx` bridges Clerk sessions to Convex. `UserButton` appears in the sidebar and header.
-- **Pages:** `/sign-in` and `/sign-up` use Clerk's pre-built components.
-- **Backend:** `convex/auth.config.ts` verifies Clerk JWTs using the issuer domain.
+- **Frontend:** `ConvexAuthNextjsProvider` wraps the app in `src/app/layout.tsx`, and `src/core/providers.tsx` bridges authenticated requests into the Convex client.
+- **Pages:** `/sign-in` and `/sign-up` use the app's current auth UI.
+- **Backend:** `convex/auth.config.ts` and server-side auth helpers derive identity from Convex Auth, while roles live in the `users` table.
 
 Unauthenticated users can explore templates and use the builder. Protected routes (like My Apps) require sign-in.
 
 ### E2E Test Users
 
-Two dedicated Clerk test users exist for role-based E2E testing. Both use `+clerk_test` emails (Clerk dev feature: email code is always `424242`).
+Two dedicated test users exist for role-based E2E coverage.
 
-| Role | Email | Env Vars | Clerk publicMetadata |
-|------|-------|----------|---------------------|
-| **SLP** | `e2e+clerk_test+slp@bridges.ai` | `E2E_SLP_EMAIL`, `E2E_SLP_PASSWORD` | `{ role: "slp" }` |
-| **Caregiver** | `e2e+clerk_test+caregiver@bridges.ai` | `E2E_CAREGIVER_EMAIL`, `E2E_CAREGIVER_PASSWORD` | `{ role: "caregiver" }` |
+| Role | Env Vars | Notes |
+|------|----------|-------|
+| **SLP** | `E2E_SLP_EMAIL`, `E2E_SLP_PASSWORD` | Redirects to `/dashboard`, then `/builder` |
+| **Caregiver** | `E2E_CAREGIVER_EMAIL`, `E2E_CAREGIVER_PASSWORD` | Redirects to `/family` |
 
-**Test fixtures** (`tests/e2e/fixtures.ts`):
-- `slpPage` — authenticated as SLP
-- `caregiverPage` — authenticated as caregiver
-- `authedPage` — legacy default user (backward-compatible)
-
-**Sign-in strategies:**
-1. **Password** (primary): `@clerk/testing/playwright` `clerk.signIn` with password strategy
-2. **Email code** (fallback for headless): Enter email → "Use another method" → "Email code" → code `424242`
+Roles are stored in the Convex `users` table, and the shared Playwright fixtures sign in through the current email/password form.
 
 ## Deployment Verification
 
@@ -158,7 +151,7 @@ gh api repos/Ddell12/Springfield-Vibeathon/commits/<sha>/check-runs \
 ### End-to-End with agent-browser
 ```bash
 agent-browser open https://bridgeai-iota.vercel.app/sign-in
-# Sign in via email code flow (see above)
+# Sign in with one of the configured test accounts
 agent-browser open https://bridgeai-iota.vercel.app/builder?new=1
 # Generate an app, then:
 agent-browser errors              # Should be empty (zero console errors)
@@ -169,13 +162,12 @@ agent-browser screenshot out.png  # Visual confirmation of styled preview
 
 ### `.env.local` (Next.js)
 - `NEXT_PUBLIC_CONVEX_URL` — Convex deployment URL
-- `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` — Clerk public key
-- `CLERK_SECRET_KEY` — Clerk server-side key
+- `SITE_URL` — app base URL for auth callbacks and links
+- `CONVEX_SITE_URL` — site URL surfaced to Convex Auth
 - `ANTHROPIC_API_KEY` — Claude API key (for streaming route)
 
 ### Convex Dashboard
 - `ANTHROPIC_API_KEY`
-- `CLERK_JWT_ISSUER_DOMAIN` — Clerk JWT issuer for auth verification
 - `GOOGLE_GENERATIVE_AI_API_KEY` — for RAG embeddings and image generation
 - `ELEVENLABS_API_KEY` — for TTS and STT
 - `VERCEL_TOKEN`, `VERCEL_PROJECT_ID` — for publish pipeline

@@ -109,7 +109,7 @@ describe("appointments access fallbacks", () => {
 
     const outsider = t.withIdentity({
       subject: "different-user-456",
-      issuer: "clerk",
+      issuer: "https://test.convex.dev",
       email: "outsider@bridges.ai",
     });
 
@@ -134,7 +134,7 @@ describe("appointments access fallbacks", () => {
 
     const outsider = t.withIdentity({
       subject: "different-user-456",
-      issuer: "clerk",
+      issuer: "https://test.convex.dev",
       email: "outsider@bridges.ai",
     });
 

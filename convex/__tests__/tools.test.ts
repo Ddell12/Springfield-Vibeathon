@@ -400,7 +400,10 @@ describe("tools.get auth boundary", () => {
       configJson: SAMPLE_CONFIG,
     });
 
-    const other = t.withIdentity({ subject: "other-slp-999", issuer: "clerk" });
+    const other = t.withIdentity({
+      subject: "other-slp-999",
+      issuer: "https://test.convex.dev",
+    });
     const result = await other.query(api.tools.get, { id });
     expect(result).toBeNull();
   });

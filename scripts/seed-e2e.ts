@@ -1,14 +1,11 @@
 /**
- * Provisions Clerk E2E test accounts with deterministic seed data.
+ * Provisions deterministic E2E data for the current auth-backed test users.
  *
  * Usage: npx tsx scripts/seed-e2e.ts
  *
- * Requires: NEXT_PUBLIC_CONVEX_URL, and the E2E SLP/caregiver Clerk user IDs
- * to be provided via env vars in .env.local.
- *
- * E2E accounts:
- *   SLP:       e2e+clerk_test+slp@bridges.ai
- *   Caregiver: e2e+clerk_test+caregiver@bridges.ai
+ * Requires: NEXT_PUBLIC_CONVEX_URL plus E2E_SLP_EMAIL and E2E_CAREGIVER_EMAIL
+ * to be provided via env vars in .env.local. Both accounts must have already
+ * signed up so they exist in the Convex users table.
  */
 
 import { execSync } from "child_process";
@@ -39,13 +36,38 @@ function run(cmd: string) {
 async function main() {
   loadEnv();
 
-  const slpUserId = process.env.E2E_SLP_USER_ID;
-  const caregiverUserId = process.env.E2E_CAREGIVER_USER_ID;
-  const caregiverEmail = "e2e+clerk_test+caregiver@bridges.ai";
+  const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL;
+  const slpEmail = process.env.E2E_SLP_EMAIL;
+  const caregiverEmail = process.env.E2E_CAREGIVER_EMAIL;
 
-  if (!slpUserId || !caregiverUserId) {
+  if (!convexUrl) {
+    console.error("❌  NEXT_PUBLIC_CONVEX_URL must be set in .env.local");
+    process.exit(1);
+  }
+
+  if (!slpEmail || !caregiverEmail) {
     console.error(
-      "❌  E2E_SLP_USER_ID and E2E_CAREGIVER_USER_ID must be set in .env.local",
+      "❌  E2E_SLP_EMAIL and E2E_CAREGIVER_EMAIL must be set in .env.local",
+    );
+    process.exit(1);
+  }
+
+  const slpUser = JSON.parse(
+    execSync(
+      `npx convex run users:getByEmail '${JSON.stringify({ email: slpEmail })}'`,
+      { encoding: "utf-8" },
+    ),
+  );
+  const caregiverUser = JSON.parse(
+    execSync(
+      `npx convex run users:getByEmail '${JSON.stringify({ email: caregiverEmail })}'`,
+      { encoding: "utf-8" },
+    ),
+  );
+
+  if (!slpUser?._id || !caregiverUser?._id) {
+    console.error(
+      "❌  Both E2E users must exist before seeding. Sign up the SLP and caregiver test accounts first.",
     );
     process.exit(1);
   }
@@ -54,8 +76,8 @@ async function main() {
 
   run(
     `npx convex run e2e_seed:seedTestCaregiverLink '${JSON.stringify({
-      slpUserId,
-      caregiverUserId,
+      slpUserId: slpUser._id,
+      caregiverUserId: caregiverUser._id,
       caregiverEmail,
     })}'`,
   );

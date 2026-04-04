@@ -2,11 +2,6 @@ import { expect,test } from "./fixtures";
 import { TIMEOUTS } from "./helpers";
 
 test.describe("My Tools — authenticated", () => {
-  test.skip(
-    !process.env.E2E_CLERK_USER_EMAIL || !process.env.E2E_CLERK_USER_PASSWORD,
-    "E2E Clerk creds not set"
-  );
-
   test("page loads (heading or empty state)", async ({ authedPage }) => {
     await authedPage.goto("/my-tools");
     // Convex takes up to 15s to hydrate

@@ -41,7 +41,7 @@ beforeAll(async () => {
 
 // Suppress convex-test scheduler noise: acceptInvite calls ctx.scheduler.runAfter
 // which tries to write to _scheduled_functions outside the transaction boundary.
-// This is expected — the scheduled Clerk API call only runs in production.
+// This is expected — the scheduled follow-up work only runs in production.
 process.on("unhandledRejection", (reason: unknown) => {
   if (
     reason instanceof Error &&

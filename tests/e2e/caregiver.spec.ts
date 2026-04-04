@@ -8,7 +8,7 @@ test.skip(
 
 /**
  * Caregiver E2E test suite.
- * Uses the caregiverPage fixture — already signed in as e2e+clerk_test+caregiver@bridges.ai.
+ * Uses the caregiverPage fixture with the Convex Auth caregiver test account.
  *
  * The test account has exactly one linked patient, so /family auto-redirects
  * to /family/{patientId}. We extract patientId from the URL after sign-in.

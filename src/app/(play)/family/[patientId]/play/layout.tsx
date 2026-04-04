@@ -1,5 +1,5 @@
 // Kid mode layout: own route group — no sidebar, no header, completely bare.
-// Clerk + Convex providers are inherited from the root layout.
+// Root auth and app providers are inherited from the main layout.
 export default function KidModeLayout({
   children,
 }: {

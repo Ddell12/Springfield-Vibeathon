@@ -220,7 +220,7 @@ describe("patients.getForPlay", () => {
     const { patientId } = await slp.mutation(api.patients.create, VALID_PATIENT);
 
     // Directly insert an accepted caregiverLink — bypasses invite flow
-    // scheduler (clerkActions.setCaregiverRole) which can't run in convex-test
+    // scheduler follow-up that doesn't run inside convex-test
     await t.run(async (ctx) => {
       await ctx.db.insert("caregiverLinks", {
         patientId,

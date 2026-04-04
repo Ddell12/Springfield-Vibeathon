@@ -2,11 +2,6 @@ import { expect,test } from "./fixtures";
 import { MOBILE_VIEWPORT } from "./helpers";
 
 test.describe("Settings — authenticated", () => {
-  test.skip(
-    !process.env.E2E_CLERK_USER_EMAIL || !process.env.E2E_CLERK_USER_PASSWORD,
-    "E2E Clerk creds not set"
-  );
-
   test("page loads with Profile section visible", async ({ authedPage }) => {
     await authedPage.goto("/settings");
     await expect(authedPage.getByText(/profile/i)).toBeVisible();

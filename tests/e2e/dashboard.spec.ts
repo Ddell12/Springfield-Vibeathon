@@ -1,11 +1,6 @@
 import { expect,test } from "./fixtures";
 
 test.describe("Dashboard — authenticated", () => {
-  test.skip(
-    !process.env.E2E_CLERK_USER_EMAIL || !process.env.E2E_CLERK_USER_PASSWORD,
-    "E2E Clerk creds not set"
-  );
-
   test("'What would you like to build?' heading visible", async ({
     authedPage,
   }) => {
