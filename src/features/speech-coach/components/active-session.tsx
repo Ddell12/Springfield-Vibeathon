@@ -112,9 +112,19 @@ function ActiveSessionInner({
   const lastMilestoneRef = useRef(0);
   const confettiTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const onEndRef = useRef(onEnd);
+  const yourTurnTimestampRef = useRef<number>(0);
+  const visualRef = useRef<SessionVisualState>({
+    targetLabel: sessionConfig?.targetSounds?.[0] ?? "Practice sound",
+    promptState: "listen",
+    totalCorrect: 0,
+  });
+  const pendingStateTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   useEffect(() => { onEndRef.current = onEnd; });
-  useEffect(() => () => clearTimeout(confettiTimer.current), []);
+  useEffect(() => () => {
+    clearTimeout(confettiTimer.current);
+    clearTimeout(pendingStateTimer.current);
+  }, []);
 
   const [token, setToken] = useState<string | null>(null);
   const [serverUrl, setServerUrl] = useState<string | null>(null);
@@ -126,27 +136,55 @@ function ActiveSessionInner({
 
   const reducedMotion = speechCoachConfig?.reducedMotion ?? false;
 
-  const [visual, setVisual] = useState<SessionVisualState>({
-    targetLabel: sessionConfig?.targetSounds?.[0] ?? "Practice sound",
-    promptState: "listen",
-    totalCorrect: 0,
+  const [visual, setVisual] = useState<SessionVisualState>(() => {
+    const initial: SessionVisualState = {
+      targetLabel: sessionConfig?.targetSounds?.[0] ?? "Practice sound",
+      promptState: "listen",
+      totalCorrect: 0,
+    };
+    visualRef.current = initial;
+    return initial;
   });
 
   const handleAgentMessage = useCallback((msg: AgentVisualMessage) => {
     if (msg.type === "visual_state") {
-      setVisual({
+      const newState: SessionVisualState = {
         targetLabel: msg.targetLabel,
         targetVisualUrl: msg.targetImageUrl,
         promptState: msg.promptState,
         totalCorrect: msg.totalCorrect,
-      });
-      if (msg.totalCorrect > 0 && msg.totalCorrect % 5 === 0 && msg.totalCorrect !== lastMilestoneRef.current) {
-        lastMilestoneRef.current = msg.totalCorrect;
-        setShowConfetti(true);
-        clearTimeout(confettiTimer.current);
-        confettiTimer.current = setTimeout(() => setShowConfetti(false), 1500);
+      };
+
+      const applyState = () => {
+        visualRef.current = newState;
+        setVisual(newState);
+        if (msg.totalCorrect > 0 && msg.totalCorrect % 5 === 0 && msg.totalCorrect !== lastMilestoneRef.current) {
+          lastMilestoneRef.current = msg.totalCorrect;
+          setShowConfetti(true);
+          clearTimeout(confettiTimer.current);
+          confettiTimer.current = setTimeout(() => setShowConfetti(false), 1500);
+        }
+      };
+
+      if (msg.promptState === "your_turn") {
+        yourTurnTimestampRef.current = Date.now();
+        clearTimeout(pendingStateTimer.current);
+        applyState();
+      } else if (visualRef.current.promptState === "your_turn") {
+        // Leaving your_turn — debounce if insufficient time has passed
+        const elapsed = Date.now() - yourTurnTimestampRef.current;
+        const delay = Math.max(0, 1500 - elapsed);
+        if (delay > 0) {
+          clearTimeout(pendingStateTimer.current);
+          pendingStateTimer.current = setTimeout(applyState, delay);
+        } else {
+          applyState();
+        }
+      } else {
+        applyState();
       }
     } else if (msg.type === "advance_target") {
+      visualRef.current = { ...visualRef.current, targetLabel: msg.nextLabel, promptState: "listen" };
       setVisual((prev) => ({ ...prev, targetLabel: msg.nextLabel, promptState: "listen" }));
     }
   }, []);
