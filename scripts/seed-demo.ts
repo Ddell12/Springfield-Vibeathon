@@ -4,7 +4,7 @@
  * Usage:  npx tsx scripts/seed-demo.ts
  *         npx tsx scripts/seed-demo.ts --reset   (wipe + reseed)
  *
- * Requires: NEXT_PUBLIC_CONVEX_URL in .env.local (CONVEX_SITE_URL is derived automatically)
+ * Requires: NEXT_PUBLIC_CONVEX_URL in .env.local
  */
 
 import { spawnSync } from "child_process";
@@ -44,38 +44,29 @@ function loadEnv() {
     const eq = trimmed.indexOf("=");
     if (eq === -1) continue;
     const key = trimmed.slice(0, eq).trim();
-    const val = trimmed.slice(eq + 1).trim().replace(/^["']|["']$/g, "");
+    const raw = trimmed.slice(eq + 1).trim().replace(/^["']|["']$/g, "");
+    // Strip inline comments (e.g. "value # comment")
+    const val = raw.replace(/\s+#.*$/, "");
     if (!process.env[key]) process.env[key] = val;
   }
 }
 
-function deriveConvexSiteUrl(): string {
-  const cloudUrl = process.env.NEXT_PUBLIC_CONVEX_URL ?? "";
-  return cloudUrl.replace(".convex.cloud", ".convex.site");
-}
-
-async function signUpAccount(siteUrl: string, email: string, password: string, name: string) {
-  const body = new URLSearchParams({
-    provider: "password",
-    params: JSON.stringify({ email, password, flow: "signUp", name }),
-  });
-  const res = await fetch(`${siteUrl}/api/auth/signin`, {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body,
-    redirect: "manual",
-  });
-  // 200, 302, or 400 "already exists" are all acceptable
-  if (res.status >= 500) {
-    throw new Error(`Auth sign-up failed: ${res.status} ${await res.text()}`);
-  }
-  if (res.status >= 400 && res.status < 500) {
-    const body = await res.clone().text();
-    if (!/already.?exists|duplicate/i.test(body)) {
-      console.warn(`  sign-up for ${email} returned ${res.status}: ${body}`);
+function signUpAccount(email: string, password: string, name: string) {
+  // @convex-dev/auth password auth is a Convex action, not an HTTP endpoint
+  const result = spawnSync(
+    "npx",
+    ["convex", "run", "auth:signIn", JSON.stringify({ provider: "password", params: { email, password, flow: "signUp", name } })],
+    { encoding: "utf-8" },
+  );
+  if (result.status !== 0) {
+    const stderr = result.stderr ?? "";
+    if (/already.?exists|duplicate|account.*exists/i.test(stderr)) {
+      console.log(`  Sign-up for ${email}: already exists (skipped)`);
+      return;
     }
+    throw new Error(`Sign-up for ${email} failed: ${stderr}`);
   }
-  console.log(`  Sign-up for ${email}: ${res.status}`);
+  console.log(`  Sign-up for ${email}: created`);
 }
 
 function convexRunJson(fn: string, args: Record<string, unknown>): Record<string, unknown> | null {
@@ -108,19 +99,12 @@ function convexRun(fn: string, args: Record<string, unknown>) {
 async function main() {
   loadEnv();
 
-  const siteUrl = process.env.CONVEX_SITE_URL ?? deriveConvexSiteUrl();
-  if (!siteUrl) {
-    console.error("❌  Could not determine CONVEX_SITE_URL. Add it to .env.local");
-    process.exit(1);
-  }
-  console.log(`  Convex site URL: ${siteUrl}\n`);
-
   const reset = process.argv.includes("--reset");
   if (reset) console.log("⚠️   --reset: existing demo data will be wiped and reseeded\n");
 
   console.log("🔑  Setting up demo accounts...\n");
-  await signUpAccount(siteUrl, DEMO.slp.email, DEMO.slp.password, `${DEMO.slp.firstName} ${DEMO.slp.lastName}`);
-  await signUpAccount(siteUrl, DEMO.caregiver.email, DEMO.caregiver.password, `${DEMO.caregiver.firstName} ${DEMO.caregiver.lastName}`);
+  signUpAccount(DEMO.slp.email, DEMO.slp.password, `${DEMO.slp.firstName} ${DEMO.slp.lastName}`);
+  signUpAccount(DEMO.caregiver.email, DEMO.caregiver.password, `${DEMO.caregiver.firstName} ${DEMO.caregiver.lastName}`);
 
   console.log("\n🔍  Looking up Convex user IDs...\n");
   const slpUser = convexRunJson("users:getByEmail", { email: DEMO.slp.email });
