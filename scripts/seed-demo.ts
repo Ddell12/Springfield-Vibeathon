@@ -1,10 +1,10 @@
 /**
- * Creates demo Clerk users (SLP + Caregiver) and seeds all Bridges demo data.
+ * Creates demo accounts via @convex-dev/auth and seeds all Bridges demo data.
  *
  * Usage:  npx tsx scripts/seed-demo.ts
  *         npx tsx scripts/seed-demo.ts --reset   (wipe + reseed)
  *
- * Requires: CLERK_SECRET_KEY and NEXT_PUBLIC_CONVEX_URL in .env.local
+ * Requires: NEXT_PUBLIC_CONVEX_URL in .env.local (CONVEX_SITE_URL is derived automatically)
  */
 
 import { execSync } from "child_process";
@@ -49,69 +49,43 @@ function loadEnv() {
   }
 }
 
-async function clerkFetch(secretKey: string, method: string, path: string, body?: unknown) {
-  const res = await fetch(`https://api.clerk.com/v1${path}`, {
-    method,
-    headers: {
-      Authorization: `Bearer ${secretKey}`,
-      "Content-Type": "application/json",
-    },
-    body: body ? JSON.stringify(body) : undefined,
-  });
-  if (!res.ok) {
-    const err = await res.text();
-    throw new Error(`Clerk ${method} ${path} → ${res.status}: ${err}`);
-  }
-  return res.json() as Promise<Record<string, unknown>>;
+function deriveConvexSiteUrl(): string {
+  const cloudUrl = process.env.NEXT_PUBLIC_CONVEX_URL ?? "";
+  return cloudUrl.replace(".convex.cloud", ".convex.site");
 }
 
-async function upsertClerkUser(
-  secretKey: string,
-  user: typeof DEMO.slp | typeof DEMO.caregiver,
-): Promise<string> {
-  // Search by email
-  const res = await fetch(
-    `https://api.clerk.com/v1/users?email_address[]=${encodeURIComponent(user.email)}&limit=1`,
-    { headers: { Authorization: `Bearer ${secretKey}` } },
-  );
-  const list = (await res.json()) as { data: Array<{ id: string }> };
-
-  if (list.data.length > 0) {
-    const userId = list.data[0].id;
-    // Ensure password + metadata are current
-    await clerkFetch(secretKey, "PATCH", `/users/${userId}`, {
-      password: user.password,
-      first_name: user.firstName,
-      last_name: user.lastName,
-      skip_password_checks: true,
-    });
-    await clerkFetch(secretKey, "PATCH", `/users/${userId}/metadata`, {
-      public_metadata: { role: user.role },
-    });
-    console.log(`  ✓ ${user.role.padEnd(9)} already exists  → ${userId}`);
-    return userId;
-  }
-
-  // Create
-  const created = await clerkFetch(secretKey, "POST", "/users", {
-    email_address: [user.email],
-    password: user.password,
-    first_name: user.firstName,
-    last_name: user.lastName,
-    public_metadata: { role: user.role },
-    skip_password_checks: false,
+async function signUpAccount(siteUrl: string, email: string, password: string, name: string) {
+  const body = new URLSearchParams({
+    provider: "password",
+    params: JSON.stringify({ email, password, flow: "signUp", name }),
   });
-  const userId = created.id as string;
-  console.log(`  ✓ ${user.role.padEnd(9)} created           → ${userId}`);
-  return userId;
+  const res = await fetch(`${siteUrl}/api/auth/signin`, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body,
+    redirect: "manual",
+  });
+  // 200, 302, or 400 "already exists" are all acceptable
+  if (res.status >= 500) {
+    throw new Error(`Auth sign-up failed: ${res.status} ${await res.text()}`);
+  }
+  console.log(`  Sign-up for ${email}: ${res.status}`);
 }
 
-function convexRun(fn: string, args: Record<string, string>, reset: boolean) {
-  const payload = JSON.stringify({ ...args, reset });
+function convexRunJson(fn: string, args: Record<string, unknown>): Record<string, unknown> | null {
   try {
-    execSync(`npx convex run demo_seed:seedDemoData '${payload}'`, {
-      stdio: "inherit",
+    const output = execSync(`npx convex run ${fn} '${JSON.stringify(args)}'`, {
+      encoding: "utf-8",
     });
+    return JSON.parse(output) as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+}
+
+function convexRun(fn: string, args: Record<string, unknown>) {
+  try {
+    execSync(`npx convex run ${fn} '${JSON.stringify(args)}'`, { stdio: "inherit" });
   } catch {
     // Non-zero exit on "skipped" is not a fatal error
   }
@@ -122,21 +96,40 @@ function convexRun(fn: string, args: Record<string, string>, reset: boolean) {
 async function main() {
   loadEnv();
 
-  const secretKey = process.env.CLERK_SECRET_KEY;
-  if (!secretKey) {
-    console.error("❌  CLERK_SECRET_KEY missing from .env.local");
+  const siteUrl = process.env.CONVEX_SITE_URL ?? deriveConvexSiteUrl();
+  if (!siteUrl) {
+    console.error("❌  Could not determine CONVEX_SITE_URL. Add it to .env.local");
     process.exit(1);
   }
 
   const reset = process.argv.includes("--reset");
   if (reset) console.log("⚠️   --reset: existing demo data will be wiped and reseeded\n");
 
-  console.log("🔑  Setting up demo Clerk accounts...\n");
-  const slpUserId = await upsertClerkUser(secretKey, DEMO.slp);
-  const caregiverUserId = await upsertClerkUser(secretKey, DEMO.caregiver);
+  console.log("🔑  Setting up demo accounts...\n");
+  await signUpAccount(siteUrl, DEMO.slp.email, DEMO.slp.password, `${DEMO.slp.firstName} ${DEMO.slp.lastName}`);
+  await signUpAccount(siteUrl, DEMO.caregiver.email, DEMO.caregiver.password, `${DEMO.caregiver.firstName} ${DEMO.caregiver.lastName}`);
+
+  console.log("\n🔍  Looking up Convex user IDs...\n");
+  const slpUser = convexRunJson("users:getByEmail", { email: DEMO.slp.email });
+  const cgUser = convexRunJson("users:getByEmail", { email: DEMO.caregiver.email });
+
+  if (!slpUser?._id || !cgUser?._id) {
+    throw new Error("Could not find created users in Convex — check that sign-up succeeded");
+  }
+
+  console.log(`  ✓ SLP user: ${slpUser._id as string}`);
+  console.log(`  ✓ Caregiver user: ${cgUser._id as string}`);
+
+  console.log("\n👤  Setting caregiver role...\n");
+  convexRun("users:setUserRole", { userId: cgUser._id as string, role: "caregiver" });
 
   console.log("\n🌱  Seeding Convex demo data...\n");
-  convexRun("demo_seed:seedDemoData", { slpUserId, caregiverUserId, caregiverEmail: DEMO.caregiver.email }, reset);
+  convexRun("demo_seed:seedDemoData", {
+    slpUserId: slpUser._id as string,
+    caregiverUserId: cgUser._id as string,
+    caregiverEmail: DEMO.caregiver.email,
+    reset,
+  });
 
   console.log(`
 ✅  Demo environment ready!
