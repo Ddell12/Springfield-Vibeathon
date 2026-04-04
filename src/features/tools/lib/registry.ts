@@ -13,8 +13,11 @@ import { type AACBoardConfig,AACBoardConfigSchema } from "./templates/aac-board/
 import { AACBoardSettingsPage } from "./templates/aac-board/settings-page";
 import { AACBoardWordBankPage } from "./templates/aac-board/word-bank-page";
 import { FirstThenBoardEditor } from "./templates/first-then-board/editor";
+import { FirstThenBoardHistoryPage } from "./templates/first-then-board/history-page";
+import { FirstThenBoardMainPage } from "./templates/first-then-board/main-page";
 import { FirstThenBoardRuntime } from "./templates/first-then-board/runtime";
 import { type FirstThenBoardConfig,FirstThenBoardConfigSchema } from "./templates/first-then-board/schema";
+import { FirstThenBoardSettingsPage } from "./templates/first-then-board/settings-page";
 import { MatchingGameEditor } from "./templates/matching-game/editor";
 import { MatchingGameRuntime } from "./templates/matching-game/runtime";
 import { type MatchingGameConfig,MatchingGameConfigSchema } from "./templates/matching-game/schema";
@@ -25,8 +28,11 @@ import { TokenBoardRuntime } from "./templates/token-board/runtime";
 import { TokenBoardSettingsPage } from "./templates/token-board/settings-page";
 import { type TokenBoardConfig,TokenBoardConfigSchema } from "./templates/token-board/schema";
 import { VisualScheduleEditor } from "./templates/visual-schedule/editor";
+import { VisualScheduleHistoryPage } from "./templates/visual-schedule/history-page";
+import { VisualScheduleMainPage } from "./templates/visual-schedule/main-page";
 import { VisualScheduleRuntime } from "./templates/visual-schedule/runtime";
 import { type VisualScheduleConfig,VisualScheduleConfigSchema } from "./templates/visual-schedule/schema";
+import { VisualScheduleSettingsPage } from "./templates/visual-schedule/settings-page";
 
 export interface RuntimeProps<TConfig = unknown> {
   config: TConfig;
@@ -233,7 +239,11 @@ export const templateRegistry: Record<string, TemplateRegistration> = {
 - If child interests are provided, weave them into the thenLabel
 - firstColor and thenColor should be visually distinct bright hex values
 - showCheckmark: true by default`,
-    pages: [],
+    pages: [
+      { id: "main", label: "Board", icon: LayoutGrid, audience: "both", component: FirstThenBoardMainPage },
+      { id: "settings", label: "Settings", icon: Settings2, audience: "slp", component: FirstThenBoardSettingsPage },
+      { id: "history", label: "History", icon: BarChart3, audience: "slp", component: FirstThenBoardHistoryPage },
+    ],
   },
   token_board: {
     meta: {
@@ -312,7 +322,11 @@ export const templateRegistry: Record<string, TemplateRegistration> = {
 - durationMinutes should reflect realistic times for the age range
 - Items should follow a logical sequential order appropriate to the context
 - showCheckmarks: true and showDuration: true by default`,
-    pages: [],
+    pages: [
+      { id: "main", label: "Schedule", icon: LayoutGrid, audience: "both", component: VisualScheduleMainPage },
+      { id: "settings", label: "Settings", icon: Settings2, audience: "slp", component: VisualScheduleSettingsPage },
+      { id: "history", label: "History", icon: BarChart3, audience: "slp", component: VisualScheduleHistoryPage },
+    ],
   },
   matching_game: {
     meta: {
