@@ -114,6 +114,13 @@ export const createLiveSession = action({
         instructions,
         tools: resolvedConfig.tools.map((tool) => tool.key),
         targetItems,
+        // Adventure mode fields — passed through if present in session config
+        ...(session.config.mode === "adventure" && {
+          mode: "adventure" as const,
+          themeSlug: session.config.themeSlug,
+          targetSounds: session.config.targetSounds,
+          patientId: session.patientId,
+        }),
       }),
     };
   },

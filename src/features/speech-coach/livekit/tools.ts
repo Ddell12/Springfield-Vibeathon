@@ -5,6 +5,10 @@
 //   log_attempt   — records each child response to Convex for post-session analysis
 //   advance_target — signals a move to the next target word
 //
+// Adventure mode adds:
+//   get_next_word  — engine fetches next adaptive word
+//   report_word_result — records attempt to engine + Convex, fires session_milestone if tier unlocked
+//
 // Tools publish data via room.localParticipant.publishData() (RoomEvent.DataReceived on client).
 // Attempts are persisted via ConvexHttpClient calling logAttemptFromRuntime.
 
@@ -15,6 +19,7 @@ import { z } from "zod";
 
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
+import type { AdaptationEvent, AdventureSessionEngine } from "./adventure-engine";
 
 export type AgentVisualMessage =
   | {
@@ -27,6 +32,15 @@ export type AgentVisualMessage =
   | {
       type: "advance_target";
       nextLabel: string;
+    }
+  | {
+      type: "session_milestone";
+      tier: string;
+      masteryPct: number;
+    }
+  | {
+      type: "agent_status";
+      status: "active" | "paused";
     };
 
 type ToolDeps = {
@@ -127,4 +141,88 @@ export function createSpeechCoachTools(deps: ToolDeps) {
       },
     }),
   };
+}
+
+type AdventureToolDeps = ToolDeps & {
+  engine: AdventureSessionEngine;
+};
+
+export function createAdventureTools(deps: AdventureToolDeps) {
+  const convex = new ConvexHttpClient(deps.convexUrl);
+  const classicTools = createSpeechCoachTools(deps);
+
+  const get_next_word = llm.tool({
+    description:
+      "Fetch the next target word from the adventure engine. Call this at the start of each new round to get the word you should embed in your narrative prompt. Returns the word content and image prompt.",
+    parameters: z.object({}),
+    execute: async () => {
+      const word = await deps.engine.getNextWord();
+      if (!word) return JSON.stringify({ content: null, message: "Session complete" });
+      publishToClient(deps.room, {
+        type: "advance_target",
+        nextLabel: word.content,
+      });
+      return JSON.stringify({ content: word.content, imagePrompt: word.imagePrompt, tier: word.tier, difficulty: word.difficulty });
+    },
+  });
+
+  const report_word_result = llm.tool({
+    description:
+      "Report the outcome of a child's attempt at the current target word. Call this after every attempt. The engine will adapt difficulty automatically based on a rolling accuracy window. If a tier is unlocked, a celebration will fire automatically.",
+    parameters: z.object({
+      content: z.string().describe("The target word or phrase that was attempted"),
+      correct: z.boolean().describe("Whether the child produced the target sound correctly"),
+    }),
+    execute: async ({ content, correct }) => {
+      // Record to the adaptive engine
+      let adaptationEvent: AdaptationEvent | null = null;
+      try {
+        adaptationEvent = await deps.engine.recordAttempt(content, correct);
+      } catch (err) {
+        console.warn("[adventure-engine] recordAttempt failed:", err);
+      }
+
+      // Persist attempt to Convex
+      try {
+        await convex.action(api.speechCoachRuntimeActions.logAttemptFromRuntime, {
+          sessionId: deps.sessionId as Id<"speechCoachSessions">,
+          runtimeSecret: deps.runtimeSecret,
+          targetLabel: content,
+          outcome: correct ? "correct" : "incorrect",
+          retryCount: 0,
+          timestampMs: Date.now(),
+        });
+      } catch (err) {
+        console.warn("[speech-coach] logAttempt failed:", err);
+      }
+
+      // Fire milestone message if tier unlocked
+      if (adaptationEvent !== null && adaptationEvent.type === "tier_unlock") {
+        const { previousTier, newTier } = adaptationEvent;
+        const tierAttempts = deps.engine.buildSessionPayload().wordLog.filter(
+          (e) => e.tier === previousTier
+        );
+        const tierCorrect = tierAttempts.filter((e) => e.correct).length;
+        const masteryPct = tierAttempts.length > 0 ? tierCorrect / tierAttempts.length : 0;
+        publishToClient(deps.room, {
+          type: "session_milestone",
+          tier: previousTier,
+          masteryPct,
+        });
+        return `Attempt recorded. Tier unlocked! Moving to ${newTier}.`;
+      }
+
+      if (adaptationEvent !== null && adaptationEvent.type === "advance_difficulty") {
+        return `Attempt recorded. Difficulty advanced to ${adaptationEvent.newDifficulty}.`;
+      }
+
+      if (adaptationEvent !== null && adaptationEvent.type === "retreat_difficulty") {
+        return `Attempt recorded. Difficulty eased to ${adaptationEvent.newDifficulty}.`;
+      }
+
+      return "Attempt recorded.";
+    },
+  });
+
+  return { ...classicTools, get_next_word, report_word_result };
 }
