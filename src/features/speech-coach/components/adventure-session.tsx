@@ -11,6 +11,7 @@ import { Button } from "@/shared/components/ui/button";
 
 import type { SpeechCoachConfig } from "../lib/config";
 import type { AgentVisualMessage } from "../livekit/tools";
+import { useProgressTrail } from "../hooks/use-progress-trail";
 
 type SessionConfig = {
   targetSounds: string[];
@@ -56,6 +57,13 @@ const THEME_COLORS: Record<string, { banner: string; accent: string }> = {
   superheroes: { banner: "from-red-700 to-orange-500", accent: "text-orange-300" },
   arctic: { banner: "from-sky-400 to-blue-200", accent: "text-sky-100" },
   trains: { banner: "from-orange-700 to-red-500", accent: "text-orange-200" },
+};
+
+const FEEDBACK_RING_CLASS: Record<SessionVisualState["promptState"], string> = {
+  listen: "",
+  your_turn: "ring-2 ring-primary/40",
+  nice_job: "ring-2 ring-green-400",
+  try_again: "ring-2 ring-amber-400",
 };
 
 const THEME_EMOJI: Record<string, string> = {
@@ -124,9 +132,6 @@ function AdventureSessionInner({
   const [showMilestone, setShowMilestone] = useState<{ tier: string; masteryPct: number } | null>(null);
   const [slpSpeaking, setSlpSpeaking] = useState(false);
 
-  // Per-session attempt trail — icons for bottom progress trail
-  const [attemptTrail, setAttemptTrail] = useState<{ correct: boolean; label: string }[]>([]);
-
   const reducedMotion = speechCoachConfig?.reducedMotion ?? false;
   const themeSlug = sessionConfig?.themeSlug ?? "dinosaurs";
   const themeColors = THEME_COLORS[themeSlug] ?? { banner: "from-primary to-primary/60", accent: "text-white" };
@@ -146,11 +151,6 @@ function AdventureSessionInner({
         promptState: msg.promptState,
         totalCorrect: msg.totalCorrect,
       });
-      if (msg.promptState === "nice_job") {
-        setAttemptTrail((prev) => [...prev.slice(-19), { correct: true, label: msg.targetLabel }]);
-      } else if (msg.promptState === "try_again") {
-        setAttemptTrail((prev) => [...prev.slice(-19), { correct: false, label: msg.targetLabel }]);
-      }
       // Confetti at every 5 correct
       if (msg.totalCorrect > 0 && msg.totalCorrect % 5 === 0 && msg.totalCorrect !== lastMilestoneRef.current) {
         lastMilestoneRef.current = msg.totalCorrect;
@@ -215,8 +215,7 @@ function AdventureSessionInner({
 
   const promptConfig = PROMPT_STATE_CONFIG[visual.promptState];
 
-  // Show last 10 trail nodes, newer on right
-  const trailNodes = attemptTrail.slice(-10);
+  const { filled: trailFilled } = useProgressTrail(visual.totalCorrect);
 
   return (
     <div className="relative flex h-full flex-col overflow-hidden">
@@ -314,8 +313,9 @@ function AdventureSessionInner({
               <div
                 className={cn(
                   "flex h-44 w-44 items-center justify-center overflow-hidden rounded-3xl bg-muted/40",
-                  !reducedMotion && "transition-opacity duration-300",
-                  isConnected ? "opacity-100" : "opacity-50"
+                  !reducedMotion && "transition-all duration-300",
+                  isConnected ? "opacity-100" : "opacity-50",
+                  FEEDBACK_RING_CLASS[visual.promptState],
                 )}
               >
                 {visual.targetVisualUrl ? (
@@ -354,29 +354,21 @@ function AdventureSessionInner({
 
       {/* Bottom — Progress trail */}
       <div className="px-4 pb-6">
-        <div className="flex items-center gap-1.5 justify-center overflow-x-auto py-2">
-          {trailNodes.length === 0 ? (
-            <div className="flex gap-1.5">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <span key={i} aria-hidden="true" className="h-2.5 w-2.5 rounded-full bg-muted" />
-              ))}
-            </div>
-          ) : (
-            trailNodes.map((node, i) => (
-              <span
-                key={i}
-                title={node.label}
-                aria-hidden="true"
-                className={cn(
-                  "h-3 w-3 rounded-full flex-shrink-0",
-                  !reducedMotion && "transition-all duration-300",
-                  node.correct
-                    ? "bg-primary shadow-sm shadow-primary/40"
-                    : "bg-muted"
-                )}
-              />
-            ))
-          )}
+        <div
+          className="flex items-center gap-1.5 justify-center py-2"
+          aria-label={`${trailFilled} of 5 attempts`}
+        >
+          {Array.from({ length: 5 }).map((_, i) => (
+            <span
+              key={i}
+              aria-hidden="true"
+              className={cn(
+                "h-3 w-3 rounded-full flex-shrink-0",
+                !reducedMotion && "transition-all duration-300",
+                i < trailFilled ? "bg-primary shadow-sm shadow-primary/40" : "bg-muted",
+              )}
+            />
+          ))}
         </div>
       </div>
     </div>
