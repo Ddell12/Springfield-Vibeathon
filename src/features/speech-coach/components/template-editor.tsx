@@ -86,9 +86,10 @@ export function TemplateEditor({
   }
 
   function handleSave() {
+    if (!name.trim()) return;
     onSave({
-      name,
-      description,
+      name: name.trim(),
+      description: description.trim(),
       status: "draft",
       voice: initialTemplate?.voice ?? { provider: "elevenlabs", voiceKey: "friendly-coach" },
       prompt: initialTemplate?.prompt ?? {},
@@ -265,6 +266,7 @@ export function TemplateEditor({
       <Button
         type="button"
         onClick={handleSave}
+        disabled={!name.trim()}
         className="w-full bg-gradient-to-br from-[#00595c] to-[#0d7377] py-5 text-base font-semibold"
       >
         Save template

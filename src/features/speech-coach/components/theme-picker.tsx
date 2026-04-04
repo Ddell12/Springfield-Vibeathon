@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery } from "convex/react";
+import { ErrorBoundary } from "react-error-boundary";
 
 import { cn } from "@/core/utils";
 
@@ -39,7 +40,19 @@ const THEME_EMOJI: Record<string, string> = {
   trains: "🚂",
 };
 
-export function ThemePicker({ selectedSlug, ageRange, onSelect }: Props) {
+export function ThemePicker(props: Props) {
+  return (
+    <ErrorBoundary fallback={
+      <p className="text-xs text-muted-foreground py-4">
+        Adventure themes unavailable right now.
+      </p>
+    }>
+      <ThemePickerInner {...props} />
+    </ErrorBoundary>
+  );
+}
+
+function ThemePickerInner({ selectedSlug, ageRange, onSelect }: Props) {
   const themes = useQuery(api.adventure_words.listThemes);
 
   if (!themes) {

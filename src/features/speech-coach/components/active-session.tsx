@@ -57,8 +57,8 @@ function AgentDataListener({ onMessage }: { onMessage: (msg: AgentVisualMessage)
       try {
         const msg = JSON.parse(new TextDecoder().decode(payload)) as AgentVisualMessage;
         onMessage(msg);
-      } catch {
-        // Ignore malformed data
+      } catch (e) {
+        console.warn("[speech-coach] Malformed data channel message:", e);
       }
     }
     room.on(RoomEvent.DataReceived, handleData);
@@ -102,9 +102,11 @@ function ActiveSessionInner({
   const hasStarted = useRef(false);
   const sessionStartTime = useRef<number | null>(null);
   const lastMilestoneRef = useRef(0);
+  const confettiTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const onEndRef = useRef(onEnd);
 
   useEffect(() => { onEndRef.current = onEnd; });
+  useEffect(() => () => clearTimeout(confettiTimer.current), []);
 
   const [token, setToken] = useState<string | null>(null);
   const [serverUrl, setServerUrl] = useState<string | null>(null);
@@ -133,7 +135,8 @@ function ActiveSessionInner({
       if (msg.totalCorrect > 0 && msg.totalCorrect % 5 === 0 && msg.totalCorrect !== lastMilestoneRef.current) {
         lastMilestoneRef.current = msg.totalCorrect;
         setShowConfetti(true);
-        setTimeout(() => setShowConfetti(false), 1500);
+        clearTimeout(confettiTimer.current);
+        confettiTimer.current = setTimeout(() => setShowConfetti(false), 1500);
       }
     } else if (msg.type === "advance_target") {
       setVisual((prev) => ({ ...prev, targetLabel: msg.nextLabel, promptState: "listen" }));
@@ -147,7 +150,7 @@ function ActiveSessionInner({
       if (sessionStartTime.current) {
         setElapsedMs(Date.now() - sessionStartTime.current);
       }
-    }, 1000);
+    }, 10_000);
     return () => clearInterval(id);
   }, [isConnected]);
 
@@ -225,7 +228,12 @@ function ActiveSessionInner({
             onConversationStarted(runtimeSession.roomName);
           }}
           onDisconnected={() => {
-            if (wasConnected.current) onEndRef.current();
+            if (wasConnected.current) {
+              toast.error("Session disconnected", {
+                description: "The connection was lost. Your progress has been saved.",
+              });
+              onEndRef.current();
+            }
           }}
         >
           <RoomAudioRenderer />

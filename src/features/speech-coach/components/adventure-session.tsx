@@ -85,8 +85,8 @@ function AgentDataListener({ onMessage }: { onMessage: (msg: AgentVisualMessage)
       try {
         const msg = JSON.parse(new TextDecoder().decode(payload)) as AgentVisualMessage;
         onMessage(msg);
-      } catch {
-        // Ignore malformed data
+      } catch (e) {
+        console.warn("[speech-coach] Malformed data channel message:", e);
       }
     }
     room.on(RoomEvent.DataReceived, handleData);
@@ -110,8 +110,11 @@ function AdventureSessionInner({
   const wasConnected = useRef(false);
   const hasStarted = useRef(false);
   const lastMilestoneRef = useRef(0);
+  const confettiTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const milestoneTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const onEndRef = useRef(onEnd);
   useEffect(() => { onEndRef.current = onEnd; });
+  useEffect(() => () => { clearTimeout(confettiTimer.current); clearTimeout(milestoneTimer.current); }, []);
 
   const [token, setToken] = useState<string | null>(null);
   const [serverUrl, setServerUrl] = useState<string | null>(null);
@@ -144,21 +147,23 @@ function AdventureSessionInner({
         totalCorrect: msg.totalCorrect,
       });
       if (msg.promptState === "nice_job") {
-        setAttemptTrail((prev) => [...prev, { correct: true, label: msg.targetLabel }]);
+        setAttemptTrail((prev) => [...prev.slice(-19), { correct: true, label: msg.targetLabel }]);
       } else if (msg.promptState === "try_again") {
-        setAttemptTrail((prev) => [...prev, { correct: false, label: msg.targetLabel }]);
+        setAttemptTrail((prev) => [...prev.slice(-19), { correct: false, label: msg.targetLabel }]);
       }
       // Confetti at every 5 correct
       if (msg.totalCorrect > 0 && msg.totalCorrect % 5 === 0 && msg.totalCorrect !== lastMilestoneRef.current) {
         lastMilestoneRef.current = msg.totalCorrect;
         setShowConfetti(true);
-        setTimeout(() => setShowConfetti(false), 1500);
+        clearTimeout(confettiTimer.current);
+        confettiTimer.current = setTimeout(() => setShowConfetti(false), 1500);
       }
     } else if (msg.type === "advance_target") {
       setVisual((prev) => ({ ...prev, targetLabel: msg.nextLabel, promptState: "listen" }));
     } else if (msg.type === "session_milestone") {
       setShowMilestone({ tier: msg.tier, masteryPct: msg.masteryPct });
-      setTimeout(() => setShowMilestone(null), 3000);
+      clearTimeout(milestoneTimer.current);
+      milestoneTimer.current = setTimeout(() => setShowMilestone(null), 3000);
     } else if (msg.type === "agent_status") {
       setSlpSpeaking(msg.status === "paused");
     }
@@ -228,7 +233,14 @@ function AdventureSessionInner({
             setIsConnected(true);
             onConversationStarted(runtimeSession.roomName);
           }}
-          onDisconnected={() => { if (wasConnected.current) onEndRef.current(); }}
+          onDisconnected={() => {
+            if (wasConnected.current) {
+              toast.error("Session disconnected", {
+                description: "The connection was lost. Your progress has been saved.",
+              });
+              onEndRef.current();
+            }
+          }}
         >
           <RoomAudioRenderer />
           <AgentDataListener onMessage={handleAgentMessage} />

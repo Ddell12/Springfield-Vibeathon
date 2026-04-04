@@ -98,6 +98,7 @@ export const endSession = mutation({
     const session = await ctx.db.get(args.sessionId);
     if (!session) throw new ConvexError("Session not found");
     if (!session.patientId) throw new ConvexError("Use endStandaloneSession for standalone sessions");
+    if (session.status === "analyzing") return; // Already analyzing — prevent duplicate scheduling
 
     await assertCaregiverAccess(ctx, session.patientId);
 
@@ -372,7 +373,7 @@ export const getPracticeFrequency = query({
       .withIndex("by_patientId_startedAt", (q) =>
         q.eq("patientId", args.patientId).gte("startedAt", thirtyDaysAgo)
       )
-      .collect();
+      .take(500);
 
     const completedSessions = allSessions.filter(
       (s) => s.status === "analyzed" || s.status === "completed"
@@ -429,16 +430,16 @@ export const logAttempt = internalMutation({
     const session = await ctx.db.get(args.sessionId);
     if (!session) throw new ConvexError("Session not found");
     const existing = session.rawAttempts ?? [];
-    await ctx.db.patch(args.sessionId, {
-      rawAttempts: [
-        ...existing,
-        {
-          targetLabel: args.targetLabel,
-          outcome: args.outcome,
-          retryCount: args.retryCount,
-          timestampMs: args.timestampMs,
-        },
-      ],
-    });
+    const MAX_RAW_ATTEMPTS = 1000;
+    const newAttempt = {
+      targetLabel: args.targetLabel,
+      outcome: args.outcome,
+      retryCount: args.retryCount,
+      timestampMs: args.timestampMs,
+    };
+    const capped = existing.length >= MAX_RAW_ATTEMPTS
+      ? [...existing.slice(-(MAX_RAW_ATTEMPTS - 1)), newAttempt]
+      : [...existing, newAttempt];
+    await ctx.db.patch(args.sessionId, { rawAttempts: capped });
   },
 });

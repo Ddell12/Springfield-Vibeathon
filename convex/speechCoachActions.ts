@@ -155,7 +155,16 @@ export const analyzeSession = internalAction({
         caregiverResult = await callClaude(anthropic, caregiverPrompt);
       } catch (error) {
         console.error("[SpeechCoach] Caregiver analysis failed, retrying:", error);
-        caregiverResult = await callClaude(anthropic, caregiverPrompt);
+        try {
+          caregiverResult = await callClaude(anthropic, caregiverPrompt);
+        } catch (retryError) {
+          console.error("[SpeechCoach] Caregiver analysis retry failed:", retryError);
+          await ctx.runMutation(internal.speechCoach_lifecycle.markReviewFailed, {
+            sessionId: args.sessionId,
+            errorMessage: "AI analysis failed after two attempts. Please retry.",
+          });
+          return;
+        }
       }
 
       // Only for clinical sessions with a patientId: SLP analysis
@@ -382,7 +391,7 @@ async function callClaude(
     model: "claude-sonnet-4-6",
     max_tokens: 4096,
     messages: [{ role: "user", content: prompt }],
-  });
+  }, { timeout: 45_000 });
 
   const textBlock = response.content.find((block) => block.type === "text");
   if (!textBlock || textBlock.type !== "text") {
