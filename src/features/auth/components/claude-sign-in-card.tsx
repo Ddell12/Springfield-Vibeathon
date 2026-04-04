@@ -11,6 +11,18 @@ import { Input } from "@/shared/components/ui/input";
 
 type Flow = "signIn" | "signUp";
 
+function mapAuthError(raw: string): string {
+  if (/InvalidAccountId|account.*not.*found/i.test(raw))
+    return "Invalid email or password.";
+  if (/InvalidSecret|incorrect.*password|invalid.*password/i.test(raw))
+    return "Invalid email or password.";
+  if (/already.*exists|duplicate/i.test(raw))
+    return "An account with this email already exists. Try signing in instead.";
+  if (/rate.*limit/i.test(raw))
+    return "Too many attempts. Please wait a moment and try again.";
+  return "Something went wrong. Please try again.";
+}
+
 export function ClaudeSignInCard({ role }: { role: AuthRole }) {
   const { signIn } = useAuthActions();
   const router = useRouter();
@@ -37,7 +49,7 @@ export function ClaudeSignInCard({ role }: { role: AuthRole }) {
       router.push(AUTH_REDIRECT_URL);
     } catch (err) {
       const message =
-        err instanceof Error ? err.message : "Something went wrong. Please try again.";
+        err instanceof Error ? mapAuthError(err.message) : "Something went wrong. Please try again.";
       setFormError(message);
     } finally {
       setIsBusy(false);
@@ -49,7 +61,7 @@ export function ClaudeSignInCard({ role }: { role: AuthRole }) {
     try {
       await signIn("google");
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : "Google sign-in isn't available right now.");
+      setFormError(err instanceof Error ? mapAuthError(err.message) : "Google sign-in isn't available right now.");
     }
   };
 
@@ -58,7 +70,7 @@ export function ClaudeSignInCard({ role }: { role: AuthRole }) {
     try {
       await signIn("apple");
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : "Apple sign-in isn't available right now.");
+      setFormError(err instanceof Error ? mapAuthError(err.message) : "Apple sign-in isn't available right now.");
     }
   };
 
