@@ -19,7 +19,10 @@ import { FirstThenBoardRuntime } from "./templates/first-then-board/runtime";
 import { type FirstThenBoardConfig,FirstThenBoardConfigSchema } from "./templates/first-then-board/schema";
 import { FirstThenBoardSettingsPage } from "./templates/first-then-board/settings-page";
 import { MatchingGameEditor } from "./templates/matching-game/editor";
+import { MatchingGameHistoryPage } from "./templates/matching-game/history-page";
+import { MatchingGameMainPage } from "./templates/matching-game/main-page";
 import { MatchingGameRuntime } from "./templates/matching-game/runtime";
+import { MatchingGameSettingsPage } from "./templates/matching-game/settings-page";
 import { type MatchingGameConfig,MatchingGameConfigSchema } from "./templates/matching-game/schema";
 import { TokenBoardEditor } from "./templates/token-board/editor";
 import { TokenBoardHistoryPage } from "./templates/token-board/history-page";
@@ -367,6 +370,10 @@ export const templateRegistry: Record<string, TemplateRegistration> = {
 - Pairs should be meaningfully related and appropriately challenging for the age range
 - Avoid trivially easy pairs (dog/cat) unless the request is explicitly for beginners
 - celebrateCorrect: true for engagement`,
-    pages: [],
+    pages: [
+      { id: "main", label: "Game", icon: LayoutGrid, audience: "both", component: MatchingGameMainPage },
+      { id: "settings", label: "Settings", icon: Settings2, audience: "slp", component: MatchingGameSettingsPage },
+      { id: "history", label: "History", icon: BarChart3, audience: "slp", component: MatchingGameHistoryPage },
+    ],
   },
 };
