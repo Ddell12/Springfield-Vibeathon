@@ -65,7 +65,7 @@ export const remove = mutation({
   },
 });
 
-/** Returns all tool events for an app instance, ordered by creation time. */
+/** Returns recent tool events for an app instance (most recent 500). */
 export const getEvents = query({
   args: { appInstanceId: v.id("app_instances") },
   handler: async (ctx, args) => {
@@ -74,6 +74,7 @@ export const getEvents = query({
       .withIndex("by_appInstanceId", (q) =>
         q.eq("appInstanceId", args.appInstanceId)
       )
-      .collect();
+      .order("desc")
+      .take(500);
   },
 });

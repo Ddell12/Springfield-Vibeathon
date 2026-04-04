@@ -100,7 +100,7 @@ export function useTemplateData(
 
   const lastUsedAt = useMemo(() => {
     if (events.length === 0) return null;
-    return Math.max(...events.map((e) => e._creationTime));
+    return events.reduce((max, e) => (e._creationTime > max ? e._creationTime : max), 0);
   }, [events]);
 
   const isLoading = useConvexBackend

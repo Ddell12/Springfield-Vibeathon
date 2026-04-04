@@ -1,6 +1,7 @@
 "use client";
 
 import { nanoid } from "nanoid";
+import { useCallback, useState } from "react";
 
 import { Badge } from "@/shared/components/ui/badge";
 import { Button } from "@/shared/components/ui/button";
@@ -55,13 +56,16 @@ export function AACBoardWordBankPage({
   const removeButton = (id: string) =>
     save(buttons.filter((b) => b.id !== id));
 
-  const updateLabel = (id: string, label: string) =>
-    save(buttons.map((b) => (b.id === id ? { ...b, label, speakText: label } : b)));
+  const commitLabel = useCallback(
+    (id: string, label: string) =>
+      save(buttons.map((b) => (b.id === id ? { ...b, label, speakText: label } : b))),
+    [buttons, save]
+  );
 
   return (
     <div className="flex flex-col gap-6 overflow-y-auto p-4">
       <p className="text-sm text-muted-foreground">
-        Words are grouped by Fitzgerald key color. Changes apply immediately to the board.
+        Words are grouped by Fitzgerald key color. Changes save when you leave the field.
       </p>
 
       {WORD_CATEGORIES.map((cat) => {
@@ -86,28 +90,55 @@ export function AACBoardWordBankPage({
                 <p className="text-xs text-muted-foreground">No words yet.</p>
               )}
               {catButtons.map((btn) => (
-                <div key={btn.id} className="flex items-center gap-1">
-                  <Badge className={CATEGORY_COLORS[cat]}>
-                    <input
-                      value={btn.label}
-                      onChange={(e) => updateLabel(btn.id, e.target.value)}
-                      className="w-20 bg-transparent text-xs outline-none"
-                    />
-                  </Badge>
-                  <button
-                    type="button"
-                    onClick={() => removeButton(btn.id)}
-                    aria-label={`Remove ${btn.label}`}
-                    className="text-muted-foreground hover:text-destructive text-xs"
-                  >
-                    ✕
-                  </button>
-                </div>
+                <WordBadge
+                  key={btn.id}
+                  btn={btn}
+                  colorClass={CATEGORY_COLORS[cat]}
+                  onCommit={commitLabel}
+                  onRemove={removeButton}
+                />
               ))}
             </div>
           </section>
         );
       })}
+    </div>
+  );
+}
+
+function WordBadge({
+  btn,
+  colorClass,
+  onCommit,
+  onRemove,
+}: {
+  btn: AACButton;
+  colorClass: string;
+  onCommit: (id: string, label: string) => void;
+  onRemove: (id: string) => void;
+}) {
+  const [local, setLocal] = useState(btn.label);
+
+  return (
+    <div className="flex items-center gap-1">
+      <Badge className={colorClass}>
+        <input
+          value={local}
+          onChange={(e) => setLocal(e.target.value)}
+          onBlur={() => {
+            if (local !== btn.label) onCommit(btn.id, local);
+          }}
+          className="w-20 bg-transparent text-xs outline-none"
+        />
+      </Badge>
+      <button
+        type="button"
+        onClick={() => onRemove(btn.id)}
+        aria-label={`Remove ${btn.label}`}
+        className="text-muted-foreground hover:text-destructive text-xs"
+      >
+        ✕
+      </button>
     </div>
   );
 }

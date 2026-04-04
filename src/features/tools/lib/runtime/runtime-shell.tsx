@@ -120,7 +120,7 @@ export function RuntimeShell({
 
       {/* Tab bar — only shown when pages provided and more than 1 visible */}
       {visiblePages.length > 1 && (
-        <nav className="sticky top-[57px] z-10 flex border-b border-border bg-background/95 backdrop-blur">
+        <nav role="tablist" className="sticky top-[57px] z-10 flex border-b border-border bg-background/95 backdrop-blur">
           {visiblePages.map((page) => {
             const Icon = page.icon;
             const isActive = page.id === (currentPage?.id ?? "main");
