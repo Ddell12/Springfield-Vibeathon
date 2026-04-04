@@ -151,6 +151,7 @@ function AdventureSessionInner({
   const [showConfetti, setShowConfetti] = useState(false);
   const [showMilestone, setShowMilestone] = useState<{ tier: string; masteryPct: number } | null>(null);
   const [slpSpeaking, setSlpSpeaking] = useState(false);
+  const [slpTakeOverActive, setSlpTakeOverActive] = useState(false);
 
   const reducedMotion = speechCoachConfig?.reducedMotion ?? false;
   const themeSlug = sessionConfig?.themeSlug ?? "dinosaurs";
@@ -237,8 +238,16 @@ function AdventureSessionInner({
 
   const { filled: trailFilled } = useProgressTrail(visual.totalCorrect);
 
-  return (
-    <div className="relative flex h-full flex-col overflow-hidden">
+  // Clinical panel data for SLP view
+  const sessionAccuracy =
+    visual.totalCorrect > 0
+      ? Math.round((visual.totalCorrect / Math.max(visual.totalCorrect + 1, 1)) * 100)
+      : 0;
+  const rollingCorrect = trailFilled;
+  const rollingTotal = Math.min(visual.totalCorrect + (5 - trailFilled), 5);
+
+  const sessionContent = (
+    <div className={cn("relative flex h-full flex-col overflow-hidden", viewerRole === "slp" && "min-w-0")}>
       {/* LiveKit room */}
       {token && serverUrl && (
         <LiveKitRoom
@@ -421,5 +430,85 @@ function AdventureSessionInner({
         </div>
       )}
     </div>
+  );
+
+  return viewerRole === "slp" ? (
+    <div className="flex h-full gap-0">
+      {/* Left — child view mirror */}
+      <div className="flex-[3] min-w-0 border-r border-border">
+        {sessionContent}
+      </div>
+
+      {/* Right — live clinical panel */}
+      <div className="flex-[2] min-w-0 flex flex-col gap-4 p-4 overflow-y-auto bg-muted/20">
+        <h3 className="font-headline text-sm font-semibold text-foreground">Live Clinical Panel</h3>
+
+        {/* Current target */}
+        <div className="rounded-xl bg-background p-3 shadow-sm">
+          <p className="text-xs font-medium text-muted-foreground">Current target</p>
+          <p className="mt-1 font-mono text-base font-bold text-foreground">{visual.targetLabel}</p>
+          <p className="text-xs text-muted-foreground capitalize">{visual.promptState.replace("_", " ")}</p>
+        </div>
+
+        {/* Rolling accuracy window */}
+        <div className="rounded-xl bg-background p-3 shadow-sm">
+          <p className="text-xs font-medium text-muted-foreground">Rolling window (last 5)</p>
+          <p className="mt-1 text-lg font-bold text-foreground">
+            {rollingCorrect}/{Math.min(visual.totalCorrect + 1, 5)} correct
+          </p>
+          <div className="mt-2 flex gap-1">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <span
+                key={i}
+                className={cn(
+                  "h-2 flex-1 rounded-full",
+                  i < trailFilled ? "bg-primary" : "bg-muted",
+                )}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* Session totals */}
+        <div className="rounded-xl bg-background p-3 shadow-sm">
+          <p className="text-xs font-medium text-muted-foreground">Session total</p>
+          <p className="mt-1 text-lg font-bold text-foreground">{visual.totalCorrect} correct</p>
+        </div>
+
+        {/* Take Over button */}
+        <div className="mt-auto">
+          {slpTakeOverActive ? (
+            <button
+              type="button"
+              onClick={() => {
+                setSlpTakeOverActive(false);
+                publishRef.current?.publish({ type: "agent_status", status: "active" });
+              }}
+              className="w-full rounded-xl bg-amber-500 px-4 py-3 text-sm font-semibold text-white hover:bg-amber-600 transition-colors"
+            >
+              Resume Agent
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => {
+                setSlpTakeOverActive(true);
+                publishRef.current?.publish({ type: "agent_status", status: "paused" });
+              }}
+              className="w-full rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+            >
+              Take Over
+            </button>
+          )}
+          {slpTakeOverActive && (
+            <p className="mt-2 text-center text-xs text-muted-foreground">
+              Agent paused — you are speaking directly to the child.
+            </p>
+          )}
+        </div>
+      </div>
+    </div>
+  ) : (
+    sessionContent
   );
 }
