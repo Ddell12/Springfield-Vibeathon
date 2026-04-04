@@ -239,12 +239,7 @@ function AdventureSessionInner({
   const { filled: trailFilled } = useProgressTrail(visual.totalCorrect);
 
   // Clinical panel data for SLP view
-  const sessionAccuracy =
-    visual.totalCorrect > 0
-      ? Math.round((visual.totalCorrect / Math.max(visual.totalCorrect + 1, 1)) * 100)
-      : 0;
   const rollingCorrect = trailFilled;
-  const rollingTotal = Math.min(visual.totalCorrect + (5 - trailFilled), 5);
 
   const sessionContent = (
     <div className={cn("relative flex h-full flex-col overflow-hidden", viewerRole === "slp" && "min-w-0")}>
