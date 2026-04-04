@@ -6,11 +6,10 @@ import { use, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { useCurrentUser } from "@/features/auth/hooks/use-current-user";
-
 import { MaterialIcon } from "@/shared/components/material-icon";
 import { Button } from "@/shared/components/ui/button";
 
-import { useAcceptInvite,useInviteInfo } from "../hooks/use-invite";
+import { useAcceptInvite, useInviteInfo } from "../hooks/use-invite";
 
 interface InviteLandingProps {
   paramsPromise: Promise<{ token: string }>;
@@ -28,27 +27,34 @@ export function InviteLanding({ paramsPromise }: InviteLandingProps) {
   const acceptAttemptedRef = useRef(false);
 
   const isSLP = user?.role === "slp";
-  // Only auto-accept for brand-new users (role = null = just signed up via invite).
-  // Existing caregivers (role = "caregiver") visiting someone else's link should not trigger this.
-  const isNewUser = isSignedIn && user?.role == null;
+  const isCaregiver = user?.role === "caregiver";
+  const canAutoAcceptInvite = isSignedIn && (isCaregiver || user?.role == null);
 
-  // Auto-accept if user is already signed in (came back from sign-up)
   useEffect(() => {
-    if (isLoaded && isNewUser && inviteInfo && !isAccepting && !acceptAttemptedRef.current) {
-      acceptAttemptedRef.current = true;
-      setTimeout(() => setIsAccepting(true), 0);
-      acceptInvite({ token })
-        .then(() => {
-          toast.success("You're connected!");
-          router.push("/builder");
-        })
-        .catch((err) => {
-          console.error("[invite] Failed to accept:", err);
-          toast.error("Failed to accept invite. Please try again.");
-          setIsAccepting(false);
-        });
+    if (
+      !isLoaded ||
+      !inviteInfo ||
+      !canAutoAcceptInvite ||
+      isAccepting ||
+      acceptAttemptedRef.current
+    ) {
+      return;
     }
-  }, [isLoaded, isNewUser, inviteInfo, token, acceptInvite, router, isAccepting]);
+
+    acceptAttemptedRef.current = true;
+    setIsAccepting(true);
+
+    acceptInvite({ token })
+      .then(() => {
+        toast.success("You're connected!");
+        router.push("/builder");
+      })
+      .catch((err) => {
+        console.error("[invite] Failed to accept:", err);
+        toast.error("Failed to accept invite. Please try again.");
+        setIsAccepting(false);
+      });
+  }, [acceptInvite, canAutoAcceptInvite, inviteInfo, isAccepting, isLoaded, router, token]);
 
   // Loading state
   if (inviteInfo === undefined) {

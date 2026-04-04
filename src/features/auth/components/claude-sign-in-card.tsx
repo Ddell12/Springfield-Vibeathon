@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-import { AUTH_REDIRECT_URL, mapAuthError, type AuthRole, ROLE_COPY } from "@/features/auth/lib/auth-content";
+import { AUTH_REDIRECT_URL, type AuthRole, mapAuthError, ROLE_COPY } from "@/features/auth/lib/auth-content";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
 

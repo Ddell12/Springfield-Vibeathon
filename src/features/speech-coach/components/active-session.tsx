@@ -1,8 +1,8 @@
 "use client";
 
 import { LiveKitRoom, RoomAudioRenderer, useRoomContext } from "@livekit/components-react";
-import Image from "next/image";
 import { RoomEvent } from "livekit-client";
+import Image from "next/image";
 import { type Dispatch, type SetStateAction, useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 

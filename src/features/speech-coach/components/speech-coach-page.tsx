@@ -14,8 +14,8 @@ import { useSpeechSession } from "../hooks/use-speech-session";
 import { ActiveSession } from "./active-session";
 import { AdventureSession } from "./adventure-session";
 import { CaregiverProgressCard } from "./caregiver-progress-card";
-import { SessionDotCalendar } from "./session-dot-calendar";
 import { SessionConfig } from "./session-config";
+import { SessionDotCalendar } from "./session-dot-calendar";
 import { SessionHistory } from "./session-history";
 
 type Tab = "new" | "history";

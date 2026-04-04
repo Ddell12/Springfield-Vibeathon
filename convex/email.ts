@@ -1,3 +1,4 @@
+import { getAuthUserId } from "@convex-dev/auth/server";
 import { Resend, vOnEmailEventArgs } from "@convex-dev/resend";
 import { ConvexError, v } from "convex/values";
 
@@ -78,14 +79,10 @@ export const sendVideoCallInvite = action({
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new ConvexError("Not authenticated");
 
-    // Role from Clerk publicMetadata — dual-parse for convex-test vs production
-    const raw = (identity as Record<string, unknown>).public_metadata;
-    let role: string | null = null;
-    if (typeof raw === "string") {
-      try { role = (JSON.parse(raw) as { role?: string }).role ?? null; } catch { role = null; }
-    } else if (raw && typeof raw === "object") {
-      role = ((raw as { role?: string }).role) ?? null;
-    }
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new ConvexError("Not authenticated");
+
+    const role = await ctx.runQuery(internal.users.getRoleById, { userId });
     if (role !== null && role !== "slp") {
       throw new ConvexError("Only SLPs can send session invites");
     }

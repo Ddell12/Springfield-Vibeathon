@@ -5,9 +5,9 @@ import type { Id } from "@convex/_generated/dataModel";
 import { useMutation, useQuery } from "convex/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { seedStateFromInstance } from "../lib/tool-config-seed";
 import { templateRegistry } from "../lib/registry";
 import type { ThemePreset } from "../lib/runtime/app-shell-types";
+import { seedStateFromInstance } from "../lib/tool-config-seed";
 
 export type WizardStep = 1 | 2 | 3 | 4;
 
@@ -73,7 +73,6 @@ export function useToolBuilder(initialId?: Id<"app_instances"> | null) {
   const createInstance = useMutation(api.tools.create);
   const updateInstance = useMutation(api.tools.update);
   const publishInstance = useMutation(api.tools.publish);
-  const archiveInstance = useMutation(api.tools.archive);
   const unpublishInstance = useMutation(api.tools.unpublish);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const latestConfigRef = useRef<unknown>(null);

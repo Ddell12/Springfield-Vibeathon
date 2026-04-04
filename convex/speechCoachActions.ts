@@ -4,7 +4,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { ConvexError, v } from "convex/values";
 
 import { api, internal } from "./_generated/api";
-import type { Doc, Id } from "./_generated/dataModel";
+import type { Doc } from "./_generated/dataModel";
 import type { ActionCtx } from "./_generated/server";
 import { action, internalAction } from "./_generated/server";
 
@@ -49,6 +49,7 @@ type AnalysisResult = {
     approximateSuccessRate: "high" | "medium" | "low";
     notes: string;
   }>;
+  homePracticeNotes?: string[];
   overallEngagement: "high" | "medium" | "low";
   recommendedNextFocus: string[];
   summary: string;
@@ -150,7 +151,7 @@ export const analyzeSession = internalAction({
 
       // Always: caregiver analysis
       const caregiverPrompt = buildCaregiverAnalysisPrompt(session, analysisInput);
-      let caregiverResult: any;
+      let caregiverResult: AnalysisResult;
       try {
         caregiverResult = await callClaude(anthropic, caregiverPrompt);
       } catch (error) {

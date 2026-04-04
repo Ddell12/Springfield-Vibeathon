@@ -11,14 +11,14 @@ import { Textarea } from "@/shared/components/ui/textarea";
 
 import type { Id } from "../../../../convex/_generated/dataModel";
 import {
+  ageRangeFromAge,
   COACH_TONE_OPTIONS,
   CORRECTION_STYLE_OPTIONS,
   FRUSTRATION_SUPPORT_OPTIONS,
-  type SpeechCoachConfig,
-  SESSION_PACE_OPTIONS,
-  TARGET_SOUNDS,
-  ageRangeFromAge,
   getCoachSetup,
+  SESSION_PACE_OPTIONS,
+  type SpeechCoachConfig,
+  TARGET_SOUNDS,
 } from "../lib/config";
 
 type TemplateOption = {

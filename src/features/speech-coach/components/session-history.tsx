@@ -10,7 +10,6 @@ import { Button } from "@/shared/components/ui/button";
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 import { getSessionStatusLabel } from "../lib/session-analysis";
-import { ProgressCard } from "./progress-card";
 import { SlpProgressCard } from "./slp-progress-card";
 
 const STATUS_STYLES = {

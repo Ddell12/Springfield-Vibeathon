@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { notFound } from "next/navigation";
 import { useState } from "react";
 
@@ -23,13 +22,13 @@ import {
 } from "@/shared/components/ui/radio-group";
 
 import type { Id } from "../../../../convex/_generated/dataModel";
+import { useSessionNoteAutosave } from "../hooks/use-session-note-autosave";
+import { useSessionNoteLifecycle } from "../hooks/use-session-note-lifecycle";
+import { useSessionNoteSigning } from "../hooks/use-session-note-signing";
 import {
   getSignatureDelayDays,
   isLateSignature,
 } from "../lib/session-utils";
-import { useSessionNoteAutosave } from "../hooks/use-session-note-autosave";
-import { useSessionNoteLifecycle } from "../hooks/use-session-note-lifecycle";
-import { useSessionNoteSigning } from "../hooks/use-session-note-signing";
 import { DurationPresetInput } from "./duration-preset-input";
 import { GroupPatientPicker } from "./group-patient-picker";
 import { type SoapNote, SoapPreview } from "./soap-preview";

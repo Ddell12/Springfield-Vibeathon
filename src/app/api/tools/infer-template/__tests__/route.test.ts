@@ -1,7 +1,9 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("@clerk/nextjs/server", () => ({
-  auth: vi.fn().mockResolvedValue({ userId: "user_test123" }),
+const mockConvexAuthNextjsToken = vi.fn().mockResolvedValue("test-token");
+
+vi.mock("@convex-dev/auth/nextjs/server", () => ({
+  convexAuthNextjsToken: mockConvexAuthNextjsToken,
 }));
 
 // First generateText call returns { templateType, suggestedTitle }
@@ -36,9 +38,13 @@ vi.mock("ai", () => ({
 import { POST } from "../route";
 
 describe("POST /api/tools/infer-template", () => {
+  beforeEach(() => {
+    callCount = 0;
+    mockConvexAuthNextjsToken.mockResolvedValue("test-token");
+  });
+
   it("returns 401 when unauthenticated", async () => {
-    const { auth } = await import("@clerk/nextjs/server");
-    vi.mocked(auth).mockResolvedValueOnce({ userId: null } as never);
+    mockConvexAuthNextjsToken.mockResolvedValueOnce(null);
 
     const req = new Request("http://localhost/api/tools/infer-template", {
       method: "POST",
@@ -58,7 +64,6 @@ describe("POST /api/tools/infer-template", () => {
   });
 
   it("returns templateType, configJson, suggestedTitle for valid description", async () => {
-    callCount = 0;
     const req = new Request("http://localhost/api/tools/infer-template", {
       method: "POST",
       body: JSON.stringify({

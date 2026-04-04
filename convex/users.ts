@@ -1,8 +1,8 @@
+import { getAuthUserId } from "@convex-dev/auth/server";
 import { v } from "convex/values";
 
 import type { Id } from "./_generated/dataModel";
 import { internalMutation, internalQuery, mutation, query } from "./_generated/server";
-import { getAuthUserId } from "@convex-dev/auth/server";
 
 export const currentUser = query({
   args: {},
@@ -55,5 +55,13 @@ export const getByEmail = internalQuery({
       .query("users")
       .withIndex("email", (q) => q.eq("email", email))
       .first();
+  },
+});
+
+export const getRoleById = internalQuery({
+  args: { userId: v.string() },
+  handler: async (ctx, { userId }) => {
+    const user = await ctx.db.get(userId as Id<"users">);
+    return user?.role ?? null;
   },
 });

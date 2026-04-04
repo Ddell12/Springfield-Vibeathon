@@ -24,7 +24,6 @@ import { ConfigEditor } from "./config-editor";
 import { GoalTagsEditor } from "./goal-tags-editor";
 import { PreviewPanel } from "./preview-panel";
 import { PublishSheet } from "./publish-sheet";
-import { TemplatePicker } from "./template-picker";
 
 type Builder = ReturnType<typeof useToolBuilder>;
 

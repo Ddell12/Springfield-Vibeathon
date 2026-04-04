@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("convex/react", () => ({
@@ -13,8 +13,9 @@ vi.mock("qrcode.react", () => ({
   QRCodeSVG: ({ value }: { value: string }) => <svg data-testid="qr-code" data-value={value} />,
 }));
 
-import { PublishSheet } from "../publish-sheet";
 import type { Id } from "@convex/_generated/dataModel";
+
+import { PublishSheet } from "../publish-sheet";
 
 const onPublish = vi.fn().mockResolvedValue("tok-abc");
 const onClose = vi.fn();

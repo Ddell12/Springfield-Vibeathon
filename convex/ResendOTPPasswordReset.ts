@@ -1,9 +1,9 @@
 "use node";
 
 import Resend from "@auth/core/providers/resend";
-import { Resend as ResendAPI } from "resend";
 import type { RandomReader } from "@oslojs/crypto/random";
 import { generateRandomString } from "@oslojs/crypto/random";
+import { Resend as ResendAPI } from "resend";
 
 export const ResendOTPPasswordReset = Resend({
   id: "resend-otp",

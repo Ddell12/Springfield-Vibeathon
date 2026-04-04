@@ -2,8 +2,8 @@ import { act, render, screen } from "@testing-library/react";
 import { useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 
-import { ActiveSession, getCelebrationMode, processAgentMessage } from "../active-session";
 import type { SessionVisualState } from "../active-session";
+import { ActiveSession, getCelebrationMode, processAgentMessage } from "../active-session";
 
 // LiveKit components are browser-only and don't render meaningfully in jsdom.
 vi.mock("@livekit/components-react", () => ({

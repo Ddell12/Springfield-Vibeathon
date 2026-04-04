@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import { formatSessionNote } from "../session-note-formatter";
 
 const now = Date.now();

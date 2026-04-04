@@ -6,10 +6,9 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 
-import { useCurrentUser } from "@/features/auth/hooks/use-current-user";
-
 import { ROUTES } from "@/core/routes";
 import { cn } from "@/core/utils";
+import { useCurrentUser } from "@/features/auth/hooks/use-current-user";
 import { NotificationBell } from "@/features/sessions/components/notification-bell";
 import { useUnreadNotificationsCount } from "@/features/sessions/hooks/use-unread-notifications-count";
 import { MaterialIcon } from "@/shared/components/material-icon";

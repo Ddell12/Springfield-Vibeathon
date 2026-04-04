@@ -1,8 +1,7 @@
 "use client";
 
-import { useQuery } from "convex/react";
-
 import { api } from "@convex/_generated/api";
+import { useQuery } from "convex/react";
 
 export function useCurrentUser() {
   return useQuery(api.users.currentUser);

@@ -1,6 +1,6 @@
 import {
-  PracticeFrequencyPanel,
   type PracticeFrequencyData,
+  PracticeFrequencyPanel,
 } from "./practice-frequency-panel";
 
 type LegacyFrequencyData = {

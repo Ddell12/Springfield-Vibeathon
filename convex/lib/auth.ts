@@ -1,5 +1,5 @@
-import { ConvexError } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
+import { ConvexError } from "convex/values";
 
 import type { Id } from "../_generated/dataModel";
 import type { ActionCtx, MutationCtx, QueryCtx } from "../_generated/server";
@@ -9,7 +9,7 @@ export { getAuthUserId } from "@convex-dev/auth/server";
 
 /**
  * Build a set of all identifiers for the current user — the Convex user ID,
- * the Clerk subject, and the tokenIdentifier. Used for ownership checks on
+ * the auth subject, and the tokenIdentifier. Used for ownership checks on
  * records that may store any of these formats.
  */
 export async function getAuthIdentifierSet(

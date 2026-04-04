@@ -5,10 +5,9 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 
-import { useCurrentUser } from "@/features/auth/hooks/use-current-user";
-
 import { APP_BRAND, APP_CONTACT_EMAIL, APP_SIGN_IN_CTA } from "@/core/config";
 import { cn } from "@/core/utils";
+import { useCurrentUser } from "@/features/auth/hooks/use-current-user";
 import { MaterialIcon } from "@/shared/components/material-icon";
 import { Button } from "@/shared/components/ui/button";
 import {

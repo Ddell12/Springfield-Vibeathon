@@ -88,7 +88,14 @@ export function MatchingGameRuntime({
         incorrectTimeoutRef.current = null;
       }, 800);
     }
-  }, [selectedPromptId, matchedPairIds, visiblePairs.length, onEvent]);
+  }, [
+    matchedPairIds,
+    onEvent,
+    selectedPromptId,
+    shellState?.soundsEnabled,
+    visiblePairs.length,
+    voice,
+  ]);
 
   const allDone = matchedPairIds.size === visiblePairs.length && visiblePairs.length > 0;
 

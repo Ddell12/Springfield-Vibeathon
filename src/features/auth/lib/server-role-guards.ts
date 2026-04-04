@@ -1,8 +1,7 @@
+import { api } from "@convex/_generated/api";
 import { convexAuthNextjsToken } from "@convex-dev/auth/nextjs/server";
 import { fetchQuery } from "convex/nextjs";
 import { redirect } from "next/navigation";
-
-import { api } from "@convex/_generated/api";
 
 export async function requireSlpUser() {
   const token = await convexAuthNextjsToken();

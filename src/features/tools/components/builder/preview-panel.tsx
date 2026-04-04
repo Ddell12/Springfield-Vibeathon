@@ -1,8 +1,7 @@
 "use client";
 
-import { useRef, useState } from "react";
-
 import { Smartphone, Tablet } from "lucide-react";
+import { useRef, useState } from "react";
 
 import { cn } from "@/core/utils";
 import { Button } from "@/shared/components/ui/button";

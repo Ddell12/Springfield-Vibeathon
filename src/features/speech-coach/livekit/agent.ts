@@ -1,9 +1,9 @@
 import { voice } from "@livekit/agents";
 import type { Room } from "livekit-client";
 
+import type { AdventureSessionEngine } from "./adventure-engine";
 import { buildAdventureSystemPromptAddendum } from "./model-config";
 import { createAdventureTools, createSpeechCoachTools } from "./tools";
-import type { AdventureSessionEngine } from "./adventure-engine";
 
 type SpeechCoachAgentConfig = {
   instructions: string;
