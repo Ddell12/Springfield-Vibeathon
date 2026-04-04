@@ -101,16 +101,18 @@ export function ClaudeSignInCard({ role }: { role: AuthRole }) {
         </div>
 
         {/* Email + password fields */}
-        {flow === "signUp" && (
-          <Input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Full name (optional)"
-            autoComplete="name"
-            className="h-12 rounded-xl border border-border bg-background"
-          />
-        )}
+        <Input
+          type="text"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="Full name (optional)"
+          autoComplete="name"
+          aria-hidden={flow !== "signUp"}
+          tabIndex={flow === "signUp" ? undefined : -1}
+          className={`h-12 rounded-xl border border-border bg-background transition-all duration-200 ${
+            flow === "signUp" ? "opacity-100" : "pointer-events-none h-0 overflow-hidden opacity-0"
+          }`}
+        />
 
         <Input
           type="email"
