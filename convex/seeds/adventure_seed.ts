@@ -320,6 +320,60 @@ const ADVENTURE_WORDS: WordSeed[] = [
   { themeSlug: "ocean", targetSound: "/l/", tier: "sentence", content: "The lobster lives in the lagoon.", imagePrompt: "lobster settled happily in a warm, calm lagoon", difficulty: 1 },
   { themeSlug: "ocean", targetSound: "/l/", tier: "sentence", content: "The lighthouse light glows along the shore.", imagePrompt: "lighthouse beam lighting up a dark rocky shoreline", difficulty: 2 },
   { themeSlug: "ocean", targetSound: "/l/", tier: "sentence", content: "Little lemon fish leap through the lagoon light.", imagePrompt: "tiny yellow fish jumping through rays of sunlight in lagoon", difficulty: 4 },
+
+  // /sh/ sound — Star Station — words
+  { themeSlug: "space", targetSound: "/sh/", tier: "word", content: "ship", imagePrompt: "colorful cartoon rocket ship zooming through space", difficulty: 1 },
+  { themeSlug: "space", targetSound: "/sh/", tier: "word", content: "shine", imagePrompt: "stars shining brightly in the dark space sky", difficulty: 1 },
+  { themeSlug: "space", targetSound: "/sh/", tier: "word", content: "shoot", imagePrompt: "shooting star streaking across the night sky", difficulty: 1 },
+  { themeSlug: "space", targetSound: "/sh/", tier: "word", content: "shadow", imagePrompt: "large planet casting a shadow across the space station", difficulty: 2 },
+  { themeSlug: "space", targetSound: "/sh/", tier: "word", content: "shape", imagePrompt: "astronaut tracing star constellation shapes in the sky", difficulty: 2 },
+  { themeSlug: "space", targetSound: "/sh/", tier: "word", content: "sharp", imagePrompt: "sharp pointed rocket nose cone gleaming in starlight", difficulty: 3 },
+  { themeSlug: "space", targetSound: "/sh/", tier: "word", content: "shelter", imagePrompt: "cozy space station shelter glowing against dark space", difficulty: 3 },
+  { themeSlug: "space", targetSound: "/sh/", tier: "word", content: "shield", imagePrompt: "energy shield protecting a space station from asteroids", difficulty: 4 },
+  // /sh/ sound — Star Station — phrases
+  { themeSlug: "space", targetSound: "/sh/", tier: "phrase", content: "shooting star", imagePrompt: "brilliant shooting star blazing across the galaxy", difficulty: 1 },
+  { themeSlug: "space", targetSound: "/sh/", tier: "phrase", content: "shiny ship", imagePrompt: "gleaming silver rocket ship hovering in space", difficulty: 2 },
+  { themeSlug: "space", targetSound: "/sh/", tier: "phrase", content: "sharp shadow shield", imagePrompt: "rocket ship with a pointed nose casting a sharp shadow", difficulty: 4 },
+  // /sh/ sound — Star Station — sentences
+  { themeSlug: "space", targetSound: "/sh/", tier: "sentence", content: "The space ship shines in the dark.", imagePrompt: "rocket ship glowing like a star in deep space", difficulty: 1 },
+  { themeSlug: "space", targetSound: "/sh/", tier: "sentence", content: "Shooting stars flash through the shadows.", imagePrompt: "multiple shooting stars streaking through a dark nebula", difficulty: 3 },
+  { themeSlug: "space", targetSound: "/sh/", tier: "sentence", content: "The shield shines as it shelters the ship from sharp rocks.", imagePrompt: "glowing shield protecting a rocket from an asteroid field", difficulty: 5 },
+
+  // /s/ sound — Star Station — words
+  { themeSlug: "space", targetSound: "/s/", tier: "word", content: "star", imagePrompt: "twinkling cartoon star in a dark space sky", difficulty: 1 },
+  { themeSlug: "space", targetSound: "/s/", tier: "word", content: "sun", imagePrompt: "the sun viewed from space, big and bright yellow", difficulty: 1 },
+  { themeSlug: "space", targetSound: "/s/", tier: "word", content: "space", imagePrompt: "dark expanse of space filled with stars and galaxies", difficulty: 1 },
+  { themeSlug: "space", targetSound: "/s/", tier: "word", content: "suit", imagePrompt: "cartoon astronaut in a white space suit floating", difficulty: 2 },
+  { themeSlug: "space", targetSound: "/s/", tier: "word", content: "silver", imagePrompt: "silver satellite orbiting a blue planet", difficulty: 2 },
+  { themeSlug: "space", targetSound: "/s/", tier: "word", content: "satellite", imagePrompt: "shiny satellite with solar panels orbiting Earth", difficulty: 3 },
+  { themeSlug: "space", targetSound: "/s/", tier: "word", content: "spiral", imagePrompt: "spiral galaxy swirling with stars and color", difficulty: 3 },
+  { themeSlug: "space", targetSound: "/s/", tier: "word", content: "station", imagePrompt: "large space station floating above planet Earth", difficulty: 4 },
+  // /s/ sound — Star Station — phrases
+  { themeSlug: "space", targetSound: "/s/", tier: "phrase", content: "solar system", imagePrompt: "all the planets of the solar system in a row", difficulty: 1 },
+  { themeSlug: "space", targetSound: "/s/", tier: "phrase", content: "silver satellite", imagePrompt: "gleaming silver satellite against a starry sky", difficulty: 2 },
+  { themeSlug: "space", targetSound: "/s/", tier: "phrase", content: "space suit star", imagePrompt: "astronaut in space suit reaching toward a big star", difficulty: 3 },
+  { themeSlug: "space", targetSound: "/s/", tier: "phrase", content: "spinning space station", imagePrompt: "space station slowly rotating against a backdrop of stars", difficulty: 4 },
+  // /s/ sound — Star Station — sentences
+  { themeSlug: "space", targetSound: "/s/", tier: "sentence", content: "Stars sparkle in the space station sky.", imagePrompt: "countless sparkly stars visible through a space station window", difficulty: 1 },
+  { themeSlug: "space", targetSound: "/s/", tier: "sentence", content: "The satellite circles the solar system.", imagePrompt: "satellite orbiting in a wide arc around the sun and planets", difficulty: 3 },
+  { themeSlug: "space", targetSound: "/s/", tier: "sentence", content: "Seven silver satellites spin past the space station.", imagePrompt: "seven spinning satellites passing by the space station", difficulty: 5 },
+
+  // /r/ sound — Star Station — words
+  { themeSlug: "space", targetSound: "/r/", tier: "word", content: "rocket", imagePrompt: "bright red cartoon rocket blasting off into space", difficulty: 1 },
+  { themeSlug: "space", targetSound: "/r/", tier: "word", content: "ring", imagePrompt: "planet Saturn with its beautiful rings", difficulty: 1 },
+  { themeSlug: "space", targetSound: "/r/", tier: "word", content: "rover", imagePrompt: "cartoon space rover rolling across a red planet surface", difficulty: 2 },
+  { themeSlug: "space", targetSound: "/r/", tier: "word", content: "radar", imagePrompt: "spinning radar dish on a space station", difficulty: 2 },
+  { themeSlug: "space", targetSound: "/r/", tier: "word", content: "race", imagePrompt: "two rockets racing side by side through space", difficulty: 2 },
+  { themeSlug: "space", targetSound: "/r/", tier: "word", content: "ray", imagePrompt: "beam of laser ray shooting from a space ship", difficulty: 3 },
+  { themeSlug: "space", targetSound: "/r/", tier: "word", content: "red", imagePrompt: "the red planet Mars glowing in space", difficulty: 3 },
+  // /r/ sound — Star Station — phrases
+  { themeSlug: "space", targetSound: "/r/", tier: "phrase", content: "rocket race", imagePrompt: "two rockets neck-and-neck racing through an asteroid field", difficulty: 1 },
+  { themeSlug: "space", targetSound: "/r/", tier: "phrase", content: "radar ring", imagePrompt: "radar beam sweeping in a ring pattern", difficulty: 2 },
+  { themeSlug: "space", targetSound: "/r/", tier: "phrase", content: "red rover on rings", imagePrompt: "rover driving along the rings of a ringed planet", difficulty: 4 },
+  // /r/ sound — Star Station — sentences
+  { themeSlug: "space", targetSound: "/r/", tier: "sentence", content: "The rocket races past the rings of Saturn.", imagePrompt: "rocket zooming past Saturn's famous rings", difficulty: 1 },
+  { themeSlug: "space", targetSound: "/r/", tier: "sentence", content: "The rover rolls on the red ground.", imagePrompt: "rover slowly driving over dusty red Martian terrain", difficulty: 2 },
+  { themeSlug: "space", targetSound: "/r/", tier: "sentence", content: "The radar reads the rings around the red planet.", imagePrompt: "space station radar scanning ring system of a red planet", difficulty: 4 },
 ];
 
 export const seedAdventureData = internalMutation({
