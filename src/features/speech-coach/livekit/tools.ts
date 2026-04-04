@@ -41,7 +41,9 @@ export type AgentVisualMessage =
   | {
       type: "agent_status";
       status: "active" | "paused";
-    };
+    }
+  | { type: "hint_requested" }
+  | { type: "boost_requested" };
 
 type ToolDeps = {
   room: Room;

@@ -138,6 +138,14 @@ export class AdventureSessionEngine {
     return this.currentDifficulty;
   }
 
+  /**
+   * Force a difficulty retreat — called when the caregiver taps Boost.
+   * Behaves identically to the automatic retreat triggered by low rolling accuracy.
+   */
+  async requestBoost(): Promise<AdaptationEvent> {
+    return this.retreatDifficulty();
+  }
+
   buildSessionPayload() {
     const correct = this.wordLog.filter((e) => e.correct).length;
     return {

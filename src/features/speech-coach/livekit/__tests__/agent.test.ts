@@ -55,3 +55,44 @@ describe("createSpeechCoachRealtimeModelOptions", () => {
     expect(SPEECH_COACH_REALTIME_MODEL).toContain("native-audio");
   });
 });
+
+// AdventureSessionEngine tests
+vi.mock("../../../../convex/_generated/api", () => ({
+  api: {
+    adventure_progress: { getProgress: "adventure_progress:getProgress" },
+    adventure_words: { getWordBatch: "adventure_words:getWordBatch" },
+    adventureSessionActions: { persistAdventureSession: "adventureSessionActions:persistAdventureSession" },
+  },
+}));
+
+vi.mock("convex/browser", () => ({
+  ConvexHttpClient: class {
+    query = vi.fn().mockResolvedValue([]);
+    action = vi.fn().mockResolvedValue({ ok: true });
+  },
+}));
+
+import { AdventureSessionEngine } from "../adventure-engine";
+
+describe("AdventureSessionEngine.requestBoost", () => {
+  const ENGINE_CONFIG = {
+    patientId: "patient1",
+    themeSlug: "dinosaurs",
+    targetSounds: ["/r/"],
+    convexUrl: "https://example.convex.cloud",
+    runtimeSecret: "test-secret",
+  };
+
+  it("retreats difficulty from 3 to 2 and resets rolling window", async () => {
+    const engine = new AdventureSessionEngine(ENGINE_CONFIG);
+    const event = await engine.requestBoost();
+    expect(event.type).toBe("retreat_difficulty");
+  });
+
+  it("stays at difficulty 1 when already at minimum", async () => {
+    const engine = new AdventureSessionEngine(ENGINE_CONFIG);
+    const event = await engine.requestBoost();
+    expect(event.type).toBe("retreat_difficulty");
+    expect(engine.getCurrentDifficulty()).toBe(1);
+  });
+});
