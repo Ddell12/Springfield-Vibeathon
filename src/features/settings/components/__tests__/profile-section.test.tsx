@@ -2,17 +2,18 @@ import { fireEvent, render, screen } from "@testing-library/react";
 
 import { ProfileSection } from "../profile-section";
 
-const mockUpdate = vi.fn().mockResolvedValue({});
+const mockUpdateName = vi.fn().mockResolvedValue({});
 
-vi.mock("@clerk/nextjs", () => ({
-  useUser: () => ({
-    isLoaded: true,
-    user: {
-      firstName: "Desha",
-      fullName: "Desha Dell",
-      primaryEmailAddress: { emailAddress: "desha@vocali.ai" },
-      update: mockUpdate,
-    },
+vi.mock("convex/react", () => ({
+  useMutation: () => mockUpdateName,
+}));
+
+vi.mock("@/features/auth/hooks/use-current-user", () => ({
+  useCurrentUser: () => ({
+    _id: "user_1",
+    name: "Desha",
+    email: "desha@vocali.ai",
+    role: "slp",
   }),
 }));
 
@@ -40,7 +41,7 @@ vi.mock("@/shared/components/ui/label", () => ({
 
 describe("ProfileSection", () => {
   beforeEach(() => {
-    mockUpdate.mockClear();
+    mockUpdateName.mockClear();
   });
 
   it("renders the Profile heading", () => {
@@ -48,18 +49,18 @@ describe("ProfileSection", () => {
     expect(screen.getByRole("heading", { name: /Profile/i })).toBeInTheDocument();
   });
 
-  it("renders avatar showing first letter of user name from Clerk", () => {
+  it("renders avatar showing first letter of user name", () => {
     render(<ProfileSection />);
     expect(screen.getByText("D")).toBeInTheDocument();
   });
 
-  it("renders the display name input with Clerk user name", () => {
+  it("renders the display name input with user name", () => {
     render(<ProfileSection />);
     const input = screen.getByDisplayValue("Desha");
     expect(input).toBeInTheDocument();
   });
 
-  it("renders the email input as disabled with Clerk email", () => {
+  it("renders the email input as disabled with user email", () => {
     render(<ProfileSection />);
     const emailInput = screen.getByDisplayValue("desha@vocali.ai");
     expect(emailInput).toBeDisabled();
@@ -70,13 +71,13 @@ describe("ProfileSection", () => {
     expect(screen.getByRole("button", { name: /Save changes/i })).toBeInTheDocument();
   });
 
-  it("calls Clerk user.update on save", async () => {
+  it("calls updateName mutation on save", async () => {
     render(<ProfileSection />);
     const saveBtn = screen.getByRole("button", { name: /Save changes/i });
     fireEvent.click(saveBtn);
     // Wait for the async update
     await vi.waitFor(() => {
-      expect(mockUpdate).toHaveBeenCalledWith({ firstName: "Desha" });
+      expect(mockUpdateName).toHaveBeenCalledWith({ name: "Desha" });
     });
   });
 

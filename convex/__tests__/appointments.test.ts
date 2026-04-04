@@ -14,7 +14,7 @@ describe("appointments developer gate", () => {
     vi.stubEnv("DEVELOPER_ALLOWLIST", "dev@bridges.ai");
     const t = convexTest(schema, modules).withIdentity({
       subject: "slp-user-123",
-      issuer: "clerk",
+      issuer: "https://test.convex.dev",
       email: "other@bridges.ai",
     });
 
@@ -27,7 +27,7 @@ describe("appointments developer gate", () => {
     vi.stubEnv("DEVELOPER_ALLOWLIST", "dev@bridges.ai");
     const t = convexTest(schema, modules).withIdentity({
       subject: "slp-user-123",
-      issuer: "clerk",
+      issuer: "https://test.convex.dev",
       email: "dev@bridges.ai",
     });
 
@@ -44,7 +44,7 @@ describe("appointments developer gate", () => {
   it("copies appointment testMetadata into meeting records on completion", async () => {
     vi.stubEnv("DEVELOPER_ALLOWLIST", "dev@bridges.ai");
     const t = convexTest(schema, modules);
-    const slp = t.withIdentity({ subject: "slp-user-123", issuer: "clerk", email: "dev@bridges.ai" });
+    const slp = t.withIdentity({ subject: "slp-user-123", issuer: "https://test.convex.dev", email: "dev@bridges.ai" });
 
     // Create a developer test call appointment
     const appointmentId = await slp.mutation(api.appointments.startDeveloperTestCall, {});
@@ -63,7 +63,7 @@ describe("appointments developer gate", () => {
     vi.stubEnv("DEVELOPER_ALLOWLIST", "dev@bridges.ai");
     const t = convexTest(schema, modules).withIdentity({
       subject: "slp-user-123",
-      issuer: "clerk",
+      issuer: "https://test.convex.dev",
       email: "dev@bridges.ai",
     });
 

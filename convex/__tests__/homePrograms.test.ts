@@ -3,17 +3,13 @@ import { describe, expect, it } from "vitest";
 
 import { api } from "../_generated/api";
 import schema from "../schema";
-import { suppressSchedulerErrors } from "./testHelpers";
+import { createTestUser, suppressSchedulerErrors } from "./testHelpers";
 
 const modules = import.meta.glob("../**/*.*s");
 
 suppressSchedulerErrors();
 
-const SLP_IDENTITY = { subject: "slp-user-123", issuer: "clerk" };
-const OTHER_SLP = { subject: "other-slp-456", issuer: "clerk" };
-// Note: public_metadata is JSON.stringify'd to match how convex-test surfaces Clerk custom claims
-const CAREGIVER_IDENTITY = { subject: "caregiver-789", issuer: "clerk", public_metadata: JSON.stringify({ role: "caregiver" }) };
-const STRANGER = { subject: "stranger-000", issuer: "clerk" };
+const today = new Date().toISOString().slice(0, 10);
 
 const VALID_PATIENT = {
   firstName: "Alex",
@@ -21,8 +17,6 @@ const VALID_PATIENT = {
   dateOfBirth: "2020-01-15",
   diagnosis: "articulation" as const,
 };
-
-const today = new Date().toISOString().slice(0, 10);
 
 const VALID_PROGRAM = {
   title: "Daily /r/ Practice",
@@ -32,12 +26,14 @@ const VALID_PROGRAM = {
 };
 
 async function createPatientWithCaregiver(t: ReturnType<typeof convexTest>) {
-  const slp = t.withIdentity(SLP_IDENTITY);
+  const { userId: slpUserId, identity: slpIdentity } = await createTestUser(t, "slp");
+  const { identity: caregiverIdentity } = await createTestUser(t, "caregiver");
+  const slp = t.withIdentity(slpIdentity);
   const { patientId } = await slp.mutation(api.patients.create, VALID_PATIENT);
   const token = await slp.mutation(api.caregivers.createInvite, { patientId, email: "parent@test.com" });
-  const caregiver = t.withIdentity(CAREGIVER_IDENTITY);
+  const caregiver = t.withIdentity(caregiverIdentity);
   await caregiver.mutation(api.caregivers.acceptInvite, { token });
-  return { patientId, token };
+  return { patientId, token, slpUserId, slpIdentity, caregiverIdentity };
 }
 
 // ── schema foundation ────────────────────────────────────────────────────────
@@ -55,38 +51,43 @@ describe("schema and auth foundation", () => {
 describe("homePrograms.create", () => {
   it("creates program with correct fields and status=active", async () => {
     const t = convexTest(schema, modules);
-    const slp = t.withIdentity(SLP_IDENTITY);
+    const { userId: slpUserId, identity: slpIdentity } = await createTestUser(t, "slp");
+    const slp = t.withIdentity(slpIdentity);
     const { patientId } = await slp.mutation(api.patients.create, VALID_PATIENT);
     const programId = await slp.mutation(api.homePrograms.create, { patientId, ...VALID_PROGRAM });
     const programs = await slp.query(api.homePrograms.listByPatient, { patientId });
     const program = programs.find((p: { _id: typeof programId }) => p._id === programId);
     expect(program).toBeDefined();
     expect(program.status).toBe("active");
-    expect(program.slpUserId).toBe("slp-user-123");
+    expect(program.slpUserId).toBe(slpUserId);
     expect(program.title).toBe("Daily /r/ Practice");
     expect(program.frequency).toBe("daily");
   });
 
   it("rejects non-owner SLP", async () => {
     const t = convexTest(schema, modules);
-    const slp = t.withIdentity(SLP_IDENTITY);
+    const { identity: slpIdentity } = await createTestUser(t, "slp");
+    const { identity: otherSlpIdentity } = await createTestUser(t, "slp");
+    const slp = t.withIdentity(slpIdentity);
     const { patientId } = await slp.mutation(api.patients.create, VALID_PATIENT);
     await expect(
-      t.withIdentity(OTHER_SLP).mutation(api.homePrograms.create, { patientId, ...VALID_PROGRAM })
+      t.withIdentity(otherSlpIdentity).mutation(api.homePrograms.create, { patientId, ...VALID_PROGRAM })
     ).rejects.toThrow();
   });
 
   it("rejects caregiver creating program", async () => {
     const t = convexTest(schema, modules);
-    const { patientId } = await createPatientWithCaregiver(t);
+    // Must be a real users row with role: "caregiver" so assertSLP throws
+    const { patientId, caregiverIdentity } = await createPatientWithCaregiver(t);
     await expect(
-      t.withIdentity(CAREGIVER_IDENTITY).mutation(api.homePrograms.create, { patientId, ...VALID_PROGRAM })
+      t.withIdentity(caregiverIdentity).mutation(api.homePrograms.create, { patientId, ...VALID_PROGRAM })
     ).rejects.toThrow();
   });
 
   it("logs home-program-assigned to activity log", async () => {
     const t = convexTest(schema, modules);
-    const slp = t.withIdentity(SLP_IDENTITY);
+    const { identity: slpIdentity } = await createTestUser(t, "slp");
+    const slp = t.withIdentity(slpIdentity);
     const { patientId } = await slp.mutation(api.patients.create, VALID_PATIENT);
     await slp.mutation(api.homePrograms.create, { patientId, ...VALID_PROGRAM });
     const logs = await slp.query(api.activityLog.listByPatient, { patientId });
@@ -96,7 +97,8 @@ describe("homePrograms.create", () => {
 
   it("rejects empty title", async () => {
     const t = convexTest(schema, modules);
-    const slp = t.withIdentity(SLP_IDENTITY);
+    const { identity: slpIdentity } = await createTestUser(t, "slp");
+    const slp = t.withIdentity(slpIdentity);
     const { patientId } = await slp.mutation(api.patients.create, VALID_PATIENT);
     await expect(
       slp.mutation(api.homePrograms.create, { patientId, ...VALID_PROGRAM, title: "" })
@@ -105,7 +107,8 @@ describe("homePrograms.create", () => {
 
   it("rejects empty instructions", async () => {
     const t = convexTest(schema, modules);
-    const slp = t.withIdentity(SLP_IDENTITY);
+    const { identity: slpIdentity } = await createTestUser(t, "slp");
+    const slp = t.withIdentity(slpIdentity);
     const { patientId } = await slp.mutation(api.patients.create, VALID_PATIENT);
     await expect(
       slp.mutation(api.homePrograms.create, { patientId, ...VALID_PROGRAM, instructions: "" })
@@ -118,7 +121,8 @@ describe("homePrograms.create", () => {
 describe("homePrograms.listByPatient", () => {
   it("SLP sees own patient programs", async () => {
     const t = convexTest(schema, modules);
-    const slp = t.withIdentity(SLP_IDENTITY);
+    const { identity: slpIdentity } = await createTestUser(t, "slp");
+    const slp = t.withIdentity(slpIdentity);
     const { patientId } = await slp.mutation(api.patients.create, VALID_PATIENT);
     await slp.mutation(api.homePrograms.create, { patientId, ...VALID_PROGRAM });
     const programs = await slp.query(api.homePrograms.listByPatient, { patientId });
@@ -127,19 +131,21 @@ describe("homePrograms.listByPatient", () => {
 
   it("caregiver sees linked patient programs", async () => {
     const t = convexTest(schema, modules);
-    const { patientId } = await createPatientWithCaregiver(t);
-    const slp = t.withIdentity(SLP_IDENTITY);
+    const { patientId, slpIdentity, caregiverIdentity } = await createPatientWithCaregiver(t);
+    const slp = t.withIdentity(slpIdentity);
     await slp.mutation(api.homePrograms.create, { patientId, ...VALID_PROGRAM });
-    const programs = await t.withIdentity(CAREGIVER_IDENTITY).query(api.homePrograms.listByPatient, { patientId });
+    const programs = await t.withIdentity(caregiverIdentity).query(api.homePrograms.listByPatient, { patientId });
     expect(programs).toHaveLength(1);
   });
 
   it("stranger gets rejected", async () => {
     const t = convexTest(schema, modules);
-    const slp = t.withIdentity(SLP_IDENTITY);
+    const { identity: slpIdentity } = await createTestUser(t, "slp");
+    const { identity: strangerIdentity } = await createTestUser(t, "slp");
+    const slp = t.withIdentity(slpIdentity);
     const { patientId } = await slp.mutation(api.patients.create, VALID_PATIENT);
     await expect(
-      t.withIdentity(STRANGER).query(api.homePrograms.listByPatient, { patientId })
+      t.withIdentity(strangerIdentity).query(api.homePrograms.listByPatient, { patientId })
     ).rejects.toThrow();
   });
 });
@@ -149,7 +155,8 @@ describe("homePrograms.listByPatient", () => {
 describe("homePrograms.getActiveByPatient", () => {
   it("returns only active programs", async () => {
     const t = convexTest(schema, modules);
-    const slp = t.withIdentity(SLP_IDENTITY);
+    const { identity: slpIdentity } = await createTestUser(t, "slp");
+    const slp = t.withIdentity(slpIdentity);
     const { patientId } = await slp.mutation(api.patients.create, VALID_PATIENT);
 
     // Create two programs
@@ -176,7 +183,8 @@ describe("homePrograms.getActiveByPatient", () => {
 describe("homePrograms.update", () => {
   it("SLP can update fields", async () => {
     const t = convexTest(schema, modules);
-    const slp = t.withIdentity(SLP_IDENTITY);
+    const { identity: slpIdentity } = await createTestUser(t, "slp");
+    const slp = t.withIdentity(slpIdentity);
     const { patientId } = await slp.mutation(api.patients.create, VALID_PATIENT);
     const id = await slp.mutation(api.homePrograms.create, { patientId, ...VALID_PROGRAM });
     await slp.mutation(api.homePrograms.update, {
@@ -192,7 +200,8 @@ describe("homePrograms.update", () => {
 
   it("status change from active to paused works", async () => {
     const t = convexTest(schema, modules);
-    const slp = t.withIdentity(SLP_IDENTITY);
+    const { identity: slpIdentity } = await createTestUser(t, "slp");
+    const slp = t.withIdentity(slpIdentity);
     const { patientId } = await slp.mutation(api.patients.create, VALID_PATIENT);
     const id = await slp.mutation(api.homePrograms.create, { patientId, ...VALID_PROGRAM });
     await slp.mutation(api.homePrograms.update, { id, status: "paused" as const });
@@ -203,11 +212,13 @@ describe("homePrograms.update", () => {
 
   it("rejects non-owner SLP update", async () => {
     const t = convexTest(schema, modules);
-    const slp = t.withIdentity(SLP_IDENTITY);
+    const { identity: slpIdentity } = await createTestUser(t, "slp");
+    const { identity: otherSlpIdentity } = await createTestUser(t, "slp");
+    const slp = t.withIdentity(slpIdentity);
     const { patientId } = await slp.mutation(api.patients.create, VALID_PATIENT);
     const id = await slp.mutation(api.homePrograms.create, { patientId, ...VALID_PROGRAM });
     await expect(
-      t.withIdentity(OTHER_SLP).mutation(api.homePrograms.update, { id, title: "Hack" })
+      t.withIdentity(otherSlpIdentity).mutation(api.homePrograms.update, { id, title: "Hack" })
     ).rejects.toThrow();
   });
 });
@@ -217,7 +228,8 @@ describe("homePrograms.update", () => {
 describe("homePrograms.create — speech-coach type", () => {
   it("creates speech-coach program with config", async () => {
     const t = convexTest(schema, modules);
-    const slp = t.withIdentity(SLP_IDENTITY);
+    const { identity: slpIdentity } = await createTestUser(t, "slp");
+    const slp = t.withIdentity(slpIdentity);
     const { patientId } = await slp.mutation(api.patients.create, VALID_PATIENT);
     const programId = await slp.mutation(api.homePrograms.create, {
       patientId,
@@ -242,7 +254,8 @@ describe("homePrograms.create — speech-coach type", () => {
 
   it("rejects speech-coach type without speechCoachConfig", async () => {
     const t = convexTest(schema, modules);
-    const slp = t.withIdentity(SLP_IDENTITY);
+    const { identity: slpIdentity } = await createTestUser(t, "slp");
+    const slp = t.withIdentity(slpIdentity);
     const { patientId } = await slp.mutation(api.patients.create, VALID_PATIENT);
     await expect(
       slp.mutation(api.homePrograms.create, {
@@ -255,7 +268,8 @@ describe("homePrograms.create — speech-coach type", () => {
 
   it("rejects speechCoachConfig on standard type", async () => {
     const t = convexTest(schema, modules);
-    const slp = t.withIdentity(SLP_IDENTITY);
+    const { identity: slpIdentity } = await createTestUser(t, "slp");
+    const slp = t.withIdentity(slpIdentity);
     const { patientId } = await slp.mutation(api.patients.create, VALID_PATIENT);
     await expect(
       slp.mutation(api.homePrograms.create, {
@@ -273,7 +287,8 @@ describe("homePrograms.create — speech-coach type", () => {
 
   it("standard program without type field still works (backward compat)", async () => {
     const t = convexTest(schema, modules);
-    const slp = t.withIdentity(SLP_IDENTITY);
+    const { identity: slpIdentity } = await createTestUser(t, "slp");
+    const slp = t.withIdentity(slpIdentity);
     const { patientId } = await slp.mutation(api.patients.create, VALID_PATIENT);
     const programId = await slp.mutation(api.homePrograms.create, {
       patientId,
@@ -292,7 +307,8 @@ describe("homePrograms.create — speech-coach type", () => {
 describe("homePrograms.listActiveSpeechCoachByPatient", () => {
   it("returns only speech-coach type programs", async () => {
     const t = convexTest(schema, modules);
-    const slp = t.withIdentity(SLP_IDENTITY);
+    const { identity: slpIdentity } = await createTestUser(t, "slp");
+    const slp = t.withIdentity(slpIdentity);
     const { patientId } = await slp.mutation(api.patients.create, VALID_PATIENT);
 
     // Create a standard program
@@ -329,7 +345,8 @@ describe("homePrograms.listActiveSpeechCoachByPatient", () => {
 
   it("returns empty array when no speech-coach programs exist", async () => {
     const t = convexTest(schema, modules);
-    const slp = t.withIdentity(SLP_IDENTITY);
+    const { identity: slpIdentity } = await createTestUser(t, "slp");
+    const slp = t.withIdentity(slpIdentity);
     const { patientId } = await slp.mutation(api.patients.create, VALID_PATIENT);
 
     await slp.mutation(api.homePrograms.create, { patientId, ...VALID_PROGRAM });

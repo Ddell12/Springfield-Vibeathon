@@ -1,13 +1,14 @@
 "use client";
 
-import { useClerk } from "@clerk/nextjs";
+import { useAuthActions } from "@convex-dev/auth/react";
+import { useRouter } from "next/navigation";
 
-import { AUTH_SIGN_OUT_URL } from "@/features/auth/lib/auth-content";
 import { MaterialIcon } from "@/shared/components/material-icon";
 import { Button } from "@/shared/components/ui/button";
 
 export function AccountSection() {
-  const { signOut } = useClerk();
+  const { signOut } = useAuthActions();
+  const router = useRouter();
   return (
     <div className="flex flex-col gap-8">
       <div className="flex items-center justify-between">
@@ -21,7 +22,10 @@ export function AccountSection() {
         <h3 className="font-body font-bold text-on-surface mb-3">Session</h3>
         <Button
           variant="outline"
-          onClick={() => signOut({ redirectUrl: AUTH_SIGN_OUT_URL })}
+          onClick={async () => {
+            await signOut();
+            router.push("/sign-in");
+          }}
           className="w-full py-3 rounded-lg"
         >
           <MaterialIcon icon="logout" size="sm" className="mr-2" />

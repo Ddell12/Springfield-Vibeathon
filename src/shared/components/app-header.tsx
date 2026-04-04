@@ -1,9 +1,11 @@
 "use client";
 
-import { Show, UserButton, useUser } from "@clerk/nextjs";
+import { useAuthActions } from "@convex-dev/auth/react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
+
+import { useCurrentUser } from "@/features/auth/hooks/use-current-user";
 
 import { cn } from "@/core/utils";
 import { NotificationBell } from "@/features/sessions/components/notification-bell";
@@ -26,14 +28,16 @@ interface AppHeaderProps {
 export function AppHeader({ title, className }: AppHeaderProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
-  const { user } = useUser();
-  const role = (user?.publicMetadata as { role?: string })?.role;
+  const user = useCurrentUser();
+  const { signOut } = useAuthActions();
+  const router = useRouter();
+  const role = user?.role;
   const navItems = role === "caregiver" ? CAREGIVER_NAV_ITEMS : NAV_ITEMS;
 
   return (
     <header className={cn("sticky top-0 z-40 flex h-14 shrink-0 items-center gap-4 border-b border-outline-variant/20 bg-background/80 px-4 backdrop-blur-sm md:hidden", className)}>
       {/* Mobile nav hamburger — md:hidden */}
-      <Show when="signed-in">
+      {user ? (
         <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
           <SheetTrigger asChild>
             <button
@@ -75,23 +79,35 @@ export function AppHeader({ title, className }: AppHeaderProps) {
             </nav>
           </SheetContent>
         </Sheet>
-      </Show>
+      ) : null}
       {title && (
         <h2 className="text-sm font-semibold text-on-surface font-headline truncate">
           {title}
         </h2>
       )}
       <div className="flex-1" />
-      <Show when="signed-in">
-        <NotificationBell />
-        {/* UserButton visible on mobile only — desktop uses sidebar user menu */}
-        <div><UserButton /></div>
-      </Show>
-      <Show when="signed-out">
+      {user ? (
+        <>
+          <NotificationBell />
+          {/* Avatar button visible on mobile only — desktop uses sidebar user menu */}
+          <button
+            type="button"
+            onClick={async () => {
+              await signOut();
+              router.push("/sign-in");
+            }}
+            aria-label="Sign out"
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-fixed text-sm font-semibold text-primary"
+          >
+            {user?.name?.[0]?.toUpperCase() ?? user?.email?.[0]?.toUpperCase() ?? "?"}
+          </button>
+        </>
+      ) : null}
+      {user === null ? (
         <Link href="/sign-in" className="text-sm font-semibold text-primary">
           Sign in
         </Link>
-      </Show>
+      ) : null}
     </header>
   );
 }

@@ -2,28 +2,10 @@ import { render, screen } from "@testing-library/react";
 
 import { HeroSection } from "../hero-section";
 
-vi.mock("@clerk/nextjs", () => ({
-  useSignIn: () => ({
-    signIn: {
-      reset: vi.fn(),
-      create: vi.fn().mockResolvedValue({ error: null }),
-      finalize: vi.fn(),
-      emailCode: {
-        sendCode: vi.fn().mockResolvedValue({ error: null }),
-        verifyCode: vi.fn().mockResolvedValue({ error: null }),
-      },
-    },
-    errors: { fields: {} },
-    fetchStatus: "idle",
-  }),
-  useSignUp: () => ({
-    signUp: {
-      status: "complete",
-      missingFields: [],
-      create: vi.fn().mockResolvedValue({ error: null }),
-      finalize: vi.fn(),
-      update: vi.fn().mockResolvedValue({ error: null }),
-    },
+vi.mock("@convex-dev/auth/react", () => ({
+  useAuthActions: () => ({
+    signIn: vi.fn().mockResolvedValue({}),
+    signOut: vi.fn(),
   }),
 }));
 
@@ -67,7 +49,7 @@ describe("HeroSection", () => {
     expect(
       screen.getByRole("button", { name: /Continue with Google/i })
     ).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Continue with email/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^Sign in$/i })).toBeInTheDocument();
   });
 
   it("renders clear sign-in paths for therapists and caregivers", () => {

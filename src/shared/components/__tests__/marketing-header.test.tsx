@@ -4,9 +4,12 @@ import { APP_BRAND } from "@/core/config";
 
 import { MarketingHeader } from "../marketing-header";
 
-vi.mock("@clerk/nextjs", () => ({
-  Show: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-  UserButton: () => <div data-testid="user-button" />,
+vi.mock("@convex-dev/auth/react", () => ({
+  useAuthActions: () => ({ signOut: vi.fn() }),
+}));
+
+vi.mock("@/features/auth/hooks/use-current-user", () => ({
+  useCurrentUser: () => null,
 }));
 
 vi.mock("next/link", () => ({
@@ -20,6 +23,7 @@ vi.mock("next/link", () => ({
 vi.mock("next/navigation", () => ({
   usePathname: vi.fn(() => "/"),
   useSearchParams: vi.fn(() => ({ get: () => null })),
+  useRouter: vi.fn(() => ({ push: vi.fn() })),
 }));
 
 vi.mock("@/shared/components/material-icon", () => ({

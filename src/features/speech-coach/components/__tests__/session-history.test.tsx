@@ -16,8 +16,8 @@ vi.mock("convex/react", () => ({
   useConvexAuth: () => ({ isAuthenticated: true, isLoading: false }),
 }));
 
-vi.mock("@clerk/nextjs", () => ({
-  useUser: () => ({ user: { publicMetadata: { role: "slp" } } }),
+vi.mock("@/features/auth/hooks/use-current-user", () => ({
+  useCurrentUser: () => ({ _id: "user_1", role: "slp", email: "slp@test.com", name: "Test SLP" }),
 }));
 
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));

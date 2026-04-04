@@ -5,7 +5,7 @@ import { api } from "../_generated/api";
 import schema from "../schema";
 
 const modules = import.meta.glob("../**/*.*s");
-const SLP_IDENTITY = { subject: "slp-user-123", issuer: "clerk" };
+const SLP_IDENTITY = { subject: "slp-user-123", issuer: "https://test.convex.dev" };
 const today = new Date().toISOString().slice(0, 10);
 
 async function setup(t: ReturnType<ReturnType<typeof convexTest>["withIdentity"]>) {

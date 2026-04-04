@@ -1,10 +1,10 @@
 import "./globals.css";
 
-import { ClerkProvider } from "@clerk/nextjs";
+import { ConvexAuthNextjsServerProvider } from "@convex-dev/auth/nextjs/server";
 import type { Metadata } from "next";
 
 import { APP_BRAND, APP_DESCRIPTION, APP_TAGLINE } from "@/core/config";
-import { ConvexClientProvider } from "@/core/providers";
+import { Providers } from "@/core/providers";
 import { SkipToContent } from "@/shared/components/skip-to-content";
 import { Toaster } from "@/shared/components/ui/sonner";
 
@@ -55,12 +55,12 @@ export default function RootLayout({
       {/* eslint-enable @next/next/no-page-custom-font */}
       <body className="min-h-full flex flex-col antialiased">
         <SkipToContent />
-        <ClerkProvider signInFallbackRedirectUrl="/builder" signUpFallbackRedirectUrl="/builder">
-          <ConvexClientProvider>
+        <ConvexAuthNextjsServerProvider>
+          <Providers>
             {children}
             <Toaster />
-          </ConvexClientProvider>
-        </ClerkProvider>
+          </Providers>
+        </ConvexAuthNextjsServerProvider>
       </body>
     </html>
   );

@@ -1,10 +1,11 @@
 "use client";
 
-import { useUser } from "@clerk/nextjs";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { use, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+
+import { useCurrentUser } from "@/features/auth/hooks/use-current-user";
 
 import { MaterialIcon } from "@/shared/components/material-icon";
 import { Button } from "@/shared/components/ui/button";
@@ -19,13 +20,14 @@ export function InviteLanding({ paramsPromise }: InviteLandingProps) {
   const { token } = use(paramsPromise);
   const inviteInfo = useInviteInfo(token);
   const acceptInvite = useAcceptInvite();
-  const { isSignedIn, isLoaded, user } = useUser();
+  const user = useCurrentUser();
+  const isLoaded = user !== undefined;
+  const isSignedIn = user !== null && user !== undefined;
   const router = useRouter();
   const [isAccepting, setIsAccepting] = useState(false);
   const acceptAttemptedRef = useRef(false);
 
-  const userRole = (user?.publicMetadata as { role?: string } | undefined)?.role;
-  const isSLP = userRole === "slp";
+  const isSLP = user?.role === "slp";
 
   // Auto-accept if user is already signed in (came back from sign-up)
   useEffect(() => {

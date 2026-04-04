@@ -9,10 +9,10 @@ const modules = import.meta.glob("../**/*.*s");
 
 suppressSchedulerErrors();
 
-const SLP_IDENTITY = { subject: "slp-user-123", issuer: "clerk" };
-const OTHER_SLP = { subject: "other-slp-456", issuer: "clerk" };
-const CAREGIVER_IDENTITY = { subject: "caregiver-789", issuer: "clerk" };
-const OTHER_CAREGIVER = { subject: "caregiver-other", issuer: "clerk" };
+const SLP_IDENTITY = { subject: "slp-user-123", issuer: "https://test.convex.dev" };
+const OTHER_SLP = { subject: "other-slp-456", issuer: "https://test.convex.dev" };
+const CAREGIVER_IDENTITY = { subject: "caregiver-789", issuer: "https://test.convex.dev" };
+const OTHER_CAREGIVER = { subject: "caregiver-other", issuer: "https://test.convex.dev" };
 
 async function createPatient(t: ReturnType<typeof convexTest>) {
   const slp = t.withIdentity(SLP_IDENTITY);

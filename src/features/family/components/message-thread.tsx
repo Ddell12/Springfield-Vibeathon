@@ -1,12 +1,12 @@
 "use client";
 
-import { useUser } from "@clerk/nextjs";
 import { ArrowLeft, Send } from "lucide-react";
 import Link from "next/link";
 import { use, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { cn } from "@/core/utils";
+import { useCurrentUser } from "@/features/auth/hooks/use-current-user";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
 
@@ -22,7 +22,7 @@ export function MessageThread({ paramsPromise }: MessageThreadProps) {
   const { patientId: patientIdStr } = use(paramsPromise);
   const patientId = patientIdStr as Id<"patients">;
 
-  const { user } = useUser();
+  const user = useCurrentUser();
   const { messages, sendMessage, markRead } = useMessages(patientId);
   const [input, setInput] = useState("");
   const [isSending, setIsSending] = useState(false);
@@ -41,7 +41,7 @@ export function MessageThread({ paramsPromise }: MessageThreadProps) {
 
     for (const msg of messages) {
       if (
-        msg.senderUserId !== user.id &&
+        msg.senderUserId !== user._id &&
         msg.readAt === undefined &&
         !markedRef.current.has(msg._id)
       ) {
@@ -119,7 +119,7 @@ export function MessageThread({ paramsPromise }: MessageThreadProps) {
                 senderRole={msg.senderRole as "slp" | "caregiver"}
                 timestamp={msg.timestamp}
                 readAt={msg.readAt}
-                isOwnMessage={msg.senderUserId === user?.id}
+                isOwnMessage={msg.senderUserId === user?._id}
               />
             ))}
             <div ref={scrollEndRef} />

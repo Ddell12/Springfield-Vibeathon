@@ -9,8 +9,8 @@ const modules = import.meta.glob("../**/*.*s");
 
 suppressSchedulerErrors();
 
-const SLP_IDENTITY = { subject: "user_slp", issuer: "clerk" };
-const CAREGIVER_IDENTITY = { subject: "user_caregiver", issuer: "clerk" };
+const SLP_IDENTITY = { subject: "user_slp", issuer: "https://test.convex.dev" };
+const CAREGIVER_IDENTITY = { subject: "user_caregiver", issuer: "https://test.convex.dev" };
 
 async function createPatient(t: ReturnType<typeof convexTest>) {
   const { patientId } = await t.withIdentity(SLP_IDENTITY).mutation(api.patients.create, {

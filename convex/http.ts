@@ -3,6 +3,7 @@ import { httpRouter } from "convex/server";
 
 import { components, internal } from "./_generated/api";
 import { httpAction } from "./_generated/server";
+import { auth } from "./auth";
 import { resend } from "./email";
 
 // Hardcoded: Convex httpAction runs in V8 runtime — no process.env access. Update on domain change.
@@ -21,6 +22,8 @@ function getCorsOrigin(request: Request): string {
 }
 
 const http = httpRouter();
+
+auth.addHttpRoutes(http);
 
 http.route({
   path: "/api/rag/search",

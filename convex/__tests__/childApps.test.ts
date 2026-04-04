@@ -9,13 +9,12 @@ const modules = import.meta.glob("../**/*.*s");
 
 suppressSchedulerErrors();
 
-const SLP_IDENTITY = { subject: "slp-user-123", issuer: "clerk" };
+const SLP_IDENTITY = { subject: "slp-user-123", issuer: "https://test.convex.dev" };
 const CAREGIVER_IDENTITY = {
   subject: "caregiver-789",
-  issuer: "clerk",
-  public_metadata: JSON.stringify({ role: "caregiver" }),
+  issuer: "https://test.convex.dev",
 };
-const STRANGER = { subject: "stranger-000", issuer: "clerk" };
+const STRANGER = { subject: "stranger-000", issuer: "https://test.convex.dev" };
 
 async function setupPatientWithApp(t: ReturnType<typeof convexTest>) {
   const slp = t.withIdentity(SLP_IDENTITY);
@@ -171,7 +170,7 @@ describe("childApps schema", () => {
 
   it("caregiverLinks accepts kidModePIN field", async () => {
     const t = convexTest(schema, modules);
-    const slpId = { subject: "slp-1", issuer: "clerk" };
+    const slpId = { subject: "slp-1", issuer: "https://test.convex.dev" };
     const slp = t.withIdentity(slpId);
 
     const { patientId } = await slp.mutation(api.patients.create, {

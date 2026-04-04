@@ -9,9 +9,9 @@ const modules = import.meta.glob("../**/*.*s");
 
 suppressSchedulerErrors();
 
-const SLP_IDENTITY = { subject: "slp-user-123", issuer: "clerk" };
-const CAREGIVER_IDENTITY = { subject: "caregiver-789", issuer: "clerk" };
-const UNLINKED_USER = { subject: "random-user-999", issuer: "clerk" };
+const SLP_IDENTITY = { subject: "slp-user-123", issuer: "https://test.convex.dev" };
+const CAREGIVER_IDENTITY = { subject: "caregiver-789", issuer: "https://test.convex.dev" };
+const UNLINKED_USER = { subject: "random-user-999", issuer: "https://test.convex.dev" };
 
 async function setupPatientWithCaregiver(t: ReturnType<typeof convexTest>) {
   const slp = t.withIdentity(SLP_IDENTITY);

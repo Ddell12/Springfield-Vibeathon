@@ -68,30 +68,17 @@ export type UserRole = "slp" | "caregiver";
 export async function getAuthRole(
   ctx: QueryCtx | MutationCtx,
 ): Promise<UserRole | null> {
-  const identity = await ctx.auth.getUserIdentity();
-  if (!identity) return null;
-  // Role comes from Clerk publicMetadata, included in JWT via template customization.
-  // convex-test surfaces public_metadata as a JSON string; production Clerk JWTs
-  // surface it as an already-parsed object. Handle both forms.
-  const raw = (identity as Record<string, unknown>).public_metadata;
-  let metadata: { role?: string } | undefined;
-  if (typeof raw === "string") {
-    try {
-      metadata = JSON.parse(raw) as { role?: string };
-    } catch {
-      metadata = undefined;
-    }
-  } else {
-    metadata = raw as { role?: string } | undefined;
-  }
-  return (metadata?.role as UserRole) ?? null;
+  const userId = await getAuthUserId(ctx);
+  if (!userId) return null;
+  const user = await ctx.db.get(userId as any) as { role?: string } | null;
+  return (user?.role as UserRole) ?? null;
 }
 
 /**
  * Assert the caller has SLP privileges.
- * Design: null role (no Clerk metadata) defaults to SLP because new
+ * Design: null role (no role set) defaults to SLP because new
  * sign-ups start as SLPs. Caregivers get role set via acceptInvite →
- * clerkActions.setCaregiverRole. Patient ownership checks in every
+ * users.setCaregiverRole. Patient ownership checks in every
  * SLP-only mutation provide a secondary gate.
  */
 export async function assertSLP(

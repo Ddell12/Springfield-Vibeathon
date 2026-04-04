@@ -12,14 +12,12 @@ vi.mock("convex/react", () => ({
   useMutation: () => vi.fn(),
   useAction: () => vi.fn(),
 }));
-vi.mock("@clerk/nextjs", () => ({
-  useUser: () => ({
-    user: {
-      id: "slp-user-123",
-      primaryEmailAddress: { emailAddress: "dev@bridges.ai" },
-      publicMetadata: { role: "slp" },
-    },
-    isLoaded: true,
+vi.mock("@/features/auth/hooks/use-current-user", () => ({
+  useCurrentUser: () => ({
+    _id: "slp-user-123",
+    email: "dev@bridges.ai",
+    role: "slp",
+    name: "Test SLP",
   }),
 }));
 vi.mock("next/navigation", () => ({

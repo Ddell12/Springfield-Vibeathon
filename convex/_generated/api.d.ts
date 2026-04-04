@@ -15,6 +15,7 @@ import type * as aiActions from "../aiActions.js";
 import type * as app_state from "../app_state.js";
 import type * as appointments from "../appointments.js";
 import type * as apps from "../apps.js";
+import type * as auth from "../auth.js";
 import type * as availability from "../availability.js";
 import type * as billing from "../billing.js";
 import type * as billingActions from "../billingActions.js";
@@ -109,6 +110,7 @@ declare const fullApi: ApiFromModules<{
   app_state: typeof app_state;
   appointments: typeof appointments;
   apps: typeof apps;
+  auth: typeof auth;
   availability: typeof availability;
   billing: typeof billing;
   billingActions: typeof billingActions;

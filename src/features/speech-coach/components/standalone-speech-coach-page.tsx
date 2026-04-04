@@ -1,11 +1,11 @@
 "use client";
 
-import { useUser } from "@clerk/nextjs";
 import { useConvexAuth, useMutation, useQuery } from "convex/react";
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 
 import { cn } from "@/core/utils";
+import { useCurrentUser } from "@/features/auth/hooks/use-current-user";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/components/ui/card";
 
 import { api } from "../../../../convex/_generated/api";
@@ -25,13 +25,12 @@ const DEFAULT_CONFIG = {
 };
 
 export function StandaloneSpeechCoachPage() {
-  const { user } = useUser();
+  const user = useCurrentUser();
   const { isAuthenticated } = useConvexAuth();
   const [activeTab, setActiveTab] = useState<Tab>("new");
   const session = useStandaloneSpeechSession();
   const retryReview = useMutation(api.speechCoach.retryReview);
-  const role = (user?.publicMetadata as { role?: string } | undefined)?.role;
-  const isSLP = role !== "caregiver";
+  const isSLP = user?.role !== "caregiver";
 
   const searchParams = useSearchParams();
   const previewTemplateId = searchParams.get("templateId");

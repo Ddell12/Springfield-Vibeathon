@@ -1,3 +1,4 @@
+import { authTables } from "@convex-dev/auth/server";
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
@@ -5,6 +6,20 @@ import { speechCoachTemplateValidator } from "./lib/speechCoachValidators";
 import { testMetadataValidator } from "./lib/testMetadata";
 
 export default defineSchema({
+  ...authTables,
+  // Override the users table from authTables to add custom role field.
+  users: defineTable({
+    email: v.optional(v.string()),
+    emailVerificationTime: v.optional(v.number()),
+    phone: v.optional(v.string()),
+    phoneVerificationTime: v.optional(v.number()),
+    isAnonymous: v.optional(v.boolean()),
+    name: v.optional(v.string()),
+    image: v.optional(v.string()),
+    role: v.optional(v.union(v.literal("slp"), v.literal("caregiver"))),
+  })
+    .index("email", ["email"])
+    .index("phone", ["phone"]),
   sessions: defineTable({
     userId: v.optional(v.string()),
     title: v.string(),

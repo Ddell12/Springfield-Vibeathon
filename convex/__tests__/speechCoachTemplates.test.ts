@@ -14,7 +14,7 @@ describe("speech coach template schema", () => {
   });
 });
 
-const SLP_IDENTITY = { subject: "slp-user-123", issuer: "clerk" };
+const SLP_IDENTITY = { subject: "slp-user-123", issuer: "https://test.convex.dev" };
 
 describe("speechCoachTemplates CRUD", () => {
   it("seeds system templates and lists them ahead of custom templates", async () => {
