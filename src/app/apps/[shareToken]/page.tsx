@@ -25,6 +25,7 @@ export default async function AppRuntimePage({ params }: Props) {
   return (
     <ToolRuntimePage
       shareToken={shareToken}
+      appInstanceId={result.instance._id}
       templateType={result.instance.templateType}
       configJson={result.configJson}
     />

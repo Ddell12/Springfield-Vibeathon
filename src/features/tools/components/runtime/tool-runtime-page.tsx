@@ -1,6 +1,7 @@
 "use client";
 
 import { api } from "@convex/_generated/api";
+import type { Id } from "@convex/_generated/dataModel";
 import { useMutation } from "convex/react";
 import { useSearchParams } from "next/navigation";
 import { useRef, useState } from "react";
@@ -8,18 +9,26 @@ import { useRef, useState } from "react";
 import { templateRegistry } from "../../lib/registry";
 import { DEFAULT_APP_SHELL } from "../../lib/runtime/app-shell-types";
 import { RuntimeShell } from "../../lib/runtime/runtime-shell";
+import { useTemplateData } from "../../lib/runtime/use-template-data";
 import { useVoiceController } from "../../lib/runtime/runtime-voice-controller";
 import { SessionBanner } from "./session-banner";
-import { type SessionEvent,SessionOverlay } from "./session-overlay";
+import { type SessionEvent, SessionOverlay } from "./session-overlay";
 
 interface ToolRuntimePageProps {
   shareToken: string;
+  appInstanceId: string;
   templateType: string;
   configJson: string;
   patientName?: string;
 }
 
-export function ToolRuntimePage({ shareToken, templateType, configJson, patientName }: ToolRuntimePageProps) {
+export function ToolRuntimePage({
+  shareToken,
+  appInstanceId,
+  templateType,
+  configJson,
+  patientName,
+}: ToolRuntimePageProps) {
   const logEvent = useMutation(api.tools.logEvent);
   const voice = useVoiceController();
   const searchParams = useSearchParams();
@@ -28,6 +37,11 @@ export function ToolRuntimePage({ shareToken, templateType, configJson, patientN
   const [sessionEvents, setSessionEvents] = useState<SessionEvent[]>([]);
   const sessionStartMs = useRef(Date.now());
   const [showSummary, setShowSummary] = useState(false);
+
+  const data = useTemplateData(
+    appInstanceId as Id<"app_instances">,
+    "published"
+  );
 
   const registration = templateRegistry[templateType];
   if (!registration) {
@@ -40,7 +54,6 @@ export function ToolRuntimePage({ shareToken, templateType, configJson, patientN
 
   const config = registration.parseConfig(configJson);
   const title = (config as { title?: string }).title ?? registration.meta.name;
-  const { Runtime } = registration;
 
   const handleEvent = (eventType: string, payloadJson?: string) => {
     void logEvent({
@@ -49,7 +62,10 @@ export function ToolRuntimePage({ shareToken, templateType, configJson, patientN
       eventPayloadJson: payloadJson,
     });
     if (isSession) {
-      setSessionEvents((prev) => [...prev, { type: eventType, payloadJson, timestamp: Date.now() }]);
+      setSessionEvents((prev) => [
+        ...prev,
+        { type: eventType, payloadJson, timestamp: Date.now() },
+      ]);
     }
   };
 
@@ -58,13 +74,27 @@ export function ToolRuntimePage({ shareToken, templateType, configJson, patientN
     else window.location.assign("/");
   };
 
+  const runtimeProps = {
+    config,
+    appInstanceId,
+    mode: "published" as const,
+    onEvent: handleEvent,
+    voice,
+  };
+
   return (
     <div className="flex flex-col min-h-screen">
       {isSession && <SessionBanner patientName={patientName} />}
 
-      <RuntimeShell mode="published" shell={DEFAULT_APP_SHELL} title={title} onExit={handleExit}>
-        <Runtime config={config} mode="published" onEvent={handleEvent} voice={voice} />
-      </RuntimeShell>
+      <RuntimeShell
+        mode="published"
+        shell={registration.shell ?? DEFAULT_APP_SHELL}
+        title={title}
+        onExit={handleExit}
+        pages={registration.pages}
+        runtimeProps={runtimeProps}
+        data={data}
+      />
 
       {isSession && !showSummary && (
         <SessionOverlay
@@ -72,7 +102,10 @@ export function ToolRuntimePage({ shareToken, templateType, configJson, patientN
           startTimeMs={sessionStartMs.current}
           toolTitle={title}
           templateType={templateType}
-          onEndSession={() => { handleEvent("app_closed"); setShowSummary(true); }}
+          onEndSession={() => {
+            handleEvent("app_closed");
+            setShowSummary(true);
+          }}
         />
       )}
 
@@ -84,7 +117,8 @@ export function ToolRuntimePage({ shareToken, templateType, configJson, patientN
               <p>Tool: {title}</p>
               <p>Events: {sessionEvents.length}</p>
               <p>
-                Completions: {sessionEvents.filter((e) => e.type === "activity_completed").length}
+                Completions:{" "}
+                {sessionEvents.filter((e) => e.type === "activity_completed").length}
               </p>
               <p>
                 Duration:{" "}
@@ -92,8 +126,11 @@ export function ToolRuntimePage({ shareToken, templateType, configJson, patientN
                 {Math.floor(((Date.now() - sessionStartMs.current) % 60000) / 1000)} sec
               </p>
             </div>
-            <button type="button" onClick={handleExit}
-              className="w-full py-2 rounded-xl bg-primary text-primary-foreground font-medium">
+            <button
+              type="button"
+              onClick={handleExit}
+              className="w-full py-2 rounded-xl bg-primary text-primary-foreground font-medium"
+            >
               Done
             </button>
           </div>

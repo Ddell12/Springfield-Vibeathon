@@ -54,6 +54,7 @@ export function SharedToolPage() {
     <div className="min-h-screen flex flex-col">
       <ToolRuntimePage
         shareToken={shareToken}
+        appInstanceId={instance._id}
         templateType={instance.templateType}
         configJson={configJson}
       />
