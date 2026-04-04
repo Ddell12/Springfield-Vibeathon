@@ -5,6 +5,7 @@ import { ConvexError, v } from "convex/values";
 import { internal } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
 import { action } from "./_generated/server";
+import { getAuthIdentifierSet } from "./lib/auth";
 
 const SPEECH_COACH_AGENT_ID = "speech-coach";
 const DEFAULT_RUNTIME_PROVIDER = "livekit";
@@ -40,13 +41,7 @@ export const createLiveSession = action({
   }> => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new ConvexError("Not authenticated");
-    const authIdentifiers = Array.from(
-      new Set(
-        [identity.subject, identity.tokenIdentifier].filter(
-          (value): value is string => typeof value === "string" && value.length > 0,
-        ),
-      ),
-    );
+    const authIdentifiers = await getAuthIdentifierSet(ctx);
 
     const launchContext: RuntimeLaunchContext = await ctx.runQuery(internal.speechCoach_lifecycle.getRuntimeLaunchContext, {
       sessionId: args.sessionId,

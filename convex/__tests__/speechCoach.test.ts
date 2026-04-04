@@ -3,7 +3,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { api, internal } from "../_generated/api";
 import schema from "../schema";
-import { createSpeechCoachFixture,suppressSchedulerErrors } from "./testHelpers";
+import {
+  createSpeechCoachFixture,
+  createTestUser,
+  suppressSchedulerErrors,
+} from "./testHelpers";
 
 const mockAnthropicCreate = vi.fn();
 
@@ -378,6 +382,28 @@ describe("speechCoachRuntimeActions.createLiveSession", () => {
         },
       });
     });
+
+    const result = await caregiver.action(api.speechCoachRuntimeActions.createLiveSession, { sessionId });
+    expect(result.runtime).toBe("livekit-agent");
+  });
+
+  it("authorizes a caregiver when the session stores the Convex user id", async () => {
+    const t = convexTest(schema, modules);
+    const slpUser = await createTestUser(t, "slp");
+    const caregiverUser = await createTestUser(t, "caregiver");
+    const { programId } = await createSpeechCoachFixture(t, {
+      slpIdentity: slpUser.identity,
+      caregiverIdentity: caregiverUser.identity,
+    });
+    const caregiver = t.withIdentity(caregiverUser.identity);
+
+    const sessionId = await caregiver.mutation(api.speechCoach.createSession, {
+      homeProgramId: programId,
+      config: { targetSounds: ["/s/"], ageRange: "2-4" as const, durationMinutes: 5 },
+    });
+
+    const session = await t.run((ctx) => ctx.db.get(sessionId));
+    expect(session?.caregiverUserId).toBe(caregiverUser.userId);
 
     const result = await caregiver.action(api.speechCoachRuntimeActions.createLiveSession, { sessionId });
     expect(result.runtime).toBe("livekit-agent");

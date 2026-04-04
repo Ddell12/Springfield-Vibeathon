@@ -2,7 +2,7 @@ import { ConvexError } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
 
 import type { Id } from "../_generated/dataModel";
-import type { MutationCtx, QueryCtx } from "../_generated/server";
+import type { ActionCtx, MutationCtx, QueryCtx } from "../_generated/server";
 
 // Re-export so all existing `import { getAuthUserId } from "./lib/auth"` work
 export { getAuthUserId } from "@convex-dev/auth/server";
@@ -12,8 +12,8 @@ export { getAuthUserId } from "@convex-dev/auth/server";
  * the Clerk subject, and the tokenIdentifier. Used for ownership checks on
  * records that may store any of these formats.
  */
-async function getAuthIdentifierSet(
-  ctx: QueryCtx | MutationCtx,
+export async function getAuthIdentifierSet(
+  ctx: QueryCtx | MutationCtx | ActionCtx,
 ): Promise<string[]> {
   const userId = await getAuthUserId(ctx);
   const identity = await ctx.auth.getUserIdentity();

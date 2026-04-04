@@ -41,6 +41,21 @@ describe("appointments developer gate", () => {
     expect(appointment?.testMetadata?.expiresAt).toBeTypeOf("number");
   });
 
+  it("accepts the public allowlist as a server fallback in local development", async () => {
+    vi.stubEnv("NEXT_PUBLIC_DEVELOPER_ALLOWLIST", "dev@bridges.ai");
+    const t = convexTest(schema, modules).withIdentity({
+      subject: "slp-user-123",
+      issuer: "https://test.convex.dev",
+      email: "dev@bridges.ai",
+    });
+
+    const appointmentId = await t.mutation(api.appointments.startDeveloperTestCall, {});
+    const appointment = await t.run((ctx) => ctx.db.get(appointmentId));
+
+    expect(appointment?._id).toBe(appointmentId);
+    expect(appointment?.testMetadata?.source).toBe("developer-shortcut");
+  });
+
   it("copies appointment testMetadata into meeting records on completion", async () => {
     vi.stubEnv("DEVELOPER_ALLOWLIST", "dev@bridges.ai");
     const t = convexTest(schema, modules);
