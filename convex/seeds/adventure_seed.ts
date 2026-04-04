@@ -260,6 +260,66 @@ const ADVENTURE_WORDS: WordSeed[] = [
   { themeSlug: "dinosaurs", targetSound: "/ch/", tier: "sentence", content: "The chicken-sized dinosaur chews on a branch.", imagePrompt: "tiny feathered dinosaur happily eating a leafy branch", difficulty: 1 },
   { themeSlug: "dinosaurs", targetSound: "/ch/", tier: "sentence", content: "The children cheer as the triceratops charges.", imagePrompt: "children waving as a friendly triceratops runs toward them", difficulty: 3 },
   { themeSlug: "dinosaurs", targetSound: "/ch/", tier: "sentence", content: "Each baby dinosaur chose a different colored chunk of chalk.", imagePrompt: "baby dinosaurs picking up different colored rocks", difficulty: 5 },
+
+  // /s/ sound — Ocean Reef — words
+  { themeSlug: "ocean", targetSound: "/s/", tier: "word", content: "sea", imagePrompt: "cartoon calm blue ocean with gentle waves", difficulty: 1 },
+  { themeSlug: "ocean", targetSound: "/s/", tier: "word", content: "sand", imagePrompt: "golden sandy ocean floor with tiny shells", difficulty: 1 },
+  { themeSlug: "ocean", targetSound: "/s/", tier: "word", content: "seal", imagePrompt: "friendly cartoon seal waving a flipper", difficulty: 1 },
+  { themeSlug: "ocean", targetSound: "/s/", tier: "word", content: "shell", imagePrompt: "beautiful spiral shell on the sandy ocean floor", difficulty: 1 },
+  { themeSlug: "ocean", targetSound: "/s/", tier: "word", content: "star", imagePrompt: "bright orange cartoon starfish resting on a rock", difficulty: 2 },
+  { themeSlug: "ocean", targetSound: "/s/", tier: "word", content: "swim", imagePrompt: "cartoon fish swimming gracefully through blue water", difficulty: 2 },
+  { themeSlug: "ocean", targetSound: "/s/", tier: "word", content: "silver", imagePrompt: "shiny silver fish school swimming together", difficulty: 2 },
+  { themeSlug: "ocean", targetSound: "/s/", tier: "word", content: "seahorse", imagePrompt: "tiny cartoon seahorse floating near coral", difficulty: 3 },
+  { themeSlug: "ocean", targetSound: "/s/", tier: "word", content: "seaweed", imagePrompt: "green seaweed swaying in ocean current", difficulty: 3 },
+  { themeSlug: "ocean", targetSound: "/s/", tier: "word", content: "submarine", imagePrompt: "yellow cartoon submarine exploring the reef", difficulty: 4 },
+  { themeSlug: "ocean", targetSound: "/s/", tier: "word", content: "splash", imagePrompt: "dolphin making a big splash jumping out of the sea", difficulty: 4 },
+  // /s/ sound — Ocean Reef — phrases
+  { themeSlug: "ocean", targetSound: "/s/", tier: "phrase", content: "sandy shore", imagePrompt: "gentle waves washing over a sunny sandy beach", difficulty: 1 },
+  { themeSlug: "ocean", targetSound: "/s/", tier: "phrase", content: "silver seal", imagePrompt: "shiny silver-grey seal lounging on a rock", difficulty: 2 },
+  { themeSlug: "ocean", targetSound: "/s/", tier: "phrase", content: "sea star", imagePrompt: "bright starfish sitting on coral in the sea", difficulty: 2 },
+  { themeSlug: "ocean", targetSound: "/s/", tier: "phrase", content: "sneaky seahorse", imagePrompt: "seahorse peeking out from behind swaying seaweed", difficulty: 3 },
+  { themeSlug: "ocean", targetSound: "/s/", tier: "phrase", content: "sailing past the submarine", imagePrompt: "cartoon boat sailing over a submarine below the surface", difficulty: 5 },
+  // /s/ sound — Ocean Reef — sentences
+  { themeSlug: "ocean", targetSound: "/s/", tier: "sentence", content: "The seal swims in the sea.", imagePrompt: "cartoon seal doing a happy swim through sparkling ocean", difficulty: 1 },
+  { themeSlug: "ocean", targetSound: "/s/", tier: "sentence", content: "Stars shine above the sandy shore.", imagePrompt: "starry night sky reflected in calm ocean water near beach", difficulty: 2 },
+  { themeSlug: "ocean", targetSound: "/s/", tier: "sentence", content: "The silver seahorse sees seaweed at the sandy bottom.", imagePrompt: "seahorse looking down at seaweed on the ocean floor", difficulty: 4 },
+
+  // /r/ sound — Ocean Reef — words
+  { themeSlug: "ocean", targetSound: "/r/", tier: "word", content: "reef", imagePrompt: "colorful cartoon coral reef full of fish", difficulty: 1 },
+  { themeSlug: "ocean", targetSound: "/r/", tier: "word", content: "ray", imagePrompt: "friendly cartoon manta ray gliding through the water", difficulty: 1 },
+  { themeSlug: "ocean", targetSound: "/r/", tier: "word", content: "rock", imagePrompt: "smooth ocean rock covered in barnacles", difficulty: 1 },
+  { themeSlug: "ocean", targetSound: "/r/", tier: "word", content: "ripple", imagePrompt: "gentle ripples spreading across calm ocean water", difficulty: 2 },
+  { themeSlug: "ocean", targetSound: "/r/", tier: "word", content: "rope", imagePrompt: "old rope tangled around an anchor underwater", difficulty: 2 },
+  { themeSlug: "ocean", targetSound: "/r/", tier: "word", content: "rainbow", imagePrompt: "rainbow arching over the sparkling ocean after rain", difficulty: 2 },
+  { themeSlug: "ocean", targetSound: "/r/", tier: "word", content: "rush", imagePrompt: "waves rushing up the sandy shore", difficulty: 3 },
+  { themeSlug: "ocean", targetSound: "/r/", tier: "word", content: "river", imagePrompt: "freshwater river flowing into the ocean at the reef", difficulty: 3 },
+  // /r/ sound — Ocean Reef — phrases
+  { themeSlug: "ocean", targetSound: "/r/", tier: "phrase", content: "red reef", imagePrompt: "vibrant red coral reef teeming with fish", difficulty: 1 },
+  { themeSlug: "ocean", targetSound: "/r/", tier: "phrase", content: "rainbow ray", imagePrompt: "manta ray swimming through rainbow-colored water", difficulty: 2 },
+  { themeSlug: "ocean", targetSound: "/r/", tier: "phrase", content: "ripples on the reef", imagePrompt: "gentle ripples washing over colorful coral", difficulty: 3 },
+  { themeSlug: "ocean", targetSound: "/r/", tier: "phrase", content: "river runs to the reef", imagePrompt: "river current meeting the ocean at the reef edge", difficulty: 5 },
+  // /r/ sound — Ocean Reef — sentences
+  { themeSlug: "ocean", targetSound: "/r/", tier: "sentence", content: "The ray rests on the reef.", imagePrompt: "manta ray settled gently on top of coral", difficulty: 1 },
+  { themeSlug: "ocean", targetSound: "/r/", tier: "sentence", content: "Ripples rush across the rocks.", imagePrompt: "water ripples spreading over rocky tide pools", difficulty: 2 },
+  { themeSlug: "ocean", targetSound: "/r/", tier: "sentence", content: "A rainbow appears over the reef after the rain.", imagePrompt: "beautiful rainbow arching over the coral reef", difficulty: 3 },
+
+  // /l/ sound — Ocean Reef — words
+  { themeSlug: "ocean", targetSound: "/l/", tier: "word", content: "lobster", imagePrompt: "friendly cartoon lobster waving its claws", difficulty: 1 },
+  { themeSlug: "ocean", targetSound: "/l/", tier: "word", content: "light", imagePrompt: "sunlight beaming down through ocean water to the reef", difficulty: 1 },
+  { themeSlug: "ocean", targetSound: "/l/", tier: "word", content: "long", imagePrompt: "very long eel swimming along the ocean floor", difficulty: 1 },
+  { themeSlug: "ocean", targetSound: "/l/", tier: "word", content: "leap", imagePrompt: "cartoon dolphin leaping high out of the water", difficulty: 2 },
+  { themeSlug: "ocean", targetSound: "/l/", tier: "word", content: "little", imagePrompt: "tiny clownfish hiding in sea anemone", difficulty: 2 },
+  { themeSlug: "ocean", targetSound: "/l/", tier: "word", content: "lagoon", imagePrompt: "calm blue lagoon surrounded by coral and palm trees", difficulty: 3 },
+  { themeSlug: "ocean", targetSound: "/l/", tier: "word", content: "lighthouse", imagePrompt: "tall cartoon lighthouse beaming light over the ocean", difficulty: 3 },
+  { themeSlug: "ocean", targetSound: "/l/", tier: "word", content: "lemon", imagePrompt: "a bright lemon-yellow fish swimming near coral", difficulty: 4 },
+  // /l/ sound — Ocean Reef — phrases
+  { themeSlug: "ocean", targetSound: "/l/", tier: "phrase", content: "little lobster", imagePrompt: "tiny baby lobster exploring the reef floor", difficulty: 1 },
+  { themeSlug: "ocean", targetSound: "/l/", tier: "phrase", content: "lighthouse light", imagePrompt: "lighthouse beam sweeping across dark ocean water", difficulty: 2 },
+  { themeSlug: "ocean", targetSound: "/l/", tier: "phrase", content: "leaping in the lagoon", imagePrompt: "dolphin leaping joyfully in a sunny lagoon", difficulty: 3 },
+  // /l/ sound — Ocean Reef — sentences
+  { themeSlug: "ocean", targetSound: "/l/", tier: "sentence", content: "The lobster lives in the lagoon.", imagePrompt: "lobster settled happily in a warm, calm lagoon", difficulty: 1 },
+  { themeSlug: "ocean", targetSound: "/l/", tier: "sentence", content: "The lighthouse light glows along the shore.", imagePrompt: "lighthouse beam lighting up a dark rocky shoreline", difficulty: 2 },
+  { themeSlug: "ocean", targetSound: "/l/", tier: "sentence", content: "Little lemon fish leap through the lagoon light.", imagePrompt: "tiny yellow fish jumping through rays of sunlight in lagoon", difficulty: 4 },
 ];
 
 export const seedAdventureData = internalMutation({
