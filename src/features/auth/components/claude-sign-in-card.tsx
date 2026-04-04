@@ -5,23 +5,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-import { AUTH_REDIRECT_URL, type AuthRole, ROLE_COPY } from "@/features/auth/lib/auth-content";
+import { AUTH_REDIRECT_URL, mapAuthError, type AuthRole, ROLE_COPY } from "@/features/auth/lib/auth-content";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
 
 type Flow = "signIn" | "signUp";
 
-function mapAuthError(raw: string): string {
-  if (/InvalidAccountId|account.*not.*found/i.test(raw))
-    return "Invalid email or password.";
-  if (/InvalidSecret|incorrect.*password|invalid.*password/i.test(raw))
-    return "Invalid email or password.";
-  if (/already.*exists|duplicate/i.test(raw))
-    return "An account with this email already exists. Try signing in instead.";
-  if (/rate.*limit/i.test(raw))
-    return "Too many attempts. Please wait a moment and try again.";
-  return "Something went wrong. Please try again.";
-}
 
 export function ClaudeSignInCard({ role }: { role: AuthRole }) {
   const { signIn } = useAuthActions();

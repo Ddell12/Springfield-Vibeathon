@@ -155,7 +155,11 @@ export const getByCaregiver = authedQuery({
   handler: async (ctx, args) => {
     if (!ctx.userId) return [];
 
-    await assertCaregiverAccess(ctx, args.patientId);
+    try {
+      await assertCaregiverAccess(ctx, args.patientId);
+    } catch {
+      return [];
+    }
 
     const all = await ctx.db
       .query("intakeForms")
@@ -214,7 +218,11 @@ export const hasTelehealthConsent = authedQuery({
   handler: async (ctx, args) => {
     if (!ctx.userId) return false;
 
-    await assertCaregiverAccess(ctx, args.patientId);
+    try {
+      await assertCaregiverAccess(ctx, args.patientId);
+    } catch {
+      return false;
+    }
 
     const form = await ctx.db
       .query("intakeForms")

@@ -28,10 +28,13 @@ export function InviteLanding({ paramsPromise }: InviteLandingProps) {
   const acceptAttemptedRef = useRef(false);
 
   const isSLP = user?.role === "slp";
+  // Only auto-accept for brand-new users (role = null = just signed up via invite).
+  // Existing caregivers (role = "caregiver") visiting someone else's link should not trigger this.
+  const isNewUser = isSignedIn && user?.role == null;
 
   // Auto-accept if user is already signed in (came back from sign-up)
   useEffect(() => {
-    if (isLoaded && isSignedIn && !isSLP && inviteInfo && !isAccepting && !acceptAttemptedRef.current) {
+    if (isLoaded && isNewUser && inviteInfo && !isAccepting && !acceptAttemptedRef.current) {
       acceptAttemptedRef.current = true;
       setTimeout(() => setIsAccepting(true), 0);
       acceptInvite({ token })
@@ -45,7 +48,7 @@ export function InviteLanding({ paramsPromise }: InviteLandingProps) {
           setIsAccepting(false);
         });
     }
-  }, [isLoaded, isSignedIn, isSLP, inviteInfo, token, acceptInvite, router, isAccepting]);
+  }, [isLoaded, isNewUser, inviteInfo, token, acceptInvite, router, isAccepting]);
 
   // Loading state
   if (inviteInfo === undefined) {

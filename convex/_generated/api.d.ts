@@ -11,6 +11,10 @@
 import type * as ResendOTPPasswordReset from "../ResendOTPPasswordReset.js";
 import type * as __tests___testHelpers from "../__tests__/testHelpers.js";
 import type * as activityLog from "../activityLog.js";
+import type * as adventureSessionActions from "../adventureSessionActions.js";
+import type * as adventure_progress from "../adventure_progress.js";
+import type * as adventure_sessions from "../adventure_sessions.js";
+import type * as adventure_words from "../adventure_words.js";
 import type * as ai from "../ai.js";
 import type * as aiActions from "../aiActions.js";
 import type * as app_state from "../app_state.js";
@@ -73,6 +77,7 @@ import type * as progressData from "../progressData.js";
 import type * as progressReports from "../progressReports.js";
 import type * as rate_limit_check from "../rate_limit_check.js";
 import type * as rate_limits from "../rate_limits.js";
+import type * as seeds_adventure_seed from "../seeds/adventure_seed.js";
 import type * as seeds_backfill_legacy_sessions from "../seeds/backfill_legacy_sessions.js";
 import type * as seeds_image_seeds from "../seeds/image_seeds.js";
 import type * as sessionActions from "../sessionActions.js";
@@ -107,6 +112,10 @@ declare const fullApi: ApiFromModules<{
   ResendOTPPasswordReset: typeof ResendOTPPasswordReset;
   "__tests__/testHelpers": typeof __tests___testHelpers;
   activityLog: typeof activityLog;
+  adventureSessionActions: typeof adventureSessionActions;
+  adventure_progress: typeof adventure_progress;
+  adventure_sessions: typeof adventure_sessions;
+  adventure_words: typeof adventure_words;
   ai: typeof ai;
   aiActions: typeof aiActions;
   app_state: typeof app_state;
@@ -169,6 +178,7 @@ declare const fullApi: ApiFromModules<{
   progressReports: typeof progressReports;
   rate_limit_check: typeof rate_limit_check;
   rate_limits: typeof rate_limits;
+  "seeds/adventure_seed": typeof seeds_adventure_seed;
   "seeds/backfill_legacy_sessions": typeof seeds_backfill_legacy_sessions;
   "seeds/image_seeds": typeof seeds_image_seeds;
   sessionActions: typeof sessionActions;

@@ -128,8 +128,8 @@ export const generateNotes = internalAction({
       const diagnosis = patient?.diagnosis ?? "not specified";
       const activeGoals =
         goals
-          ?.filter((g) => g.status === "active")
-          .map((g) => `${g.domain}: ${g.shortDescription}`)
+          ?.filter((g: { status: string }) => g.status === "active")
+          .map((g: { domain: string; shortDescription: string }) => `${g.domain}: ${g.shortDescription}`)
           .join("\n  - ") || "none specified";
 
       const transcript = record.transcript || "No transcript available.";

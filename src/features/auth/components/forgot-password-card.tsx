@@ -4,6 +4,7 @@ import { useAuthActions } from "@convex-dev/auth/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { mapAuthError } from "@/features/auth/lib/auth-content";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
 
@@ -28,7 +29,7 @@ export function ForgotPasswordCard() {
       await signIn("password", { email, flow: "reset" });
       setStep("verify");
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : "Could not send reset email.");
+      setFormError(err instanceof Error ? mapAuthError(err.message) : "Could not send reset email.");
     } finally {
       setIsBusy(false);
     }
@@ -42,7 +43,7 @@ export function ForgotPasswordCard() {
       await signIn("password", { email, code, newPassword, flow: "reset-verification" });
       router.push("/sign-in");
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : "Could not reset password.");
+      setFormError(err instanceof Error ? mapAuthError(err.message) : "Could not reset password.");
     } finally {
       setIsBusy(false);
     }

@@ -1,6 +1,7 @@
 "use node";
 
 import { ConvexError, v } from "convex/values";
+import type { Id } from "./_generated/dataModel";
 
 import { internal } from "./_generated/api";
 import { action } from "./_generated/server";
@@ -31,7 +32,7 @@ export const persistAdventureSession = action({
       throw new ConvexError("Unauthorized");
     }
 
-    const adventureSessionId = await ctx.runMutation(
+    const adventureSessionId: Id<"adventureSessions"> = await ctx.runMutation(
       internal.adventure_sessions.createAdventureSession,
       payload
     );
