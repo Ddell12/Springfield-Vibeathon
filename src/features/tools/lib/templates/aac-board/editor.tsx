@@ -23,17 +23,20 @@ const CATEGORY_LABELS: Record<string, string> = {
 };
 
 export function AACBoardEditor({ config, onChange }: EditorProps<AACBoardConfig>) {
+  // Defensive: buttons may be missing if config arrived before schema parse completed
+  const buttons = config.buttons ?? [];
+
   const set = <K extends keyof AACBoardConfig>(key: K, value: AACBoardConfig[K]) =>
     onChange({ ...config, [key]: value });
 
   const updateButton = (id: string, patch: Partial<AACButton>) =>
-    onChange({ ...config, buttons: config.buttons.map((b) => (b.id === id ? { ...b, ...patch } : b)) });
+    onChange({ ...config, buttons: buttons.map((b) => (b.id === id ? { ...b, ...patch } : b)) });
 
   const addButton = () =>
-    onChange({ ...config, buttons: [...config.buttons, { id: nanoid(), label: "New Button", speakText: "New Button" }] });
+    onChange({ ...config, buttons: [...buttons, { id: nanoid(), label: "New Button", speakText: "New Button" }] });
 
   const removeButton = (id: string) =>
-    onChange({ ...config, buttons: config.buttons.filter((b) => b.id !== id) });
+    onChange({ ...config, buttons: buttons.filter((b) => b.id !== id) });
 
   return (
     <div className="flex flex-col gap-6 p-4">
@@ -86,11 +89,11 @@ export function AACBoardEditor({ config, onChange }: EditorProps<AACBoardConfig>
 
       <div className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
-          <Label>Buttons ({config.buttons.length})</Label>
+          <Label>Buttons ({buttons.length})</Label>
           <Button variant="outline" size="sm" onClick={addButton}>Add button</Button>
         </div>
 
-        {config.buttons.map((button, i) => (
+        {buttons.map((button, i) => (
           <div key={button.id} className="border border-border rounded-lg p-3 flex flex-col gap-2">
             <div className="flex items-center justify-between">
               <span className="text-xs text-muted-foreground">Button {i + 1}</span>
@@ -140,9 +143,9 @@ export function AACBoardEditor({ config, onChange }: EditorProps<AACBoardConfig>
           </div>
         ))}
 
-        {config.buttons.length > config.gridCols * config.gridRows && (
+        {buttons.length > config.gridCols * config.gridRows && (
           <p className="text-sm text-amber-700 bg-amber-50 rounded-lg px-3 py-2">
-            {config.buttons.length - config.gridCols * config.gridRows} button(s) exceed
+            {buttons.length - config.gridCols * config.gridRows} button(s) exceed
             the {config.gridCols}×{config.gridRows} grid and won&apos;t be visible.
           </p>
         )}

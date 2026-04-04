@@ -140,7 +140,26 @@ export const templateRegistry: Record<string, TemplateRegistration> = {
       instructionsText:
         "Tap a picture to hear the word. Use the board to build a short message one step at a time.",
     },
-    aiConfigSchema: z.object({}).passthrough(),
+    // Note: Anthropic structured output does not support min/max on integer types.
+    // Use plain z.number().int() or z.number() — range hints go in schemaPrompt only.
+    aiConfigSchema: z.object({
+      title: z.string().optional(),
+      gridCols: z.number().optional(),
+      gridRows: z.number().optional(),
+      buttons: z.array(z.object({
+        id: z.string(),
+        label: z.string(),
+        speakText: z.string(),
+        imageUrl: z.string().optional(),
+        backgroundColor: z.string().optional(),
+        wordCategory: z.enum(["verb", "pronoun", "noun", "descriptor", "social", "core"]).optional(),
+      })).optional(),
+      showTextLabels: z.boolean().optional(),
+      autoSpeak: z.boolean().optional(),
+      sentenceStripEnabled: z.boolean().optional(),
+      voice: z.enum(["child-friendly", "warm-female", "calm-male"]).optional(),
+      highContrast: z.boolean().optional(),
+    }),
     schemaPrompt: `Generate buttons that match the clinician request and child context.
 - Apply Fitzgerald key colors via wordCategory: "verb" (green), "pronoun" (yellow), "noun" (orange), "descriptor" (blue), "social" (pink)
 - speakText should be a natural spoken phrase (e.g. "I want more please", not just "More")
@@ -169,7 +188,15 @@ export const templateRegistry: Record<string, TemplateRegistration> = {
       instructionsText:
         "Finish the first activity on the left, then move to the reward on the right.",
     },
-    aiConfigSchema: z.object({}).passthrough(),
+    aiConfigSchema: z.object({
+      title: z.string().optional(),
+      firstLabel: z.string().optional(),
+      thenLabel: z.string().optional(),
+      firstColor: z.string().optional(),
+      thenColor: z.string().optional(),
+      highContrast: z.boolean().optional(),
+      showCheckmark: z.boolean().optional(),
+    }),
     schemaPrompt: `Set firstLabel and thenLabel to specific, concrete activities — never generic placeholders.
 - firstLabel should name the task the child must complete (e.g. "Finish your worksheet")
 - thenLabel should name the motivating reward (e.g. "5 minutes of dinosaur videos")
@@ -197,7 +224,15 @@ export const templateRegistry: Record<string, TemplateRegistration> = {
       instructionsText:
         "Tap one token each time the task is done. Fill the whole board to earn the reward.",
     },
-    aiConfigSchema: z.object({}).passthrough(),
+    // Note: Anthropic structured output does not support min/max on integer types.
+    aiConfigSchema: z.object({
+      title: z.string().optional(),
+      tokenCount: z.number().optional(),
+      rewardLabel: z.string().optional(),
+      tokenShape: z.enum(["star", "circle", "heart"]).optional(),
+      tokenColor: z.string().optional(),
+      highContrast: z.boolean().optional(),
+    }),
     schemaPrompt: `Set rewardLabel to a specific, motivating reward matching the child profile — never "Reward" or "Prize".
 - tokenCount: 3–5 for young children (ages 3–5), 5–8 for older children
 - tokenShape: "star" by default; "circle" for simpler visual needs
@@ -223,7 +258,19 @@ export const templateRegistry: Record<string, TemplateRegistration> = {
       instructionsText:
         "Work through each step in order. Tap a step when it is finished to move forward.",
     },
-    aiConfigSchema: z.object({}).passthrough(),
+    // Note: Anthropic structured output does not support min/max on integer types.
+    aiConfigSchema: z.object({
+      title: z.string().optional(),
+      items: z.array(z.object({
+        id: z.string(),
+        label: z.string(),
+        imageUrl: z.string().optional(),
+        durationMinutes: z.number().optional(),
+      })).optional(),
+      showDuration: z.boolean().optional(),
+      highContrast: z.boolean().optional(),
+      showCheckmarks: z.boolean().optional(),
+    }),
     schemaPrompt: `Generate 3–8 schedule items with concrete, specific labels — never "Activity 1" or "Step 2".
 - Each item label should name a real activity (e.g. "Put on shoes", "Eat breakfast")
 - durationMinutes should reflect realistic times for the age range
@@ -251,7 +298,19 @@ export const templateRegistry: Record<string, TemplateRegistration> = {
       instructionsText:
         "Choose an item on the left, then tap the matching answer on the right until all pairs are found.",
     },
-    aiConfigSchema: z.object({}).passthrough(),
+    aiConfigSchema: z.object({
+      title: z.string().optional(),
+      pairs: z.array(z.object({
+        id: z.string(),
+        prompt: z.string(),
+        answer: z.string(),
+        imageUrl: z.string().optional(),
+        promptImageUrl: z.string().optional(),
+      })).optional(),
+      showAnswerImages: z.boolean().optional(),
+      celebrateCorrect: z.boolean().optional(),
+      highContrast: z.boolean().optional(),
+    }),
     schemaPrompt: `Generate 4–8 word-answer pairs that match the described vocabulary or concept goal.
 - Each pair: prompt is the cue (word, category, or question), answer is the correct match
 - Pairs should be meaningfully related and appropriately challenging for the age range

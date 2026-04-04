@@ -47,8 +47,10 @@ export function AACBoardRuntime({
   }, [sentence, config.voice, voice]);
 
   // Motor planning: pad to gridCols × gridRows fixed slots
+  // Defensive: buttons may be missing if config is partially hydrated
+  const buttons = config.buttons ?? [];
   const totalSlots = config.gridCols * config.gridRows;
-  const slots = Array.from({ length: totalSlots }, (_, i) => config.buttons[i] ?? null);
+  const slots = Array.from({ length: totalSlots }, (_, i) => buttons[i] ?? null);
 
   return (
     <div className={cn("p-4", config.highContrast && "high-contrast bg-black")}>

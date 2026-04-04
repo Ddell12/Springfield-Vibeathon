@@ -115,13 +115,34 @@ export async function POST(req: Request) {
       );
     }
 
+    // Validate and fill in any missing required fields by merging AI output over defaults.
+    // This prevents crashes when the AI omits required fields (e.g. buttons[] in aac_board).
+    let finalConfig: unknown;
+    try {
+      finalConfig = registration.parseConfig(JSON.stringify(configResult.output));
+    } catch {
+      // AI output didn't satisfy the full schema — merge with defaults and retry
+      const merged = { ...(registration.defaultConfig as object), ...(configResult.output as object) };
+      try {
+        finalConfig = registration.parseConfig(JSON.stringify(merged));
+      } catch {
+        // Still invalid — fall back entirely to defaults
+        finalConfig = registration.defaultConfig;
+      }
+    }
+
     return NextResponse.json({
       templateType,
-      configJson: JSON.stringify(configResult.output),
+      configJson: JSON.stringify(finalConfig),
       suggestedTitle,
     });
   } catch (err) {
+    const errMsg = err instanceof Error ? err.message : String(err);
     console.error("[tools/infer-template] failed:", err);
+    // In dev: return the actual error for debugging
+    if (process.env.NODE_ENV === "development") {
+      return NextResponse.json({ error: "Generation failed", detail: errMsg }, { status: 500 });
+    }
     return NextResponse.json({ error: "Generation failed" }, { status: 500 });
   }
 }
