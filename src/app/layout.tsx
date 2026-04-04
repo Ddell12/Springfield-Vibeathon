@@ -1,5 +1,6 @@
 import "./globals.css";
 
+import { ConvexAuthNextjsServerProvider } from "@convex-dev/auth/nextjs/server";
 import type { Metadata } from "next";
 
 import { APP_BRAND, APP_DESCRIPTION, APP_TAGLINE } from "@/core/config";
@@ -54,10 +55,12 @@ export default function RootLayout({
       {/* eslint-enable @next/next/no-page-custom-font */}
       <body className="min-h-full flex flex-col antialiased">
         <SkipToContent />
-        <Providers>
-          {children}
-          <Toaster />
-        </Providers>
+        <ConvexAuthNextjsServerProvider>
+          <Providers>
+            {children}
+            <Toaster />
+          </Providers>
+        </ConvexAuthNextjsServerProvider>
       </body>
     </html>
   );
