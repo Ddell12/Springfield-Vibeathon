@@ -141,7 +141,13 @@ export const templateRegistry: Record<string, TemplateRegistration> = {
         "Tap a picture to hear the word. Use the board to build a short message one step at a time.",
     },
     aiConfigSchema: z.object({}).passthrough(),
-    schemaPrompt: "Return a config object matching the template defaults.",
+    schemaPrompt: `Generate buttons that match the clinician request and child context.
+- Apply Fitzgerald key colors via wordCategory: "verb" (green), "pronoun" (yellow), "noun" (orange), "descriptor" (blue), "social" (pink)
+- speakText should be a natural spoken phrase (e.g. "I want more please", not just "More")
+- Prefer 6–12 buttons in a 3×2 or 3×3 grid appropriate to the child's communication level
+- Use vocabulary appropriate for the child's age range and interests
+- Set autoSpeak: true unless the request implies sentence building
+- Set sentenceStripEnabled: true if the request mentions sentence building or combining words`,
   },
   first_then_board: {
     meta: {
@@ -164,7 +170,12 @@ export const templateRegistry: Record<string, TemplateRegistration> = {
         "Finish the first activity on the left, then move to the reward on the right.",
     },
     aiConfigSchema: z.object({}).passthrough(),
-    schemaPrompt: "Return a config object matching the template defaults.",
+    schemaPrompt: `Set firstLabel and thenLabel to specific, concrete activities — never generic placeholders.
+- firstLabel should name the task the child must complete (e.g. "Finish your worksheet")
+- thenLabel should name the motivating reward (e.g. "5 minutes of dinosaur videos")
+- If child interests are provided, weave them into the thenLabel
+- firstColor and thenColor should be visually distinct bright hex values
+- showCheckmark: true by default`,
   },
   token_board: {
     meta: {
@@ -187,7 +198,10 @@ export const templateRegistry: Record<string, TemplateRegistration> = {
         "Tap one token each time the task is done. Fill the whole board to earn the reward.",
     },
     aiConfigSchema: z.object({}).passthrough(),
-    schemaPrompt: "Return a config object matching the template defaults.",
+    schemaPrompt: `Set rewardLabel to a specific, motivating reward matching the child profile — never "Reward" or "Prize".
+- tokenCount: 3–5 for young children (ages 3–5), 5–8 for older children
+- tokenShape: "star" by default; "circle" for simpler visual needs
+- tokenColor should be bright and positive — gold (#FBBF24), green (#22c55e), or aligned with child interests`,
   },
   visual_schedule: {
     meta: {
@@ -210,7 +224,11 @@ export const templateRegistry: Record<string, TemplateRegistration> = {
         "Work through each step in order. Tap a step when it is finished to move forward.",
     },
     aiConfigSchema: z.object({}).passthrough(),
-    schemaPrompt: "Return a config object matching the template defaults.",
+    schemaPrompt: `Generate 3–8 schedule items with concrete, specific labels — never "Activity 1" or "Step 2".
+- Each item label should name a real activity (e.g. "Put on shoes", "Eat breakfast")
+- durationMinutes should reflect realistic times for the age range
+- Items should follow a logical sequential order appropriate to the context
+- showCheckmarks: true and showDuration: true by default`,
   },
   matching_game: {
     meta: {
@@ -234,6 +252,10 @@ export const templateRegistry: Record<string, TemplateRegistration> = {
         "Choose an item on the left, then tap the matching answer on the right until all pairs are found.",
     },
     aiConfigSchema: z.object({}).passthrough(),
-    schemaPrompt: "Return a config object matching the template defaults.",
+    schemaPrompt: `Generate 4–8 word-answer pairs that match the described vocabulary or concept goal.
+- Each pair: prompt is the cue (word, category, or question), answer is the correct match
+- Pairs should be meaningfully related and appropriately challenging for the age range
+- Avoid trivially easy pairs (dog/cat) unless the request is explicitly for beginners
+- celebrateCorrect: true for engagement`,
   },
 };
