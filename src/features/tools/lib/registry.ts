@@ -19,7 +19,10 @@ import { MatchingGameEditor } from "./templates/matching-game/editor";
 import { MatchingGameRuntime } from "./templates/matching-game/runtime";
 import { type MatchingGameConfig,MatchingGameConfigSchema } from "./templates/matching-game/schema";
 import { TokenBoardEditor } from "./templates/token-board/editor";
+import { TokenBoardHistoryPage } from "./templates/token-board/history-page";
+import { TokenBoardMainPage } from "./templates/token-board/main-page";
 import { TokenBoardRuntime } from "./templates/token-board/runtime";
+import { TokenBoardSettingsPage } from "./templates/token-board/settings-page";
 import { type TokenBoardConfig,TokenBoardConfigSchema } from "./templates/token-board/schema";
 import { VisualScheduleEditor } from "./templates/visual-schedule/editor";
 import { VisualScheduleRuntime } from "./templates/visual-schedule/runtime";
@@ -265,7 +268,11 @@ export const templateRegistry: Record<string, TemplateRegistration> = {
 - tokenCount: 3–5 for young children (ages 3–5), 5–8 for older children
 - tokenShape: "star" by default; "circle" for simpler visual needs
 - tokenColor should be bright and positive — gold (#FBBF24), green (#22c55e), or aligned with child interests`,
-    pages: [],
+    pages: [
+      { id: "main", label: "Board", icon: LayoutGrid, audience: "both", component: TokenBoardMainPage },
+      { id: "settings", label: "Settings", icon: Settings2, audience: "slp", component: TokenBoardSettingsPage },
+      { id: "history", label: "History", icon: BarChart3, audience: "slp", component: TokenBoardHistoryPage },
+    ],
   },
   visual_schedule: {
     meta: {
