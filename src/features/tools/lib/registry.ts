@@ -1,7 +1,9 @@
 import type { ComponentType } from "react";
+import type { LucideIcon } from "lucide-react";
 import { z } from "zod";
 
 import { type AppShellConfig, DEFAULT_APP_SHELL } from "./runtime/app-shell-types";
+import type { TemplateDataStore } from "./runtime/page-types";
 import { AACBoardEditor } from "./templates/aac-board/editor";
 import { AACBoardRuntime } from "./templates/aac-board/runtime";
 import { type AACBoardConfig,AACBoardConfigSchema } from "./templates/aac-board/schema";
@@ -20,6 +22,7 @@ import { type VisualScheduleConfig,VisualScheduleConfigSchema } from "./template
 
 export interface RuntimeProps<TConfig = unknown> {
   config: TConfig;
+  appInstanceId?: string;           // NEW — optional to avoid breaking existing tests
   mode: "preview" | "published";
   onEvent: (type: string, payloadJson?: string) => void;
   voice: {
@@ -32,6 +35,18 @@ export interface RuntimeProps<TConfig = unknown> {
 export interface EditorProps<TConfig = unknown> {
   config: TConfig;
   onChange: (config: TConfig) => void;
+}
+
+export interface PageDefinition<TConfig = unknown> {
+  id: string;
+  label: string;
+  icon: LucideIcon;
+  audience: "slp" | "child" | "both";
+  component: ComponentType<PageProps<TConfig>>;
+}
+
+export interface PageProps<TConfig = unknown> extends RuntimeProps<TConfig> {
+  data: TemplateDataStore;
 }
 
 export interface TemplateMeta {
@@ -53,6 +68,7 @@ export interface TemplateRegistration {
   shell: AppShellConfig;
   aiConfigSchema: z.ZodTypeAny;
   schemaPrompt: string;
+  pages: PageDefinition[];          // NEW
 }
 
 const DEFAULT_AAC_CONFIG: AACBoardConfig = {
@@ -167,6 +183,7 @@ export const templateRegistry: Record<string, TemplateRegistration> = {
 - Use vocabulary appropriate for the child's age range and interests
 - Set autoSpeak: true unless the request implies sentence building
 - Set sentenceStripEnabled: true if the request mentions sentence building or combining words`,
+    pages: [],
   },
   first_then_board: {
     meta: {
@@ -203,6 +220,7 @@ export const templateRegistry: Record<string, TemplateRegistration> = {
 - If child interests are provided, weave them into the thenLabel
 - firstColor and thenColor should be visually distinct bright hex values
 - showCheckmark: true by default`,
+    pages: [],
   },
   token_board: {
     meta: {
@@ -237,6 +255,7 @@ export const templateRegistry: Record<string, TemplateRegistration> = {
 - tokenCount: 3–5 for young children (ages 3–5), 5–8 for older children
 - tokenShape: "star" by default; "circle" for simpler visual needs
 - tokenColor should be bright and positive — gold (#FBBF24), green (#22c55e), or aligned with child interests`,
+    pages: [],
   },
   visual_schedule: {
     meta: {
@@ -276,6 +295,7 @@ export const templateRegistry: Record<string, TemplateRegistration> = {
 - durationMinutes should reflect realistic times for the age range
 - Items should follow a logical sequential order appropriate to the context
 - showCheckmarks: true and showDuration: true by default`,
+    pages: [],
   },
   matching_game: {
     meta: {
@@ -316,5 +336,6 @@ export const templateRegistry: Record<string, TemplateRegistration> = {
 - Pairs should be meaningfully related and appropriately challenging for the age range
 - Avoid trivially easy pairs (dog/cat) unless the request is explicitly for beginners
 - celebrateCorrect: true for engagement`,
+    pages: [],
   },
 };
